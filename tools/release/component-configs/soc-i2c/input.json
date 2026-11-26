@@ -1,0 +1,40 @@
+{
+  "profile" : "byte-i2c-functional-experimental-v1",
+  "controllers" : [ {
+    "index" : 0,
+    "irq" : 510,
+    "interruptPort" : "soc-gic.lines",
+    "busPort" : "i2c-bus.bus0",
+    "byte_ticks" : 8,
+    "reset" : {
+      "ccr" : 0,
+      "adr" : 0,
+      "csr" : 0,
+      "fsr" : 0
+    }
+  }, {
+    "index" : 1,
+    "irq" : 66,
+    "interruptPort" : "soc-gic.lines",
+    "busPort" : "i2c-bus.bus1",
+    "byte_ticks" : 8,
+    "reset" : {
+      "ccr" : 0,
+      "adr" : 0,
+      "csr" : 0,
+      "fsr" : 0
+    }
+  }, {
+    "index" : 2,
+    "irq" : 67,
+    "interruptPort" : "soc-gic.lines",
+    "busPort" : "i2c-bus.bus2",
+    "byte_ticks" : 8,
+    "reset" : {
+      "ccr" : 0,
+      "adr" : 0,
+      "csr" : 0,
+      "fsr" : 0
+    }
+  } ]
+}

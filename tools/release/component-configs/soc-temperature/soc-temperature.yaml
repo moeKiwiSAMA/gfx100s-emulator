@@ -1,0 +1,4 @@
+# Internal GFX100S SoC hardware definition — no user edits needed.
+profile: "gfx100s-temperature-functional-experimental-v1"
+inputFile: "input.yaml"
+samplePort: "temperature-sensor"

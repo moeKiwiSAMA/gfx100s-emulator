@@ -1,0 +1,20 @@
+---
+schema: 1
+profile: "gfx100s-serial-transmit-functional-experimental-v3"
+firmwareSha256: "ea997915ac5accc79699392b47909bb29506f66ec8d571e5804dd1fb0408fd12"
+initialWords:
+  "0": 0
+statusPlans:
+  "1":
+  - - 0
+resumeChannel1StatusSamples: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+transmitPlans:
+  "1":
+  - byteCount: 19488
+    acceptDelayTicks: 0
+  - byteCount: 19488
+    acceptDelayTicks: 0
+  - byteCount: 19488
+    acceptDelayTicks: 0
+  - byteCount: 19488
+    acceptDelayTicks: 0

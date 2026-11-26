@@ -1,0 +1,7 @@
+---
+schema: 1
+profile: "named-destination-ports-experimental-v1"
+ports:
+- "soc-flash.tx"
+- "soc-isp-setup.i2s0-dma-tx"
+- "soc-isp-setup.i2s1-dma-tx"

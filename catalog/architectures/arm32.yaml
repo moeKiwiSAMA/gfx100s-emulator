@@ -1,0 +1,66 @@
+{
+  "schema": 1,
+  "id": "arm32",
+  "spaces": [
+    {
+      "id": "cpu-physical",
+      "base": 0,
+      "endExclusive": 4294967296,
+      "addressBits": 32,
+      "unit": "byte",
+      "byteOrder": "little",
+      "defaultClassification": "UNASSIGNED",
+      "allocation": "interval-only; no implicit backing"
+    },
+    {
+      "id": "guest-virtual",
+      "base": 0,
+      "endExclusive": 4294967296,
+      "addressBits": 32,
+      "unit": "byte",
+      "byteOrder": "little",
+      "defaultClassification": "UNASSIGNED",
+      "allocation": "interval-only; no implicit backing"
+    },
+    {
+      "id": "flash-aperture",
+      "base": 0,
+      "endExclusive": 4294967296,
+      "addressBits": 32,
+      "unit": "byte",
+      "byteOrder": "little",
+      "defaultClassification": "UNASSIGNED",
+      "allocation": "interval-only; no implicit backing"
+    },
+    {
+      "id": "flash-logical",
+      "base": 0,
+      "endExclusive": 4294967296,
+      "addressBits": 32,
+      "unit": "byte",
+      "byteOrder": "little",
+      "defaultClassification": "UNASSIGNED",
+      "allocation": "interval-only; no implicit backing"
+    },
+    {
+      "id": "dat-file",
+      "base": 0,
+      "endExclusive": 50197040,
+      "addressBits": 32,
+      "unit": "byte",
+      "byteOrder": "little",
+      "defaultClassification": "UNASSIGNED",
+      "allocation": "interval-only; no implicit backing"
+    },
+    {
+      "id": "ram-backing",
+      "base": 0,
+      "endExclusive": 4294967296,
+      "addressBits": 32,
+      "unit": "byte",
+      "byteOrder": "little",
+      "defaultClassification": "UNASSIGNED",
+      "allocation": "interval-only; no implicit backing"
+    }
+  ]
+}

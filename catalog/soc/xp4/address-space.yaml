@@ -1,0 +1,693 @@
+{
+  "schema": 1,
+  "id": "xp4",
+  "architecture": "arm32",
+  "diagnosticProfiles": [
+    {
+      "id": "gfx100s-sd-finite-f01c-retained-diagnostic-v1",
+      "inventoryId": "INV-SYS-F01C-001",
+      "routeBase": 4294242332,
+      "routeEndExclusive": 4294242336,
+      "width": 4,
+      "strategy": "retained-bytes",
+      "writeValue": 1,
+      "successfulReadLimit": 4096,
+      "initialValue": null,
+      "repeatWrite": "refuse",
+      "addressKind": "observed-native-callback-address",
+      "confidence": "HYPOTHESIS",
+      "physicalAddress": null,
+      "reset": null,
+      "dataEffect": null,
+      "automaticEvents": false,
+      "evidence": [
+        "evidence/refactor/system-f01c-frontier-fresh-22/README.md",
+        "evidence/refactor/f01c-retained-diagnostic-model-fresh-27/README.md"
+      ]
+    },
+    {
+      "id": "gfx100s-sd-finite-core0-successor-diagnostic-v1",
+      "inventoryId": "INV-SYS-F01C-001",
+      "routeBase": 4294242332,
+      "routeEndExclusive": 4294242336,
+      "width": 4,
+      "strategy": "retained-bytes",
+      "writeValue": 1,
+      "successfulReadLimit": 131072,
+      "initialValue": null,
+      "repeatWrite": "refuse",
+      "addressKind": "observed-native-callback-address",
+      "confidence": "HYPOTHESIS",
+      "physicalAddress": null,
+      "reset": null,
+      "dataEffect": null,
+      "automaticEvents": false,
+      "evidence": [
+        "evidence/refactor/core0-diagnostic-model-fresh-30/README.md"
+      ]
+    },
+    {
+      "id": "gfx100s-sd-finite-callback-return-diagnostic-v1",
+      "inventoryId": "INV-SYS-F01C-001",
+      "routeBase": 4294242332,
+      "routeEndExclusive": 4294242336,
+      "width": 4,
+      "strategy": "retained-bytes",
+      "writeValue": 1,
+      "successfulReadLimit": 262144,
+      "initialValue": null,
+      "repeatWrite": "refuse",
+      "addressKind": "observed-native-callback-address",
+      "confidence": "HYPOTHESIS",
+      "physicalAddress": null,
+      "reset": null,
+      "dataEffect": null,
+      "automaticEvents": false,
+      "evidence": [
+        "evidence/refactor/callback-diagnostic-model-fresh-35/README.md"
+      ]
+    },
+    {
+      "id": "gfx100s-sd-finite-parent-return-diagnostic-v1",
+      "inventoryId": "INV-SYS-F01C-001",
+      "routeBase": 4294242332,
+      "routeEndExclusive": 4294242336,
+      "width": 4,
+      "strategy": "retained-bytes",
+      "writeValue": 1,
+      "successfulReadLimit": 327680,
+      "initialValue": null,
+      "repeatWrite": "refuse",
+      "addressKind": "observed-native-callback-address",
+      "confidence": "HYPOTHESIS",
+      "physicalAddress": null,
+      "reset": null,
+      "dataEffect": null,
+      "automaticEvents": false,
+      "evidence": [
+        "evidence/refactor/parent-return-model-fresh-38/README.md"
+      ]
+    },
+    {
+      "id": "gfx100s-sd-finite-type3-return-diagnostic-v1",
+      "inventoryId": "INV-SYS-F01C-001",
+      "routeBase": 4294242332,
+      "routeEndExclusive": 4294242336,
+      "width": 4,
+      "strategy": "retained-bytes",
+      "writeValue": 1,
+      "successfulReadLimit": 409600,
+      "initialValue": null,
+      "repeatWrite": "refuse",
+      "addressKind": "observed-native-callback-address",
+      "confidence": "HYPOTHESIS",
+      "physicalAddress": null,
+      "reset": null,
+      "dataEffect": null,
+      "automaticEvents": false,
+      "evidence": [
+        "evidence/refactor/type3-return-model-fresh-43/README.md"
+      ]
+    },
+    {
+      "id": "gfx100s-sd-finite-type3-parent-diagnostic-v1",
+      "inventoryId": "INV-SYS-F01C-001",
+      "routeBase": 4294242332,
+      "routeEndExclusive": 4294242336,
+      "width": 4,
+      "strategy": "retained-bytes",
+      "writeValue": 1,
+      "successfulReadLimit": 540672,
+      "initialValue": null,
+      "repeatWrite": "refuse",
+      "addressKind": "observed-native-callback-address",
+      "confidence": "HYPOTHESIS",
+      "physicalAddress": null,
+      "reset": null,
+      "dataEffect": null,
+      "automaticEvents": false,
+      "evidence": [
+        "evidence/refactor/type3-parent-model-fresh-45/README.md"
+      ]
+    },
+    {
+      "id": "gfx100s-sd-finite-post-staging-diagnostic-v1",
+      "inventoryId": "INV-SYS-F01C-001",
+      "routeBase": 4294242332,
+      "routeEndExclusive": 4294242336,
+      "width": 4,
+      "strategy": "retained-bytes",
+      "writeValue": 1,
+      "successfulReadLimit": 544768,
+      "initialValue": null,
+      "repeatWrite": "refuse",
+      "addressKind": "observed-native-callback-address",
+      "confidence": "HYPOTHESIS",
+      "physicalAddress": null,
+      "reset": null,
+      "dataEffect": null,
+      "automaticEvents": false,
+      "evidence": [
+        "evidence/refactor/post-staging-allowance-fresh-68/README.md"
+      ]
+    },
+    {
+      "id": "gfx100s-sd-finite-dispatch-diagnostic-v1",
+      "inventoryId": "INV-SYS-F01C-001",
+      "routeBase": 4294242332,
+      "routeEndExclusive": 4294242336,
+      "width": 4,
+      "strategy": "retained-bytes",
+      "writeValue": 1,
+      "successfulReadLimit": 589824,
+      "initialValue": null,
+      "repeatWrite": "refuse",
+      "addressKind": "observed-native-callback-address",
+      "confidence": "HYPOTHESIS",
+      "physicalAddress": null,
+      "reset": null,
+      "dataEffect": null,
+      "automaticEvents": false,
+      "evidence": [
+        "evidence/refactor/dispatch-allowance-fresh-75/README.md"
+      ]
+    },
+    {
+      "id": "gfx100s-sd-finite-dispatch-tail-diagnostic-v1",
+      "inventoryId": "INV-SYS-F01C-001",
+      "routeBase": 4294242332,
+      "routeEndExclusive": 4294242336,
+      "width": 4,
+      "strategy": "retained-bytes",
+      "writeValue": 1,
+      "successfulReadLimit": 598016,
+      "initialValue": null,
+      "repeatWrite": "refuse",
+      "addressKind": "observed-native-callback-address",
+      "confidence": "HYPOTHESIS",
+      "physicalAddress": null,
+      "reset": null,
+      "dataEffect": null,
+      "automaticEvents": false,
+      "evidence": [
+        "evidence/refactor/dispatch-tail-allowance-fresh-83/README.md"
+      ]
+    },
+    {
+      "id": "gfx100s-sd-finite-dispatch-exit-diagnostic-v1",
+      "inventoryId": "INV-SYS-F01C-001",
+      "routeBase": 4294242332,
+      "routeEndExclusive": 4294242336,
+      "width": 4,
+      "strategy": "retained-bytes",
+      "writeValue": 1,
+      "successfulReadLimit": 663552,
+      "initialValue": null,
+      "repeatWrite": "refuse",
+      "addressKind": "observed-native-callback-address",
+      "confidence": "HYPOTHESIS",
+      "physicalAddress": null,
+      "reset": null,
+      "dataEffect": null,
+      "automaticEvents": false,
+      "evidence": [
+        "evidence/refactor/dispatch-exit-allowance-fresh-95/README.md"
+      ]
+    },
+    {
+      "id": "gfx100s-sd-finite-dispatch-followup-diagnostic-v1",
+      "inventoryId": "INV-SYS-F01C-001",
+      "routeBase": 4294242332,
+      "routeEndExclusive": 4294242336,
+      "width": 4,
+      "strategy": "retained-bytes",
+      "writeValue": 1,
+      "successfulReadLimit": 696320,
+      "initialValue": null,
+      "repeatWrite": "refuse",
+      "addressKind": "observed-native-callback-address",
+      "confidence": "HYPOTHESIS",
+      "physicalAddress": null,
+      "reset": null,
+      "dataEffect": null,
+      "automaticEvents": false,
+      "evidence": [
+        "evidence/refactor/dispatch-followup-allowance-fresh-102/README.md"
+      ]
+    },
+    {
+      "id": "gfx100s-sd-finite-kernel-call-diagnostic-v1",
+      "inventoryId": "INV-SYS-F01C-001",
+      "routeBase": 4294242332,
+      "routeEndExclusive": 4294242336,
+      "width": 4,
+      "strategy": "retained-bytes",
+      "writeValue": 1,
+      "successfulReadLimit": 697344,
+      "initialValue": null,
+      "repeatWrite": "refuse",
+      "addressKind": "observed-native-callback-address",
+      "confidence": "HYPOTHESIS",
+      "physicalAddress": null,
+      "reset": null,
+      "dataEffect": null,
+      "automaticEvents": false,
+      "evidence": [
+        "evidence/refactor/kernel-call-finite-input-fresh-121/README.md"
+      ]
+    },
+    {
+      "id": "gfx100s-sd-finite-lcd-progress-diagnostic-v1",
+      "inventoryId": "INV-SYS-F01C-001",
+      "routeBase": 4294242332,
+      "routeEndExclusive": 4294242336,
+      "width": 4,
+      "strategy": "retained-bytes",
+      "writeValue": 1,
+      "successfulReadLimit": 1048576,
+      "initialValue": null,
+      "repeatWrite": "refuse",
+      "addressKind": "observed-native-callback-address",
+      "confidence": "HYPOTHESIS",
+      "physicalAddress": null,
+      "reset": null,
+      "dataEffect": null,
+      "automaticEvents": false,
+      "evidence": [
+        "evidence/refactor/lcd-finite-horizon-fresh-189/README.md"
+      ]
+    },
+    {
+      "id": "gfx100s-sd-finite-lens-completion-diagnostic-v1",
+      "inventoryId": "INV-SYS-F01C-001",
+      "routeBase": 4294242332,
+      "routeEndExclusive": 4294242336,
+      "width": 4,
+      "strategy": "retained-bytes",
+      "writeValue": 1,
+      "successfulReadLimit": 2097152,
+      "initialValue": null,
+      "repeatWrite": "refuse",
+      "addressKind": "observed-native-callback-address",
+      "confidence": "HYPOTHESIS",
+      "physicalAddress": null,
+      "reset": null,
+      "dataEffect": null,
+      "automaticEvents": false,
+      "evidence": [
+        "evidence/refactor/lens-completion-horizon-fresh-199/README.md"
+      ]
+    }
+  ],
+  "candidates": [
+    {
+      "id": "gfx100s.sd.slot0.a.candidate",
+      "deviceId": "instance.gfx100s.soc-sd-host.slot0",
+      "space": "cpu-physical",
+      "base": 4294721536,
+      "endExclusive": 4294722048,
+      "policy": "retained-bytes",
+      "widths": [
+        1,
+        2,
+        4
+      ],
+      "alignment": 1,
+      "byteOrder": "little",
+      "initialFill": 0,
+      "prohibited": [],
+      "definitionId": "definition.soc-sd-host.candidate-a",
+      "groups": [],
+      "provenance": {
+        "base": {
+          "confidence": "DAT",
+          "evidence": [
+            "evidence/tooling/sd-init-preflight-2026-11-11-01/local/sd-init-static-04.generated.json"
+          ]
+        },
+        "length": {
+          "confidence": "HYPOTHESIS",
+          "evidence": []
+        },
+        "policy": {
+          "confidence": "HYPOTHESIS",
+          "evidence": []
+        },
+        "initialFill": {
+          "confidence": "HYPOTHESIS",
+          "evidence": []
+        }
+      },
+      "basis": "Owner-selected finite discovery partition, not measured device span. No implicit ready, ACK, IRQ, DMA or completion.",
+      "nextValidation": "Compare strict controls and log new consumers; promote only validated properties."
+    },
+    {
+      "id": "gfx100s.sd.slot0.phy.candidate",
+      "deviceId": "instance.gfx100s.soc-sd-host.slot0",
+      "space": "cpu-physical",
+      "base": 4294729728,
+      "endExclusive": 4294730496,
+      "policy": "retained-bytes",
+      "widths": [
+        1,
+        2,
+        4
+      ],
+      "alignment": 1,
+      "byteOrder": "little",
+      "initialFill": 0,
+      "prohibited": [],
+      "definitionId": "definition.soc-sd-host.candidate-phy",
+      "groups": [
+        {
+          "id": "gfx100s.sd.slot0.b.group",
+          "base": 4294730240,
+          "endExclusive": 4294730496,
+          "owner": "parent candidate only",
+          "physicalSpan": "UNKNOWN"
+        }
+      ],
+      "provenance": {
+        "base": {
+          "confidence": "DAT",
+          "evidence": [
+            "evidence/tooling/sd-init-preflight-2026-11-11-01/local/sd-init-static-04.generated.json"
+          ]
+        },
+        "length": {
+          "confidence": "HYPOTHESIS",
+          "evidence": []
+        },
+        "policy": {
+          "confidence": "HYPOTHESIS",
+          "evidence": []
+        },
+        "initialFill": {
+          "confidence": "HYPOTHESIS",
+          "evidence": []
+        }
+      },
+      "basis": "Owner-selected finite discovery partition, not measured device span. No implicit ready, ACK, IRQ, DMA or completion.",
+      "nextValidation": "Compare strict controls and log new consumers; promote only validated properties."
+    },
+    {
+      "id": "gfx100s.sd.slot1.a.candidate",
+      "deviceId": "instance.gfx100s.soc-sd-host.slot1",
+      "space": "cpu-physical",
+      "base": 4294737920,
+      "endExclusive": 4294738432,
+      "policy": "retained-bytes",
+      "widths": [
+        1,
+        2,
+        4
+      ],
+      "alignment": 1,
+      "byteOrder": "little",
+      "initialFill": 0,
+      "prohibited": [],
+      "definitionId": "definition.soc-sd-host.candidate-a",
+      "groups": [],
+      "provenance": {
+        "base": {
+          "confidence": "DAT",
+          "evidence": [
+            "evidence/tooling/sd-init-preflight-2026-11-11-01/local/sd-init-static-04.generated.json"
+          ]
+        },
+        "length": {
+          "confidence": "HYPOTHESIS",
+          "evidence": []
+        },
+        "policy": {
+          "confidence": "HYPOTHESIS",
+          "evidence": []
+        },
+        "initialFill": {
+          "confidence": "HYPOTHESIS",
+          "evidence": []
+        }
+      },
+      "basis": "Owner-selected finite discovery partition, not measured device span. No implicit ready, ACK, IRQ, DMA or completion.",
+      "nextValidation": "Compare strict controls and log new consumers; promote only validated properties."
+    },
+    {
+      "id": "gfx100s.sd.slot1.phy.candidate",
+      "deviceId": "instance.gfx100s.soc-sd-host.slot1",
+      "space": "cpu-physical",
+      "base": 4294746112,
+      "endExclusive": 4294746880,
+      "policy": "retained-bytes",
+      "widths": [
+        1,
+        2,
+        4
+      ],
+      "alignment": 1,
+      "byteOrder": "little",
+      "initialFill": 0,
+      "prohibited": [],
+      "definitionId": "definition.soc-sd-host.candidate-phy",
+      "groups": [
+        {
+          "id": "gfx100s.sd.slot1.b.group",
+          "base": 4294746624,
+          "endExclusive": 4294746880,
+          "owner": "parent candidate only",
+          "physicalSpan": "UNKNOWN"
+        }
+      ],
+      "provenance": {
+        "base": {
+          "confidence": "DAT",
+          "evidence": [
+            "evidence/tooling/sd-init-preflight-2026-11-11-01/local/sd-init-static-04.generated.json"
+          ]
+        },
+        "length": {
+          "confidence": "HYPOTHESIS",
+          "evidence": []
+        },
+        "policy": {
+          "confidence": "HYPOTHESIS",
+          "evidence": []
+        },
+        "initialFill": {
+          "confidence": "HYPOTHESIS",
+          "evidence": []
+        }
+      },
+      "basis": "Owner-selected finite discovery partition, not measured device span. No implicit ready, ACK, IRQ, DMA or completion.",
+      "nextValidation": "Compare strict controls and log new consumers; promote only validated properties."
+    }
+  ],
+  "singleReadDiagnosticProfiles": [
+    {
+      "id": "gfx100s-sd-finite-a300-zero-diagnostic-v1",
+      "parentProfile": "gfx100s-sd-finite-type3-parent-diagnostic-v1",
+      "inventoryId": "INV-SYS-A300-001",
+      "routeBase": 4294222592,
+      "routeEndExclusive": 4294222596,
+      "width": 4,
+      "strategy": "scripted-read",
+      "samples": [
+        0
+      ],
+      "exhaustion": "refuse",
+      "addressKind": "observed-native-callback-address",
+      "confidence": "HYPOTHESIS",
+      "physicalAddress": null,
+      "reset": null,
+      "function": null,
+      "dataEffect": null,
+      "automaticEvents": false,
+      "evidence": [
+        "evidence/refactor/a300-zero-model-fresh-50/README.md"
+      ]
+    },
+    {
+      "id": "gfx100s-sd-finite-post-staging-a300-diagnostic-v1",
+      "parentProfile": "gfx100s-sd-finite-post-staging-diagnostic-v1",
+      "inventoryId": "INV-SYS-A300-001",
+      "routeBase": 4294222592,
+      "routeEndExclusive": 4294222596,
+      "width": 4,
+      "strategy": "scripted-read",
+      "samples": [
+        0
+      ],
+      "exhaustion": "refuse",
+      "addressKind": "observed-native-callback-address",
+      "confidence": "HYPOTHESIS",
+      "physicalAddress": null,
+      "reset": null,
+      "function": null,
+      "dataEffect": null,
+      "automaticEvents": false,
+      "evidence": [
+        "evidence/refactor/post-staging-allowance-fresh-68/README.md"
+      ]
+    },
+    {
+      "id": "gfx100s-sd-finite-dispatch-a300-diagnostic-v1",
+      "parentProfile": "gfx100s-sd-finite-dispatch-diagnostic-v1",
+      "inventoryId": "INV-SYS-A300-001",
+      "routeBase": 4294222592,
+      "routeEndExclusive": 4294222596,
+      "width": 4,
+      "strategy": "scripted-read",
+      "samples": [
+        0
+      ],
+      "exhaustion": "refuse",
+      "addressKind": "observed-native-callback-address",
+      "confidence": "HYPOTHESIS",
+      "physicalAddress": null,
+      "reset": null,
+      "function": null,
+      "dataEffect": null,
+      "automaticEvents": false,
+      "evidence": [
+        "evidence/refactor/dispatch-allowance-fresh-75/README.md"
+      ]
+    },
+    {
+      "id": "gfx100s-sd-finite-dispatch-tail-a300-diagnostic-v1",
+      "parentProfile": "gfx100s-sd-finite-dispatch-tail-diagnostic-v1",
+      "inventoryId": "INV-SYS-A300-001",
+      "routeBase": 4294222592,
+      "routeEndExclusive": 4294222596,
+      "width": 4,
+      "strategy": "scripted-read",
+      "samples": [
+        0
+      ],
+      "exhaustion": "refuse",
+      "addressKind": "observed-native-callback-address",
+      "confidence": "HYPOTHESIS",
+      "physicalAddress": null,
+      "reset": null,
+      "function": null,
+      "dataEffect": null,
+      "automaticEvents": false,
+      "evidence": [
+        "evidence/refactor/dispatch-tail-allowance-fresh-83/README.md"
+      ]
+    },
+    {
+      "id": "gfx100s-sd-finite-dispatch-exit-a300-diagnostic-v1",
+      "parentProfile": "gfx100s-sd-finite-dispatch-exit-diagnostic-v1",
+      "inventoryId": "INV-SYS-A300-001",
+      "routeBase": 4294222592,
+      "routeEndExclusive": 4294222596,
+      "width": 4,
+      "strategy": "scripted-read",
+      "samples": [
+        0
+      ],
+      "exhaustion": "refuse",
+      "addressKind": "observed-native-callback-address",
+      "confidence": "HYPOTHESIS",
+      "physicalAddress": null,
+      "reset": null,
+      "function": null,
+      "dataEffect": null,
+      "automaticEvents": false,
+      "evidence": [
+        "evidence/refactor/dispatch-exit-allowance-fresh-95/README.md"
+      ]
+    },
+    {
+      "id": "gfx100s-sd-finite-dispatch-followup-a300-diagnostic-v1",
+      "parentProfile": "gfx100s-sd-finite-dispatch-followup-diagnostic-v1",
+      "inventoryId": "INV-SYS-A300-001",
+      "routeBase": 4294222592,
+      "routeEndExclusive": 4294222596,
+      "width": 4,
+      "strategy": "scripted-read",
+      "samples": [
+        0
+      ],
+      "exhaustion": "refuse",
+      "addressKind": "observed-native-callback-address",
+      "confidence": "HYPOTHESIS",
+      "physicalAddress": null,
+      "reset": null,
+      "function": null,
+      "dataEffect": null,
+      "automaticEvents": false,
+      "evidence": [
+        "evidence/refactor/dispatch-followup-allowance-fresh-102/README.md"
+      ]
+    },
+    {
+      "id": "gfx100s-sd-finite-kernel-call-a300-diagnostic-v1",
+      "parentProfile": "gfx100s-sd-finite-kernel-call-diagnostic-v1",
+      "inventoryId": "INV-SYS-A300-001",
+      "routeBase": 4294222592,
+      "routeEndExclusive": 4294222596,
+      "width": 4,
+      "strategy": "scripted-read",
+      "samples": [
+        0
+      ],
+      "exhaustion": "refuse",
+      "addressKind": "observed-native-callback-address",
+      "confidence": "HYPOTHESIS",
+      "physicalAddress": null,
+      "reset": null,
+      "function": null,
+      "dataEffect": null,
+      "automaticEvents": false,
+      "evidence": [
+        "evidence/refactor/kernel-call-finite-input-fresh-121/README.md"
+      ]
+    },
+    {
+      "id": "gfx100s-sd-finite-lcd-progress-a300-diagnostic-v1",
+      "parentProfile": "gfx100s-sd-finite-lcd-progress-diagnostic-v1",
+      "inventoryId": "INV-SYS-A300-001",
+      "routeBase": 4294222592,
+      "routeEndExclusive": 4294222596,
+      "width": 4,
+      "strategy": "scripted-read",
+      "samples": [
+        0
+      ],
+      "exhaustion": "refuse",
+      "addressKind": "observed-native-callback-address",
+      "confidence": "HYPOTHESIS",
+      "physicalAddress": null,
+      "reset": null,
+      "function": null,
+      "dataEffect": null,
+      "automaticEvents": false,
+      "evidence": [
+        "evidence/refactor/lcd-finite-horizon-fresh-189/README.md"
+      ]
+    },
+    {
+      "id": "gfx100s-sd-finite-lens-completion-a300-diagnostic-v1",
+      "parentProfile": "gfx100s-sd-finite-lens-completion-diagnostic-v1",
+      "inventoryId": "INV-SYS-A300-001",
+      "routeBase": 4294222592,
+      "routeEndExclusive": 4294222596,
+      "width": 4,
+      "strategy": "scripted-read",
+      "samples": [
+        0
+      ],
+      "exhaustion": "refuse",
+      "addressKind": "observed-native-callback-address",
+      "confidence": "HYPOTHESIS",
+      "physicalAddress": null,
+      "reset": null,
+      "function": null,
+      "dataEffect": null,
+      "automaticEvents": false,
+      "evidence": [
+        "evidence/refactor/lens-completion-horizon-fresh-199/README.md"
+      ]
+    }
+  ]
+}

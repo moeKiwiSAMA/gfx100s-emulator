@@ -1,0 +1,5 @@
+# Internal GFX100S SoC hardware definition — no user edits needed.
+# Real Micron MT25QU512ABB 512 Mbit (64 MiB) QSPI NOR JEDEC ID (0x20BB20 = 2145056).
+jedec: 2145056
+interruptPort: "soc-gic.lines"
+profile: "gfx100s-unified-boot-program-v6"

@@ -1,0 +1,166 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 320" width="900" height="320">
+  <title>Hasselblad 907X &amp; CFV 100C 路 top</title>
+  <desc>The 907X front standard and CFV slide lock are on the left. The separate GFX control panel displays the active exposure and capture modes.</desc>
+  <defs>
+    <linearGradient id="rail" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#16171a" />
+      <stop offset="7%" stop-color="#676769" />
+      <stop offset="22%" stop-color="#ecebe9" />
+      <stop offset="36%" stop-color="#fffef9" />
+      <stop offset="49%" stop-color="#b6b4b3" />
+      <stop offset="78%" stop-color="#66676c" />
+      <stop offset="89%" stop-color="#d9d7d7" />
+      <stop offset="100%" stop-color="#36373c" />
+    </linearGradient>
+    <linearGradient id="edge" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#353538" />
+      <stop offset="10%" stop-color="#eae8e7" />
+      <stop offset="24%" stop-color="#a4a2a4" />
+      <stop offset="40%" stop-color="#626167" />
+      <stop offset="66%" stop-color="#bdbabb" />
+      <stop offset="79%" stop-color="#f2efe9" />
+      <stop offset="100%" stop-color="#35363a" />
+    </linearGradient>
+    <linearGradient id="silver" x1="0%" y1="0%" x2="75%" y2="100%">
+      <stop offset="0%" stop-color="#f9faf6" />
+      <stop offset="16%" stop-color="#dddcda" />
+      <stop offset="35%" stop-color="#97969a" />
+      <stop offset="52%" stop-color="#6b6a70" />
+      <stop offset="77%" stop-color="#c1bfc0" />
+      <stop offset="100%" stop-color="#69686c" />
+    </linearGradient>
+    <linearGradient id="cup" x1="0%" y1="0%" x2="100%" y2="80%">
+      <stop offset="0%" stop-color="#202126" />
+      <stop offset="18%" stop-color="#414248" />
+      <stop offset="53%" stop-color="#77767a" />
+      <stop offset="76%" stop-color="#cdcbc8" />
+      <stop offset="87%" stop-color="#dad8d3" />
+      <stop offset="100%" stop-color="#878589" />
+    </linearGradient>
+    <linearGradient id="body" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#3b3a3d" />
+      <stop offset="8%" stop-color="#212023" />
+      <stop offset="20%" stop-color="#151518" />
+      <stop offset="55%" stop-color="#222125" />
+      <stop offset="80%" stop-color="#151417" />
+      <stop offset="96%" stop-color="#27272b" />
+      <stop offset="100%" stop-color="#101013" />
+    </linearGradient>
+    <linearGradient id="key" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#464548" />
+      <stop offset="9%" stop-color="#29292c" />
+      <stop offset="68%" stop-color="#19191c" />
+      <stop offset="100%" stop-color="#28272c" />
+    </linearGradient>
+    <linearGradient id="seat" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#08080b" />
+      <stop offset="55%" stop-color="#141416" />
+      <stop offset="100%" stop-color="#38383b" />
+    </linearGradient>
+    <linearGradient id="glass" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#161719" />
+      <stop offset="65%" stop-color="#222225" />
+      <stop offset="100%" stop-color="#111214" />
+    </linearGradient>
+    <pattern id="skin" width="116" height="116" patternUnits="userSpaceOnUse" data-texture="shared/leatherette.png" />
+    <pattern id="brush" width="150" height="150" patternUnits="userSpaceOnUse" data-texture="shared/brushed-chrome.png" />
+  </defs>
+  <rect x="82" y="16" width="192" height="17" rx="5" fill="url(#edge)" />
+  <rect x="40" y="28" width="277" height="70" rx="12" fill="url(#silver)" stroke="#343439" stroke-width="2" />
+  <rect x="41" y="29" width="275" height="68" rx="12" fill="url(#brush)" opacity="0.16" />
+  <rect x="61" y="30" width="236" height="64" rx="4" fill="url(#skin)" />
+  <rect x="75" y="39" width="210" height="42" rx="5" fill="url(#body)" />
+  <text x="180" y="66" font-size="15" fill="#e0d9cc" text-anchor="middle" font-weight="bold">H A S S E L B L A D</text>
+  <rect x="37" y="98" width="283" height="205" rx="17" fill="url(#silver)" stroke="#2b2b2f" stroke-width="2" />
+  <rect x="49" y="101" width="259" height="197" rx="11" fill="url(#skin)" />
+  <rect x="49" y="101" width="259" height="197" rx="11" fill="url(#body)" opacity="0.27" />
+  <rect x="41" y="104" width="10" height="190" rx="4" fill="url(#rail)" />
+  <rect x="305" y="104" width="11" height="190" rx="4" fill="url(#rail)" />
+  <line x1="45" y1="100" x2="312" y2="100" stroke="#0e0e10" stroke-width="3" />
+  <!-- Rear-cover release. The round thumb button slides along the inset top rail. -->
+  <path d="M 65 110 L 289 110 L 298 137 L 59 137 Z" fill="url(#edge)" stroke="#514f52" stroke-width="1.3" />
+  <path d="M 72 112 H 283 L 289 131 H 67 Z" fill="url(#body)" stroke="#727071" stroke-width="1" />
+  <path d="M 166 112 H 195 Q 201 112 201 119 Q 201 126 195 126 H 166 Q 160 126 160 119 Q 160 112 166 112 Z" fill="#08090a" stroke="#5a585a" stroke-width="1" />
+  <ellipse cx="178" cy="122" rx="14" ry="12" fill="#171619" />
+  <circle cx="178" cy="119" r="12.5" fill="url(#rail)" stroke="#39383c" stroke-width="1" />
+  <circle cx="178" cy="118" r="9.7" fill="url(#silver)" stroke="#e5e1df" stroke-width="0.7" />
+  <circle cx="178" cy="118" r="8.4" fill="url(#brush)" opacity="0.22" />
+  <circle cx="80" cy="149" r="2.2" fill="#090a0b" stroke="#767477" stroke-width="0.65" />
+  <circle cx="86" cy="149" r="2.2" fill="#090a0b" stroke="#767477" stroke-width="0.65" />
+  <rect x="24" y="50" width="20" height="12" rx="4" fill="url(#edge)" />
+  <rect x="317" y="50" width="20" height="12" rx="4" fill="url(#edge)" />
+  <rect x="49" y="285" width="258" height="13" rx="3" fill="url(#body)" />
+  <rect x="360" y="20" width="519" height="280" rx="12" fill="#101214" stroke="#484a49" stroke-width="1.5" />
+  <text x="385" y="53" font-size="16" fill="#bbbcb9" text-anchor="start" font-weight="bold">GFX  /  EMULATOR</text>
+  <line x1="385" y1="65" x2="853" y2="65" stroke="#404342" stroke-width="1" />
+  <text x="443" y="105" font-size="13" fill="#babbb6" text-anchor="middle" font-weight="bold">EXPOSURE</text>
+  <g id="top-mode-dial" data-control-id="top-mode-dial" data-view-id="top">
+    <rect x="384" y="118" width="118" height="51" fill="none" stroke="none" data-hitbox="true" />
+    <rect x="384" y="118" width="118" height="51" rx="6" fill="#1e2022" stroke="#4b4d4d" stroke-width="1.2" />
+    <path d="M 485 139 l 4 5 -4 5" fill="none" stroke="#b4b3ae" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+  <g id="top-shoulder" data-control-id="top-shoulder" data-view-id="top">
+    <rect x="529" y="84" width="174" height="115" fill="none" stroke="none" data-hitbox="true" />
+    <rect x="525" y="80" width="182" height="123" rx="5" fill="#050607" stroke="#616261" stroke-width="1.6" />
+    <rect x="529" y="84" width="174" height="115" rx="5" fill="#222828" />
+  </g>
+  <g id="top-drive" data-control-id="top-drive" data-view-id="top">
+    <rect x="727" y="151" width="122" height="43" fill="none" stroke="none" data-hitbox="true" />
+    <rect x="727" y="151" width="122" height="43" rx="6" fill="#1e2022" stroke="#4b4d4d" stroke-width="1.2" />
+    <text x="788" y="177.6" font-size="15" fill="#dfdfd9" text-anchor="middle" font-weight="bold">DRIVE</text>
+  </g>
+  <g id="top-movie-mode" data-control-id="top-movie-mode" data-view-id="top">
+    <rect x="719" y="86" width="138" height="45" fill="none" stroke="none" data-hitbox="true" />
+    <rect x="719" y="86" width="138" height="45" rx="6" fill="#1b1d1f" stroke="#4b4d4d" stroke-width="1.2" />
+    <line x1="788" y1="90" x2="788" y2="127" stroke="#444643" />
+    <text x="753" y="113" font-size="14" fill="#a5a5a2" text-anchor="middle" font-weight="bold">MOVIE</text>
+    <text x="823" y="113" font-size="14" fill="#a5a5a2" text-anchor="middle" font-weight="bold">STILL</text>
+    <g id="cfv-still-selected">
+      <rect x="790" y="88" width="65" height="41" rx="4" fill="#d8dbd3" />
+      <text x="823" y="113" font-size="14" fill="#202623" text-anchor="middle" font-weight="bold">STILL</text>
+    </g>
+    <g id="cfv-movie-selected" opacity="0">
+      <rect x="721" y="88" width="65" height="41" rx="4" fill="#e1c3b0" />
+      <text x="753" y="113" font-size="14" fill="#33251d" text-anchor="middle" font-weight="bold">MOVIE</text>
+    </g>
+  </g>
+  <g id="rear-view-mode" data-control-id="rear-view-mode" data-view-id="top">
+    <rect x="384" y="228" width="145" height="44" fill="none" stroke="none" data-hitbox="true" />
+    <rect x="384" y="228" width="145" height="44" rx="6" fill="#1e2022" stroke="#4b4d4d" stroke-width="1.2" />
+    <text x="456.5" y="255.0" font-size="14" fill="#dfdfd9" text-anchor="middle" font-weight="bold">VIEW</text>
+  </g>
+  <g id="rear-eye-sensor" data-control-id="rear-eye-sensor" data-view-id="top">
+    <rect x="547" y="228" width="145" height="44" fill="none" stroke="none" data-hitbox="true" />
+    <rect x="547" y="228" width="145" height="44" rx="6" fill="#1e2022" stroke="#4b4d4d" stroke-width="1.2" />
+    <text x="619.5" y="255.0" font-size="14" fill="#dfdfd9" text-anchor="middle" font-weight="bold">EYE</text>
+  </g>
+  <g id="rear-command-dial" data-control-id="rear-command-dial" data-view-id="top">
+    <rect x="713" y="228" width="142" height="44" fill="none" stroke="none" data-hitbox="true" />
+    <rect x="711" y="226" width="146" height="48" rx="9" fill="#09090c" />
+    <rect x="713" y="228" width="142" height="44" rx="7" fill="url(#key)" stroke="#4d4b50" stroke-width="1.4" />
+    <line x1="723" y1="234" x2="723" y2="266" stroke="#585959" stroke-width="2" />
+    <line x1="728.2" y1="234" x2="728.2" y2="266" stroke="#585959" stroke-width="2" />
+    <line x1="733.4" y1="234" x2="733.4" y2="266" stroke="#585959" stroke-width="2" />
+    <line x1="738.6" y1="234" x2="738.6" y2="266" stroke="#585959" stroke-width="2" />
+    <line x1="743.8" y1="234" x2="743.8" y2="266" stroke="#585959" stroke-width="2" />
+    <line x1="749" y1="234" x2="749" y2="266" stroke="#585959" stroke-width="2" />
+    <line x1="754.2" y1="234" x2="754.2" y2="266" stroke="#585959" stroke-width="2" />
+    <line x1="759.4" y1="234" x2="759.4" y2="266" stroke="#585959" stroke-width="2" />
+    <line x1="764.6" y1="234" x2="764.6" y2="266" stroke="#585959" stroke-width="2" />
+    <line x1="769.8" y1="234" x2="769.8" y2="266" stroke="#585959" stroke-width="2" />
+    <line x1="775" y1="234" x2="775" y2="266" stroke="#585959" stroke-width="2" />
+    <line x1="780.2" y1="234" x2="780.2" y2="266" stroke="#585959" stroke-width="2" />
+    <line x1="785.4" y1="234" x2="785.4" y2="266" stroke="#585959" stroke-width="2" />
+    <line x1="790.6" y1="234" x2="790.6" y2="266" stroke="#585959" stroke-width="2" />
+    <line x1="795.8" y1="234" x2="795.8" y2="266" stroke="#585959" stroke-width="2" />
+    <line x1="801" y1="234" x2="801" y2="266" stroke="#585959" stroke-width="2" />
+    <line x1="806.2" y1="234" x2="806.2" y2="266" stroke="#585959" stroke-width="2" />
+    <line x1="811.4" y1="234" x2="811.4" y2="266" stroke="#585959" stroke-width="2" />
+    <line x1="816.6" y1="234" x2="816.6" y2="266" stroke="#585959" stroke-width="2" />
+    <line x1="821.8" y1="234" x2="821.8" y2="266" stroke="#585959" stroke-width="2" />
+    <line x1="827" y1="234" x2="827" y2="266" stroke="#585959" stroke-width="2" />
+    <line x1="832.2" y1="234" x2="832.2" y2="266" stroke="#585959" stroke-width="2" />
+    <line x1="837.4" y1="234" x2="837.4" y2="266" stroke="#585959" stroke-width="2" />
+    <line x1="842.6" y1="234" x2="842.6" y2="266" stroke="#585959" stroke-width="2" />
+  </g>
+</svg>

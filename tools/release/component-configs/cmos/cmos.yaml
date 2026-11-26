@@ -1,0 +1,58 @@
+# ==============================================================================
+# Virtual Image Sensor Input Source (CMOS)
+# File: configs/components/cmos/cmos.yaml
+#
+# Chooses what the virtual 102 MP medium-format sensor sees through the lens.
+# You can switch scenes live at any time from the Studio UI or console.
+#
+# Supported sourceKind values:
+#   - optical-scene  : Built-in 3D scenes with true per-pixel depth for realistic
+#                      autofocus, depth-of-field, and bokeh:
+#                        scene://qr-ball           (near 3D sphere + 5.5 m QR wall, default)
+#                        scene://mona-lisa         (portrait scene for Face/Eye AF)
+#                        scene://depth-studio      (multi-plane color checker & star chart)
+#                        scene://bokeh-city        (night bokeh highlights)
+#                        scene://resolution-chart  (sharpness & distortion chart)
+#   - JPEG / PNG     : Static image file (paths resolve under runtime/compoments/cmos/)
+#   - screen-capture : Live desktop, region, or window capture
+#   - ffmpeg-pipe    : Live webcam, local video file, or RTSP/HTTP stream via ffmpeg
+#   - WEBCAM         : Shorthand for local webcam via ffmpeg (e.g. "default")
+#   - VIDEO_FILE     : Shorthand for local MP4/MKV playback via ffmpeg
+#   - RTMP_RTSP      : Shorthand for RTSP/RTMP network stream via ffmpeg
+#   - stream-ingest  : Low-latency live feed pushed from OBS/Python over localhost
+# ==============================================================================
+
+# Input source type (see list above).
+sourceKind: "optical-scene"
+
+# Scene URI, image filename, webcam identifier, or stream address.
+sourceFile: "scene://qr-ball"
+
+# Automatically loop video or sequence sources when they reach the end.
+loop: true
+
+# --- Examples (uncomment and replace the values above) ------------------------
+# Portrait scene for Face/Eye AF testing:
+# sourceKind: "optical-scene"
+# sourceFile: "scene://mona-lisa"
+# loop: true
+#
+# Static bundled test chart (see configs/examples/cmos-static-image.yaml):
+# sourceKind: "JPEG"
+# sourceFile: "test-qr.jpg"
+# loop: true
+#
+# Live desktop capture (see configs/examples/cmos-screen-capture.yaml):
+# sourceKind: "screen-capture"
+# sourceFile: "screen://primary"
+# loop: true
+#
+# Local webcam via ffmpeg (see configs/examples/cmos-ffmpeg-camera-video.yaml):
+# sourceKind: "ffmpeg-pipe"
+# sourceFile: "webcam:default"
+# loop: true
+#
+# Local TCP stream ingest (see configs/examples/cmos-stream-ingest.yaml):
+# sourceKind: "stream-ingest"
+# sourceFile: "tcp://127.0.0.1:9555"
+# loop: true

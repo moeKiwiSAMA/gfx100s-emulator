@@ -1,0 +1,444 @@
+{
+  "schema": 2,
+  "id": "GFX-STUDIO-SCATTERED-MATERIAL-002",
+  "model": "GFX100S / FF200003",
+  "evidenceClass": "SIM+TEST+SOURCE",
+  "status": "targeted-ui-verified-root-visual-reviewed-awaiting-formal-integration",
+  "run": "local/studio-material-direction-smoke-02",
+  "passed": true,
+  "scope": "Original-workspace targeted Windows x64 JavaFX UI preflight. Does not supersede root accepted mainline evidence.",
+  "tests": {
+    "junitMethods": 39,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "classes": [
+      {
+        "file": "TEST-com.github.nyabanban.fuji.emulator.desktop.PanelCatalogTest.xml",
+        "tests": 12,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "sha256": "cb3738237e0e89787f2afba9a6bd1d7f39964644572935868ae9f0118250043f"
+      },
+      {
+        "file": "TEST-com.github.nyabanban.fuji.emulator.desktop.PanelEvidenceTest.xml",
+        "tests": 11,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "sha256": "bd13e8e9eba85750ecf2e0649e1b498adc5e4f5d852ec6c62a55c7fc31c05222"
+      },
+      {
+        "file": "TEST-com.github.nyabanban.fuji.emulator.desktop.PanelTextureTest.xml",
+        "tests": 10,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "sha256": "329853299d33972d0cfdcaaf0d060e7a3b20831079aed9de94d9a60b01e58c08"
+      },
+      {
+        "file": "TEST-com.github.nyabanban.fuji.emulator.desktop.StudioInputStateTest.xml",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "sha256": "7781107f4c12453c066d497ae8f57bb989a9dc0f92be6db1b3e983414c99e56e"
+      }
+    ],
+    "buildLog": "local/shell-migration/studio-material-direction-preflight-04.txt",
+    "buildExit": 0,
+    "buildDurationSeconds": 30,
+    "guiExit": 0,
+    "checkerExit": 0,
+    "hostGates": 40,
+    "allHostGatesPassed": true,
+    "firmwareRun": false,
+    "firmwareFrames": 0,
+    "firmwareMenu": "UNKNOWN"
+  },
+  "layout": {
+    "mode": "three-column-face-windows",
+    "stages": 7,
+    "createdFaces": 6,
+    "configurationIsMainEntry": true,
+    "frontRotationDegrees": 90,
+    "actualFrontCanvasBounds": {
+      "rotationDegrees": 90,
+      "x": 0,
+      "y": 0,
+      "width": 576,
+      "height": 972
+    },
+    "screen": {
+      "scope": "primary-screen-JavaFX-logical-coordinates",
+      "dpi": 0,
+      "outputScaleX": 2,
+      "outputScaleY": 2,
+      "mixedDpiRuntimeQualified": false
+    },
+    "workspaceBounds": {
+      "x": 0,
+      "y": 0,
+      "width": 1280,
+      "height": 752
+    },
+    "captureMethod": "actual-shown-scene-snapshots-at-observed-native-client-positions; excludes OS desktop and decoration pixels",
+    "actualLayoutFile": "ui-workbench-layout.json",
+    "otherOsAndMixedDpiQualified": false
+  },
+  "visualReview": {
+    "allActualPngsIndividuallyViewed": [
+      "ui-controls.png",
+      "ui-face-hidden.png",
+      "ui-face-reopened.png",
+      "ui-lens-attached.png",
+      "ui-lens-battery-bottom-attached.png",
+      "ui-lens-battery-bottom-detached.png",
+      "ui-lens-detached.png",
+      "ui-lens-ports-left-attached.png",
+      "ui-lens-ports-left-detached.png",
+      "ui-lens-storage-right-attached.png",
+      "ui-lens-storage-right-detached.png",
+      "ui-lens-top-attached.png",
+      "ui-lens-top-detached.png",
+      "ui-studio-battery-bottom.png",
+      "ui-studio-front.png",
+      "ui-studio-ports-left.png",
+      "ui-studio-rear.png",
+      "ui-studio-storage-right.png",
+      "ui-studio-top.png",
+      "ui-window-controls.png",
+      "ui-workbench-compact.png",
+      "ui-workbench.png",
+      "ui.png"
+    ],
+    "findings": [
+      "Left/front/right narrow column; top/rear/bottom middle column; long independent configuration right column visible together.",
+      "Front rotated clockwise90 including SVG/lens/hotspots. Actual native pointer press/release/click targets front-lens-release, inverse error0; owner keys unchanged.",
+      "All six show switches and Arrange visible by default; rear hide/reopen mark visually synchronizes after relative phase chain.",
+      "Compact keeps fourTabs and full battery title/fields/application buttons visible.",
+      "Two left connector recesses and separate covers visible, shallow attached cap separately disappears on detach.",
+      "Right card guides and thin card edge separated from narrower door; no whole-body flattening.",
+      "Focus labels S/C/M top-to-bottom at selector left; EVF wheel touches housing.",
+      "Stable gray paint/rubber planes, localized bevel light and continuous nonperiodic fine material; no broad soft body gradient.",
+      "Scattered compact microrelief replaces independent pixel-height mix, finer continuous sand and random microfacet axes; normal/compact top has no visible stripe.",
+      "Root inspected selected generator candidate and final actual overview; accepted as improved original approximation for formal integration."
+    ],
+    "materialComparison": "local/studio-material-direction-smoke-02/visual-review/paint-comparison-two-step-fresh03-new-official.png",
+    "materialComparisonOrder": [
+      "fresh03 actual",
+      "selected scattered candidate actual",
+      "official pure-plane crop"
+    ],
+    "materialLimit": "Generated paint remains less directionally varied and darker than official crop; no measured BRDF/photometric matching. The corrected source crop supports visual sand-grain comparison only; different projection/lighting cannot establish true material response.",
+    "privateOfficialPixelsNeverRedistributed": true,
+    "resamplingCorrection": [
+      "Earlier Sharp chains called resize twice on one pipeline; only final size took effect, so historical claimed half-size intermediate was not actually applied. Prior comparison files kept unchanged and no longer treated as equal-display-resampling evidence.",
+      "Earlier official crop y238 included a mechanical edge; current pure-plane crop y230 was individually viewed."
+    ]
+  },
+  "runtimeDesktopJar": {
+    "file": "local/studio-material-direction-smoke-02/lib/desktop-0.0.1.jar",
+    "bytes": 807277,
+    "sha256": "04c39321461843bf41789e69c5c57edf437e238a84622984d5cb24545c052ad3"
+  },
+  "views": [
+    {
+      "id": "rear",
+      "controls": 23,
+      "elements": 248,
+      "file": "desktop/src/main/resources/panels/gfx100s/rear.svg",
+      "bytes": 23063,
+      "sha256": "9d88ce6d39145a34e83ed94a0c51ef1f198053587ce1494b5b025f01518a3a50"
+    },
+    {
+      "id": "top",
+      "controls": 12,
+      "elements": 237,
+      "file": "desktop/src/main/resources/panels/gfx100s/top.svg",
+      "bytes": 21356,
+      "sha256": "0be7f8d505c675304340602b9745930e13e4599a1bd694456488ce013b7e6711"
+    },
+    {
+      "id": "front",
+      "controls": 13,
+      "elements": 319,
+      "file": "desktop/src/main/resources/panels/gfx100s/front.svg",
+      "bytes": 28953,
+      "sha256": "fd3033eb9cfe4baba2c1e820268db3195386ff1a96908986989a939626b8139e"
+    },
+    {
+      "id": "ports-left",
+      "controls": 7,
+      "elements": 117,
+      "file": "desktop/src/main/resources/panels/gfx100s/ports-left.svg",
+      "bytes": 10083,
+      "sha256": "498d089c25029ef81d22ef5ae61e805bae80e75b8c1422f6385fa3697d460e02"
+    },
+    {
+      "id": "storage-right",
+      "controls": 6,
+      "elements": 98,
+      "file": "desktop/src/main/resources/panels/gfx100s/storage-right.svg",
+      "bytes": 8564,
+      "sha256": "b795c056968d6d26e0ea7c68b38a100ab4a6b41d4793ab7dbe9085c4049eccda"
+    },
+    {
+      "id": "battery-bottom",
+      "controls": 7,
+      "elements": 116,
+      "file": "desktop/src/main/resources/panels/gfx100s/battery-bottom.svg",
+      "bytes": 10305,
+      "sha256": "1fd7ef806c4f323a44939410020967edeec2061cb0b430dd6cad4f4752360b58"
+    }
+  ],
+  "rawIdentities": [
+    {
+      "file": "local/studio-material-direction-smoke-02/studio-checks.json",
+      "bytes": 2728,
+      "sha256": "44900fb37be5caee33423a60928e0e821b2f9e40f4de7a18ccea7abd1319b3fa"
+    },
+    {
+      "file": "local/studio-material-direction-smoke-02/ui-configuration-colors.json",
+      "bytes": 39521,
+      "sha256": "0453fa50c109129478b7bb07261f8a637461a91df8d550b1aff36575f6c44f20"
+    },
+    {
+      "file": "local/studio-material-direction-smoke-02/ui-controls.png",
+      "bytes": 268079,
+      "sha256": "70efaf53604b0a2c0571cb148d4fe5f1ad06db13b2ff16a7aef21d3adcdec927"
+    },
+    {
+      "file": "local/studio-material-direction-smoke-02/ui-face-hidden.png",
+      "bytes": 193517,
+      "sha256": "d93393a825b2c60139f3517476dfeaa9d3814de3b175a02d927491ad65f58deb"
+    },
+    {
+      "file": "local/studio-material-direction-smoke-02/ui-face-reopened.png",
+      "bytes": 258835,
+      "sha256": "746755ef6314697a7caee03164ec852817fbf1b070d22b4aea028577615e1758"
+    },
+    {
+      "file": "local/studio-material-direction-smoke-02/ui-front-hit.json",
+      "bytes": 1593,
+      "sha256": "ae7d9036a9ae56ca1d7e5bbab928e223ae5e57c4a8e6a80c93e70c48b3db1597"
+    },
+    {
+      "file": "local/studio-material-direction-smoke-02/ui-interactions.json",
+      "bytes": 3551,
+      "sha256": "ec4292b497b17a032ff3ceb1747663a42b5115a95e7301e00716d27c8d1554dc"
+    },
+    {
+      "file": "local/studio-material-direction-smoke-02/ui-lens-attached.png",
+      "bytes": 268079,
+      "sha256": "70efaf53604b0a2c0571cb148d4fe5f1ad06db13b2ff16a7aef21d3adcdec927"
+    },
+    {
+      "file": "local/studio-material-direction-smoke-02/ui-lens-battery-bottom-attached.png",
+      "bytes": 268079,
+      "sha256": "70efaf53604b0a2c0571cb148d4fe5f1ad06db13b2ff16a7aef21d3adcdec927"
+    },
+    {
+      "file": "local/studio-material-direction-smoke-02/ui-lens-battery-bottom-detached.png",
+      "bytes": 264851,
+      "sha256": "047d8251a7b5fefbdf0da775200dc23a4917b45b73254658c9f5f14cd97cd554"
+    },
+    {
+      "file": "local/studio-material-direction-smoke-02/ui-lens-detached.png",
+      "bytes": 264851,
+      "sha256": "047d8251a7b5fefbdf0da775200dc23a4917b45b73254658c9f5f14cd97cd554"
+    },
+    {
+      "file": "local/studio-material-direction-smoke-02/ui-lens-ports-left-attached.png",
+      "bytes": 268079,
+      "sha256": "70efaf53604b0a2c0571cb148d4fe5f1ad06db13b2ff16a7aef21d3adcdec927"
+    },
+    {
+      "file": "local/studio-material-direction-smoke-02/ui-lens-ports-left-detached.png",
+      "bytes": 264851,
+      "sha256": "047d8251a7b5fefbdf0da775200dc23a4917b45b73254658c9f5f14cd97cd554"
+    },
+    {
+      "file": "local/studio-material-direction-smoke-02/ui-lens-projections.json",
+      "bytes": 65650,
+      "sha256": "b703aa5f21d330ac852b3e532087a46104de3f2ae9d34afa6b978ccf7a6bbf43"
+    },
+    {
+      "file": "local/studio-material-direction-smoke-02/ui-lens-storage-right-attached.png",
+      "bytes": 268079,
+      "sha256": "70efaf53604b0a2c0571cb148d4fe5f1ad06db13b2ff16a7aef21d3adcdec927"
+    },
+    {
+      "file": "local/studio-material-direction-smoke-02/ui-lens-storage-right-detached.png",
+      "bytes": 264851,
+      "sha256": "047d8251a7b5fefbdf0da775200dc23a4917b45b73254658c9f5f14cd97cd554"
+    },
+    {
+      "file": "local/studio-material-direction-smoke-02/ui-lens-top-attached.png",
+      "bytes": 268079,
+      "sha256": "70efaf53604b0a2c0571cb148d4fe5f1ad06db13b2ff16a7aef21d3adcdec927"
+    },
+    {
+      "file": "local/studio-material-direction-smoke-02/ui-lens-top-detached.png",
+      "bytes": 264851,
+      "sha256": "047d8251a7b5fefbdf0da775200dc23a4917b45b73254658c9f5f14cd97cd554"
+    },
+    {
+      "file": "local/studio-material-direction-smoke-02/ui-panels.json",
+      "bytes": 6085,
+      "sha256": "7711c6f63096b1a177585b6fcdc411ffd798685e9a8ceba7764c48194f60c177"
+    },
+    {
+      "file": "local/studio-material-direction-smoke-02/ui-preview.json",
+      "bytes": 13215,
+      "sha256": "3a964c133bab33da34b07debdc02d6d34142773e5487663d68afe35b821eb736"
+    },
+    {
+      "file": "local/studio-material-direction-smoke-02/ui-shutdown.json",
+      "bytes": 435,
+      "sha256": "651bdc9043448cb9185495af438531185ebe92519cfff6710d80b200d39af21d"
+    },
+    {
+      "file": "local/studio-material-direction-smoke-02/ui-state.json",
+      "bytes": 57086,
+      "sha256": "1db7e2af8c6b5f67b2b35e9b749440a241dd2ab2750dafca0a78e9057b85076e"
+    },
+    {
+      "file": "local/studio-material-direction-smoke-02/ui-studio-battery-bottom.png",
+      "bytes": 268079,
+      "sha256": "70efaf53604b0a2c0571cb148d4fe5f1ad06db13b2ff16a7aef21d3adcdec927"
+    },
+    {
+      "file": "local/studio-material-direction-smoke-02/ui-studio-captures.json",
+      "bytes": 39084,
+      "sha256": "3dc62c3b31344e8a6c41934da96b04a6b7d84d6bf292a2d8fc4a307eb1483bca"
+    },
+    {
+      "file": "local/studio-material-direction-smoke-02/ui-studio-front.png",
+      "bytes": 268079,
+      "sha256": "70efaf53604b0a2c0571cb148d4fe5f1ad06db13b2ff16a7aef21d3adcdec927"
+    },
+    {
+      "file": "local/studio-material-direction-smoke-02/ui-studio-ports-left.png",
+      "bytes": 268079,
+      "sha256": "70efaf53604b0a2c0571cb148d4fe5f1ad06db13b2ff16a7aef21d3adcdec927"
+    },
+    {
+      "file": "local/studio-material-direction-smoke-02/ui-studio-rear.png",
+      "bytes": 268079,
+      "sha256": "70efaf53604b0a2c0571cb148d4fe5f1ad06db13b2ff16a7aef21d3adcdec927"
+    },
+    {
+      "file": "local/studio-material-direction-smoke-02/ui-studio-storage-right.png",
+      "bytes": 268079,
+      "sha256": "70efaf53604b0a2c0571cb148d4fe5f1ad06db13b2ff16a7aef21d3adcdec927"
+    },
+    {
+      "file": "local/studio-material-direction-smoke-02/ui-studio-top.png",
+      "bytes": 268079,
+      "sha256": "70efaf53604b0a2c0571cb148d4fe5f1ad06db13b2ff16a7aef21d3adcdec927"
+    },
+    {
+      "file": "local/studio-material-direction-smoke-02/ui-widgets.json",
+      "bytes": 148,
+      "sha256": "e293b9ff759a7daec94b35f8be6167224649c9ef351047ee1e7bb952ef0a1f32"
+    },
+    {
+      "file": "local/studio-material-direction-smoke-02/ui-window-controls.png",
+      "bytes": 258835,
+      "sha256": "746755ef6314697a7caee03164ec852817fbf1b070d22b4aea028577615e1758"
+    },
+    {
+      "file": "local/studio-material-direction-smoke-02/ui-window-drag.json",
+      "bytes": 2102,
+      "sha256": "c04086ccb5170cf7125d20c89e0d4bb4d173dec5d8d7322da56d8d98b67e50cb"
+    },
+    {
+      "file": "local/studio-material-direction-smoke-02/ui-window-lifecycle.json",
+      "bytes": 49861,
+      "sha256": "1537c093ebaad105a46e6da9a95374e2aa617dfd5f8aad12af7bc6628c98d41c"
+    },
+    {
+      "file": "local/studio-material-direction-smoke-02/ui-workbench-compact.png",
+      "bytes": 183907,
+      "sha256": "96bce0845669f239b2fe02b49d6b97738abaaa7521aaf87a821028158f0627a0"
+    },
+    {
+      "file": "local/studio-material-direction-smoke-02/ui-workbench-layout.json",
+      "bytes": 19308,
+      "sha256": "f5c0c8b095fd1657e9cfbfd7169ca1b66ce99c8ca33778a0a42e147bd11f8f35"
+    },
+    {
+      "file": "local/studio-material-direction-smoke-02/ui-workbench.png",
+      "bytes": 268079,
+      "sha256": "70efaf53604b0a2c0571cb148d4fe5f1ad06db13b2ff16a7aef21d3adcdec927"
+    },
+    {
+      "file": "local/studio-material-direction-smoke-02/ui.png",
+      "bytes": 268079,
+      "sha256": "70efaf53604b0a2c0571cb148d4fe5f1ad06db13b2ff16a7aef21d3adcdec927"
+    }
+  ],
+  "sourceRegistry": {
+    "officialGfxIdentities": 18,
+    "unchanged": true,
+    "geometryReference": "geometry-reference.generated.json",
+    "websiteCodeReference": "source-code-reference.generated.json",
+    "textureReference": "texture-reference.generated.json"
+  },
+  "failuresRetained": [
+    {
+      "run": "local/studio-workbench-smoke-01",
+      "reason": "Nested top-diopter hotspot stale x433 correction; strict guard retained."
+    },
+    {
+      "run": "local/studio-windows-smoke-01",
+      "reason": "Native Robot screenshots exposed stale native buffer/OS margin; private original never republished."
+    },
+    {
+      "run": "local/studio-windows-smoke-03",
+      "reason": "Compact configuration too narrow and editor visibility initially insufficient."
+    },
+    {
+      "run": "local/studio-columns-rotated-smoke-01",
+      "reason": "39/40: no native pointer event; absolute time frames coalesced after blocking owner work."
+    },
+    {
+      "run": "local/studio-columns-rotated-smoke-02",
+      "reason": "39/40: splitting absolute times still coalesced; relative PauseTransition chain required."
+    },
+    {
+      "run": "local/studio-columns-hard-edge-smoke-01",
+      "reason": "40 host checks passed but visual checkbox skin lag was detected; all lifecycle phases moved to relative waits."
+    },
+    {
+      "run": "local/studio-columns-hard-edge-smoke-02",
+      "reason": "40 host checks passed, all23PNG viewed; paint microcontrast still too weak so retained as previous revision."
+    },
+    {
+      "run": "local/studio-material-direction-01/failed-preflight-01",
+      "reason": "New uncentered correlation incorrectly treated nonzero brightness mean as periodicity; corrected centered covariance with original thresholds. Generator not modified for test."
+    },
+    {
+      "run": "local/studio-material-direction-01/candidate-generator",
+      "reason": "Value-grid relief visually rejected for grid-oriented diagonal structure."
+    },
+    {
+      "run": "local/studio-material-direction-smoke-01",
+      "reason": "39UI/40gates passed; actual paint microcontrast weak; same scatter retained with small selected paint calibration."
+    },
+    {
+      "run": "Historical visual-review comparison derivatives",
+      "reason": "Consecutive Sharp resize calls did not create recorded half-size intermediate; old derivatives retained and disqualified as equal-display resampling comparison."
+    }
+  ],
+  "unknowns": [
+    "No current formal collector/verify run for this UI revision.",
+    "No measured CAD/BRDF/physical roughness or exact proprietary typeface equivalence.",
+    "Only primary Windows logical screen was exercised; DPI reported0 while outputScale2, no physical DPI claim.",
+    "No Linux/macOS/mixed-DPI/multimonitor qualification.",
+    "No electrical button matrix/contact bus/CMOS pipeline or firmware menu qualification."
+  ],
+  "baseCommit": "64d11a7eee4adda9d0d91fd0f3df0e00db058259"
+}

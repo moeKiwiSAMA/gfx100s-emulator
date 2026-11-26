@@ -1,0 +1,168 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 740" width="900" height="740">
+  <title>Hasselblad 907X &amp; CFV 100C · rear</title>
+  <desc>CFV 100C tilting display, chrome side rails and five horizontal membrane keys. Auxiliary GFX navigation is below the back.</desc>
+  <defs>
+    <linearGradient id="rail" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#16171a" />
+      <stop offset="7%" stop-color="#676769" />
+      <stop offset="22%" stop-color="#ecebe9" />
+      <stop offset="36%" stop-color="#fffef9" />
+      <stop offset="49%" stop-color="#b6b4b3" />
+      <stop offset="78%" stop-color="#66676c" />
+      <stop offset="89%" stop-color="#d9d7d7" />
+      <stop offset="100%" stop-color="#36373c" />
+    </linearGradient>
+    <linearGradient id="edge" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#353538" />
+      <stop offset="10%" stop-color="#eae8e7" />
+      <stop offset="24%" stop-color="#a4a2a4" />
+      <stop offset="40%" stop-color="#626167" />
+      <stop offset="66%" stop-color="#bdbabb" />
+      <stop offset="79%" stop-color="#f2efe9" />
+      <stop offset="100%" stop-color="#35363a" />
+    </linearGradient>
+    <linearGradient id="silver" x1="0%" y1="0%" x2="75%" y2="100%">
+      <stop offset="0%" stop-color="#f9faf6" />
+      <stop offset="16%" stop-color="#dddcda" />
+      <stop offset="35%" stop-color="#97969a" />
+      <stop offset="52%" stop-color="#6b6a70" />
+      <stop offset="77%" stop-color="#c1bfc0" />
+      <stop offset="100%" stop-color="#69686c" />
+    </linearGradient>
+    <linearGradient id="cup" x1="0%" y1="0%" x2="100%" y2="80%">
+      <stop offset="0%" stop-color="#202126" />
+      <stop offset="18%" stop-color="#414248" />
+      <stop offset="53%" stop-color="#77767a" />
+      <stop offset="76%" stop-color="#cdcbc8" />
+      <stop offset="87%" stop-color="#dad8d3" />
+      <stop offset="100%" stop-color="#878589" />
+    </linearGradient>
+    <linearGradient id="body" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#3b3a3d" />
+      <stop offset="8%" stop-color="#212023" />
+      <stop offset="20%" stop-color="#151518" />
+      <stop offset="55%" stop-color="#222125" />
+      <stop offset="80%" stop-color="#151417" />
+      <stop offset="96%" stop-color="#27272b" />
+      <stop offset="100%" stop-color="#101013" />
+    </linearGradient>
+    <linearGradient id="key" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#464548" />
+      <stop offset="9%" stop-color="#29292c" />
+      <stop offset="68%" stop-color="#19191c" />
+      <stop offset="100%" stop-color="#28272c" />
+    </linearGradient>
+    <linearGradient id="seat" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#08080b" />
+      <stop offset="55%" stop-color="#141416" />
+      <stop offset="100%" stop-color="#38383b" />
+    </linearGradient>
+    <linearGradient id="glass" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#161719" />
+      <stop offset="65%" stop-color="#222225" />
+      <stop offset="100%" stop-color="#111214" />
+    </linearGradient>
+    <pattern id="skin" width="116" height="116" patternUnits="userSpaceOnUse" data-texture="shared/leatherette.png" />
+    <pattern id="brush" width="150" height="150" patternUnits="userSpaceOnUse" data-texture="shared/brushed-chrome.png" />
+  </defs>
+  <rect x="116" y="327" width="48" height="16" rx="6" fill="url(#edge)" stroke="#373638" stroke-width="2" />
+  <rect x="125" y="332" width="29" height="6" rx="3" fill="#201f21" />
+  <rect x="729" y="327" width="48" height="16" rx="6" fill="url(#edge)" stroke="#373638" stroke-width="2" />
+  <rect x="738" y="332" width="29" height="6" rx="3" fill="#201f21" />
+  <rect x="673" y="85" width="73" height="510" rx="18" fill="url(#silver)" stroke="#343439" stroke-width="2" />
+  <rect x="674" y="86" width="71" height="508" rx="18" fill="url(#brush)" opacity="0.16" />
+  <rect x="686" y="91" width="53" height="499" rx="14" fill="url(#rail)" />
+  <rect x="189" y="35" width="470" height="28" rx="14" fill="url(#silver)" />
+  <rect x="215" y="35" width="418" height="11" rx="5" fill="url(#body)" />
+  <rect x="404" y="24" width="58" height="24" rx="5" fill="url(#rail)" />
+  <rect x="407" y="20" width="52" height="9" rx="3" fill="url(#edge)" />
+  <rect x="145" y="54" width="569" height="586" rx="26" fill="url(#rail)" stroke="#37363b" stroke-width="1.6" />
+  <rect x="152" y="55" width="551" height="583" rx="19" fill="url(#edge)" />
+  <path d="M 161 58 Q 151 68 151 125 V 579 Q 152 618 162 628 L 165 617 Q 156 563 157 490 V 131 Q 158 84 164 61 Z" fill="#e4e2e0" />
+  <path d="M 696 65 Q 705 102 704 177 L 704 589 Q 705 621 696 631 L 694 614 L 698 567 V 131 Z" fill="#c3c0c0" />
+  <rect x="165" y="54" width="528" height="581" rx="14" fill="url(#body)" />
+  <rect x="166" y="54" width="526" height="55" rx="11" fill="url(#skin)" />
+  <rect x="166" y="55" width="526" height="54" rx="10" fill="url(#body)" opacity="0.22" />
+  <line x1="166" y1="108" x2="692" y2="108" stroke="#09090b" stroke-width="3" />
+  <path d="M 168 114 Q 422 110 690 114 L 690 553 Q 688 586 672 598 H 190 Q 171 592 168 563 Z" fill="url(#body)" />
+  <text x="429" y="143" font-size="21" fill="#d6cac0" text-anchor="middle" font-weight="bold">H A S S E L B L A D</text>
+  <rect x="185" y="158" width="488" height="376" rx="15" fill="url(#seat)" stroke="#242328" stroke-width="2" />
+  <g id="rear-lcd" data-control-id="rear-lcd" data-view-id="rear">
+    <rect x="195" y="167" width="468" height="351" fill="none" stroke="none" data-hitbox="true" />
+    <rect x="195" y="167" width="468" height="351" rx="4" fill="url(#glass)" />
+  </g>
+  <g id="rear-menu" data-control-id="rear-menu" data-view-id="rear">
+    <rect x="221" y="545" width="70" height="34" fill="none" stroke="none" data-hitbox="true" />
+    <rect x="219" y="543" width="74" height="38" rx="10" fill="#09090c" />
+    <rect x="221" y="545" width="70" height="34" rx="8" fill="url(#key)" stroke="#4d4b50" stroke-width="1.4" />
+    <line x1="250" y1="558" x2="262" y2="558" stroke="#d7cec3" stroke-width="2.5" stroke-linecap="round" />
+    <line x1="250" y1="562" x2="262" y2="562" stroke="#d7cec3" stroke-width="2.5" stroke-linecap="round" />
+    <line x1="250" y1="566" x2="262" y2="566" stroke="#d7cec3" stroke-width="2.5" stroke-linecap="round" />
+  </g>
+  <g id="rear-delete" data-control-id="rear-delete" data-view-id="rear">
+    <rect x="307" y="545" width="70" height="34" fill="none" stroke="none" data-hitbox="true" />
+    <rect x="305" y="543" width="74" height="38" rx="10" fill="#09090c" />
+    <rect x="307" y="545" width="70" height="34" rx="8" fill="url(#key)" stroke="#4d4b50" stroke-width="1.4" />
+    <line x1="337" y1="567" x2="347" y2="557" stroke="#d7cec3" stroke-width="2.5" stroke-linecap="round" />
+    <line x1="337" y1="557" x2="347" y2="567" stroke="#d7cec3" stroke-width="2.5" stroke-linecap="round" />
+  </g>
+  <g id="rear-back" data-control-id="rear-back" data-view-id="rear">
+    <rect x="393" y="545" width="70" height="34" fill="none" stroke="none" data-hitbox="true" />
+    <rect x="391" y="543" width="74" height="38" rx="10" fill="#09090c" />
+    <rect x="393" y="545" width="70" height="34" rx="8" fill="url(#key)" stroke="#4d4b50" stroke-width="1.4" />
+    <circle cx="428" cy="562" r="5.7" fill="none" stroke="#d7cec3" stroke-width="2.5" />
+  </g>
+  <g id="rear-play" data-control-id="rear-play" data-view-id="rear">
+    <rect x="479" y="545" width="70" height="34" fill="none" stroke="none" data-hitbox="true" />
+    <rect x="477" y="543" width="74" height="38" rx="10" fill="#09090c" />
+    <rect x="479" y="545" width="70" height="34" rx="8" fill="url(#key)" stroke="#4d4b50" stroke-width="1.4" />
+    <path d="M 509 556 l 12 6 -12 6 Z" fill="#d7cec3" />
+  </g>
+  <g id="top-power" data-control-id="top-power" data-view-id="rear">
+    <rect x="565" y="545" width="70" height="34" fill="none" stroke="none" data-hitbox="true" />
+    <rect x="563" y="543" width="74" height="38" rx="10" fill="#09090c" />
+    <rect x="565" y="545" width="70" height="34" rx="8" fill="url(#key)" stroke="#4d4b50" stroke-width="1.4" />
+    <path d="M 597 557 a 5.5 5.5 0 1 0 6 0" fill="none" stroke="#d7cec3" stroke-width="2" />
+    <line x1="600" y1="555" x2="600" y2="562" stroke="#d7cec3" stroke-width="2.2" stroke-linecap="round" />
+  </g>
+  <circle cx="198" cy="562" r="6" fill="url(#glass)" stroke="#444045" stroke-width="1" />
+  <circle cx="658" cy="562" r="6" fill="#515156" stroke="#211f23" stroke-width="1.5" />
+  <circle cx="658" cy="562" r="4.8" fill="#7fbb77" id="cfv-power-led" opacity="0.15" />
+  <path d="M 167 604 H 367 Q 376 603 381 607 Q 387 614 396 614 H 463 Q 473 614 479 606 Q 483 603 491 604 H 691 V 620 Q 690 632 678 633 H 180 Q 169 631 167 621 Z" fill="url(#body)" stroke="#161519" stroke-width="2" />
+  <text x="138" y="683" font-size="15" fill="#9d9d9a" text-anchor="end" font-weight="bold">GFX</text>
+  <g id="rear-nav-left" data-control-id="rear-nav-left" data-view-id="rear">
+    <rect x="154" y="652" width="64" height="48" fill="none" stroke="none" data-hitbox="true" />
+    <rect x="154" y="652" width="64" height="48" rx="6" fill="#1e2022" stroke="#4b4d4d" stroke-width="1.2" />
+    <text x="186" y="681.1" font-size="15" fill="#dfdfd9" text-anchor="middle" font-weight="bold">◀</text>
+  </g>
+  <g id="rear-nav-up" data-control-id="rear-nav-up" data-view-id="rear">
+    <rect x="231" y="652" width="64" height="48" fill="none" stroke="none" data-hitbox="true" />
+    <rect x="231" y="652" width="64" height="48" rx="6" fill="#1e2022" stroke="#4b4d4d" stroke-width="1.2" />
+    <text x="263" y="681.1" font-size="15" fill="#dfdfd9" text-anchor="middle" font-weight="bold">▲</text>
+  </g>
+  <g id="rear-nav-center" data-control-id="rear-nav-center" data-view-id="rear">
+    <rect x="308" y="652" width="64" height="48" fill="none" stroke="none" data-hitbox="true" />
+    <rect x="308" y="652" width="64" height="48" rx="6" fill="#1e2022" stroke="#4b4d4d" stroke-width="1.2" />
+    <text x="340" y="681.1" font-size="15" fill="#dfdfd9" text-anchor="middle" font-weight="bold">OK</text>
+  </g>
+  <g id="rear-nav-down" data-control-id="rear-nav-down" data-view-id="rear">
+    <rect x="385" y="652" width="64" height="48" fill="none" stroke="none" data-hitbox="true" />
+    <rect x="385" y="652" width="64" height="48" rx="6" fill="#1e2022" stroke="#4b4d4d" stroke-width="1.2" />
+    <text x="417" y="681.1" font-size="15" fill="#dfdfd9" text-anchor="middle" font-weight="bold">▼</text>
+  </g>
+  <g id="rear-nav-right" data-control-id="rear-nav-right" data-view-id="rear">
+    <rect x="462" y="652" width="64" height="48" fill="none" stroke="none" data-hitbox="true" />
+    <rect x="462" y="652" width="64" height="48" rx="6" fill="#1e2022" stroke="#4b4d4d" stroke-width="1.2" />
+    <text x="494" y="681.1" font-size="15" fill="#dfdfd9" text-anchor="middle" font-weight="bold">▶</text>
+  </g>
+  <g id="rear-af-on" data-control-id="rear-af-on" data-view-id="rear">
+    <rect x="539" y="652" width="89" height="48" fill="none" stroke="none" data-hitbox="true" />
+    <rect x="539" y="652" width="89" height="48" rx="6" fill="#1e2022" stroke="#4b4d4d" stroke-width="1.2" />
+    <text x="583.5" y="681.1" font-size="15" fill="#dfdfd9" text-anchor="middle" font-weight="bold">AF-ON</text>
+  </g>
+  <g id="rear-q" data-control-id="rear-q" data-view-id="rear">
+    <rect x="641" y="652" width="64" height="48" fill="none" stroke="none" data-hitbox="true" />
+    <rect x="641" y="652" width="64" height="48" rx="6" fill="#1e2022" stroke="#4b4d4d" stroke-width="1.2" />
+    <text x="673" y="681.1" font-size="15" fill="#dfdfd9" text-anchor="middle" font-weight="bold">Q</text>
+  </g>
+</svg>

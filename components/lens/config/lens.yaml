@@ -1,0 +1,2 @@
+# GFX100S 16-bit CMOS readout pedestal in ADU. Set 0 for an ideal zero-offset sensor.
+blackLevel: 256

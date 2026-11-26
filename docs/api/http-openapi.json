@@ -1,0 +1,2798 @@
+{
+  "openapi" : "3.1.0",
+  "info" : {
+    "title" : "FUJIFILM GFX100S Emulator HTTP Control API",
+    "version" : "1.0.0",
+    "description" : "Loopback (`127.0.0.1`) HTTP Control API for inspecting and automating a live FUJIFILM GFX100S emulator session.\n\n- **Security**: Bound exclusively to loopback (`127.0.0.1`). Cross-origin browser requests are denied (`400`); JSON write endpoints require `Content-Type: application/json` and bodies are capped at 64 KiB.\n- **Error Contract**: `400` invalid input / cross-origin / bad Content-Type, `404` unavailable component or unknown route, `409` optimistic-concurrency revision conflict (`PATCH /api/v1/components/{id}`), `503` runtime busy / executor rejected / upload unavailable, `500` internal error.\n- **Live Self-Documentation**: Served directly at `GET /api/docs` (offline interactive HTML explorer) and `GET /api/openapi.json` (OpenAPI 3.1.0 schema)."
+  },
+  "servers" : [ {
+    "url" : "http://127.0.0.1:18080",
+    "description" : "Local loopback ControlServer (replace port with --control-port)"
+  } ],
+  "tags" : [ {
+    "name" : "Core & Catalog",
+    "description" : "Live emulator state snapshots, component patching, memory dumps, and hardware address dictionary queries."
+  }, {
+    "name" : "Profiler",
+    "description" : "Asynchronous CPU/instruction profiler start, stop, and JSON or plain-text reports."
+  }, {
+    "name" : "Touch & Controls",
+    "description" : "Rear LCD touch taps/swipes, EVF eye sensor, ADC buttons/dials, focus mode, shooting mode, and VIEW MODE."
+  }, {
+    "name" : "Optics & Filters",
+    "description" : "Mounted lens control, multi-slot optical filter rack (UV, ND, Bokeh Mask, Star, Mist, GND), and ND shorthand."
+  }, {
+    "name" : "Audio",
+    "description" : "Host audio output/input mixer, device enumeration, headphone/mic jack simulation, and loopback monitoring."
+  }, {
+    "name" : "Wireless",
+    "description" : "BCM43438 Wi-Fi / BLE combo radio status and virtual mobile peer / PTP-IP bridge controls."
+  }, {
+    "name" : "Telemetry",
+    "description" : "Manual diagnostic session log upload."
+  }, {
+    "name" : "UI & Personalization",
+    "description" : "Runtime UI locale switching and camera body / studio theme customization."
+  }, {
+    "name" : "NOR Flash",
+    "description" : "Unified 64 MiB QSPI NOR Flash status inspection, .DAT firmware flashing, raw export/import, and factory restore."
+  }, {
+    "name" : "Documentation",
+    "description" : "Self-hosted OpenAPI 3.1.0 specification and offline interactive HTML API explorer."
+  } ],
+  "paths" : {
+    "/api/v1/catalog" : {
+      "get" : {
+        "operationId" : "getCatalog",
+        "tags" : [ "Core & Catalog" ],
+        "summary" : "Query hardware address catalog",
+        "description" : "Queries the bundled GFX100S 2.13 MMIO/memory address dictionary using up to 16 distinct query parameters.",
+        "parameters" : [ {
+          "name" : "address",
+          "in" : "query",
+          "required" : false,
+          "description" : "Hex or decimal MMIO/memory address to look up (e.g. `0xfff40000`).",
+          "schema" : {
+            "type" : "string"
+          },
+          "example" : "0xfff40000"
+        }, {
+          "name" : "subsystem",
+          "in" : "query",
+          "required" : false,
+          "description" : "Optional subsystem filter (e.g. `isp`, `dma`, `gpio`).",
+          "schema" : {
+            "type" : "string"
+          },
+          "example" : "isp"
+        }, {
+          "name" : "query",
+          "in" : "query",
+          "required" : false,
+          "description" : "Optional free-text search term across device/region names and notes.",
+          "schema" : {
+            "type" : "string"
+          },
+          "example" : "RECC_S"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Matching address catalog entries.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                },
+                "example" : {
+                  "count" : 1,
+                  "entries" : [ {
+                    "name" : "soc-isp.core",
+                    "start" : "0xfff70000",
+                    "end" : "0xfff702ec",
+                    "basis" : "DAT"
+                  } ]
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Duplicate, malformed, or excessive (>16) query parameters.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "Duplicate or excessive query parameters"
+                }
+              }
+            }
+          },
+          "500" : {
+            "description" : "Address dictionary unavailable.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "address dictionary unavailable"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/state" : {
+      "get" : {
+        "operationId" : "getState",
+        "tags" : [ "Core & Catalog" ],
+        "summary" : "Get live emulator and component state snapshot",
+        "description" : "Returns the complete component roster (id, revision, config, state) merged with the live `machine` execution telemetry map.",
+        "responses" : {
+          "200" : {
+            "description" : "Current component snapshot and machine telemetry.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                },
+                "example" : {
+                  "components" : [ {
+                    "id" : "buttons",
+                    "revision" : 1,
+                    "config" : {
+                      "power" : true,
+                      "movieMode" : false
+                    },
+                    "state" : {
+                      "power" : true,
+                      "movieMode" : false
+                    }
+                  } ],
+                  "machine" : {
+                    "status" : "running",
+                    "tick" : 125000000,
+                    "screenId" : "0x0100"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dump" : {
+      "post" : {
+        "operationId" : "createDump",
+        "tags" : [ "Core & Catalog" ],
+        "summary" : "Trigger a memory and state dump",
+        "description" : "Captures an emulator state/memory dump archive via the runtime dump handler. Body must be empty or `{}`.",
+        "requestBody" : {
+          "required" : false,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object"
+              },
+              "example" : { }
+            }
+          }
+        },
+        "responses" : {
+          "201" : {
+            "description" : "Dump created successfully.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                },
+                "example" : {
+                  "dump" : "dumps/dump-20261125-120000"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Non-empty JSON object or missing `application/json` Content-Type.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "dump body must be empty or {}"
+                }
+              }
+            }
+          },
+          "500" : {
+            "description" : "Dump handler unavailable.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "dump unavailable"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/components/{id}" : {
+      "patch" : {
+        "operationId" : "patchComponent",
+        "tags" : [ "Core & Catalog" ],
+        "summary" : "Patch live settings of a hardware component",
+        "description" : "Applies a live settings patch to component `{id}` with optimistic concurrency control using its current `revision` from `GET /api/v1/state`.",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "description" : "Component identifier matching `[a-z][a-z0-9-]{0,63}` (e.g. `buttons`, `cmos`, `soc-adc`).",
+          "schema" : {
+            "type" : "string",
+            "pattern" : "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "example" : "buttons"
+        } ],
+        "requestBody" : {
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object",
+                "properties" : {
+                  "revision" : {
+                    "type" : "integer",
+                    "description" : "Expected non-negative component revision.",
+                    "minimum" : 0,
+                    "example" : 1
+                  },
+                  "changes" : {
+                    "type" : "object",
+                    "description" : "Key-value map of live component settings to update.",
+                    "example" : {
+                      "menu" : true
+                    }
+                  }
+                },
+                "required" : [ "revision", "changes" ]
+              },
+              "example" : {
+                "revision" : 1,
+                "changes" : {
+                  "menu" : true
+                }
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Updated component descriptor with incremented revision.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                },
+                "example" : {
+                  "id" : "buttons",
+                  "revision" : 2,
+                  "state" : {
+                    "menu" : true
+                  }
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Malformed payload, invalid setting key/value, or wrong Content-Type.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "application/json required"
+                }
+              }
+            }
+          },
+          "409" : {
+            "description" : "Revision mismatch (stale revision).",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "revision conflict"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/profiler/start" : {
+      "post" : {
+        "operationId" : "startProfiler",
+        "tags" : [ "Profiler" ],
+        "summary" : "Start asynchronous performance profiler",
+        "description" : "Starts sampling CPU/PC hot spots and subsystem timings. `intervalMs` may be provided as a query parameter or JSON body field (body overrides query).",
+        "parameters" : [ {
+          "name" : "intervalMs",
+          "in" : "query",
+          "required" : false,
+          "description" : "Sampling interval in milliseconds (defaults to profiler default).",
+          "schema" : {
+            "type" : "integer",
+            "minimum" : 1
+          },
+          "example" : "5"
+        } ],
+        "requestBody" : {
+          "required" : false,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object",
+                "properties" : {
+                  "intervalMs" : {
+                    "type" : "integer",
+                    "description" : "Optional sampling interval in milliseconds.",
+                    "minimum" : 1,
+                    "example" : 5
+                  }
+                }
+              },
+              "example" : {
+                "intervalMs" : 5
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Profiler started.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                },
+                "example" : {
+                  "running" : true,
+                  "intervalMs" : 5
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Invalid `intervalMs` or non-JSON body.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "intervalMs must be integer"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Profiler not attached to this session.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "profiler unavailable"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/profiler/stop" : {
+      "post" : {
+        "operationId" : "stopProfiler",
+        "tags" : [ "Profiler" ],
+        "summary" : "Stop profiler and fetch report",
+        "description" : "Stops active profiling and returns the collected report as JSON, or as `text/plain` when `?format=text|txt` or `Accept: text/plain` is sent.",
+        "parameters" : [ {
+          "name" : "format",
+          "in" : "query",
+          "required" : false,
+          "description" : "Response format override (`json`, `text`, or `txt`).",
+          "schema" : {
+            "type" : "string",
+            "enum" : [ "json", "text", "txt" ]
+          },
+          "example" : "json"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Profiler stopped with summary report (JSON or plain text).",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                },
+                "example" : {
+                  "running" : false,
+                  "samples" : 1240,
+                  "elapsedMs" : 6200
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Profiler not attached to this session.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "profiler unavailable"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/profiler/report" : {
+      "get" : {
+        "operationId" : "getProfilerReport",
+        "tags" : [ "Profiler" ],
+        "summary" : "Read latest profiler report",
+        "description" : "Returns the current or last completed profiler report without stopping a running session. Supports `text/plain` via `?format=text|txt` or `Accept: text/plain`.",
+        "parameters" : [ {
+          "name" : "format",
+          "in" : "query",
+          "required" : false,
+          "description" : "Response format override (`json`, `text`, or `txt`).",
+          "schema" : {
+            "type" : "string",
+            "enum" : [ "json", "text", "txt" ]
+          },
+          "example" : "json"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Latest profiler report.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                },
+                "example" : {
+                  "running" : true,
+                  "samples" : 610,
+                  "elapsedMs" : 3050
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Profiler not attached to this session.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "profiler unavailable"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/touch" : {
+      "post" : {
+        "operationId" : "postTouch",
+        "tags" : [ "Touch & Controls" ],
+        "summary" : "Send a rear-LCD touch event",
+        "description" : "Injects a single capacitive touch down/move/up event onto the rear LCD (`rear-touch-ic` preferred, falling back to `i2c-bus`). Payload must contain exact keys `x`, `y`, `pressed`.",
+        "requestBody" : {
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object",
+                "properties" : {
+                  "x" : {
+                    "type" : "integer",
+                    "description" : "Horizontal touch coordinate (`0..65535`; rear LCD native range `0..1023`).",
+                    "minimum" : 0,
+                    "maximum" : 65535,
+                    "example" : 512
+                  },
+                  "y" : {
+                    "type" : "integer",
+                    "description" : "Vertical touch coordinate (`0..65535`; rear LCD native range `0..767`).",
+                    "minimum" : 0,
+                    "maximum" : 65535,
+                    "example" : 384
+                  },
+                  "pressed" : {
+                    "type" : "boolean",
+                    "description" : "`true` for finger down/move, `false` for finger release.",
+                    "example" : true
+                  }
+                },
+                "required" : [ "x", "y", "pressed" ]
+              },
+              "example" : {
+                "x" : 512,
+                "y" : 384,
+                "pressed" : true
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Touch event applied.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                },
+                "example" : {
+                  "ok" : true,
+                  "component" : "rear-touch-ic",
+                  "x" : 512,
+                  "y" : 384,
+                  "pressed" : true,
+                  "revision" : 4
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Missing/extra keys or out-of-range coordinates.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "touch payload requires exact keys: x, y, pressed"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "No touch controller component available.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "i2c-bus touch target unavailable"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/touch/swipe" : {
+      "post" : {
+        "operationId" : "postTouchSwipe",
+        "tags" : [ "Touch & Controls" ],
+        "summary" : "Send a multi-step rear-LCD touch swipe/flick",
+        "description" : "Executes a calibrated multi-step capacitive swipe gesture. Provide either a cardinal `direction` (`up`/`down`/`left`/`right`) OR explicit `x1`/`y1`/`x2`/`y2` endpoints (never both). Default `4` steps x `20 ms` satisfies both LiveView T-Fn flicks (<260 ms) and Playback slide-commit (>341 px).",
+        "requestBody" : {
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object",
+                "properties" : {
+                  "direction" : {
+                    "type" : "string",
+                    "description" : "Preset swipe direction (mutually exclusive with `x1`/`y1`/`x2`/`y2`).",
+                    "enum" : [ "up", "down", "left", "right" ],
+                    "example" : "left"
+                  },
+                  "x1" : {
+                    "type" : "integer",
+                    "description" : "Start X coordinate (`0..65535`). Required when `direction` is omitted.",
+                    "minimum" : 0,
+                    "maximum" : 65535,
+                    "example" : 760
+                  },
+                  "y1" : {
+                    "type" : "integer",
+                    "description" : "Start Y coordinate (`0..65535`). Required when `direction` is omitted.",
+                    "minimum" : 0,
+                    "maximum" : 65535,
+                    "example" : 384
+                  },
+                  "x2" : {
+                    "type" : "integer",
+                    "description" : "End X coordinate (`0..65535`). Required when `direction` is omitted.",
+                    "minimum" : 0,
+                    "maximum" : 65535,
+                    "example" : 240
+                  },
+                  "y2" : {
+                    "type" : "integer",
+                    "description" : "End Y coordinate (`0..65535`). Required when `direction` is omitted.",
+                    "minimum" : 0,
+                    "maximum" : 65535,
+                    "example" : 384
+                  },
+                  "steps" : {
+                    "type" : "integer",
+                    "description" : "Number of intermediate move steps (`1..8`, default `4`).",
+                    "minimum" : 1,
+                    "maximum" : 8,
+                    "example" : 4
+                  },
+                  "stepMs" : {
+                    "type" : "integer",
+                    "description" : "Per-step dwell in milliseconds (`5..100`, default `20`).",
+                    "minimum" : 5,
+                    "maximum" : 100,
+                    "example" : 20
+                  }
+                }
+              },
+              "example" : {
+                "direction" : "left",
+                "steps" : 4,
+                "stepMs" : 20
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Swipe gesture completed.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                },
+                "example" : {
+                  "ok" : true,
+                  "component" : "rear-touch-ic",
+                  "direction" : "left",
+                  "x1" : 760,
+                  "y1" : 384,
+                  "x2" : 240,
+                  "y2" : 384,
+                  "steps" : 4,
+                  "stepMs" : 20,
+                  "revision" : 10
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Invalid direction, mixed direction+coordinates, or out-of-range steps/stepMs.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "touch swipe payload cannot mix direction with x1/y1/x2/y2"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "No touch controller component available.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "i2c-bus touch target unavailable"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/eye-sensor" : {
+      "get" : {
+        "operationId" : "getEyeSensor",
+        "tags" : [ "Touch & Controls" ],
+        "summary" : "Get EVF eye proximity sensor state",
+        "description" : "Inspects the TMD2772 (or `i2c-bus` fallback) eye proximity state along with active viewfinder detection (`LCD`, `EVF`, `BOTH`, or `WAITING`) and display frame sequences.",
+        "responses" : {
+          "200" : {
+            "description" : "Current eye sensor and viewfinder routing state.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                },
+                "example" : {
+                  "ok" : true,
+                  "component" : "tmd2772",
+                  "near" : false,
+                  "activeViewfinder" : "LCD",
+                  "lcdSequence" : 42,
+                  "evfSequence" : 0,
+                  "lcdOutputActive" : true,
+                  "evfOutputActive" : false
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Eye sensor component unavailable.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "i2c-bus eye sensor unavailable"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "operationId" : "postEyeSensor",
+        "tags" : [ "Touch & Controls" ],
+        "summary" : "Set EVF eye proximity sensor",
+        "description" : "Sets whether an eye is detected near the EVF (`near: true` switches automatic viewfinder routing to EVF; `false` returns to rear LCD).",
+        "requestBody" : {
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object",
+                "properties" : {
+                  "near" : {
+                    "type" : "boolean",
+                    "description" : "`true` for eye close to EVF, `false` for eye away.",
+                    "example" : true
+                  }
+                },
+                "required" : [ "near" ]
+              },
+              "example" : {
+                "near" : true
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Eye sensor updated.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                },
+                "example" : {
+                  "ok" : true,
+                  "component" : "tmd2772",
+                  "near" : true,
+                  "revision" : 2
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Payload missing exact `near` boolean key.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "eye-sensor payload requires exact key: near"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Eye sensor component unavailable.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "i2c-bus eye sensor unavailable"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/adc" : {
+      "get" : {
+        "operationId" : "getAdc",
+        "tags" : [ "Touch & Controls" ],
+        "summary" : "Inspect ADC buttons, dials, and channel samples",
+        "description" : "Returns live `soc-adc` control states (`qButton`, `aelButton`, `modeDial`, `fn1Button`..`fn3Button`, `lightButton`, rear command dial, and channel overrides) plus sampled ADC register counts.",
+        "responses" : {
+          "200" : {
+            "description" : "Current `soc-adc` control values and sample counters.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                },
+                "example" : {
+                  "ok" : true,
+                  "component" : "soc-adc",
+                  "revision" : 3,
+                  "controls" : {
+                    "qButton" : false,
+                    "aelButton" : false,
+                    "modeDial" : "default",
+                    "fn1Button" : false,
+                    "fn2Button" : false,
+                    "fn3Button" : false,
+                    "lightButton" : false,
+                    "rearDialPosition" : -1,
+                    "rearDialDetents" : 0
+                  },
+                  "eventCount" : 12,
+                  "sampleReadCount" : 420
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "`soc-adc` component unavailable.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "soc-adc unavailable"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "operationId" : "postAdc",
+        "tags" : [ "Touch & Controls" ],
+        "summary" : "Update ADC buttons, dials, or raw channel overrides",
+        "description" : "Updates a non-empty subset of `soc-adc` inputs, including momentary buttons, mode dial, relative `rearDialStep` detent increments, or raw 12-bit channel overrides (`-1` clears override).",
+        "requestBody" : {
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object",
+                "properties" : {
+                  "qButton" : {
+                    "type" : "boolean",
+                    "description" : "Press/release the Q (Quick Menu) button.",
+                    "example" : true
+                  },
+                  "aelButton" : {
+                    "type" : "boolean",
+                    "description" : "Press/release the AE-L button.",
+                    "example" : false
+                  },
+                  "fn1Button" : {
+                    "type" : "boolean",
+                    "description" : "Press/release the Fn1 / Exposure Comp (`+/-`) button.",
+                    "example" : false
+                  },
+                  "fn2Button" : {
+                    "type" : "boolean",
+                    "description" : "Press/release the Fn2 button.",
+                    "example" : false
+                  },
+                  "fn3Button" : {
+                    "type" : "boolean",
+                    "description" : "Press/release the Fn3 button.",
+                    "example" : false
+                  },
+                  "lightButton" : {
+                    "type" : "boolean",
+                    "description" : "Press/release the top LCD backlight button.",
+                    "example" : false
+                  },
+                  "modeDial" : {
+                    "type" : "string",
+                    "description" : "Mode dial position (e.g. `default`, `P`, `S`, `A`, `M`, `C1`..`C6`).",
+                    "example" : "M"
+                  },
+                  "rearDialPosition" : {
+                    "type" : "integer",
+                    "description" : "Explicit rear dial quadrature phase (`-1..3`, `-1` uses detents).",
+                    "minimum" : -1,
+                    "maximum" : 3,
+                    "example" : -1
+                  },
+                  "rearDialDetents" : {
+                    "type" : "integer",
+                    "description" : "Absolute rear command dial detent counter (`-10000..10000`).",
+                    "minimum" : -10000,
+                    "maximum" : 10000,
+                    "example" : 2
+                  },
+                  "rearDialStep" : {
+                    "type" : "integer",
+                    "description" : "Relative rear command dial detent delta (`-1000..1000`).",
+                    "minimum" : -1000,
+                    "maximum" : 1000,
+                    "example" : 1
+                  },
+                  "ch3Override" : {
+                    "type" : "integer",
+                    "description" : "Raw 12-bit ADC CH3 override (`-1..4095`).",
+                    "minimum" : -1,
+                    "maximum" : 4095,
+                    "example" : -1
+                  },
+                  "ch5Override" : {
+                    "type" : "integer",
+                    "description" : "Raw 12-bit ADC CH5 override (`-1..4095`).",
+                    "minimum" : -1,
+                    "maximum" : 4095,
+                    "example" : -1
+                  },
+                  "ch6Override" : {
+                    "type" : "integer",
+                    "description" : "Raw 12-bit ADC CH6 override (`-1..4095`).",
+                    "minimum" : -1,
+                    "maximum" : 4095,
+                    "example" : -1
+                  },
+                  "ch7Override" : {
+                    "type" : "integer",
+                    "description" : "Raw 12-bit ADC CH7 override (`-1..4095`).",
+                    "minimum" : -1,
+                    "maximum" : 4095,
+                    "example" : -1
+                  },
+                  "ch11Override" : {
+                    "type" : "integer",
+                    "description" : "Raw 12-bit ADC CH11 override (`-1..4095`).",
+                    "minimum" : -1,
+                    "maximum" : 4095,
+                    "example" : -1
+                  }
+                }
+              },
+              "example" : {
+                "qButton" : true,
+                "modeDial" : "M"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "ADC settings patched.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                },
+                "example" : {
+                  "ok" : true,
+                  "component" : "soc-adc",
+                  "revision" : 4,
+                  "changes" : {
+                    "qButton" : true,
+                    "modeDial" : "M"
+                  }
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Empty payload, unknown key, wrong type, or out-of-range integer.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "adc payload requires non-empty subset of [...]"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "`soc-adc` component unavailable.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "soc-adc unavailable"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/focus-mode" : {
+      "get" : {
+        "operationId" : "getFocusMode",
+        "tags" : [ "Touch & Controls" ],
+        "summary" : "Get S/C/M focus mode lever state",
+        "description" : "Inspects the `soc-gpio` focus mode selector (`focusMode` configuration and resolved `effectiveFocusMode`).",
+        "responses" : {
+          "200" : {
+            "description" : "Current focus mode lever state.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                },
+                "example" : {
+                  "ok" : true,
+                  "component" : "soc-gpio",
+                  "revision" : 2,
+                  "focusMode" : "default",
+                  "effectiveFocusMode" : "AF-S"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "`soc-gpio` component unavailable.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "soc-gpio unavailable"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "operationId" : "postFocusMode",
+        "tags" : [ "Touch & Controls" ],
+        "summary" : "Set S/C/M focus mode lever",
+        "description" : "Sets the physical S/C/M focus mode lever via exact key `focusMode` or `mode`. Accepts `AF-S` (`AFS`/`S`), `AF-C` (`AFC`/`C`), `MF` (`M`), or `default`.",
+        "requestBody" : {
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object",
+                "properties" : {
+                  "focusMode" : {
+                    "type" : "string",
+                    "description" : "Target focus mode (provide either `focusMode` or `mode`).",
+                    "enum" : [ "AF-S", "AF-C", "MF", "default" ],
+                    "example" : "MF"
+                  },
+                  "mode" : {
+                    "type" : "string",
+                    "description" : "Alias for `focusMode`.",
+                    "enum" : [ "AF-S", "AF-C", "MF", "default" ],
+                    "example" : "AF-C"
+                  }
+                }
+              },
+              "example" : {
+                "focusMode" : "MF"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Focus mode updated.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                },
+                "example" : {
+                  "ok" : true,
+                  "component" : "soc-gpio",
+                  "revision" : 3,
+                  "focusMode" : "MF",
+                  "effectiveFocusMode" : "MF"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Invalid key or unsupported focus mode value.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "focus-mode payload requires exact key: focusMode (or mode)"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "`soc-gpio` component unavailable.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "soc-gpio unavailable"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/shooting-mode" : {
+      "get" : {
+        "operationId" : "getShootingMode",
+        "tags" : [ "Touch & Controls" ],
+        "summary" : "Get combined STILL/MOVIE, mode dial, and focus mode state",
+        "description" : "Reads the `buttons` STILL/MOVIE lever (`movieMode`), `soc-adc` `modeDial`, and `soc-gpio` `effectiveFocusMode` in a single request.",
+        "responses" : {
+          "200" : {
+            "description" : "Combined shooting mode summary.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                },
+                "example" : {
+                  "ok" : true,
+                  "mode" : "STILL",
+                  "movieMode" : false,
+                  "modeDial" : "default",
+                  "focusMode" : "AF-S"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "`buttons` component unavailable.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "buttons unavailable"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "operationId" : "postShootingMode",
+        "tags" : [ "Touch & Controls" ],
+        "summary" : "Update STILL/MOVIE switch, mode dial, and/or focus mode",
+        "description" : "Updates one or more of `mode` (`STILL`/`MOVIE`/`PHOTO`/`VIDEO`), `movieMode` (boolean), `modeDial`, and `focusMode`.",
+        "requestBody" : {
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object",
+                "properties" : {
+                  "mode" : {
+                    "type" : "string",
+                    "description" : "Shooting mode switch (`STILL`, `PHOTO`, `MOVIE`, or `VIDEO`).",
+                    "enum" : [ "STILL", "MOVIE", "PHOTO", "VIDEO" ],
+                    "example" : "MOVIE"
+                  },
+                  "movieMode" : {
+                    "type" : "boolean",
+                    "description" : "Boolean equivalent of `mode` (`true` = MOVIE, `false` = STILL).",
+                    "example" : true
+                  },
+                  "modeDial" : {
+                    "type" : "string",
+                    "description" : "Exposure mode dial position (e.g. `P`, `S`, `A`, `M`, `C1`..`C6`).",
+                    "example" : "M"
+                  },
+                  "focusMode" : {
+                    "type" : "string",
+                    "description" : "Focus lever position (`AF-S`, `AF-C`, `MF`, or `default`).",
+                    "enum" : [ "AF-S", "AF-C", "MF", "default" ],
+                    "example" : "AF-C"
+                  }
+                }
+              },
+              "example" : {
+                "mode" : "MOVIE",
+                "modeDial" : "M",
+                "focusMode" : "AF-C"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Updated shooting mode summary with applied `changes`.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                },
+                "example" : {
+                  "ok" : true,
+                  "mode" : "MOVIE",
+                  "movieMode" : true,
+                  "modeDial" : "M",
+                  "focusMode" : "AF-C",
+                  "changes" : {
+                    "movieMode" : true,
+                    "mode" : "MOVIE",
+                    "modeDial" : "M",
+                    "focusMode" : "AF-C"
+                  }
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Empty payload or invalid field value.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "mode must be STILL or MOVIE"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "`buttons` component unavailable.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "buttons unavailable"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/view-mode" : {
+      "post" : {
+        "operationId" : "postViewMode",
+        "tags" : [ "Touch & Controls" ],
+        "summary" : "Press or release the VIEW MODE button",
+        "description" : "Asserts or releases the hardware VIEW MODE GPIO button (`pressed: true` / `false`) to cycle LCD/EVF viewfinder modes.",
+        "requestBody" : {
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object",
+                "properties" : {
+                  "pressed" : {
+                    "type" : "boolean",
+                    "description" : "`true` to press VIEW MODE, `false` to release.",
+                    "example" : true
+                  }
+                },
+                "required" : [ "pressed" ]
+              },
+              "example" : {
+                "pressed" : true
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "VIEW MODE button state updated.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                },
+                "example" : {
+                  "ok" : true,
+                  "pressed" : true
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Payload missing exact `pressed` boolean key.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "view-mode payload requires exact key: pressed"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "VIEW MODE GPIO target unavailable.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "view-mode GPIO target unavailable"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/telemetry/upload-log" : {
+      "post" : {
+        "operationId" : "postTelemetryUploadLog",
+        "tags" : [ "Telemetry" ],
+        "summary" : "Upload current diagnostic session log",
+        "description" : "Triggers a manual upload of the current emulator diagnostic log when telemetry is explicitly enabled. Optional `notes` may be passed in the query string or JSON body.",
+        "parameters" : [ {
+          "name" : "notes",
+          "in" : "query",
+          "required" : false,
+          "description" : "Optional operator notes attached to the uploaded diagnostic bundle.",
+          "schema" : {
+            "type" : "string"
+          },
+          "example" : "repro-raw-conv"
+        } ],
+        "requestBody" : {
+          "required" : false,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object",
+                "properties" : {
+                  "notes" : {
+                    "type" : "string",
+                    "description" : "Optional operator notes (overrides query parameter if provided).",
+                    "example" : "repro-raw-conv"
+                  }
+                }
+              },
+              "example" : {
+                "notes" : "repro-raw-conv"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Log uploaded (`uploaded == true`).",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                },
+                "example" : {
+                  "uploaded" : true,
+                  "sessionId" : "sess-001"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Non-string `notes` or invalid JSON body.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "notes must be string"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Telemetry handler unavailable.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "telemetry unavailable"
+                }
+              }
+            }
+          },
+          "503" : {
+            "description" : "Upload attempted but failed or telemetry disabled (`uploaded == false`).",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                },
+                "example" : {
+                  "uploaded" : false,
+                  "reason" : "disabled"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/audio" : {
+      "get" : {
+        "operationId" : "getAudio",
+        "tags" : [ "Audio" ],
+        "summary" : "Get audio output and input mixer state",
+        "description" : "Returns live WM8962 + host audio engine state, volume, mute, backend, buffer size, headphone/mic jack state, and input capture settings.",
+        "responses" : {
+          "200" : {
+            "description" : "Current audio subsystem status.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                },
+                "example" : {
+                  "enabled" : true,
+                  "volume" : 0.8,
+                  "muted" : false,
+                  "bufferMs" : 24,
+                  "backendPreference" : "auto",
+                  "headphonePlugged" : false,
+                  "inputMode" : "SILENCE",
+                  "extMicPlugged" : false
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Audio engine unavailable.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "audio unavailable"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "operationId" : "postAudio",
+        "tags" : [ "Audio" ],
+        "summary" : "Update audio output, input, and jack settings",
+        "description" : "Applies a non-empty subset of live host audio mixer and jack-detection settings.",
+        "requestBody" : {
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object",
+                "properties" : {
+                  "enabled" : {
+                    "type" : "boolean",
+                    "description" : "Enable or disable host audio playback.",
+                    "example" : true
+                  },
+                  "volume" : {
+                    "type" : "number",
+                    "description" : "Master output volume scalar (`0.0..1.0`).",
+                    "minimum" : 0.0,
+                    "maximum" : 1.0,
+                    "example" : 0.75
+                  },
+                  "muted" : {
+                    "type" : "boolean",
+                    "description" : "Mute output playback.",
+                    "example" : false
+                  },
+                  "outputDeviceId" : {
+                    "type" : "string",
+                    "description" : "Host playback device ID from `GET /api/audio/devices`.",
+                    "example" : "default"
+                  },
+                  "bufferMs" : {
+                    "type" : "integer",
+                    "description" : "Audio ring buffer latency target in milliseconds.",
+                    "minimum" : 4,
+                    "example" : 24
+                  },
+                  "backendPreference" : {
+                    "type" : "string",
+                    "description" : "Preferred audio backend (`auto`, `native`, `javax`, `silent`).",
+                    "example" : "auto"
+                  },
+                  "headphonePlugged" : {
+                    "type" : "boolean",
+                    "description" : "Simulate 3.5 mm headphone jack insertion.",
+                    "example" : false
+                  },
+                  "inputMode" : {
+                    "type" : "string",
+                    "description" : "Microphone input source mode (e.g. `SILENCE`, `TEST_TONE`, `HOST_MIC`).",
+                    "example" : "TEST_TONE"
+                  },
+                  "inputDeviceId" : {
+                    "type" : "string",
+                    "description" : "Host capture device ID from `GET /api/audio/devices`.",
+                    "example" : "default"
+                  },
+                  "inputGainDb" : {
+                    "type" : "number",
+                    "description" : "Input microphone gain in dB.",
+                    "example" : 0.0
+                  },
+                  "inputMuted" : {
+                    "type" : "boolean",
+                    "description" : "Mute microphone capture.",
+                    "example" : false
+                  },
+                  "inputMonitor" : {
+                    "type" : "boolean",
+                    "description" : "Enable live input-to-output monitoring.",
+                    "example" : false
+                  },
+                  "testToneHz" : {
+                    "type" : "number",
+                    "description" : "Frequency in Hz when `inputMode` is `TEST_TONE`.",
+                    "example" : 440.0
+                  },
+                  "extMicPlugged" : {
+                    "type" : "boolean",
+                    "description" : "Simulate 3.5 mm external microphone jack insertion.",
+                    "example" : false
+                  }
+                }
+              },
+              "example" : {
+                "volume" : 0.75,
+                "muted" : false,
+                "headphonePlugged" : true
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Updated audio subsystem state.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                },
+                "example" : {
+                  "enabled" : true,
+                  "volume" : 0.75,
+                  "muted" : false,
+                  "headphonePlugged" : true
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Empty body or unknown audio setting key.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "audio update accepts non-empty subset of [...]"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Audio engine unavailable.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "audio unavailable"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/audio/devices" : {
+      "get" : {
+        "operationId" : "getAudioDevices",
+        "tags" : [ "Audio" ],
+        "summary" : "List host audio output and input devices",
+        "description" : "Enumerates host playback and capture devices available to the emulator audio bridge.",
+        "responses" : {
+          "200" : {
+            "description" : "Available host audio devices.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                },
+                "example" : {
+                  "outputs" : [ {
+                    "id" : "default",
+                    "name" : "System Default"
+                  } ],
+                  "inputs" : [ {
+                    "id" : "default",
+                    "name" : "System Default"
+                  } ]
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Audio device enumeration unavailable.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "audio devices unavailable"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/wireless" : {
+      "get" : {
+        "operationId" : "getWireless",
+        "tags" : [ "Wireless" ],
+        "summary" : "Get BCM43438 Wi-Fi / BLE wireless state",
+        "description" : "Returns the current BCM43438 wireless combo state (firmware download progress, BLE peer connection, Wi-Fi STA/AP state, and PTP-IP bridge status).",
+        "responses" : {
+          "200" : {
+            "description" : "BCM43438 wireless status.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                },
+                "example" : {
+                  "deviceName" : "GFX100S-EMU",
+                  "blePeerConnected" : false,
+                  "wifiPeerConnected" : false,
+                  "ptpIpBridgeEnabled" : false
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "`bcm43438` wireless component unavailable.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "bcm43438 wireless unavailable"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "operationId" : "postWireless",
+        "tags" : [ "Wireless" ],
+        "summary" : "Update BCM43438 virtual wireless peer state",
+        "description" : "Controls virtual mobile BLE/Wi-Fi peer attachment, advertised camera device name, or host PTP-IP bridge enablement.",
+        "requestBody" : {
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object",
+                "properties" : {
+                  "deviceName" : {
+                    "type" : "string",
+                    "description" : "Advertised camera wireless name.",
+                    "example" : "GFX100S-EMU"
+                  },
+                  "blePeerConnected" : {
+                    "type" : "boolean",
+                    "description" : "Connect or disconnect the virtual BLE mobile peer.",
+                    "example" : true
+                  },
+                  "wifiPeerConnected" : {
+                    "type" : "boolean",
+                    "description" : "Connect or disconnect the virtual Wi-Fi peer.",
+                    "example" : false
+                  },
+                  "ptpIpBridgeEnabled" : {
+                    "type" : "boolean",
+                    "description" : "Enable or disable the host PTP-IP socket bridge.",
+                    "example" : true
+                  }
+                }
+              },
+              "example" : {
+                "blePeerConnected" : true,
+                "ptpIpBridgeEnabled" : true
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Updated BCM43438 wireless state.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                },
+                "example" : {
+                  "deviceName" : "GFX100S-EMU",
+                  "blePeerConnected" : true,
+                  "wifiPeerConnected" : false,
+                  "ptpIpBridgeEnabled" : true
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "No recognized wireless keys provided.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "wireless update requires non-empty subset of [...]"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "`bcm43438` wireless component unavailable.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "bcm43438 wireless unavailable"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/lens" : {
+      "get" : {
+        "operationId" : "getLens",
+        "tags" : [ "Optics & Filters" ],
+        "summary" : "Get mounted lens optical and electronic state",
+        "description" : "Inspects the currently mounted lens template, focal length, aperture/iris sync, focus distance, OIS/optics flags, and mount contact protocol.",
+        "responses" : {
+          "200" : {
+            "description" : "Current mounted lens state.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                },
+                "example" : {
+                  "ok" : true,
+                  "component" : "lens",
+                  "revision" : 2,
+                  "template" : "gf50-f35",
+                  "model" : "GF50mmF3.5 R LM WR",
+                  "communicationMode" : "SIMULATED",
+                  "electronicContacts" : true,
+                  "apertureRingMode" : "A",
+                  "aperture" : 3.5,
+                  "focalLengthMm" : 50.0,
+                  "focusDistanceM" : 2.0,
+                  "oisEnabled" : false,
+                  "opticsEnabled" : true,
+                  "mountAttached" : true
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "`lens` component unavailable.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "lens component unavailable"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "operationId" : "postLens",
+        "tags" : [ "Optics & Filters" ],
+        "summary" : "Update mounted lens profile or optical parameters",
+        "description" : "Swaps the mounted lens template/adapter or adjusts live optical controls such as focal length, aperture ring mode (`A`/`C`/`MANUAL`), aperture, focus distance, OIS, and optics simulation.",
+        "requestBody" : {
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object",
+                "properties" : {
+                  "template" : {
+                    "type" : "string",
+                    "description" : "Lens module ID (e.g. `gf50-f35`, `gf32-64-f4`, `gf110-f2`, `gf45-100-f4`).",
+                    "example" : "gf110-f2"
+                  },
+                  "adapterId" : {
+                    "type" : "string",
+                    "description" : "Mount adapter ID for adapted lenses (e.g. `fringer-ef-gfx`, `m42-gfx`).",
+                    "example" : ""
+                  },
+                  "communicationMode" : {
+                    "type" : "string",
+                    "description" : "Lens communication mode (`SIMULATED`, `MANUAL`, or `REAL_FIRMWARE`).",
+                    "example" : "SIMULATED"
+                  },
+                  "realFirmwareFile" : {
+                    "type" : "string",
+                    "description" : "Path to real lens firmware file when using `REAL_FIRMWARE` mode.",
+                    "example" : ""
+                  },
+                  "apertureRingMode" : {
+                    "type" : "string",
+                    "description" : "Aperture ring position (`A`, `C`, or `MANUAL`).",
+                    "enum" : [ "A", "C", "MANUAL" ],
+                    "example" : "A"
+                  },
+                  "aperture" : {
+                    "type" : "number",
+                    "description" : "Manual aperture f-number (e.g. `2.0`, `3.5`, `8.0`).",
+                    "example" : 2.8
+                  },
+                  "focalLengthMm" : {
+                    "type" : "number",
+                    "description" : "Zoom focal length in millimeters.",
+                    "example" : 50.0
+                  },
+                  "focusDistanceM" : {
+                    "type" : "number",
+                    "description" : "Focus distance in meters.",
+                    "example" : 1.5
+                  },
+                  "subjectDistanceM" : {
+                    "type" : "number",
+                    "description" : "Optical scene subject distance in meters.",
+                    "example" : 1.5
+                  },
+                  "focusMode" : {
+                    "type" : "string",
+                    "description" : "Lens focus mode setting.",
+                    "example" : "AF-S"
+                  },
+                  "oisEnabled" : {
+                    "type" : "boolean",
+                    "description" : "Enable/disable optical image stabilization (OIS).",
+                    "example" : true
+                  },
+                  "opticsEnabled" : {
+                    "type" : "boolean",
+                    "description" : "Enable/disable physically based lens optics pipeline.",
+                    "example" : true
+                  },
+                  "electronicContacts" : {
+                    "type" : "boolean",
+                    "description" : "Enable/disable electronic lens mount contacts.",
+                    "example" : true
+                  },
+                  "afTrigger" : {
+                    "type" : "boolean",
+                    "description" : "Trigger an autofocus step.",
+                    "example" : false
+                  }
+                }
+              },
+              "example" : {
+                "apertureRingMode" : "MANUAL",
+                "aperture" : 4.0,
+                "focusDistanceM" : 1.5
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Updated lens state.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                },
+                "example" : {
+                  "ok" : true,
+                  "component" : "lens",
+                  "revision" : 3,
+                  "apertureRingMode" : "MANUAL",
+                  "aperture" : 4.0,
+                  "focusDistanceM" : 1.5
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Unknown lens key, null value, or invalid `apertureRingMode`.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "apertureRingMode must be one of [A, C, MANUAL], got 'X'"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "`lens` component unavailable.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "lens component unavailable"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/filters" : {
+      "get" : {
+        "operationId" : "getFilters",
+        "tags" : [ "Optics & Filters" ],
+        "summary" : "Get optical filter stack state",
+        "description" : "Inspects the `optical-filter` component configuration and computed state across the ordered multi-slot rack (`slots`) as well as UV, ND, Bokeh Mask, Star, Black Mist, and Graduated ND stages.",
+        "responses" : {
+          "200" : {
+            "description" : "Current optical filter stack state.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                },
+                "example" : {
+                  "ok" : true,
+                  "component" : "optical-filter",
+                  "revision" : 1,
+                  "enabled" : true,
+                  "slots" : "",
+                  "ndPreset" : "OFF",
+                  "ndStops" : 0.0,
+                  "uvPreset" : "OFF",
+                  "bokehMask" : "OFF",
+                  "starEnabled" : false,
+                  "mistEnabled" : false,
+                  "gndEnabled" : false
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "`optical-filter` component unavailable.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "optical-filter component unavailable"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "operationId" : "postFilters",
+        "tags" : [ "Optics & Filters" ],
+        "summary" : "Configure optical filter stack",
+        "description" : "Configures the `optical-filter` stack using `clear`/`off`, an ordered `slots` array (up to 4 stacked filters), flat settings (`ndPreset`, `ndStops`, `uvPreset`, `bokehMask`, `star*`, `mist*`, `gnd*`), or nested shorthand objects (`uv`, `nd`, `bokeh`, `star`, `mist`, `gnd`).",
+        "requestBody" : {
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object",
+                "properties" : {
+                  "clear" : {
+                    "type" : "boolean",
+                    "description" : "Reset all filter slots and stages to OFF.",
+                    "example" : false
+                  },
+                  "off" : {
+                    "type" : "boolean",
+                    "description" : "Alias for `clear`.",
+                    "example" : false
+                  },
+                  "enabled" : {
+                    "type" : "boolean",
+                    "description" : "Master optical filter bypass switch.",
+                    "example" : true
+                  },
+                  "slots" : {
+                    "type" : "array",
+                    "description" : "Ordered multi-slot rack array (max 4 filter objects with `type`) or encoded string.",
+                    "items" : {
+                      "type" : "object"
+                    }
+                  },
+                  "ndPreset" : {
+                    "type" : "string",
+                    "description" : "ND preset ID (`OFF`, `ND2`, `ND4`, `ND8`, `ND16`, `ND32`, `ND64`, `ND1000`, `VND`).",
+                    "example" : "ND8"
+                  },
+                  "ndStops" : {
+                    "type" : "number",
+                    "description" : "ND attenuation in EV stops (`0.0..10.0`).",
+                    "minimum" : 0.0,
+                    "maximum" : 10.0,
+                    "example" : 3.0
+                  },
+                  "uvPreset" : {
+                    "type" : "string",
+                    "description" : "UV protector preset (`OFF`, `MULTI_COATED`, `UNCOATED`, `WARMING`, `HAZE`, `CUSTOM`).",
+                    "example" : "MULTI_COATED"
+                  },
+                  "bokehMask" : {
+                    "type" : "string",
+                    "description" : "Custom aperture bokeh mask shape (`OFF`, `HEART`, `STAR`, `HEXAGON`, `CAT_EYE`, `ANAMORPHIC`).",
+                    "example" : "HEART"
+                  },
+                  "starEnabled" : {
+                    "type" : "boolean",
+                    "description" : "Enable diffraction star filter.",
+                    "example" : false
+                  },
+                  "mistEnabled" : {
+                    "type" : "boolean",
+                    "description" : "Enable black mist / diffusion glow filter.",
+                    "example" : false
+                  },
+                  "gndEnabled" : {
+                    "type" : "boolean",
+                    "description" : "Enable graduated neutral-density filter.",
+                    "example" : false
+                  },
+                  "uv" : {
+                    "type" : "object",
+                    "description" : "Nested UV shorthand object (`preset`, `transmittance`, `veilingGlare`, `ghostIntensity`, `softness`, `tintR/G/B`) or preset string."
+                  },
+                  "nd" : {
+                    "type" : "object",
+                    "description" : "Nested ND shorthand object (`preset`, `stops`).",
+                    "example" : {
+                      "preset" : "ND8"
+                    }
+                  },
+                  "bokeh" : {
+                    "type" : "object",
+                    "description" : "Nested bokeh shorthand object (`shape`/`mask`, `angleDeg`, `scale`)."
+                  },
+                  "star" : {
+                    "type" : "object",
+                    "description" : "Nested star shorthand object (`enabled`, `points`, `strength`, `threshold`, `angleDeg`, `length`)."
+                  },
+                  "mist" : {
+                    "type" : "object",
+                    "description" : "Nested mist shorthand object (`enabled`, `preset`, `strength`, `threshold`)."
+                  },
+                  "gnd" : {
+                    "type" : "object",
+                    "description" : "Nested GND shorthand object (`enabled`, `stops`, `horizon`, `feather`, `angleDeg`)."
+                  }
+                }
+              },
+              "example" : {
+                "enabled" : true,
+                "nd" : {
+                  "preset" : "ND8"
+                },
+                "mist" : {
+                  "enabled" : true,
+                  "strength" : 0.35
+                }
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Updated optical filter stack state.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                },
+                "example" : {
+                  "ok" : true,
+                  "component" : "optical-filter",
+                  "revision" : 2,
+                  "enabled" : true,
+                  "ndPreset" : "ND8",
+                  "ndStops" : 3.0,
+                  "mistEnabled" : true,
+                  "mistStrength" : 0.35
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "No valid filter setting or unknown preset/shape.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "filters update requires at least one valid filter setting"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "`optical-filter` component unavailable.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "optical-filter component unavailable"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/nd" : {
+      "get" : {
+        "operationId" : "getNdFilter",
+        "tags" : [ "Optics & Filters" ],
+        "summary" : "Get ND filter transmittance and stop metrics",
+        "description" : "Returns dedicated neutral-density (ND) filter telemetry including stops, effective stops, filter factor, optical density, transmittance percentage, and human-readable summary.",
+        "responses" : {
+          "200" : {
+            "description" : "Current ND filter optical metrics.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                },
+                "example" : {
+                  "ok" : true,
+                  "component" : "optical-filter",
+                  "revision" : 2,
+                  "enabled" : true,
+                  "preset" : "ND8",
+                  "stops" : 3.0,
+                  "effectiveStops" : 3.0,
+                  "factor" : 8.0,
+                  "opticalDensity" : 0.903,
+                  "transmittance" : 0.125,
+                  "transmittancePercent" : 12.5,
+                  "summary" : "ND8 (-3.0 EV)"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "`optical-filter` component unavailable.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "optical-filter component unavailable"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "operationId" : "postNdFilter",
+        "tags" : [ "Optics & Filters" ],
+        "summary" : "Configure ND filter stops or preset",
+        "description" : "Shorthand endpoint for setting the neutral-density filter by preset (`preset`/`ndPreset`), explicit EV stops (`stops`/`ndStops` in `0.0..10.0`), `enabled`, or `off: true`.",
+        "requestBody" : {
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object",
+                "properties" : {
+                  "off" : {
+                    "type" : "boolean",
+                    "description" : "Set to `true` to clear ND filter to `OFF` (0 stops).",
+                    "example" : false
+                  },
+                  "preset" : {
+                    "type" : "string",
+                    "description" : "ND preset name (e.g. `ND2`, `ND4`, `ND8`, `ND64`, `ND1000`, `VND`).",
+                    "example" : "ND8"
+                  },
+                  "ndPreset" : {
+                    "type" : "string",
+                    "description" : "Alias for `preset`.",
+                    "example" : "ND8"
+                  },
+                  "stops" : {
+                    "type" : "number",
+                    "description" : "ND density in EV stops (`0.0..10.0`).",
+                    "minimum" : 0.0,
+                    "maximum" : 10.0,
+                    "example" : 3.0
+                  },
+                  "ndStops" : {
+                    "type" : "number",
+                    "description" : "Alias for `stops`.",
+                    "minimum" : 0.0,
+                    "maximum" : 10.0,
+                    "example" : 3.0
+                  },
+                  "enabled" : {
+                    "type" : "boolean",
+                    "description" : "Enable or bypass optical filter processing.",
+                    "example" : true
+                  }
+                }
+              },
+              "example" : {
+                "preset" : "ND8"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Updated ND filter metrics.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                },
+                "example" : {
+                  "ok" : true,
+                  "component" : "optical-filter",
+                  "revision" : 3,
+                  "enabled" : true,
+                  "preset" : "ND8",
+                  "stops" : 3.0,
+                  "effectiveStops" : 3.0
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Missing parameters, unknown preset, or out-of-range stops.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "nd update requires preset, stops, off, or enabled"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "`optical-filter` component unavailable.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "optical-filter component unavailable"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/lang" : {
+      "get" : {
+        "operationId" : "getLanguage",
+        "tags" : [ "UI & Personalization" ],
+        "summary" : "Get active UI language and supported locales",
+        "description" : "Returns the current desktop studio UI locale and list of supported language codes.",
+        "responses" : {
+          "200" : {
+            "description" : "Current UI locale state.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                },
+                "example" : {
+                  "language" : "en",
+                  "supported" : [ "en", "zh_CN", "ja_JP", "de_DE", "fr_FR", "es_ES" ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "operationId" : "postLanguage",
+        "tags" : [ "UI & Personalization" ],
+        "summary" : "Switch desktop UI language live",
+        "description" : "Hot-switches the emulator desktop UI language without restarting. Provide exact key `language` or `lang`.",
+        "requestBody" : {
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object",
+                "properties" : {
+                  "language" : {
+                    "type" : "string",
+                    "description" : "Target locale code (`en`, `zh_CN`, `ja_JP`, `de_DE`, `fr_FR`, `es_ES`). Provide either `language` or `lang`.",
+                    "example" : "zh_CN"
+                  },
+                  "lang" : {
+                    "type" : "string",
+                    "description" : "Alias for `language`.",
+                    "example" : "en"
+                  }
+                }
+              },
+              "example" : {
+                "language" : "zh_CN"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Language updated.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                },
+                "example" : {
+                  "ok" : true,
+                  "language" : "zh_CN",
+                  "supported" : [ "en", "zh_CN", "ja_JP", "de_DE", "fr_FR", "es_ES" ]
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Missing exact key or unsupported locale.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "lang payload requires exact key: language (or lang)"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/theme" : {
+      "get" : {
+        "operationId" : "getTheme",
+        "tags" : [ "UI & Personalization" ],
+        "summary" : "Get active camera body and UI studio theme",
+        "description" : "Returns the currently active camera body theme (`body`) and desktop studio UI theme (`ui`), plus available presets.",
+        "responses" : {
+          "200" : {
+            "description" : "Current theme configuration.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                },
+                "example" : {
+                  "body" : "graphite",
+                  "ui" : "studio-dark"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Theme controller unavailable (headless mode).",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "theme controller unavailable"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "operationId" : "postTheme",
+        "tags" : [ "UI & Personalization" ],
+        "summary" : "Switch camera body and/or studio UI theme",
+        "description" : "Hot-switches the camera body finish (`body`) and/or desktop studio UI theme (`ui`). Accepts a non-empty subset of `body` and `ui` with non-blank string values.",
+        "requestBody" : {
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object",
+                "properties" : {
+                  "body" : {
+                    "type" : "string",
+                    "description" : "Camera body theme identifier.",
+                    "example" : "graphite"
+                  },
+                  "ui" : {
+                    "type" : "string",
+                    "description" : "Desktop studio UI theme identifier.",
+                    "example" : "studio-dark"
+                  }
+                }
+              },
+              "example" : {
+                "body" : "graphite",
+                "ui" : "studio-dark"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Theme updated.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                },
+                "example" : {
+                  "ok" : true,
+                  "body" : "graphite",
+                  "ui" : "studio-dark"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Empty body, unknown key, or blank theme string.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "theme update requires non-empty subset of [body, ui]"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Theme controller unavailable (headless mode).",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "theme controller unavailable"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/theme/reload" : {
+      "post" : {
+        "operationId" : "postThemeReload",
+        "tags" : [ "UI & Personalization" ],
+        "summary" : "Hot-reload external camera body and UI themes",
+        "description" : "Rescans `./themes/body/` and `./themes/ui/` packs from disk, re-resolves the active camera body and UI themes, and notifies all live studio windows without restarting.",
+        "responses" : {
+          "200" : {
+            "description" : "Themes reloaded.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                },
+                "example" : {
+                  "reloaded" : true,
+                  "reloadGeneration" : 1,
+                  "body" : "origin",
+                  "ui" : "origin"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Non-empty request body.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "theme reload body must be empty or {}"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Theme reload unavailable (headless mode).",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "theme reload unavailable"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/flash" : {
+      "get" : {
+        "operationId" : "getFlashStatus",
+        "tags" : [ "NOR Flash" ],
+        "summary" : "Get unified 64 MiB QSPI NOR Flash status",
+        "description" : "Returns the active 64 MiB QSPI NOR Flash image path, boot path (`flash-direct` or `bootrom-nor`), BootROM presence, SHA-256 digest, writability, and committed erase/program counters.",
+        "responses" : {
+          "200" : {
+            "description" : "Current unified NOR Flash status.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                },
+                "example" : {
+                  "unifiedNorMode" : true,
+                  "norFlashFile" : "flash/nor-flash.bin",
+                  "factoryAvailable" : true,
+                  "bootPath" : "flash-direct",
+                  "bootRomPresent" : true,
+                  "loaded" : true,
+                  "length" : 67108864,
+                  "writable" : true,
+                  "eraseCommitted" : 0,
+                  "programCommitted" : 0
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Flash controller unavailable.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "flash controller unavailable"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "operationId" : "postFlashAction",
+        "tags" : [ "NOR Flash" ],
+        "summary" : "Flash .DAT firmware, export/import raw NOR image, or restore factory Flash",
+        "description" : "Performs a live host flasher action against the unified 64 MiB QSPI NOR Flash image (`write-dat`, `export`, `import`, or `restore-factory`). Mutating actions automatically reload the component host and cold-reboot the camera.",
+        "requestBody" : {
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object",
+                "properties" : {
+                  "action" : {
+                    "type" : "string",
+                    "description" : "Flash operation to perform.",
+                    "enum" : [ "write-dat", "export", "import", "restore-factory" ],
+                    "example" : "write-dat"
+                  },
+                  "path" : {
+                    "type" : "string",
+                    "description" : "Source or destination file path (required for `write-dat`, `export`, and `import`; resolved relative to emulator home if not absolute).",
+                    "example" : "GXUP0004.DAT"
+                  },
+                  "preserveCalibration" : {
+                    "type" : "boolean",
+                    "description" : "For `write-dat` only: preserve calibration and user settings `[0x02FE0000..0x04000000)` (default `true`).",
+                    "example" : true
+                  }
+                },
+                "required" : [ "action" ]
+              },
+              "example" : {
+                "action" : "write-dat",
+                "path" : "GXUP0004.DAT",
+                "preserveCalibration" : true
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Flash action succeeded.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                },
+                "example" : {
+                  "ok" : true,
+                  "sizeBytes" : 67108864,
+                  "preservedCalibration" : true
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Invalid action, missing path, or unknown field.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "unsupported flash action 'bad' (expected: write-dat, export, import, restore-factory)"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Flash controller unavailable.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "flash controller unavailable"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/openapi.json" : {
+      "get" : {
+        "operationId" : "getOpenApiSpec",
+        "tags" : [ "Documentation" ],
+        "summary" : "Get OpenAPI 3.1.0 specification",
+        "description" : "Serves the deterministically generated OpenAPI 3.1.0 JSON schema describing every route on this ControlServer, ready for Swagger UI, Postman, Apifox, Bruno, Insomnia, or Redoc.",
+        "responses" : {
+          "200" : {
+            "description" : "OpenAPI 3.1.0 JSON document.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                },
+                "example" : {
+                  "openapi" : "3.1.0",
+                  "info" : {
+                    "title" : "FUJIFILM GFX100S Emulator HTTP Control API",
+                    "version" : "1.0.0"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/docs" : {
+      "get" : {
+        "operationId" : "getApiDocsHtml",
+        "tags" : [ "Documentation" ],
+        "summary" : "Open offline interactive HTTP API Explorer",
+        "description" : "Serves a zero-CDN, self-contained HTML interactive API explorer with instant search, tag filtering, copy-as-curl snippets, and live same-origin Try-It execution against this ControlServer.",
+        "responses" : {
+          "200" : {
+            "description" : "Self-contained interactive HTML API Explorer.",
+            "content" : {
+              "text/html" : {
+                "schema" : {
+                  "type" : "string"
+                },
+                "example" : "<!DOCTYPE html><html lang=\"en\">...</html>"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components" : {
+    "schemas" : {
+      "ErrorResponse" : {
+        "type" : "object",
+        "required" : [ "error" ],
+        "properties" : {
+          "error" : {
+            "type" : "string",
+            "description" : "Human-readable error diagnostic message."
+          }
+        }
+      }
+    }
+  }
+}

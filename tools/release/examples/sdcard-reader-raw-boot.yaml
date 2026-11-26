@@ -1,0 +1,18 @@
+# ==============================================================================
+# SD Card Example 3: Raw Sector Disk Image Mode (raw)
+#
+# Copy to configs/components/sdcard-reader/sdcard-reader.yaml to activate.
+# Place your raw .img disk images under runtime/compoments/sdcard-reader/
+# (for example, a real SD card backup or multi-boot card image).
+# ==============================================================================
+slot1Inserted: true
+slot1Backend: "raw"
+slot1Image: "sd-card-slot-1.img"
+slot1ReadOnly: false
+slot1CapacityBytes: 4294967296
+
+slot2Inserted: true
+slot2Backend: "raw"
+slot2Image: "sd2-super.img"
+slot2ReadOnly: false
+slot2CapacityBytes: 4294967296

@@ -1,0 +1,5 @@
+# Internal GFX100S SoC hardware definition — no user edits needed.
+profile: "spi-fifo-peer-experimental-v2"
+peerPort: "power-peer.spi"
+portsFile: "ports.json"
+continuousFixedMiso: true

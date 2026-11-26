@@ -1,0 +1,240 @@
+#version 450
+/*
+ * FUJIFILM GFX100S Emulator - Vulkan 1.1 Compute ISP Statistics Parallel Reduction
+ *
+ * Single-dispatch 16x16 workgroup compute shader reducing a LiveView Bayer RGGB (16-bit LE or
+ * 8-bit) or packed RGBA8 frame directly into a compact 9,280-byte GPU->CPU stats struct:
+ *   - 16x16 (256-zone) AE/AWB Bayer channel sums [R, G1, B, G2] + quad counts (10-bit linear)
+ *   - 4 x 256-bin LiveView Y / R / G / B histograms (workgroup shared-memory local atomics)
+ *   - Global & highlight-excluded AWB R / G / B sums + pixel counts
+ *   - AF ROI CDAF horizontal & vertical 1st-deriv Tenengrad + 2nd-deriv Laplacian sharpness energy
+ *
+ * Uses strictly 32-bit unsigned atomics (no shaderInt64) and 4,160 bytes of workgroup shared
+ * memory (guaranteed on all Vulkan 1.1+ GPUs and Mesa Lavapipe).
+ */
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+layout(std430, binding = 0) readonly buffer InPixels {
+    uint inWords[];
+};
+
+layout(std430, binding = 1) buffer OutStats {
+    /*
+     * [0..255]     aeSumR[256]
+     * [256..511]   aeSumG1[256]
+     * [512..767]   aeSumB[256]
+     * [768..1023]  aeSumG2[256]
+     * [1024..1279] aeCount[256]
+     * [1280..1535] histY[256]
+     * [1536..1791] histR[256]
+     * [1792..2047] histG[256]
+     * [2048..2303] histB[256]
+     * [2304..2319] summary[16]:
+     *   0..3:  awbGlobalSumR, awbGlobalSumG, awbGlobalSumB, awbGlobalCount
+     *   4..7:  awbValidSumR,  awbValidSumG,  awbValidSumB,  awbValidCount
+     *   8..11: cdafHorizTenengrad, cdafHorizLaplacian, cdafVertTenengrad, cdafVertLaplacian
+     *   12..15: cdafRoiMaxG14, cdafRoiSumG10, cdafRoiCount, totalHistPixels
+     */
+    uint outWords[];
+};
+
+layout(std140, binding = 2) uniform StatsParams {
+    uint width;
+    uint height;
+    uint inputFormat;          /* 0=BAYER_RGGB_16LE, 1=BAYER_RGGB_8, 2=PACKED_RGBA8, 3=BAYER_RGGB_U32_12 */
+    uint flags;                /* bit0=enableCdaf, bit1=enableHist, bit2=enableAeGrid */
+
+    uint viewX;
+    uint viewY;
+    uint viewW;
+    uint viewH;
+
+    uint gridCols;             /* 1..16 */
+    uint gridRows;             /* 1..16 */
+    uint stepQuad;             /* 1 or 2 */
+    uint awbHighlightThresh10; /* 10-bit threshold, default 960 */
+
+    uint afRoiX0;
+    uint afRoiY0;
+    uint afRoiX1;
+    uint afRoiY1;
+
+    uint afCols;
+    uint afRows;
+    uint afStepQuad;
+    uint ob14;
+
+    uint reserved0;
+    uint reserved1;
+    uint reserved2;
+    uint reserved3;
+} u;
+
+shared uint s_histY[256];
+shared uint s_histR[256];
+shared uint s_histG[256];
+shared uint s_histB[256];
+shared uint s_summary[16];
+
+uint readSample10(uint x, uint y) {
+    uint idx = y * u.width + x;
+    if (u.inputFormat == 0u) {
+        /* 16-bit LE Bayer: 2 pixels per uint32 word -> >> 6 for 10-bit linear */
+        uint w = inWords[idx >> 1u];
+        uint v16 = ((idx & 1u) != 0u) ? (w >> 16u) : (w & 0xFFFFu);
+        return v16 >> 6u;
+    } else if (u.inputFormat == 1u) {
+        /* 8-bit Bayer: 4 pixels per uint32 word -> << 2 for 10-bit linear */
+        uint w = inWords[idx >> 2u];
+        uint shift = (idx & 3u) << 3u;
+        return ((w >> shift) & 0xFFu) << 2u;
+    } else if (u.inputFormat == 3u) {
+        /* GPU-resident 12-bit Bayer stored as 1 uint32 word per pixel -> >> 2 for 10-bit linear */
+        return (inWords[idx] & 0xFFFu) >> 2u;
+    } else {
+        /* Packed RGBA8: return BT.601 luma << 2 for CDAF green proxy */
+        uint w = inWords[idx];
+        uint r8 = w & 0xFFu;
+        uint g8 = (w >> 8u) & 0xFFu;
+        uint b8 = (w >> 16u) & 0xFFu;
+        uint y8 = (77u * r8 + 150u * g8 + 29u * b8 + 128u) >> 8u;
+        return min(y8, 255u) << 2u;
+    }
+}
+
+void main() {
+    uint lid = gl_LocalInvocationIndex;
+    s_histY[lid] = 0u;
+    s_histR[lid] = 0u;
+    s_histG[lid] = 0u;
+    s_histB[lid] = 0u;
+    if (lid < 16u) {
+        s_summary[lid] = 0u;
+    }
+    barrier();
+
+    uint stepPx = max(u.stepQuad, 1u) << 1u;
+    uint px = u.viewX + gl_GlobalInvocationID.x * stepPx;
+    uint py = u.viewY + gl_GlobalInvocationID.y * stepPx;
+    uint endX = u.viewX + u.viewW;
+    uint endY = u.viewY + u.viewH;
+
+    if (px + 1u < endX && py + 1u < endY) {
+        uint r10, g1_10, g2_10, b10;
+        uint r8, g8, b8;
+        if (u.inputFormat == 2u) {
+            uint p = inWords[py * u.width + px];
+            r8 = p & 0xFFu;
+            g8 = (p >> 8u) & 0xFFu;
+            b8 = (p >> 16u) & 0xFFu;
+            r10 = r8 << 2u;
+            g1_10 = g8 << 2u;
+            g2_10 = g1_10;
+            b10 = b8 << 2u;
+        } else {
+            r10 = readSample10(px, py);
+            g1_10 = readSample10(px + 1u, py);
+            g2_10 = readSample10(px, py + 1u);
+            b10 = readSample10(px + 1u, py + 1u);
+            r8 = r10 >> 2u;
+            g8 = (g1_10 + g2_10 + 1u) >> 3u;
+            b8 = b10 >> 2u;
+        }
+        uint y8 = min((77u * r8 + 150u * g8 + 29u * b8 + 128u) >> 8u, 255u);
+        uint gAvg10 = (g1_10 + g2_10 + 1u) >> 1u;
+
+        /* 1. 16x16 (256-zone) AE/AWB grid reduction */
+        if ((u.flags & 4u) != 0u) {
+            uint gx = min(((px - u.viewX) * u.gridCols) / max(u.viewW, 1u), u.gridCols - 1u);
+            uint gy = min(((py - u.viewY) * u.gridRows) / max(u.viewH, 1u), u.gridRows - 1u);
+            uint cell = gy * u.gridCols + gx;
+            atomicAdd(outWords[cell], r10);
+            atomicAdd(outWords[256u + cell], g1_10);
+            atomicAdd(outWords[512u + cell], b10);
+            atomicAdd(outWords[768u + cell], g2_10);
+            atomicAdd(outWords[1024u + cell], 1u);
+        }
+
+        /* 2. 256-bin Y / R / G / B histograms (workgroup shared memory) */
+        if ((u.flags & 2u) != 0u) {
+            atomicAdd(s_histY[y8], 1u);
+            atomicAdd(s_histR[r8], 1u);
+            atomicAdd(s_histG[g8], 1u);
+            atomicAdd(s_histB[b8], 1u);
+            atomicAdd(s_summary[15], 1u);
+        }
+
+        /* 3. Global & highlight-excluded AWB averages (workgroup shared memory) */
+        atomicAdd(s_summary[0], r10);
+        atomicAdd(s_summary[1], gAvg10);
+        atomicAdd(s_summary[2], b10);
+        atomicAdd(s_summary[3], 1u);
+        uint maxCh = max(max(r10, b10), max(g1_10, g2_10));
+        if (maxCh < u.awbHighlightThresh10) {
+            atomicAdd(s_summary[4], r10);
+            atomicAdd(s_summary[5], gAvg10);
+            atomicAdd(s_summary[6], b10);
+            atomicAdd(s_summary[7], 1u);
+        }
+
+        /* 4. AF ROI CDAF horizontal & vertical gradient sharpness energy */
+        if ((u.flags & 1u) != 0u &&
+            px >= u.afRoiX0 && px < u.afRoiX1 &&
+            py >= u.afRoiY0 && py < u.afRoiY1) {
+            uint gxSample = (u.inputFormat == 2u) ? px : (px + 1u);
+            uint gC = (u.inputFormat == 2u) ? readSample10(px, py) : g1_10;
+            uint gC14 = gC << 4u;
+            atomicMax(s_summary[12], gC14);
+            atomicAdd(s_summary[13], gC);
+            atomicAdd(s_summary[14], 1u);
+
+            if (gxSample + 2u < u.width) {
+                uint gR1 = readSample10(gxSample + 2u, py);
+                int dH1 = abs(int(gR1) - int(gC));
+                uint eH1 = uint(dH1 * dH1) >> 2u;
+                atomicAdd(s_summary[8], eH1);
+                if (gxSample + 4u < u.width) {
+                    uint gR2 = readSample10(gxSample + 4u, py);
+                    int lapH = abs(2 * int(gR1) - int(gC) - int(gR2));
+                    uint eLapH = uint(lapH * lapH) >> 1u;
+                    atomicAdd(s_summary[9], eLapH);
+                }
+            }
+            if (py + 2u < u.height) {
+                uint gD1 = readSample10(gxSample, py + 2u);
+                int dV1 = abs(int(gD1) - int(gC));
+                uint eV1 = uint(dV1 * dV1) >> 2u;
+                atomicAdd(s_summary[10], eV1);
+                if (py + 4u < u.height) {
+                    uint gD2 = readSample10(gxSample, py + 4u);
+                    int lapV = abs(2 * int(gD1) - int(gC) - int(gD2));
+                    uint eLapV = uint(lapV * lapV) >> 1u;
+                    atomicAdd(s_summary[11], eLapV);
+                }
+            }
+        }
+    }
+
+    barrier();
+
+    /* Single flush per workgroup from shared memory to global SSBO */
+    uint hy = s_histY[lid];
+    if (hy != 0u) atomicAdd(outWords[1280u + lid], hy);
+    uint hr = s_histR[lid];
+    if (hr != 0u) atomicAdd(outWords[1536u + lid], hr);
+    uint hg = s_histG[lid];
+    if (hg != 0u) atomicAdd(outWords[1792u + lid], hg);
+    uint hb = s_histB[lid];
+    if (hb != 0u) atomicAdd(outWords[2048u + lid], hb);
+
+    if (lid < 16u) {
+        uint sv = s_summary[lid];
+        if (sv != 0u) {
+            if (lid == 12u) {
+                atomicMax(outWords[2304u + lid], sv);
+            } else {
+                atomicAdd(outWords[2304u + lid], sv);
+            }
+        }
+    }
+}

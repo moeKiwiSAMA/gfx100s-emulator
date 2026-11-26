@@ -1,0 +1,5 @@
+# Internal GFX100S SoC hardware definition — no user edits needed.
+profile: "hdmi-init-retained-experimental-v1"
+inputFile: "input.json"
+repeatLastLinkRead: true
+repeatLastStatusPair: true

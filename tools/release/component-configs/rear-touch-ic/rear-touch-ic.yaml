@@ -1,0 +1,17 @@
+# ==============================================================================
+# Rear Touchscreen Controller
+# File: configs/components/rear-touch-ic/rear-touch-ic.yaml
+#
+# Controls the capacitive touch panel on the rear LCD screen (touch-to-focus,
+# touch shutter, touch menus, and swipe gestures).
+# ==============================================================================
+
+# Enable the rear touchscreen controller chip.
+enabled: true
+
+# Accept touch input on the rear LCD (set false to disable touch gestures).
+touchEnabled: true
+
+# --- Examples (uncomment and replace touchEnabled above) ----------------------
+# Disable rear touchscreen input at startup:
+# touchEnabled: false

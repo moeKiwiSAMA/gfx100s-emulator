@@ -1,0 +1,17 @@
+# ==============================================================================
+# G-Mount Lens Attachment
+# File: configs/components/mount/mount.yaml
+#
+# Controls whether a lens is physically mounted on the camera body at startup.
+# Choose which lens is mounted in configs/components/lens/lens.yaml.
+# ==============================================================================
+
+# Mount a lens on the camera body (true = lens attached, false = body cap / no lens).
+attached: true
+
+# Fixed GFX100S G-mount communication protocol (do not change).
+protocolProfile: "gf-lenscom-frame32-experimental-v1"
+
+# --- Examples (uncomment and replace attached above) --------------------------
+# Start with no lens mounted (body-cap / manual-mount test):
+# attached: false

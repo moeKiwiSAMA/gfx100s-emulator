@@ -1,0 +1,4177 @@
+{
+  "schema": 1,
+  "id": "device.soc-flash",
+  "componentId": "soc-flash",
+  "depends": ["flash-image"],
+  "version": "0.0.1",
+  "name": "soc-flash",
+  "physicalIdentity": "UNKNOWN",
+  "implementationStatus": "PARTIAL",
+  "implementationSources": [
+    "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+    "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+    "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+  ],
+  "ports": [
+    {
+      "id": "definition.soc-flash.registers",
+      "size": 4096,
+      "kind": "MMIO",
+      "byteOrder": "little",
+      "backing": {
+        "source": "component-owned state",
+        "permissions": "per register; stateful checks remain"
+      },
+      "registers": [
+        {
+          "id": "reg.soc-flash.registers.o0",
+          "offset": 0,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-flash",
+          "name": "o0",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-flash.registers.o0.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-flash.registers.o4",
+          "offset": 4,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-flash",
+          "name": "o4",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-flash.registers.o4.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-flash.registers.o8",
+          "offset": 8,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-flash",
+          "name": "o8",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-flash.registers.o8.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-flash.registers.oc",
+          "offset": 12,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-flash",
+          "name": "oc",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-flash.registers.oc.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-flash.registers.o10",
+          "offset": 16,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-flash",
+          "name": "o10",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-flash.registers.o10.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-flash.registers.o14",
+          "offset": 20,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-flash",
+          "name": "o14",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-flash.registers.o14.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-flash.registers.o18",
+          "offset": 24,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-flash",
+          "name": "o18",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-flash.registers.o18.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-flash.registers.o1c",
+          "offset": 28,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-flash",
+          "name": "o1c",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-flash.registers.o1c.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-flash.registers.o20",
+          "offset": 32,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-flash",
+          "name": "o20",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-flash.registers.o20.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-flash.registers.o38",
+          "offset": 56,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-flash",
+          "name": "o38",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-flash.registers.o38.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-flash.registers.o40",
+          "offset": 64,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-flash",
+          "name": "o40",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-flash.registers.o40.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-flash.registers.o44",
+          "offset": 68,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-flash",
+          "name": "o44",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-flash.registers.o44.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-flash.registers.o60",
+          "offset": 96,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-flash",
+          "name": "o60",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-flash.registers.o60.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-flash.registers.o64",
+          "offset": 100,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-flash",
+          "name": "o64",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-flash.registers.o64.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-flash.registers.o68",
+          "offset": 104,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-flash",
+          "name": "o68",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-flash.registers.o68.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-flash.registers.o6c",
+          "offset": 108,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-flash",
+          "name": "o6c",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-flash.registers.o6c.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-flash.registers.o70",
+          "offset": 112,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-flash",
+          "name": "o70",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-flash.registers.o70.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-flash.registers.o74",
+          "offset": 116,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-flash",
+          "name": "o74",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-flash.registers.o74.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-flash.registers.o78",
+          "offset": 120,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-flash",
+          "name": "o78",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-flash.registers.o78.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-flash.registers.o7c",
+          "offset": 124,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-flash",
+          "name": "o7c",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-flash.registers.o7c.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-flash.registers.o80",
+          "offset": 128,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-flash",
+          "name": "o80",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-flash.registers.o80.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-flash.registers.o90",
+          "offset": 144,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-flash",
+          "name": "o90",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-flash.registers.o90.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-flash.registers.o94",
+          "offset": 148,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-flash",
+          "name": "o94",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-flash.registers.o94.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-flash.registers.o98",
+          "offset": 152,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-flash",
+          "name": "o98",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-flash.registers.o98.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-flash.registers.o9c",
+          "offset": 156,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-flash",
+          "name": "o9c",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-flash.registers.o9c.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-flash.registers.oa0",
+          "offset": 160,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-flash",
+          "name": "oa0",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-flash.registers.oa0.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-flash.registers.oa4",
+          "offset": 164,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-flash",
+          "name": "oa4",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-flash.registers.oa4.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-flash.registers.oa8",
+          "offset": 168,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-flash",
+          "name": "oa8",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-flash.registers.oa8.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-flash.registers.ob4",
+          "offset": 180,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-flash",
+          "name": "ob4",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-flash.registers.ob4.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-flash.registers.ob8",
+          "offset": 184,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-flash",
+          "name": "ob8",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-flash.registers.ob8.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-flash.registers.obc",
+          "offset": 188,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-flash",
+          "name": "obc",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-flash.registers.obc.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-flash.registers.oe0",
+          "offset": 224,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-flash",
+          "name": "oe0",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-flash.registers.oe0.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-flash.registers.of0",
+          "offset": 240,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-flash",
+          "name": "of0",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+            "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+                "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-flash.registers.of0.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        }
+      ],
+      "unknownCoverage": "All gaps not listed by registers are UNKNOWN and refused by the known device.",
+      "implementationSources": [
+        "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+        "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+        "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+      ]
+    },
+    {
+      "id": "definition.soc-flash.aperture",
+      "size": 134217728,
+      "kind": "FLASH_APERTURE",
+      "byteOrder": "little",
+      "backing": {
+        "source": "flash.image",
+        "permissions": "read-only",
+        "logicalSpace": "flash-logical",
+        "scope": "explicit supplied images only"
+      },
+      "registers": [],
+      "unknownCoverage": "All gaps not listed by registers are UNKNOWN and refused by the known device.",
+      "implementationSources": [
+        "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashFactory.kt",
+        "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/FlashProgramEngine.kt",
+        "components/soc-flash/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flash/PioEnableStatus.kt"
+      ]
+    }
+  ],
+  "unknowns": [
+    "Physical device identity, reset values, wiring and full state machine are not qualified."
+  ],
+  "nextValidation": "Trace selected original firmware consumers and retain refusal controls."
+}

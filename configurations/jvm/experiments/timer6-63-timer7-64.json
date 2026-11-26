@@ -1,0 +1,14 @@
+{
+  "profile": "interval-edge-routing-experimental-v1",
+  "clock": "one-tick-per-attempt",
+  "routes": [
+    {
+      "channel": 6,
+      "irq": 63
+    },
+    {
+      "channel": 7,
+      "irq": 64
+    }
+  ]
+}

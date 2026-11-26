@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "id": "device.display",
+  "componentId": "display",
+  "depends": [],
+  "version": "0.0.1",
+  "name": "display",
+  "physicalIdentity": "UNKNOWN",
+  "implementationStatus": "HOST_CONTRACT_ONLY",
+  "implementationSources": [
+    "components/display/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/display/DisplayFactory.kt"
+  ],
+  "ports": [],
+  "unknowns": [
+    "Physical device identity, reset values, wiring and full state machine are not qualified.",
+    "Exposes independent display.main and display.evf ArgbFrameBuffer ports as host DisplayPort contracts; physical panel timing and EVF resolution remain unqualified."
+  ],
+  "nextValidation": "Trace selected original firmware consumers and retain refusal controls."
+}

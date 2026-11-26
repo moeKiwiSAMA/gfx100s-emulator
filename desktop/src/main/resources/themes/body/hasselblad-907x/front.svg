@@ -1,0 +1,229 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 740" width="820" height="740">
+  <title>Hasselblad 907X &amp; CFV 100C · front</title>
+  <desc>Polished V-system shell, XCD bayonet and concentric front shutter release. The S1 shortcut beneath the body exposes the first shutter detent.</desc>
+  <defs>
+    <linearGradient id="rail" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#16171a" />
+      <stop offset="7%" stop-color="#676769" />
+      <stop offset="22%" stop-color="#ecebe9" />
+      <stop offset="36%" stop-color="#fffef9" />
+      <stop offset="49%" stop-color="#b6b4b3" />
+      <stop offset="78%" stop-color="#66676c" />
+      <stop offset="89%" stop-color="#d9d7d7" />
+      <stop offset="100%" stop-color="#36373c" />
+    </linearGradient>
+    <linearGradient id="edge" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#353538" />
+      <stop offset="10%" stop-color="#eae8e7" />
+      <stop offset="24%" stop-color="#a4a2a4" />
+      <stop offset="40%" stop-color="#626167" />
+      <stop offset="66%" stop-color="#bdbabb" />
+      <stop offset="79%" stop-color="#f2efe9" />
+      <stop offset="100%" stop-color="#35363a" />
+    </linearGradient>
+    <linearGradient id="silver" x1="0%" y1="0%" x2="75%" y2="100%">
+      <stop offset="0%" stop-color="#f9faf6" />
+      <stop offset="16%" stop-color="#dddcda" />
+      <stop offset="35%" stop-color="#97969a" />
+      <stop offset="52%" stop-color="#6b6a70" />
+      <stop offset="77%" stop-color="#c1bfc0" />
+      <stop offset="100%" stop-color="#69686c" />
+    </linearGradient>
+    <linearGradient id="cup" x1="0%" y1="0%" x2="100%" y2="80%">
+      <stop offset="0%" stop-color="#202126" />
+      <stop offset="18%" stop-color="#414248" />
+      <stop offset="53%" stop-color="#77767a" />
+      <stop offset="76%" stop-color="#cdcbc8" />
+      <stop offset="87%" stop-color="#dad8d3" />
+      <stop offset="100%" stop-color="#878589" />
+    </linearGradient>
+    <linearGradient id="body" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#3b3a3d" />
+      <stop offset="8%" stop-color="#212023" />
+      <stop offset="20%" stop-color="#151518" />
+      <stop offset="55%" stop-color="#222125" />
+      <stop offset="80%" stop-color="#151417" />
+      <stop offset="96%" stop-color="#27272b" />
+      <stop offset="100%" stop-color="#101013" />
+    </linearGradient>
+    <linearGradient id="key" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#464548" />
+      <stop offset="9%" stop-color="#29292c" />
+      <stop offset="68%" stop-color="#19191c" />
+      <stop offset="100%" stop-color="#28272c" />
+    </linearGradient>
+    <linearGradient id="seat" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#08080b" />
+      <stop offset="55%" stop-color="#141416" />
+      <stop offset="100%" stop-color="#38383b" />
+    </linearGradient>
+    <linearGradient id="glass" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#161719" />
+      <stop offset="65%" stop-color="#222225" />
+      <stop offset="100%" stop-color="#111214" />
+    </linearGradient>
+    <pattern id="skin" width="116" height="116" patternUnits="userSpaceOnUse" data-texture="shared/leatherette.png" />
+    <pattern id="brush" width="150" height="150" patternUnits="userSpaceOnUse" data-texture="shared/brushed-chrome.png" />
+    <linearGradient id="sensor" x1="0%" y1="0%" x2="100%" y2="80%">
+      <stop offset="0%" stop-color="#0d1235" />
+      <stop offset="15%" stop-color="#062448" />
+      <stop offset="39%" stop-color="#053443" />
+      <stop offset="53%" stop-color="#034b3c" />
+      <stop offset="64%" stop-color="#004341" />
+      <stop offset="86%" stop-color="#0c2139" />
+      <stop offset="100%" stop-color="#052f42" />
+    </linearGradient>
+  </defs>
+  <rect x="76" y="94" width="110" height="524" rx="20" fill="url(#silver)" stroke="#343439" stroke-width="2" />
+  <rect x="77" y="95" width="108" height="522" rx="20" fill="url(#brush)" opacity="0.16" />
+  <rect x="84" y="101" width="91" height="507" rx="15" fill="url(#rail)" />
+  <rect x="47" y="321" width="47" height="17" rx="7" fill="url(#edge)" stroke="#56565b" stroke-width="2" />
+  <rect x="54" y="325" width="28" height="9" rx="3" fill="#29282b" />
+  <rect x="706" y="321" width="47" height="17" rx="7" fill="url(#edge)" stroke="#56565b" stroke-width="2" />
+  <rect x="713" y="325" width="28" height="9" rx="3" fill="#29282b" />
+  <rect x="137" y="646" width="513" height="17" rx="7" fill="url(#edge)" />
+  <rect x="171" y="36" width="491" height="31" rx="13" fill="url(#silver)" />
+  <rect x="187" y="36" width="459" height="21" rx="9" fill="url(#body)" />
+  <rect x="388" y="24" width="61" height="12" rx="7" fill="url(#rail)" />
+  <text x="414" y="50" font-size="11" fill="#d5d0c8" text-anchor="middle" font-weight="bold">H A S S E L B L A D</text>
+  <rect x="117" y="53" width="596" height="598" rx="23" fill="url(#rail)" stroke="#333338" stroke-width="2" />
+  <rect x="122" y="58" width="586" height="588" rx="20" fill="url(#edge)" />
+  <path d="M 125 111 Q 125 68 154 64 Q 436 60 671 64 Q 697 65 705 97 Q 701 73 680 69 Q 453 65 159 69 Q 136 71 129 106 V 608 Q 127 573 125 544 Z" fill="#f0eeeb" opacity="0.84" />
+  <path d="M 706 123 V 608 Q 706 642 678 645 H 163 Q 130 645 124 619 Q 136 638 165 638 H 675 Q 696 638 699 615 Z" fill="#d5d2d1" opacity="0.88" />
+  <rect x="131" y="66" width="568" height="572" rx="36" fill="#141416" stroke="#e0dedd" stroke-width="2" />
+  <rect x="132" y="67" width="566" height="570" rx="35" fill="url(#skin)" />
+  <rect x="132" y="67" width="566" height="570" rx="35" fill="url(#body)" opacity="0.23" />
+  <g id="front-mount" data-control-id="front-mount" data-view-id="front">
+    <rect x="163" y="98" width="504" height="504" fill="none" stroke="none" data-hitbox="true" />
+  </g>
+  <g id="lens-detached-art" data-mount-preview="detached">
+    <circle cx="415" cy="353" r="254" fill="#09090a" opacity="0.8" />
+    <circle cx="415" cy="350" r="251" fill="url(#silver)" stroke="#c9c9c7" stroke-width="2" />
+    <circle cx="415" cy="350" r="250" fill="url(#brush)" opacity="0.18" />
+    <circle cx="415" cy="350" r="216" fill="url(#body)" stroke="#262528" stroke-width="3" />
+    <circle cx="415" cy="350" r="209" fill="url(#seat)" stroke="#464448" stroke-width="1.5" />
+    <path d="M 501.23 156.33 A 212 212 0 0 1 618.79 291.56" fill="none" stroke="#76757a" stroke-width="4.3" />
+    <path d="M 572.55 491.86 A 212 212 0 0 1 396.52 561.19" fill="none" stroke="#76757a" stroke-width="4.3" />
+    <path d="M 203.52 364.79 A 212 212 0 0 1 284.48 182.94" fill="none" stroke="#76757a" stroke-width="4.3" />
+    <path d="M 244 242 L 259 222 H 572 L 590 247 V 455 L 571 479 H 262 L 241 459 Z" fill="#090a0e" stroke="#2a292d" stroke-width="3" />
+    <rect x="259" y="233" width="312" height="234" rx="1" fill="#101810" stroke="#31222c" stroke-width="3" />
+    <rect x="263" y="236" width="304" height="228" fill="url(#sensor)" stroke="#16847b" stroke-width="1.5" />
+    <line x1="264" y1="235" x2="565" y2="235" stroke="#498763" stroke-width="1.5" />
+    <line x1="262" y1="238" x2="262" y2="463" stroke="#1b4597" stroke-width="1.3" />
+    <circle cx="415" cy="116" r="10" fill="#36353a" />
+    <circle cx="415" cy="116" r="8.1" fill="url(#silver)" stroke="#68686c" stroke-width="0.7" />
+    <path d="M 411 114 l 1.8 -1.8 2.2 2.2 2.3 -2.4 2 1.9 -2.2 2.2 2.2 2.3 -2 1.9 -2.3 -2.2 -2.3 2.2 -1.8 -2 2.1 -2.2 z" fill="#4c4a4e" />
+    <circle cx="647" cy="350" r="10" fill="#36353a" />
+    <circle cx="647" cy="350" r="8.1" fill="url(#silver)" stroke="#68686c" stroke-width="0.7" />
+    <path d="M 643 348 l 1.8 -1.8 2.2 2.2 2.3 -2.4 2 1.9 -2.2 2.2 2.2 2.3 -2 1.9 -2.3 -2.2 -2.3 2.2 -1.8 -2 2.1 -2.2 z" fill="#4c4a4e" />
+    <circle cx="415" cy="584" r="10" fill="#36353a" />
+    <circle cx="415" cy="584" r="8.1" fill="url(#silver)" stroke="#68686c" stroke-width="0.7" />
+    <path d="M 411 582 l 1.8 -1.8 2.2 2.2 2.3 -2.4 2 1.9 -2.2 2.2 2.2 2.3 -2 1.9 -2.3 -2.2 -2.3 2.2 -1.8 -2 2.1 -2.2 z" fill="#4c4a4e" />
+    <circle cx="183" cy="350" r="10" fill="#36353a" />
+    <circle cx="183" cy="350" r="8.1" fill="url(#silver)" stroke="#68686c" stroke-width="0.7" />
+    <path d="M 179 348 l 1.8 -1.8 2.2 2.2 2.3 -2.4 2 1.9 -2.2 2.2 2.2 2.3 -2 1.9 -2.3 -2.2 -2.3 2.2 -1.8 -2 2.1 -2.2 z" fill="#4c4a4e" />
+    <circle cx="415" cy="144" r="8" fill="#6c0f17" stroke="#3e1e24" stroke-width="1" />
+    <circle cx="587" cy="509" r="7" fill="url(#cup)" stroke="#5b595e" stroke-width="2" />
+    <path d="M 343 523 Q 415 552 487 523 L 484 539 Q 415 565 346 539 Z" fill="#121214" stroke="#676469" stroke-width="1.8" />
+    <circle cx="353" cy="531" r="5.4" fill="#4c3c24" />
+    <circle cx="353" cy="530.4" r="3.9" fill="#d9ac64" />
+    <circle cx="352" cy="529.6" r="1.9" fill="#fcdea7" />
+    <circle cx="366.9" cy="534.078" r="5.4" fill="#4c3c24" />
+    <circle cx="366.9" cy="533.478" r="3.9" fill="#d9ac64" />
+    <circle cx="365.9" cy="532.678" r="1.9" fill="#fcdea7" />
+    <circle cx="380.8" cy="536.785" r="5.4" fill="#4c3c24" />
+    <circle cx="380.8" cy="536.185" r="3.9" fill="#d9ac64" />
+    <circle cx="379.8" cy="535.385" r="1.9" fill="#fcdea7" />
+    <circle cx="394.7" cy="538.794" r="5.4" fill="#4c3c24" />
+    <circle cx="394.7" cy="538.194" r="3.9" fill="#d9ac64" />
+    <circle cx="393.7" cy="537.394" r="1.9" fill="#fcdea7" />
+    <circle cx="408.6" cy="539.863" r="5.4" fill="#4c3c24" />
+    <circle cx="408.6" cy="539.263" r="3.9" fill="#d9ac64" />
+    <circle cx="407.6" cy="538.463" r="1.9" fill="#fcdea7" />
+    <circle cx="422.5" cy="539.863" r="5.4" fill="#4c3c24" />
+    <circle cx="422.5" cy="539.263" r="3.9" fill="#d9ac64" />
+    <circle cx="421.5" cy="538.463" r="1.9" fill="#fcdea7" />
+    <circle cx="436.4" cy="538.794" r="5.4" fill="#4c3c24" />
+    <circle cx="436.4" cy="538.194" r="3.9" fill="#d9ac64" />
+    <circle cx="435.4" cy="537.394" r="1.9" fill="#fcdea7" />
+    <circle cx="450.3" cy="536.785" r="5.4" fill="#4c3c24" />
+    <circle cx="450.3" cy="536.185" r="3.9" fill="#d9ac64" />
+    <circle cx="449.3" cy="535.385" r="1.9" fill="#fcdea7" />
+    <circle cx="464.2" cy="534.078" r="5.4" fill="#4c3c24" />
+    <circle cx="464.2" cy="533.478" r="3.9" fill="#d9ac64" />
+    <circle cx="463.2" cy="532.678" r="1.9" fill="#fcdea7" />
+    <circle cx="478.1" cy="531" r="5.4" fill="#4c3c24" />
+    <circle cx="478.1" cy="530.4" r="3.9" fill="#d9ac64" />
+    <circle cx="477.1" cy="529.6" r="1.9" fill="#fcdea7" />
+  </g>
+  <g id="lens-attached-art" data-mount-preview="attached">
+    <circle cx="415" cy="354" r="262" fill="#09090b" opacity="0.78" />
+    <circle cx="415" cy="350" r="260" fill="url(#body)" stroke="#545457" stroke-width="2" />
+    <circle cx="415" cy="350" r="251" fill="url(#key)" stroke="#111214" stroke-width="3" />
+    <circle cx="415" cy="350" r="246" fill="#202124" stroke="#47484a" stroke-width="1.6" />
+    <circle cx="415" cy="350" r="239" fill="#141517" stroke="#0b0c0d" stroke-width="2" />
+    <circle cx="415" cy="350" r="214" fill="url(#seat)" stroke="#3c3b3d" stroke-width="1.4" />
+    <image href="shared/xcd-glass.png" x="200" y="135" width="430" height="430" />
+    <text x="415" y="130" font-size="14" fill="#c5c3bd" text-anchor="middle">H A S S E L B L A D</text>
+    <text x="415" y="582" font-size="14" fill="#b8b6b1" text-anchor="middle">X C D</text>
+  </g>
+  <g id="front-lens-release" data-control-id="front-lens-release" data-view-id="front">
+    <rect x="609" y="550" width="62" height="62" fill="none" stroke="none" data-hitbox="true" />
+    <circle cx="640" cy="581" r="32" fill="#29292c" />
+    <circle cx="640" cy="581" r="29" fill="url(#silver)" />
+    <circle cx="640" cy="581" r="23" fill="#3c3b40" />
+    <circle cx="640" cy="581" r="19" fill="url(#cup)" />
+  </g>
+  <g id="front-command-dial" data-control-id="front-command-dial" data-view-id="front">
+    <rect x="133" y="532" width="103" height="22" fill="none" stroke="none" data-hitbox="true" />
+    <circle cx="185" cy="582" r="52" fill="url(#silver)" stroke="#333337" stroke-width="2" />
+    <circle cx="185" cy="582" r="46" fill="url(#body)" stroke="#434246" stroke-width="2" />
+    <line x1="233.2" y1="582" x2="228.929" y2="584.507" stroke="#777477" stroke-width="2.4" />
+    <line x1="232.468" y1="590.37" x2="227.826" y2="592.097" stroke="#777477" stroke-width="2.4" />
+    <line x1="230.293" y1="598.485" x2="225.422" y2="599.38" stroke="#777477" stroke-width="2.4" />
+    <line x1="226.742" y1="606.1" x2="221.79" y2="606.135" stroke="#777477" stroke-width="2.4" />
+    <line x1="221.923" y1="612.982" x2="217.04" y2="612.157" stroke="#777477" stroke-width="2.4" />
+    <line x1="215.982" y1="618.923" x2="211.317" y2="617.262" stroke="#777477" stroke-width="2.4" />
+    <line x1="209.1" y1="623.742" x2="204.793" y2="621.297" stroke="#777477" stroke-width="2.4" />
+    <line x1="201.485" y1="627.293" x2="197.669" y2="624.137" stroke="#777477" stroke-width="2.4" />
+    <line x1="193.37" y1="629.468" x2="190.16" y2="625.696" stroke="#777477" stroke-width="2.4" />
+    <line x1="185" y1="630.2" x2="182.493" y2="625.929" stroke="#777477" stroke-width="2.4" />
+    <line x1="176.63" y1="629.468" x2="174.903" y2="624.826" stroke="#777477" stroke-width="2.4" />
+    <line x1="168.515" y1="627.293" x2="167.62" y2="622.422" stroke="#777477" stroke-width="2.4" />
+    <line x1="160.9" y1="623.742" x2="160.865" y2="618.79" stroke="#777477" stroke-width="2.4" />
+    <line x1="154.018" y1="618.923" x2="154.843" y2="614.04" stroke="#777477" stroke-width="2.4" />
+    <line x1="148.077" y1="612.982" x2="149.738" y2="608.317" stroke="#777477" stroke-width="2.4" />
+    <line x1="143.258" y1="606.1" x2="145.703" y2="601.793" stroke="#777477" stroke-width="2.4" />
+    <line x1="139.707" y1="598.485" x2="142.863" y2="594.669" stroke="#777477" stroke-width="2.4" />
+    <line x1="137.532" y1="590.37" x2="141.304" y2="587.16" stroke="#777477" stroke-width="2.4" />
+    <line x1="136.8" y1="582" x2="141.071" y2="579.493" stroke="#777477" stroke-width="2.4" />
+    <line x1="137.532" y1="573.63" x2="142.174" y2="571.903" stroke="#a29b9a" stroke-width="2.4" />
+    <line x1="139.707" y1="565.515" x2="144.578" y2="564.62" stroke="#a29b9a" stroke-width="2.4" />
+    <line x1="143.258" y1="557.9" x2="148.21" y2="557.865" stroke="#a29b9a" stroke-width="2.4" />
+    <line x1="148.077" y1="551.018" x2="152.96" y2="551.843" stroke="#a29b9a" stroke-width="2.4" />
+    <line x1="154.018" y1="545.077" x2="158.683" y2="546.738" stroke="#a29b9a" stroke-width="2.4" />
+    <line x1="160.9" y1="540.258" x2="165.207" y2="542.703" stroke="#a29b9a" stroke-width="2.4" />
+    <line x1="168.515" y1="536.707" x2="172.331" y2="539.863" stroke="#a29b9a" stroke-width="2.4" />
+    <line x1="176.63" y1="534.532" x2="179.84" y2="538.304" stroke="#a29b9a" stroke-width="2.4" />
+    <line x1="185" y1="533.8" x2="187.507" y2="538.071" stroke="#a29b9a" stroke-width="2.4" />
+    <line x1="193.37" y1="534.532" x2="195.097" y2="539.174" stroke="#a29b9a" stroke-width="2.4" />
+    <line x1="201.485" y1="536.707" x2="202.38" y2="541.578" stroke="#a29b9a" stroke-width="2.4" />
+    <line x1="209.1" y1="540.258" x2="209.135" y2="545.21" stroke="#a29b9a" stroke-width="2.4" />
+    <line x1="215.982" y1="545.077" x2="215.157" y2="549.96" stroke="#a29b9a" stroke-width="2.4" />
+    <line x1="221.923" y1="551.018" x2="220.262" y2="555.683" stroke="#a29b9a" stroke-width="2.4" />
+    <line x1="226.742" y1="557.9" x2="224.297" y2="562.207" stroke="#a29b9a" stroke-width="2.4" />
+    <line x1="230.293" y1="565.515" x2="227.137" y2="569.331" stroke="#a29b9a" stroke-width="2.4" />
+    <line x1="232.468" y1="573.63" x2="228.696" y2="576.84" stroke="#a29b9a" stroke-width="2.4" />
+  </g>
+  <g id="top-shutter-full" data-control-id="top-shutter-full" data-view-id="front">
+    <rect x="156" y="554" width="58" height="56" fill="none" stroke="none" data-hitbox="true" />
+    <circle cx="185" cy="582" r="34" fill="#1a191c" stroke="#535056" stroke-width="1.2" />
+    <circle cx="185" cy="582" r="27" fill="url(#silver)" stroke="#bbb7b7" stroke-width="1.1" />
+    <circle cx="185" cy="582" r="21" fill="url(#cup)" stroke="#646168" stroke-width="1" />
+  </g>
+  <g id="top-shutter-half" data-control-id="top-shutter-half" data-view-id="front">
+    <rect x="313" y="680" width="194" height="44" fill="none" stroke="none" data-hitbox="true" />
+    <rect x="313" y="680" width="194" height="44" rx="6" fill="#1e2022" stroke="#4b4d4d" stroke-width="1.2" />
+    <text x="410" y="707.44" font-size="16" fill="#dfdfd9" text-anchor="middle" font-weight="bold">S1  ·  AF / AE</text>
+  </g>
+</svg>

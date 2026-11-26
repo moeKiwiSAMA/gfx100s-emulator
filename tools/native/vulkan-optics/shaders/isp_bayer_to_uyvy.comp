@@ -1,0 +1,192 @@
+#version 450
+/*
+ * FUJIFILM GFX100S Emulator - Vulkan 1.1 Compute Phase 3: LiveView ISP Pipeline
+ *
+ * Bit-exact GPU implementation of LiveViewDmaEngine + MfAssistPeakingFilter:
+ *   RGGB Bayer (12-bit normalized from 16-bit LE or 8-bit) -> bilinear demosaic ->
+ *   Q10 RGB exposure gain -> optional 3x3 Q10 RGB CCM -> 4096-entry 1D R/G/B Tone LUT ->
+ *   BT.601 / custom Q-shift RGB->YCbCr (or Monochrome) -> canonical packed UYVY422 uint32
+ *   (`U0 | (Y0 << 8) | (V0 << 16) | (Y1 << 24)`).
+ *
+ * Paired with `isp_focus_peaking` (5-tap HPF edge contrast stamping) in the same single
+ * command-buffer submission when peaking is enabled, supporting UYVY422 / NV16 / NV12 / YYUV422.
+ */
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+
+layout(constant_id = 0) const uint SPEC_OUTPUT_FORMAT   = 0xFFFFFFFFu; /* 0=UYVY,1=NV16,2=NV12,3=YYUV,0xFFFFFFFF=UBO */
+layout(constant_id = 1) const uint SPEC_PEAKING_ENABLED = 0xFFFFFFFFu; /* 0=off,1=on,0xFFFFFFFF=UBO */
+layout(constant_id = 2) const uint SPEC_IS_16BIT        = 0xFFFFFFFFu; /* 0=8bit,1=16bit,0xFFFFFFFF=UBO */
+layout(constant_id = 3) const uint SPEC_ISP_MODE_MASK   = 0xFFFFFFFFu; /* bits[2:0]=CCM|YUV|MONO,0xFFFFFFFF=UBO */
+
+layout(std430, binding = 0) readonly buffer InBuffer {
+    /* [0..4095]: packed 1D tone LUT: (lutR & 0xFF) | ((lutG & 0xFF) << 8) | ((lutB & 0xFF) << 16)
+     * [4096..4096+srcW*srcH-1]: 12-bit Bayer samples (0..4095) */
+    uint inWords[];
+};
+
+layout(std430, binding = 1) writeonly buffer OutBuffer {
+    /* One uint32 per horizontal pixel pair: U0 | (Y0 << 8) | (V0 << 16) | (Y1 << 24) */
+    uint outUyvyPairs[];
+};
+
+layout(std140, binding = 2) uniform IspParams {
+    uint srcWidth;
+    uint srcHeight;
+    uint dstWidth;
+    uint dstHeight;
+
+    uint is16Bit;
+    uint outputFormat;
+    uint dstStrideBytes;
+    uint flags; /* bit0=hasCcm, bit1=hasYuvMat, bit2=monoMode, bit3=peakingEnabled */
+
+    uint offX;
+    uint offY;
+    uint fitW;
+    uint fitH;
+
+    uint gainR1024;
+    uint gainG1024;
+    uint gainB1024;
+    uint yuvShift;
+
+    int ccm0; int ccm1; int ccm2;
+    int ccm3; int ccm4; int ccm5;
+    int ccm6; int ccm7; int ccm8;
+
+    int yuv0; int yuv1; int yuv2;
+    int yuv3; int yuv4; int yuv5;
+    int yuv6; int yuv7; int yuv8;
+
+    uint peakingThreshold;
+    uint peakingHiY;
+    uint peakingHiCb;
+    uint peakingHiCr;
+
+    uint reserved0;
+    uint reserved1;
+} u;
+
+uint sample12(uint sx, uint sy) {
+    return inWords[4096u + sy * u.srcWidth + sx];
+}
+
+uvec3 demosaicPixel(uint sx, uint sy) {
+    uint maxX = u.srcWidth - 1u;
+    uint maxY = u.srcHeight - 1u;
+    uint xPrev = (sx > 0u) ? (sx - 1u) : 0u;
+    uint xNext = (sx < maxX) ? (sx + 1u) : maxX;
+    uint yPrev = (sy > 0u) ? (sy - 1u) : 0u;
+    uint yNext = (sy < maxY) ? (sy + 1u) : maxY;
+    bool sxOdd = (sx & 1u) != 0u;
+    bool syOdd = (sy & 1u) != 0u;
+    uint c = sample12(sx, sy);
+
+    uint rLin, gLin, bLin;
+    if (!syOdd && !sxOdd) {
+        rLin = c;
+        gLin = (sample12(xPrev, sy) + sample12(xNext, sy) + sample12(sx, yPrev) + sample12(sx, yNext) + 2u) >> 2u;
+        bLin = (sample12(xPrev, yPrev) + sample12(xNext, yPrev) + sample12(xPrev, yNext) + sample12(xNext, yNext) + 2u) >> 2u;
+    } else if (!syOdd && sxOdd) {
+        rLin = (sample12(xPrev, sy) + sample12(xNext, sy) + 1u) >> 1u;
+        gLin = c;
+        bLin = (sample12(sx, yPrev) + sample12(sx, yNext) + 1u) >> 1u;
+    } else if (syOdd && !sxOdd) {
+        rLin = (sample12(sx, yPrev) + sample12(sx, yNext) + 1u) >> 1u;
+        gLin = c;
+        bLin = (sample12(xPrev, sy) + sample12(xNext, sy) + 1u) >> 1u;
+    } else {
+        rLin = (sample12(xPrev, yPrev) + sample12(xNext, yPrev) + sample12(xPrev, yNext) + sample12(xNext, yNext) + 2u) >> 2u;
+        gLin = (sample12(xPrev, sy) + sample12(xNext, sy) + sample12(sx, yPrev) + sample12(sx, yNext) + 2u) >> 2u;
+        bLin = c;
+    }
+
+    int rG = int(min((rLin * u.gainR1024) >> 10u, 4095u));
+    int gG = int(min((gLin * u.gainG1024) >> 10u, 4095u));
+    int bG = int(min((bLin * u.gainB1024) >> 10u, 4095u));
+
+    int rIdx = rG;
+    int gIdx = gG;
+    int bIdx = bG;
+    if ((u.flags & 1u) != 0u) {
+        rIdx = clamp((u.ccm0 * rG + u.ccm1 * gG + u.ccm2 * bG + 512) >> 10, 0, 4095);
+        gIdx = clamp((u.ccm3 * rG + u.ccm4 * gG + u.ccm5 * bG + 512) >> 10, 0, 4095);
+        bIdx = clamp((u.ccm6 * rG + u.ccm7 * gG + u.ccm8 * bG + 512) >> 10, 0, 4095);
+    }
+
+    uint r = inWords[uint(rIdx)] & 0xFFu;
+    uint g = (inWords[uint(gIdx)] >> 8u) & 0xFFu;
+    uint b = (inWords[uint(bIdx)] >> 16u) & 0xFFu;
+    return uvec3(r, g, b);
+}
+
+void main() {
+    uint pxPair = gl_GlobalInvocationID.x;
+    uint y = gl_GlobalInvocationID.y;
+    uint pairsW = u.dstWidth >> 1u;
+    if (pxPair >= pairsW || y >= u.dstHeight) return;
+
+    uint x0 = pxPair << 1u;
+    uint x1 = x0 + 1u;
+    uint endX = u.offX + u.fitW;
+    uint endY = u.offY + u.fitH;
+    uint outIdx = y * pairsW + pxPair;
+
+    if (y < u.offY || y >= endY) {
+        outUyvyPairs[outIdx] = 0x00800080u; /* U=128, Y0=0, V=128, Y1=0 */
+        return;
+    }
+    bool inX0 = (x0 >= u.offX) && (x0 < endX);
+    bool inX1 = (x1 >= u.offX) && (x1 < endX);
+    if (!inX0 && !inX1) {
+        outUyvyPairs[outIdx] = 0x00800080u;
+        return;
+    }
+
+    uint sy = min(((y - u.offY) * u.srcHeight) / max(u.fitH, 1u), u.srcHeight - 1u);
+    int yuvShift = int(u.yuvShift);
+    int yuvHalf = 1 << max(yuvShift - 1, 0);
+    bool hasYuv = (u.flags & 2u) != 0u;
+    bool mono = (u.flags & 4u) != 0u;
+
+    uvec3 rgb0 = uvec3(0u);
+    uint y0 = 0u;
+    if (inX0) {
+        uint sx0 = min(((x0 - u.offX) * u.srcWidth) / max(u.fitW, 1u), u.srcWidth - 1u);
+        rgb0 = demosaicPixel(sx0, sy);
+        int yv = hasYuv
+            ? ((u.yuv0 * int(rgb0.r) + u.yuv1 * int(rgb0.g) + u.yuv2 * int(rgb0.b) + yuvHalf) >> yuvShift)
+            : ((77 * int(rgb0.r) + 150 * int(rgb0.g) + 29 * int(rgb0.b) + 128) >> 8);
+        y0 = uint(clamp(yv, 0, 255));
+    }
+
+    uvec3 rgb1 = uvec3(0u);
+    uint y1 = 0u;
+    if (inX1) {
+        uint sx1 = min(((x1 - u.offX) * u.srcWidth) / max(u.fitW, 1u), u.srcWidth - 1u);
+        rgb1 = demosaicPixel(sx1, sy);
+        int yv = hasYuv
+            ? ((u.yuv0 * int(rgb1.r) + u.yuv1 * int(rgb1.g) + u.yuv2 * int(rgb1.b) + yuvHalf) >> yuvShift)
+            : ((77 * int(rgb1.r) + 150 * int(rgb1.g) + 29 * int(rgb1.b) + 128) >> 8);
+        y1 = uint(clamp(yv, 0, 255));
+    }
+
+    int avgR = (inX0 && inX1) ? int((rgb0.r + rgb1.r) >> 1u) : (inX0 ? int(rgb0.r) : int(rgb1.r));
+    int avgG = (inX0 && inX1) ? int((rgb0.g + rgb1.g) >> 1u) : (inX0 ? int(rgb0.g) : int(rgb1.g));
+    int avgB = (inX0 && inX1) ? int((rgb0.b + rgb1.b) >> 1u) : (inX0 ? int(rgb0.b) : int(rgb1.b));
+
+    uint uVal = 128u;
+    uint vVal = 128u;
+    if (!mono) {
+        int uv = hasYuv
+            ? (((u.yuv3 * avgR + u.yuv4 * avgG + u.yuv5 * avgB + yuvHalf) >> yuvShift) + 128)
+            : (((-43 * avgR - 85 * avgG + 128 * avgB + 128) >> 8) + 128);
+        int vv = hasYuv
+            ? (((u.yuv6 * avgR + u.yuv7 * avgG + u.yuv8 * avgB + yuvHalf) >> yuvShift) + 128)
+            : (((128 * avgR - 107 * avgG - 21 * avgB + 128) >> 8) + 128);
+        uVal = uint(clamp(uv, 0, 255));
+        vVal = uint(clamp(vv, 0, 255));
+    }
+
+    outUyvyPairs[outIdx] = uVal | (y0 << 8u) | (vVal << 16u) | (y1 << 24u);
+}

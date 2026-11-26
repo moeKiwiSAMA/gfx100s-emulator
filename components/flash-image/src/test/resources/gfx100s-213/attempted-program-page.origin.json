@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "kind": "SIM guest-prepared RAM, unsubmitted DMA",
+  "firmware": "gfx100s-213",
+  "firmwareSha256": "ea997915ac5accc79699392b47909bb29506f66ec8d571e5804dd1fb0408fd12",
+  "bytes": 256,
+  "sha256": "f2606be16ea79dadf91f36b6e8abf15521502c147a9d3925e556165aca6c4004",
+  "sourcePhysical": 25305088,
+  "destinationPeripheral": 4091281408,
+  "sourceEvidence": "evidence/tooling/flash-program-source-preflight-2026-11-11-01/local/flash-program-source-discovery-01/ff/debug-attempted-flash-program.generated.json",
+  "scope": "Byte-identical FF and zero finite-input originals; after-stop checked source. Not physical camera dump, accepted program, completed array or physical page law."
+}

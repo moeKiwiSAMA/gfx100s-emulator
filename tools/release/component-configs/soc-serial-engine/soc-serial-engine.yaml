@@ -1,0 +1,6 @@
+# Internal GFX100S SoC hardware definition — no user edits needed.
+profile: "gfx100s-serial-transmit-functional-experimental-v3"
+inputFile: "input.yaml"
+captureEvents: true
+repeatLastPlan: true
+completionIrqs: true

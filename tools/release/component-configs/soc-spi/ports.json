@@ -1,0 +1,37 @@
+{
+  "profile": "spi-additional-ports-experimental-v1",
+  "controllers": [
+    {
+      "index": 2,
+      "peerPort": "soc-spi.biscom",
+      "requestEnable3Limit": 16384
+    },
+    {
+      "index": 0,
+      "peerPort": "mount.spi",
+      "requestEnable3Limit": 16384
+    },
+    {
+      "index": 5,
+      "peerPort": "",
+      "panel16Replies": {
+        "prefix": [
+          {
+            "tx": 6976,
+            "rx": 42330
+          },
+          {
+            "tx": 0,
+            "rx": 23130
+          }
+        ],
+        "fixedMisoHigh": false,
+        "exchangeLimit": 2048
+      }
+    },
+    {
+      "index": 4,
+      "peerPort": "wm8962.spi"
+    }
+  ]
+}

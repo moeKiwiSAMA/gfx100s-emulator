@@ -1,0 +1,119 @@
+name: Bug Report
+description: Report a crash, rendering glitch, audio/input issue, or firmware emulation bug (please attach logs/latest.log!)
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for testing **FUJIFILM GFX100S Emulator**!
+        Before submitting, please note:
+        - **Supported platforms**: 64-bit **`x86_64` Windows 10/11 and Linux only** (`AVX2` / `AVX-512` recommended; Apple Silicon / ARM64 hosts are not supported).
+        - **Never attach proprietary binaries or personal camera dumps**: Do **NOT** upload `GXUP0004.DAT`, `boot-rom.bin`, or `nor-flash.bin` (which may contain personal camera serial/MAC data). Only attach plain-text log files!
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      description: Which 64-bit x86_64 operating system are you running?
+      options:
+        - Windows 11 (x86_64)
+        - Windows 10 (x86_64)
+        - Linux (Ubuntu / Debian x86_64)
+        - Linux (Fedora / Arch / Other x86_64)
+        - Other (please specify below)
+    validations:
+      required: true
+
+  - type: input
+    id: os_detail
+    attributes:
+      label: OS Version / Kernel / Desktop Environment
+      description: "e.g., Windows 11 24H2 (Build 26100), or Arch Linux 6.12 + KDE Wayland"
+      placeholder: "Windows 11 24H2 / Ubuntu 24.04 LTS (X11 or Wayland)"
+    validations:
+      required: true
+
+  - type: input
+    id: cpu
+    attributes:
+      label: CPU Model & SIMD Support (AVX2 / AVX-512)
+      description: "Exact processor model and whether it supports AVX2 or AVX-512"
+      placeholder: "e.g., AMD Ryzen 7 7800X3D (AVX2 + AVX-512) / Intel Core i7-13700K (AVX2)"
+    validations:
+      required: true
+
+  - type: input
+    id: gpu
+    attributes:
+      label: GPU Model & Vulkan Driver Version
+      description: "Graphics card(s), driver version, and active optics backend (`auto` / `vulkan` / `cpu`)"
+      placeholder: "e.g., NVIDIA RTX 4070 (Driver 566.14, Vulkan 1.3) / AMD Radeon 780M (Mesa 24.3)"
+    validations:
+      required: true
+
+  - type: input
+    id: build
+    attributes:
+      label: Emulator Version / Release Bundle or Git Commit SHA
+      description: "Release tag, GitHub Actions run ID, or `git rev-parse --short HEAD` if built from source"
+      placeholder: "e.g., v0.3.0 portable Windows .zip / commit 303d6ca"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: boot_mode
+    attributes:
+      label: Firmware & Boot Configuration
+      options:
+        - Official GXUP0004.DAT (v2.13) — Default Flash-Direct boot
+        - Sanitized real-hardware nor-flash.bin — Default Flash-Direct boot
+        - Experimental BootROM cold boot (--boot-rom / bootRomBoot=true)
+        - Missing-firmware / pre-boot UI or build failure
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Exact steps from launch to trigger the issue (include active lens, optical filters, input scene, or body/UI theme if relevant).
+      placeholder: |
+        1. Launch `fuji-emulator-gfx100s.exe`
+        2. Switch input scene to `scene://star-bokeh` and attach `gf110`
+        3. Half-press shutter (`S1`) while rotating front command dial
+        4. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected_actual
+    attributes:
+      label: Expected vs. Actual Behavior
+      description: What did you expect to happen, and what actually happened (error dialog, visual artifact, hang, crash)?
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Emulator Debug Log (`logs/latest.log`) — MANDATORY
+      description: |
+        Please drag-and-drop your **`latest.log`** file into this box (or paste the relevant section).
+        The emulator writes full `DEBUG`-level plain-text diagnostics (zero ANSI escape codes) to:
+        - **Windows (Portable Release)**: `<emulator-folder>\logs\latest.log` *(next to `fuji-emulator-gfx100s.exe`; prior sessions are archived as `logs\yyyy-MM-dd-N.log.gz`)*
+        - **Linux (Portable Release)**: `<emulator-folder>/logs/latest.log` *(next to `start-gfx100s.sh` / `bin/fuji-emulator-gfx100s`; prior sessions are in `logs/yyyy-MM-dd-N.log.gz`)*
+        - **Source Build (`sh jvm.sh launch` / `./gradlew :desktop:run`)**: `local/runtime/logs/latest.log` or `./logs/latest.log` *(or your custom `--home` / `-Dfuji.log.dir` directory)*
+      placeholder: "Drag and drop logs/latest.log here, or paste key [ERROR] / [WARN] / [FALLBACK] lines..."
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-Submission Check
+      options:
+        - label: I have attached `logs/latest.log` (or archived `.log.gz`) from the failing session.
+          required: true
+        - label: I confirmed I did NOT attach proprietary firmware (`GXUP0004.DAT`, `boot-rom.bin`) or raw personal `nor-flash.bin` dumps.
+          required: true

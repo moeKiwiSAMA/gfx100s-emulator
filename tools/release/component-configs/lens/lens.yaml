@@ -1,0 +1,42 @@
+# ==============================================================================
+# Virtual Lens & Optical Simulation
+# File: configs/components/lens/lens.yaml
+#
+# Chooses the lens mounted on the camera and toggles real-time optical
+# simulation (depth-of-field blur, aperture bokeh, distortion, vignetting,
+# chromatic aberration, and flare). Lenses can also be swapped live in the UI.
+#
+# Built-in GFX lenses & mount adapters (template):
+#   - gf45-100             : GF 45-100mm f/4 R LM OIS WR (standard zoom, default)
+#   - gf20-35              : GF 20-35mm f/4 R WR (ultra-wide zoom)
+#   - gf32-64              : GF 32-64mm f/4 R LM WR (wide-normal zoom)
+#   - gf50                 : GF 50mm f/3.5 R LM WR (compact prime)
+#   - gf63                 : GF 63mm f/2.8 R WR (standard prime)
+#   - gf110                : GF 110mm f/2 R LM WR (portrait telephoto prime)
+#   - adapter-ef-gfx       : Canon EF 85mm f/1.4L IS via electronic EF-GFX adapter
+#   - adapter-m42-dumb     : Super-Takumar 50mm f/1.4 via manual M42 adapter
+#   - adapter-hasselblad-v : Zeiss Planar T* 80mm f/2.8 via Hasselblad V adapter
+#   - custom               : Clean pass-through lens with no optical aberrations
+# ==============================================================================
+
+# Active lens or adapter profile.
+template: "gf45-100"
+
+# Enable real-time lens optical rendering (depth-of-field, bokeh, aberrations).
+opticsEnabled: true
+
+# ADC pedestal in the 16-bit CMOS readout. Set 0 for an ideal zero-offset sensor.
+blackLevel: 256
+
+# --- Examples (uncomment and replace the values above) ------------------------
+# Portrait prime for shallow depth-of-field:
+# template: "gf110"
+# opticsEnabled: true
+#
+# Vintage manual-focus M42 lens (enable "SHOOT WITHOUT LENS" in camera menu):
+# template: "adapter-m42-dumb"
+# opticsEnabled: true
+#
+# Disable optical simulation for maximum frame rate on slower machines:
+# template: "gf45-100"
+# opticsEnabled: false

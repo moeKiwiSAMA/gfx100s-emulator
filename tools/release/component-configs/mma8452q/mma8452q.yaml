@@ -1,0 +1,38 @@
+# ==============================================================================
+# Camera Orientation, Tilting LCD & Handheld Shake Sensors (MMA8452Q)
+# File: configs/components/mma8452q/mma8452q.yaml
+#
+# Controls the camera body's orientation sensor (for auto-rotate and the
+# electronic level), the tilting rear LCD angle, and optional handheld shake
+# simulation for testing 5-axis IBIS stabilization.
+# ==============================================================================
+
+# Enable the camera body and tilting-screen orientation sensors.
+enabled: true
+
+# Quick camera orientation preset:
+#   landscape | portrait-cw | portrait-ccw | inverted | custom
+orientationPreset: "landscape"
+
+# Fine roll angle in degrees when orientationPreset is "custom" (-180.0 to 180.0).
+rollDeg: 0.0
+
+# Camera tilt forward/backward in degrees (-90.0 = straight down, 0.0 = level, 90.0 = straight up).
+pitchDeg: 0.0
+
+# Simulated handheld micro-shake amplitude in degrees (0.0 = tripod steady, up to 5.0).
+shakeAmpDeg: 0.0
+
+# Rear tilting LCD hinge angle relative to the body in degrees (-45.0 to 90.0).
+lcdTiltDeg: 0.0
+
+# --- Examples (uncomment and replace the values above) ------------------------
+# Vertical (portrait) shooting rotated 90 degrees clockwise:
+# orientationPreset: "portrait-cw"
+# rollDeg: 90.0
+#
+# Waist-level shooting with the rear screen tilted up 45 degrees and mild hand shake:
+# orientationPreset: "landscape"
+# pitchDeg: -10.0
+# lcdTiltDeg: 45.0
+# shakeAmpDeg: 0.8

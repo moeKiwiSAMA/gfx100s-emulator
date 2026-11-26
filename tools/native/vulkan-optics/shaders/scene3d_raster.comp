@@ -1,0 +1,103 @@
+/*
+ * FUJIFILM GFX100S Emulator - Vulkan 1.1 Compute 3D Scene Rasterizer & Raytracer
+ * Reference GLSL 450 source for the 6 compute kernels generated as Khronos SPIR-V 1.0
+ * by `generate_scene3d_spirv.py` -> `../fuji_vulkan_scene3d_spirv.h`:
+ *
+ *   0. milkfrog_vertex_xform   (64x1x1): audio-synced belly-laugh vertex deformation +
+ *                                        double-sided 3-point matte-gouache lighting + projection
+ *   1. milkfrog_tri_bin        (64x1x1): double-sided winding normalization + 16x16 screen tile binning
+ *   2. milkfrog_tile_raster    (8x8x1):  static studio stage + analytic pedestal/ruler +
+ *                                        exact Z-buffered tile triangle rasterizer + HDR orbs -> DEVICE_LOCAL VRAM
+ *   3. scene3d_qr_ball         (8x8x1):  analytic 6-DoF 3D raytracer (room, scannable QR wall,
+ *                                        8 HDR studio lamps, plinth, Blinn-Phong sphere) -> DEVICE_LOCAL VRAM
+ *   4. scene3d_mona_lisa       (8x8x1):  60 fps sculpted 3D portrait + parallax backdrop -> DEVICE_LOCAL VRAM
+ *   5. scene3d_layered_reproj  (8x8x1):  6-DoF parallax reprojection for depth-studio/bokeh-city/star-bokeh
+ *
+ * All kernels share a unified 7-binding descriptor layout:
+ *   binding 0..5: storage buffers (binding 4 = shared DEVICE_LOCAL bufSceneDevice, binding 5 = 16x16 depth grid)
+ *   binding 6:    uniform buffer (params)
+ */
+
+#version 450
+
+// Kernel 0..2: Milk Frog tiled compute rasterizer (see generate_scene3d_spirv.py for exact SPIR-V emission)
+// Kernel 3:    QR-Ball analytic 6-DoF 3D studio raytracer
+// Kernel 4:    Mona Lisa 3D portrait compositor
+// Kernel 5:    Layered 3D studio 6-DoF reprojector
+
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+
+layout(std430, binding = 0) readonly buffer Src0Buf { vec4 data[]; } src0;
+layout(std430, binding = 4) writeonly buffer DstSceneBuf { vec4 pixels[]; } dstScene;
+layout(std430, binding = 5) writeonly buffer DstDepthGrid { float depths[]; } dstGrid;
+
+layout(std140, binding = 6) uniform LayeredParams {
+    uint width;
+    uint height;
+    uint tilesX;
+    uint tilesY;
+    uint hasPose;
+    uint hasTranslation;
+    uint reserved0;
+    uint reserved1;
+    float halfW;
+    float halfH;
+    float invFocalScale;
+    float focal;
+    float cosR;
+    float sinR;
+    float yawShiftPx;
+    float pitchShiftPx;
+    float posXM;
+    float posYM;
+    float posZM;
+    float bgDepthM;
+} u;
+
+void main() {
+    uint gx = gl_GlobalInvocationID.x;
+    uint gy = gl_GlobalInvocationID.y;
+    if (gx >= u.width || gy >= u.height) return;
+    uint idx = gy * u.width + gx;
+    vec4 outPx;
+    if (u.hasPose == 0u) {
+        outPx = src0.data[idx];
+    } else {
+        float dx = (float(gx) - u.halfW) * u.invFocalScale;
+        float dy = (float(gy) - u.halfH) * u.invFocalScale;
+        float rx = dx * u.cosR + dy * u.sinR;
+        float ry = -dx * u.sinR + dy * u.cosR;
+        float sx = u.halfW + rx + u.yawShiftPx * u.invFocalScale;
+        float sy = u.halfH + ry - u.pitchShiftPx * u.invFocalScale;
+        float maxXf = float(u.width - 1u);
+        float maxYf = float(u.height - 1u);
+        int probeX = clamp(int(floor(sx + 0.5)), 0, int(u.width) - 1);
+        int probeY = clamp(int(floor(sy + 0.5)), 0, int(u.height) - 1);
+        float z0 = max(src0.data[uint(probeY) * u.width + uint(probeX)].w, 0.05);
+        if (u.hasTranslation != 0u) {
+            sx += (u.posXM / z0) * u.focal;
+            sy -= (u.posYM / z0) * u.focal;
+        }
+        if (sx < 0.0 || sx > maxXf || sy < 0.0 || sy > maxYf) {
+            outPx = vec4(0.015, 0.018, 0.025, u.bgDepthM);
+        } else {
+            int x0 = clamp(int(floor(sx)), 0, int(u.width) - 1);
+            int y0 = clamp(int(floor(sy)), 0, int(u.height) - 1);
+            int x1 = min(x0 + 1, int(u.width) - 1);
+            int y1 = min(y0 + 1, int(u.height) - 1);
+            float fx = sx - float(x0);
+            float fy = sy - float(y0);
+            vec4 p00 = src0.data[uint(y0) * u.width + uint(x0)];
+            vec4 p10 = src0.data[uint(y0) * u.width + uint(x1)];
+            vec4 p01 = src0.data[uint(y1) * u.width + uint(x0)];
+            vec4 p11 = src0.data[uint(y1) * u.width + uint(x1)];
+            vec3 top = mix(p00.rgb, p10.rgb, fx);
+            vec3 bot = mix(p01.rgb, p11.rgb, fx);
+            outPx = vec4(mix(top, bot, fy), max(p00.w - u.posZM, 0.05));
+        }
+    }
+    dstScene.pixels[idx] = outPx;
+    if ((gx & 15u) == 8u && (gy & 15u) == 8u) {
+        dstGrid.depths[(gy >> 4u) * u.tilesX + (gx >> 4u)] = outPx.w;
+    }
+}

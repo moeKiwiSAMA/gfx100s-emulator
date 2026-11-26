@@ -1,0 +1,21 @@
+# Internal GFX100S SoC hardware definition — no user edits needed.
+input0: 16384
+input1: 0
+input2: 8196
+input3: 0
+input4: 0
+input5: 0
+input6: 18
+input7: 8256
+input8: 0
+input9: 28
+input10: 0
+input11: 0
+input12: 0
+input13: 0
+input14: 0
+input15: 3
+profile: "gfx100s-2.13-gpio-buttons-v6"
+directionButtonProfile: "gfx100s-2.13-direction-input-v1"
+shutterIrqProfile: "gfx100s-2.13-shutter-extirq-v1"
+shutterMechanismProfile: "disabled"

@@ -1,0 +1,283 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "id",
+    "offset",
+    "size",
+    "count",
+    "stride",
+    "alignment",
+    "readWidths",
+    "writeWidths",
+    "status",
+    "behaviorId",
+    "name",
+    "namingBasis",
+    "initial",
+    "masks",
+    "unknownBitPolicy",
+    "sideEffects",
+    "timing",
+    "stateTransitions",
+    "irq",
+    "dma",
+    "connections",
+    "producerPcs",
+    "consumerPcs",
+    "evidence",
+    "tests",
+    "provenance",
+    "fields",
+    "unknowns",
+    "nextValidation"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "offset": {
+      "type": "integer"
+    },
+    "size": {
+      "type": "integer"
+    },
+    "count": {
+      "type": "integer"
+    },
+    "stride": {
+      "type": "integer"
+    },
+    "alignment": {
+      "type": "integer"
+    },
+    "readWidths": {
+      "type": "array"
+    },
+    "writeWidths": {
+      "type": "array"
+    },
+    "status": {
+      "type": "string"
+    },
+    "behaviorId": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "namingBasis": {
+      "type": "string"
+    },
+    "initial": {
+      "type": "object"
+    },
+    "masks": {
+      "type": "object"
+    },
+    "unknownBitPolicy": {
+      "type": "string"
+    },
+    "sideEffects": {
+      "type": "object"
+    },
+    "timing": {
+      "type": "string"
+    },
+    "stateTransitions": {
+      "type": "string"
+    },
+    "irq": {
+      "type": "string"
+    },
+    "dma": {
+      "type": "string"
+    },
+    "connections": {
+      "type": "array"
+    },
+    "producerPcs": {
+      "type": "array"
+    },
+    "consumerPcs": {
+      "type": "array"
+    },
+    "evidence": {
+      "type": "array"
+    },
+    "tests": {
+      "type": "array"
+    },
+    "provenance": {
+      "type": "object"
+    },
+    "fields": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "required": [
+          "id",
+          "bitOffset",
+          "bitWidth",
+          "type",
+          "signed",
+          "unit",
+          "enums",
+          "access",
+          "sideEffects",
+          "definition",
+          "initial",
+          "provenance",
+          "supportingEvidence",
+          "refutingEvidence",
+          "unknowns",
+          "nextValidation"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "bitOffset": {
+            "type": "integer"
+          },
+          "bitWidth": {
+            "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          },
+          "signed": {
+            "type": "boolean"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "enums": {
+            "type": "object"
+          },
+          "access": {
+            "type": "string"
+          },
+          "sideEffects": {
+            "type": "string"
+          },
+          "definition": {
+            "type": "string"
+          },
+          "initial": {
+            "type": "object"
+          },
+          "provenance": {
+            "type": "object"
+          },
+          "supportingEvidence": {
+            "type": "array"
+          },
+          "refutingEvidence": {
+            "type": "array"
+          },
+          "unknowns": {
+            "type": "array"
+          },
+          "nextValidation": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "unknowns": {
+      "type": "array"
+    },
+    "nextValidation": {
+      "type": "string"
+    },
+    "writeWidthsByProfile": {
+      "description": "Optional exact component-profile overrides. Base writeWidths applies to unbound and other profiles; only an owner-bound matching profile selects this list. Keys must reference the owning device profiles. These are access constraints, not executable behavior.",
+      "type": "object",
+      "minProperties": 1,
+      "maxProperties": 64,
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._:/-]*$"
+      },
+      "additionalProperties": {
+        "type": "array",
+        "minItems": 1,
+        "maxItems": 3,
+        "uniqueItems": true,
+        "items": {
+          "type": "integer",
+          "enum": [
+            1,
+            2,
+            4
+          ]
+        }
+      }
+    },
+    "writeOffsets": {
+      "description": "Optional finite byte offsets within each register element at which writes may begin. Absent retains ordinary width/alignment behavior.",
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 4,
+      "uniqueItems": true,
+      "items": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 3
+      }
+    },
+    "readOffsetsByWidth": {
+      "type": "object",
+      "description": "Exact optional read width to byte-lane map within each register element; all declared read widths required.",
+      "minProperties": 1,
+      "maxProperties": 3,
+      "propertyNames": {
+        "enum": [
+          "1",
+          "2",
+          "4"
+        ]
+      },
+      "additionalProperties": {
+        "type": "array",
+        "minItems": 1,
+        "maxItems": 4,
+        "uniqueItems": true,
+        "items": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3
+        }
+      }
+    },
+    "writeOffsetsByWidth": {
+      "type": "object",
+      "description": "Exact optional write width to byte-lane map within each register element; all declared write widths required.",
+      "minProperties": 1,
+      "maxProperties": 3,
+      "propertyNames": {
+        "enum": [
+          "1",
+          "2",
+          "4"
+        ]
+      },
+      "additionalProperties": {
+        "type": "array",
+        "minItems": 1,
+        "maxItems": 4,
+        "uniqueItems": true,
+        "items": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,16 @@
+# Internal GFX100S SoC hardware definition — no user edits needed.
+profile: "lcdc-functional-experimental-v1"
+inputFile: "sequence.yaml"
+controlWordInputFile: "mode-word.yaml"
+irq118Tick: 315113473
+irq117Tick: 446113473
+frameSyncStartTick: 427113473
+firstScanout: "lcdc1-pic-yuv-osd0-nearest-v1"
+scanoutFrameLimit: 256
+evfScanout: "lcdc1-pic-yuv-osd0-nearest-v1"
+evfScanoutFrameLimit: 256
+continuousScanout: true
+graphicsFillTail: "graphics-fill-retained-experimental-v2"
+graphicsFillIrq92Tick: 413940000
+graphicsCopyIrq92Tick: 438648461
+graphicsIrq92Sequence: "either*512"

@@ -1,0 +1,20 @@
+{
+  "buses": [
+    {"index": 0, "kind": "empty"},
+    {
+      "index": 1, "kind": "eye-sensor-finite-v1", "address": 57,
+      "transfers": [
+        {"write": [179], "read": [32]},
+        {"write": [184], "read": [255, 3]},
+        {"write": [168, 176, 1, 255, 255], "read": []},
+        {"write": [229], "read": []},
+        {"write": [179], "read": [32]},
+        {"write": [184], "read": [0, 0]},
+        {"write": [168, 0, 0, 150, 2], "read": []},
+        {"write": [229], "read": []},
+        {"write": [179], "read": [0]}
+      ]
+    },
+    {"index": 2, "kind": "empty"}
+  ]
+}

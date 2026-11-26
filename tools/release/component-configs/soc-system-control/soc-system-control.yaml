@@ -1,0 +1,9 @@
+# Internal GFX100S SoC hardware definition — no user edits needed.
+profile: "retained-banks-usb-dwc3-experimental-v2"
+usbVbusPresent: false
+serialWrite: true
+booleanWrite: true
+readWordInputFile: "word.json"
+statusA200InputFile: "status-a200.json"
+write49530: true
+tail49500: true

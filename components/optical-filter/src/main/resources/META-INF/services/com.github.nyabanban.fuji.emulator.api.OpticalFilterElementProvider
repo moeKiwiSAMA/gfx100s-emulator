@@ -1,0 +1,6 @@
+com.github.nyabanban.fuji.emulator.components.filter.UvFilterProvider
+com.github.nyabanban.fuji.emulator.components.filter.NdFilterProvider
+com.github.nyabanban.fuji.emulator.components.filter.BokehMaskFilterProvider
+com.github.nyabanban.fuji.emulator.components.filter.StarFilterProvider
+com.github.nyabanban.fuji.emulator.components.filter.BlackMistFilterProvider
+com.github.nyabanban.fuji.emulator.components.filter.GndFilterProvider

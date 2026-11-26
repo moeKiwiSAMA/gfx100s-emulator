@@ -1,0 +1,4 @@
+# Internal GFX100S SoC hardware definition — no user edits needed.
+profile: "pl011-multi-uart-experimental-v1"
+initialFill: 0
+uart1IrqEnabled: true

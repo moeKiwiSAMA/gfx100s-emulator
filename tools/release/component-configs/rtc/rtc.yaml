@@ -1,0 +1,32 @@
+# ==============================================================================
+# Camera Real-Time Clock (Date & Time)
+# File: configs/components/rtc/rtc.yaml
+#
+# Configures the camera's internal date/time clock used for photo timestamps
+# and EXIF metadata.
+#
+# Supported clockMode values:
+#   - input-file       : Deterministic default clock seed from input.yaml
+#   - calibrated-54mhz : Advance from input.yaml at real-time camera clock rate
+#   - host-wall-clock  : Sync camera startup time to your computer's clock
+#
+# stateFile (relaxed interactive mode only):
+#   Persists user-configured date/time across restarts and advances the clock
+#   by elapsed real-world time while the camera is powered off.
+# ==============================================================================
+
+# Fixed GFX100S real-time clock hardware profile (do not change).
+profile: "gfx100s-rtc-scripted-stage-read-experimental-v2"
+inputFile: "input.yaml"
+
+# Match the camera clock to your computer's current date and time by default,
+# and persist user-configured date/time changes across restarts in relaxed mode.
+clockMode: "host-wall-clock"
+stateFile: "rtc-state.json"
+
+# --- Examples (uncomment to customize) ----------------------------------------
+# Use a fixed deterministic seed date from input.yaml:
+# clockMode: "input-file"
+#
+# Run at real-time speed starting from the default seed date:
+# clockMode: "calibrated-54mhz"

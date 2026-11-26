@@ -1,0 +1,14 @@
+# ==============================================================================
+# Battery Fuel Gauge (MAX17048)
+# File: configs/components/max17048/max17048.yaml
+#
+# Enables the battery monitoring chip that reports battery percentage and
+# voltage from configs/components/battery/battery.yaml to the camera body.
+# ==============================================================================
+
+# Enable the battery fuel gauge chip.
+enabled: true
+
+# --- Examples (uncomment to customize) ----------------------------------------
+# To change the starting battery charge or voltage, edit:
+#   configs/components/battery/battery.yaml

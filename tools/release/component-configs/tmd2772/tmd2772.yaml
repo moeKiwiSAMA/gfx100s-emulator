@@ -1,0 +1,18 @@
+# ==============================================================================
+# EVF Eye Proximity Sensor (TMD2772)
+# File: configs/components/tmd2772/tmd2772.yaml
+#
+# Controls the infrared eye sensor next to the electronic viewfinder (EVF)
+# that automatically switches between the rear LCD and the EVF when you raise
+# the camera to your eye. Can also be toggled live with /evf near | far.
+# ==============================================================================
+
+# Enable the EVF eye proximity sensor.
+enabled: true
+
+# Initial eye-sensor state (false = rear LCD active, true = eye at viewfinder / EVF active).
+eyeSensorNear: false
+
+# --- Examples (uncomment and replace eyeSensorNear above) ---------------------
+# Start with your eye up to the EVF viewfinder:
+# eyeSensorNear: true

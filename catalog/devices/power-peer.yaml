@@ -1,0 +1,2083 @@
+{
+  "schema": 1,
+  "id": "device.power-peer",
+  "componentId": "power-peer",
+  "depends": [],
+  "version": "0.0.1",
+  "name": "power-peer",
+  "physicalIdentity": "UNKNOWN",
+  "implementationStatus": "HOST_CONTRACT_ONLY",
+  "implementationSources": [
+    "components/power-peer/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/powerpeer/PowerPeerFactory.kt",
+    "components/power-peer/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/powerpeer/FiniteCandidateReads.kt"
+  ],
+  "ports": [],
+  "unknowns": [
+    "Physical device identity, reset values, wiring and full state machine are not qualified."
+  ],
+  "nextValidation": "Trace selected original firmware consumers and retain refusal controls.",
+  "protocolCandidates": [
+    {
+      "id": "gfx100s-power-protocol-requests",
+      "coordinateKind": "PROTOCOL_SELECTOR",
+      "selectorBits": 7,
+      "wordBits": 16,
+      "unit": "selector",
+      "byteOrder": "big",
+      "transportPort": "power-peer.spi",
+      "deviceOwner": "UNKNOWN",
+      "implementationStatus": "NOT_IMPLEMENTED",
+      "unknownPolicy": "refuse",
+      "applicability": {
+        "body": "gfx100s",
+        "firmware": "gfx100s-213"
+      },
+      "requests": [
+        {
+          "id": "request.power-peer.selector0x25",
+          "selector": 37,
+          "wordBits": 16,
+          "name": "UNKNOWN",
+          "direction": "read",
+          "observationStatus": "REQUEST_OBSERVED_PENDING",
+          "implementationStatus": "NOT_IMPLEMENTED",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 65535,
+            "prohibited": 0
+          },
+          "behaviorId": null,
+          "sideEffects": "UNKNOWN",
+          "fields": [
+            {
+              "id": "request.power-peer.selector0x25.raw",
+              "bitOffset": 0,
+              "bitWidth": 16,
+              "type": "raw-bits",
+              "signed": false,
+              "unit": "UNKNOWN",
+              "access": "UNKNOWN",
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "evidence/refactor/rtc-selector25-research-fresh-02/actual-02.generated.json"
+                  ],
+                  "source": {
+                    "commit": "5dd05496b66d0826d24fa34963540a845131108f",
+                    "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/RtcSelector25Research.kt"
+                  },
+                  "limitation": "Unsigned raw bits describe the protocol representation only; physical signedness and bit meanings remain UNKNOWN."
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/rtc-selector25-research-fresh-02/actual-02.generated.json"
+                  ],
+                  "limitation": "No qualified physical definition, reset, input value or behavior."
+                },
+                "behavior": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/rtc-selector25-research-fresh-02/actual-02.generated.json"
+                  ],
+                  "limitation": "No qualified physical definition, reset, input value or behavior."
+                },
+                "unit": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/rtc-selector25-research-fresh-02/actual-02.generated.json"
+                  ],
+                  "limitation": "No qualified physical definition, reset, input value or behavior."
+                },
+                "access": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/rtc-selector25-research-fresh-02/actual-02.generated.json"
+                  ],
+                  "limitation": "No qualified physical definition, reset, input value or behavior."
+                }
+              },
+              "unknowns": [
+                "All bit meanings, physical units, reset and device behavior are UNKNOWN."
+              ],
+              "nextValidation": "Capture a qualified request and response, then verify a consumer before naming bits."
+            }
+          ],
+          "provenance": {
+            "selector": {
+              "confidence": "DAT",
+              "evidence": [
+                "evidence/refactor/rtc-selector25-research-fresh-02/actual-02.generated.json"
+              ],
+              "source": {
+                "commit": "5dd05496b66d0826d24fa34963540a845131108f",
+                "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/RtcSelector25Research.kt"
+              },
+              "limitation": "Exact MOV immediate and BL identify the selected firmware request; device ownership is unknown."
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "evidence/refactor/rtc-selector25-research-fresh-02/actual-02.generated.json"
+              ],
+              "source": {
+                "commit": "5dd05496b66d0826d24fa34963540a845131108f",
+                "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/RtcSelector25Research.kt"
+              },
+              "limitation": "Read API and conditional LDRH/STRH define a raw16 software result. Finite scripted input values are HYPOTHESIS, not physical measurements."
+            },
+            "direction": {
+              "confidence": "DAT",
+              "evidence": [
+                "evidence/refactor/rtc-selector25-research-fresh-02/actual-02.generated.json"
+              ],
+              "source": {
+                "commit": "5dd05496b66d0826d24fa34963540a845131108f",
+                "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/RtcSelector25Research.kt"
+              },
+              "limitation": "Selected BL invokes the read API; this is an evidenced request direction, not permission."
+            },
+            "observation": {
+              "confidence": "SIM",
+              "evidence": [
+                "evidence/refactor/rtc-stage-original-new-02/study/discovery-cap8-v5-gpio110-rtc-stage-v2-zero/original.generated.json",
+                "evidence/refactor/power-finite-original-fresh-04/study/discovery-cap8-v5-gpio110-power-finite-control/original.generated.json",
+                "evidence/refactor/power-finite-original-fresh-04/study/discovery-cap8-v5-gpio110-power-finite-zero/original.generated.json",
+                "evidence/refactor/power-finite-original-fresh-04/study/discovery-cap8-v5-gpio110-power-finite-tagged/original.generated.json"
+              ],
+              "source": {
+                "commit": "00ed94d4921ead2c740c9f7e6589928749ff54aa",
+                "path": "evidence/refactor/rtc-stage-original-new-02/study/discovery-cap8-v5-gpio110-rtc-stage-v2-zero/original.generated.json"
+              },
+              "limitation": "The unconfigured control still has header37 pending. Two finite HYPOTHESIS runs each complete one raw16 scripted frame (0 or4660); this qualifies host transport consumption only, not a physical reply, reset or bit meaning."
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": [
+                "evidence/refactor/rtc-selector25-research-fresh-02/actual-02.generated.json"
+              ],
+              "limitation": "No qualified physical definition, reset, input value or behavior."
+            },
+            "initial": {
+              "confidence": "UNKNOWN",
+              "evidence": [
+                "evidence/refactor/rtc-selector25-research-fresh-02/actual-02.generated.json"
+              ],
+              "limitation": "No qualified physical definition, reset, input value or behavior."
+            },
+            "behavior": {
+              "confidence": "UNKNOWN",
+              "evidence": [
+                "evidence/refactor/rtc-selector25-research-fresh-02/actual-02.generated.json"
+              ],
+              "limitation": "No qualified physical definition, reset, input value or behavior."
+            }
+          },
+          "evidence": [
+            "evidence/refactor/rtc-selector25-research-fresh-02/actual-02.generated.json",
+            "evidence/refactor/rtc-stage-original-new-02/study/discovery-cap8-v5-gpio110-rtc-stage-v2-zero/original.generated.json",
+            "evidence/refactor/power-finite-original-fresh-04/study/discovery-cap8-v5-gpio110-power-finite-control/original.generated.json",
+            "evidence/refactor/power-finite-original-fresh-04/study/discovery-cap8-v5-gpio110-power-finite-zero/original.generated.json",
+            "evidence/refactor/power-finite-original-fresh-04/study/discovery-cap8-v5-gpio110-power-finite-tagged/original.generated.json"
+          ],
+          "unknowns": [
+            "Physical device ownership, name, reset, value, side effects and state machine are UNKNOWN."
+          ],
+          "nextValidation": "Interpret the DAT consumers and obtain qualified physical replies; distinguish wrapper status from data validation and re-request exhaustion from one-time consumption."
+        },
+        {
+          "id": "request.power-peer.selector0x26",
+          "selector": 38,
+          "wordBits": 16,
+          "name": "UNKNOWN",
+          "direction": "read",
+          "observationStatus": "REQUEST_OBSERVED_PENDING",
+          "implementationStatus": "NOT_IMPLEMENTED",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 65535,
+            "prohibited": 0
+          },
+          "behaviorId": null,
+          "sideEffects": "UNKNOWN",
+          "fields": [
+            {
+              "id": "request.power-peer.selector0x26.raw",
+              "bitOffset": 0,
+              "bitWidth": 16,
+              "type": "raw-bits",
+              "signed": false,
+              "unit": "UNKNOWN",
+              "access": "UNKNOWN",
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "evidence/refactor/rtc-selector25-research-fresh-02/actual-02.generated.json"
+                  ],
+                  "source": {
+                    "commit": "5dd05496b66d0826d24fa34963540a845131108f",
+                    "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/RtcSelector25Research.kt"
+                  },
+                  "limitation": "Unsigned raw bits describe the protocol representation only; physical signedness and bit meanings remain UNKNOWN."
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/rtc-selector25-research-fresh-02/actual-02.generated.json"
+                  ],
+                  "limitation": "No qualified physical definition, reset, input value or behavior."
+                },
+                "behavior": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/rtc-selector25-research-fresh-02/actual-02.generated.json"
+                  ],
+                  "limitation": "No qualified physical definition, reset, input value or behavior."
+                },
+                "unit": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/rtc-selector25-research-fresh-02/actual-02.generated.json"
+                  ],
+                  "limitation": "No qualified physical definition, reset, input value or behavior."
+                },
+                "access": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/rtc-selector25-research-fresh-02/actual-02.generated.json"
+                  ],
+                  "limitation": "No qualified physical definition, reset, input value or behavior."
+                }
+              },
+              "unknowns": [
+                "All bit meanings, physical units, reset and device behavior are UNKNOWN."
+              ],
+              "nextValidation": "Capture a qualified request and response, then verify a consumer before naming bits."
+            }
+          ],
+          "provenance": {
+            "selector": {
+              "confidence": "DAT",
+              "evidence": [
+                "evidence/refactor/rtc-selector25-research-fresh-02/actual-02.generated.json"
+              ],
+              "source": {
+                "commit": "5dd05496b66d0826d24fa34963540a845131108f",
+                "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/RtcSelector25Research.kt"
+              },
+              "limitation": "Exact MOV immediate and BL identify the selected firmware request; device ownership is unknown."
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "evidence/refactor/rtc-selector25-research-fresh-02/actual-02.generated.json"
+              ],
+              "source": {
+                "commit": "5dd05496b66d0826d24fa34963540a845131108f",
+                "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/RtcSelector25Research.kt"
+              },
+              "limitation": "Read API and conditional LDRH/STRH define a raw16 software result; no completed response is claimed."
+            },
+            "direction": {
+              "confidence": "DAT",
+              "evidence": [
+                "evidence/refactor/rtc-selector25-research-fresh-02/actual-02.generated.json"
+              ],
+              "source": {
+                "commit": "5dd05496b66d0826d24fa34963540a845131108f",
+                "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/RtcSelector25Research.kt"
+              },
+              "limitation": "Selected BL invokes the read API; this is an evidenced request direction, not permission."
+            },
+            "observation": {
+              "confidence": "SIM",
+              "evidence": [
+                "evidence/refactor/power-finite-original-fresh-04/study/discovery-cap8-v5-gpio110-power-finite-zero/original.generated.json",
+                "evidence/refactor/power-finite-original-fresh-04/study/discovery-cap8-v5-gpio110-power-finite-tagged/original.generated.json",
+                "evidence/refactor/power26-original-fresh-05/study/discovery-cap8-v5-gpio110-power26-zero/original.generated.json",
+                "evidence/refactor/power26-original-fresh-05/study/discovery-cap8-v5-gpio110-power26-tagged/original.generated.json",
+                "evidence/refactor/power26-flash-original-fresh-06/study/discovery-cap8-v5-gpio110-power26-flash-zero/original.generated.json"
+              ],
+              "source": {
+                "commit": "a91ef33b4eaf55ebd1696429da3d40da828ef54e",
+                "path": "evidence/refactor/power26-original-fresh-05/study/discovery-cap8-v5-gpio110-power26-zero/original.generated.json"
+              },
+              "limitation": "The missing-input control still has selector38 pending. Two finite HYPOTHESIS raw16 replies0/22136 each complete once and are observed in software cache VA0x1878FB4; selector39 is then read and14 becomes pending. This qualifies transport consumption and a software cache observation only, not physical semantics, reset, unique caller or re-request exhaustion. The real FILE Flash zero38 case also completes its finite frame, reads39=2 and stops at14; its unchanged cached zero alone cannot prove a new store."
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": [
+                "evidence/refactor/rtc-selector25-research-fresh-02/actual-02.generated.json"
+              ],
+              "limitation": "No qualified physical definition, reset, input value or behavior."
+            },
+            "initial": {
+              "confidence": "UNKNOWN",
+              "evidence": [
+                "evidence/refactor/rtc-selector25-research-fresh-02/actual-02.generated.json"
+              ],
+              "limitation": "No qualified physical definition, reset, input value or behavior."
+            },
+            "behavior": {
+              "confidence": "UNKNOWN",
+              "evidence": [
+                "evidence/refactor/rtc-selector25-research-fresh-02/actual-02.generated.json"
+              ],
+              "limitation": "No qualified physical definition, reset, input value or behavior."
+            }
+          },
+          "evidence": [
+            "evidence/refactor/rtc-selector25-research-fresh-02/actual-02.generated.json",
+            "evidence/refactor/power-finite-original-fresh-04/study/discovery-cap8-v5-gpio110-power-finite-zero/original.generated.json",
+            "evidence/refactor/power-finite-original-fresh-04/study/discovery-cap8-v5-gpio110-power-finite-tagged/original.generated.json",
+            "evidence/refactor/power26-original-fresh-05/study/discovery-cap8-v5-gpio110-power26-zero/original.generated.json",
+            "evidence/refactor/power26-original-fresh-05/study/discovery-cap8-v5-gpio110-power26-tagged/original.generated.json",
+            "evidence/refactor/power26-flash-original-fresh-06/study/discovery-cap8-v5-gpio110-power26-flash-zero/original.generated.json"
+          ],
+          "unknowns": [
+            "Physical device ownership, name, reset, value, side effects and state machine are UNKNOWN."
+          ],
+          "nextValidation": "Keep physical semantics UNKNOWN; qualify14 consumers and a separate bounded14 input experiment on the accepted real Flash baseline, retaining missing-input control and explicit exhaustion."
+        },
+        {
+          "id": "request.power-peer.selector0x0e",
+          "selector": 14,
+          "wordBits": 16,
+          "name": "UNKNOWN",
+          "direction": "read",
+          "observationStatus": "REQUEST_OBSERVED_PENDING",
+          "implementationStatus": "NOT_IMPLEMENTED",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 65535,
+            "prohibited": 0
+          },
+          "behaviorId": null,
+          "sideEffects": "UNKNOWN",
+          "fields": [
+            {
+              "id": "request.power-peer.selector0x0e.bits0_3",
+              "bitOffset": 0,
+              "bitWidth": 4,
+              "type": "raw-bits",
+              "signed": false,
+              "unit": "UNKNOWN",
+              "access": "UNKNOWN",
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "evidence/refactor/power14-dat-fresh-06/actual-02.generated.json"
+                  ],
+                  "source": {
+                    "commit": "51a5a68651c02a431ca0d3dd544598e092b26b7d",
+                    "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Power14ConsumerResearch.kt"
+                  },
+                  "limitation": "Uninterpreted slice of the DAT raw16 representation; no independent bit meaning is qualified."
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power14-dat-fresh-06/actual-02.generated.json"
+                  ],
+                  "limitation": "No qualified physical definition, reset, input value or behavior."
+                },
+                "behavior": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power14-dat-fresh-06/actual-02.generated.json"
+                  ],
+                  "limitation": "No qualified physical definition, reset, input value or behavior."
+                },
+                "unit": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power14-dat-fresh-06/actual-02.generated.json"
+                  ],
+                  "limitation": "No qualified physical definition, reset, input value or behavior."
+                },
+                "access": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power14-dat-fresh-06/actual-02.generated.json"
+                  ],
+                  "limitation": "No qualified physical definition, reset, input value or behavior."
+                }
+              },
+              "unknowns": [
+                "Physical bit meanings, units, reset, side effects and device behavior remain UNKNOWN."
+              ],
+              "nextValidation": "Find independent GFX100S consumers before splitting or naming these bits."
+            },
+            {
+              "id": "request.power-peer.selector0x0e.bit4",
+              "bitOffset": 4,
+              "bitWidth": 1,
+              "type": "raw-bits",
+              "signed": false,
+              "unit": "UNKNOWN",
+              "access": "UNKNOWN",
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "evidence/refactor/power14-dat-fresh-06/actual-02.generated.json"
+                  ],
+                  "source": {
+                    "commit": "51a5a68651c02a431ca0d3dd544598e092b26b7d",
+                    "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Power14ConsumerResearch.kt"
+                  },
+                  "limitation": "DAT getter VA0x120BCFC reads the software cache low byte and extracts this bit at VA0x120BD10. Position/extraction only; physical function, polarity and behavior remain UNKNOWN."
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power14-dat-fresh-06/actual-02.generated.json"
+                  ],
+                  "limitation": "No qualified physical definition, reset, input value or behavior."
+                },
+                "behavior": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power14-dat-fresh-06/actual-02.generated.json"
+                  ],
+                  "limitation": "No qualified physical definition, reset, input value or behavior."
+                },
+                "unit": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power14-dat-fresh-06/actual-02.generated.json"
+                  ],
+                  "limitation": "No qualified physical definition, reset, input value or behavior."
+                },
+                "access": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power14-dat-fresh-06/actual-02.generated.json"
+                  ],
+                  "limitation": "No qualified physical definition, reset, input value or behavior."
+                }
+              },
+              "unknowns": [
+                "Physical bit meanings, units, reset, side effects and device behavior remain UNKNOWN."
+              ],
+              "nextValidation": "Qualify GFX100S callers and consumers of this getter before assigning a physical name; do not transplant another model."
+            },
+            {
+              "id": "request.power-peer.selector0x0e.bit5",
+              "bitOffset": 5,
+              "bitWidth": 1,
+              "type": "raw-bits",
+              "signed": false,
+              "unit": "UNKNOWN",
+              "access": "UNKNOWN",
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "evidence/refactor/power14-dat-fresh-06/actual-02.generated.json"
+                  ],
+                  "source": {
+                    "commit": "51a5a68651c02a431ca0d3dd544598e092b26b7d",
+                    "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Power14ConsumerResearch.kt"
+                  },
+                  "limitation": "DAT getter VA0x120BC78 reads the software cache low byte and extracts this bit at VA0x120BC8C. Position/extraction only; physical function, polarity and behavior remain UNKNOWN."
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power14-dat-fresh-06/actual-02.generated.json"
+                  ],
+                  "limitation": "No qualified physical definition, reset, input value or behavior."
+                },
+                "behavior": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power14-dat-fresh-06/actual-02.generated.json"
+                  ],
+                  "limitation": "No qualified physical definition, reset, input value or behavior."
+                },
+                "unit": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power14-dat-fresh-06/actual-02.generated.json"
+                  ],
+                  "limitation": "No qualified physical definition, reset, input value or behavior."
+                },
+                "access": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power14-dat-fresh-06/actual-02.generated.json"
+                  ],
+                  "limitation": "No qualified physical definition, reset, input value or behavior."
+                }
+              },
+              "unknowns": [
+                "Physical bit meanings, units, reset, side effects and device behavior remain UNKNOWN."
+              ],
+              "nextValidation": "Qualify GFX100S callers and consumers of this getter before assigning a physical name; do not transplant another model."
+            },
+            {
+              "id": "request.power-peer.selector0x0e.bits6_15",
+              "bitOffset": 6,
+              "bitWidth": 10,
+              "type": "raw-bits",
+              "signed": false,
+              "unit": "UNKNOWN",
+              "access": "UNKNOWN",
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "evidence/refactor/power14-dat-fresh-06/actual-02.generated.json"
+                  ],
+                  "source": {
+                    "commit": "51a5a68651c02a431ca0d3dd544598e092b26b7d",
+                    "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Power14ConsumerResearch.kt"
+                  },
+                  "limitation": "Uninterpreted slice of the DAT raw16 representation; no independent bit meaning is qualified."
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power14-dat-fresh-06/actual-02.generated.json"
+                  ],
+                  "limitation": "No qualified physical definition, reset, input value or behavior."
+                },
+                "behavior": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power14-dat-fresh-06/actual-02.generated.json"
+                  ],
+                  "limitation": "No qualified physical definition, reset, input value or behavior."
+                },
+                "unit": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power14-dat-fresh-06/actual-02.generated.json"
+                  ],
+                  "limitation": "No qualified physical definition, reset, input value or behavior."
+                },
+                "access": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power14-dat-fresh-06/actual-02.generated.json"
+                  ],
+                  "limitation": "No qualified physical definition, reset, input value or behavior."
+                }
+              },
+              "unknowns": [
+                "Physical bit meanings, units, reset, side effects and device behavior remain UNKNOWN."
+              ],
+              "nextValidation": "Find independent GFX100S consumers before splitting or naming these bits."
+            }
+          ],
+          "provenance": {
+            "selector": {
+              "confidence": "DAT",
+              "evidence": [
+                "evidence/refactor/power26-dat-fresh-05/actual-01.generated.json"
+              ],
+              "source": {
+                "commit": "33c2cb7044d4254a9a86e3c4a7f4cefad0215814",
+                "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Power26ContinuationResearch.kt"
+              },
+              "limitation": "Exact selector14 MOV and BL at software VA0x120C4A4/0x120C4A8 identify a read API call; static caller is not a unique dynamic caller or physical owner."
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "evidence/refactor/power26-dat-fresh-05/actual-01.generated.json",
+                "evidence/refactor/power14-dat-fresh-06/actual-02.generated.json"
+              ],
+              "source": {
+                "commit": "33c2cb7044d4254a9a86e3c4a7f4cefad0215814",
+                "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Power26ContinuationResearch.kt"
+              },
+              "limitation": "Status-gated LDRH/STRH at software VA0x120C4B8/0x120C4BC copy a raw16 result into software cache VA0x1878F84. No selector14 returned value, physical signedness or bit meaning is qualified."
+            },
+            "direction": {
+              "confidence": "DAT",
+              "evidence": [
+                "evidence/refactor/power26-dat-fresh-05/actual-01.generated.json"
+              ],
+              "source": {
+                "commit": "33c2cb7044d4254a9a86e3c4a7f4cefad0215814",
+                "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Power26ContinuationResearch.kt"
+              },
+              "limitation": "Selected BL invokes the read API; this is an evidenced request direction, not permission."
+            },
+            "observation": {
+              "confidence": "SIM",
+              "evidence": [
+                "evidence/refactor/power26-original-fresh-05/study/discovery-cap8-v5-gpio110-power26-zero/original.generated.json",
+                "evidence/refactor/power26-original-fresh-05/study/discovery-cap8-v5-gpio110-power26-tagged/original.generated.json",
+                "evidence/refactor/power26-flash-original-fresh-06/study/discovery-cap8-v5-gpio110-power26-flash-zero/original.generated.json"
+              ],
+              "source": {
+                "commit": "a91ef33b4eaf55ebd1696429da3d40da828ef54e",
+                "path": "evidence/refactor/power26-original-fresh-05/study/discovery-cap8-v5-gpio110-power26-zero/original.generated.json"
+              },
+              "limitation": "Old Flash zero/tagged38 inputs and the separate real FILE Flash zero38 case each stop with14 pending and no returned value. Complete saved-return snapshots support the selected14 call chain within their qualified bounds, not a full trace or globally unique caller. Row/local cached zero is prior software state, not a device reply or reset."
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": [
+                "evidence/refactor/power26-dat-fresh-05/actual-01.generated.json"
+              ],
+              "limitation": "No qualified physical definition, reset, input value or behavior."
+            },
+            "initial": {
+              "confidence": "UNKNOWN",
+              "evidence": [
+                "evidence/refactor/power26-dat-fresh-05/actual-01.generated.json"
+              ],
+              "limitation": "No qualified physical definition, reset, input value or behavior."
+            },
+            "behavior": {
+              "confidence": "UNKNOWN",
+              "evidence": [
+                "evidence/refactor/power26-dat-fresh-05/actual-01.generated.json"
+              ],
+              "limitation": "No qualified physical definition, reset, input value or behavior."
+            }
+          },
+          "evidence": [
+            "evidence/refactor/power26-dat-fresh-05/actual-01.generated.json",
+            "evidence/refactor/power26-original-fresh-05/study/discovery-cap8-v5-gpio110-power26-zero/original.generated.json",
+            "evidence/refactor/power26-original-fresh-05/study/discovery-cap8-v5-gpio110-power26-tagged/original.generated.json",
+            "evidence/refactor/power14-dat-fresh-06/actual-02.generated.json",
+            "evidence/refactor/power26-flash-original-fresh-06/study/discovery-cap8-v5-gpio110-power26-flash-zero/original.generated.json"
+          ],
+          "unknowns": [
+            "Physical device ownership, name, reset, value, side effects and state machine are UNKNOWN."
+          ],
+          "nextValidation": "Qualify the dynamic14 caller and downstream raw16 consumers; retain missing-input control before a separate bounded finite input study. Do not infer a reply from cached RAM or grant physical ownership."
+        },
+        {
+          "id": "request.power-peer.selector0x03",
+          "selector": 3,
+          "wordBits": 16,
+          "name": "UNKNOWN",
+          "direction": "read",
+          "observationStatus": "REQUEST_OBSERVED_PENDING",
+          "implementationStatus": "NOT_IMPLEMENTED",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 65535,
+            "prohibited": 0
+          },
+          "behaviorId": null,
+          "sideEffects": "UNKNOWN",
+          "fields": [
+            {
+              "id": "request.power-peer.selector0x03.bits0_9",
+              "bitOffset": 0,
+              "bitWidth": 10,
+              "type": "raw-bits",
+              "signed": false,
+              "unit": "UNKNOWN",
+              "access": "UNKNOWN",
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "evidence/refactor/power03-dat-fresh-08/actual-02.generated.json"
+                  ],
+                  "source": {
+                    "commit": "b80f5fac8489420d9d035eaaa7527f33ff1dfa6f",
+                    "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Power03ConsumerResearch.kt"
+                  },
+                  "limitation": "Four qualified DAT software consumers extract bits0..9 from the cached raw16. This is software extraction only, with no physical meaning or unit. Full16 storage and full-ring averaging remain separate consumers."
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power03-dat-fresh-08/actual-02.generated.json"
+                  ],
+                  "limitation": "Physical meaning, signedness, units, reset, input value, ownership and hardware behavior remain UNKNOWN."
+                },
+                "behavior": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power03-dat-fresh-08/actual-02.generated.json"
+                  ],
+                  "limitation": "Physical meaning, signedness, units, reset, input value, ownership and hardware behavior remain UNKNOWN."
+                },
+                "unit": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power03-dat-fresh-08/actual-02.generated.json"
+                  ],
+                  "limitation": "Physical meaning, signedness, units, reset, input value, ownership and hardware behavior remain UNKNOWN."
+                },
+                "access": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power03-dat-fresh-08/actual-02.generated.json"
+                  ],
+                  "limitation": "Physical meaning, signedness, units, reset, input value, ownership and hardware behavior remain UNKNOWN."
+                }
+              },
+              "unknowns": [
+                "This slice describes unsigned software raw bits, not a physical signedness, field name, scale, reset or behavior."
+              ],
+              "nextValidation": "Retain complete raw16 values and qualify downstream use after an explicitly finite hypothesis input; do not infer physical units or display ownership."
+            },
+            {
+              "id": "request.power-peer.selector0x03.bits10_15",
+              "bitOffset": 10,
+              "bitWidth": 6,
+              "type": "raw-bits",
+              "signed": false,
+              "unit": "UNKNOWN",
+              "access": "UNKNOWN",
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "evidence/refactor/power03-dat-fresh-08/actual-02.generated.json"
+                  ],
+                  "source": {
+                    "commit": "b80f5fac8489420d9d035eaaa7527f33ff1dfa6f",
+                    "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Power03ConsumerResearch.kt"
+                  },
+                  "limitation": "Uninterpreted upper slice of the DAT raw16 representation. All16 bits are copied into software cache/ring and consumed by the qualified full-ring arithmetic; these six bits are not established as unused or physically meaningful. The averaging branch has not been dynamically observed."
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power03-dat-fresh-08/actual-02.generated.json"
+                  ],
+                  "limitation": "Physical meaning, signedness, units, reset, input value, ownership and hardware behavior remain UNKNOWN."
+                },
+                "behavior": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power03-dat-fresh-08/actual-02.generated.json"
+                  ],
+                  "limitation": "Physical meaning, signedness, units, reset, input value, ownership and hardware behavior remain UNKNOWN."
+                },
+                "unit": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power03-dat-fresh-08/actual-02.generated.json"
+                  ],
+                  "limitation": "Physical meaning, signedness, units, reset, input value, ownership and hardware behavior remain UNKNOWN."
+                },
+                "access": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power03-dat-fresh-08/actual-02.generated.json"
+                  ],
+                  "limitation": "Physical meaning, signedness, units, reset, input value, ownership and hardware behavior remain UNKNOWN."
+                }
+              },
+              "unknowns": [
+                "This slice describes unsigned software raw bits, not a physical signedness, field name, scale, reset or behavior."
+              ],
+              "nextValidation": "Retain complete raw16 values and qualify downstream use after an explicitly finite hypothesis input; do not infer physical units or display ownership."
+            }
+          ],
+          "provenance": {
+            "selector": {
+              "confidence": "DAT",
+              "evidence": [
+                "evidence/refactor/power03-dat-fresh-08/actual-02.generated.json"
+              ],
+              "source": {
+                "commit": "b80f5fac8489420d9d035eaaa7527f33ff1dfa6f",
+                "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Power03ConsumerResearch.kt"
+              },
+              "limitation": "Complete selector3 argument and BL at the qualified software callsite identify the selected read request. Bounded saved-return qualification does not establish a unique global caller or physical owner."
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "evidence/refactor/power03-dat-fresh-08/actual-02.generated.json"
+              ],
+              "source": {
+                "commit": "b80f5fac8489420d9d035eaaa7527f33ff1dfa6f",
+                "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Power03ConsumerResearch.kt"
+              },
+              "limitation": "Status0 gates a full unsigned16 copy to software cache and ring, with no raw-content range check before storage. Full-ring arithmetic reads and averages full16 values; separate consumers extract low10. No physical input value, signedness, scale or dynamic mean execution is qualified."
+            },
+            "direction": {
+              "confidence": "DAT",
+              "evidence": [
+                "evidence/refactor/power03-dat-fresh-08/actual-02.generated.json"
+              ],
+              "source": {
+                "commit": "b80f5fac8489420d9d035eaaa7527f33ff1dfa6f",
+                "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Power03ConsumerResearch.kt"
+              },
+              "limitation": "The selected BL invokes the read API. Request direction is evidence, never access permission."
+            },
+            "observation": {
+              "confidence": "SIM",
+              "evidence": [
+                "evidence/refactor/power03-dat-fresh-08/actual-02.generated.json",
+                "evidence/refactor/power14-original-fresh-07/study/discovery-cap8-v5-gpio110-power14-zero/original.generated.json",
+                "evidence/refactor/power14-original-fresh-07/study/discovery-cap8-v5-gpio110-power14-tagged/original.generated.json"
+              ],
+              "source": {
+                "commit": "af515c46e4f301e3b28e01ac7827ed460ceb3850",
+                "path": "evidence/refactor/power14-original-fresh-07/study/discovery-cap8-v5-gpio110-power14-zero/original.generated.json"
+              },
+              "limitation": "Both accepted finite14 zero/tagged runs stop with selector3 pending and no returned value. Their six saved-return/prologue edges qualify the selected request/buffer within fixed bounds; no complete dynamic trace, task identity, physical reply or reset is established. Cached zero is prior software state, not a reply. Ring capacity/index/full bytes were not captured."
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": [
+                "evidence/refactor/power03-dat-fresh-08/actual-02.generated.json"
+              ],
+              "limitation": "Physical meaning, signedness, units, reset, input value, ownership and hardware behavior remain UNKNOWN."
+            },
+            "initial": {
+              "confidence": "UNKNOWN",
+              "evidence": [
+                "evidence/refactor/power03-dat-fresh-08/actual-02.generated.json"
+              ],
+              "limitation": "Physical meaning, signedness, units, reset, input value, ownership and hardware behavior remain UNKNOWN."
+            },
+            "behavior": {
+              "confidence": "UNKNOWN",
+              "evidence": [
+                "evidence/refactor/power03-dat-fresh-08/actual-02.generated.json"
+              ],
+              "limitation": "Physical meaning, signedness, units, reset, input value, ownership and hardware behavior remain UNKNOWN."
+            }
+          },
+          "evidence": [
+            "evidence/refactor/power03-dat-fresh-08/actual-02.generated.json",
+            "evidence/refactor/power14-original-fresh-07/study/discovery-cap8-v5-gpio110-power14-zero/original.generated.json",
+            "evidence/refactor/power14-original-fresh-07/study/discovery-cap8-v5-gpio110-power14-tagged/original.generated.json"
+          ],
+          "unknowns": [
+            "Physical device ownership, name, units, reset, reply, side effects and state machine are UNKNOWN.",
+            "Existing stopped software raw3 is not a completed request response; ring capacity/index/full are not captured.",
+            "Low10 software extraction does not license discarding the upper6 raw bits, which participate in full16 storage and DAT-only averaging.",
+            "A consumer-to-main-LCD/EVF/shoulder edge is UNKNOWN; prior DotLCD clear is not proven to depend on this request."
+          ],
+          "nextValidation": "Freeze the realFlash plus37/38/14=[0] baseline, retain missing3 control, and add only one explicit HYPOTHESIS raw16 sample3=[0]. Observe cache/ring and actual next request/errors without repeat-last. Later0 versus1024 can separate identical low10 from different full16, but one sample cannot qualify a full-ring average or physical input."
+        },
+        {
+          "id": "request.power-peer.selector0x2f",
+          "selector": 47,
+          "wordBits": 16,
+          "name": "UNKNOWN",
+          "direction": "read",
+          "observationStatus": "REQUEST_OBSERVED_PENDING",
+          "implementationStatus": "NOT_IMPLEMENTED",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 65535,
+            "prohibited": 0
+          },
+          "behaviorId": null,
+          "sideEffects": "UNKNOWN",
+          "fields": [
+            {
+              "id": "request.power-peer.selector0x2f.raw",
+              "bitOffset": 0,
+              "bitWidth": 16,
+              "type": "raw-bits",
+              "signed": false,
+              "unit": "UNKNOWN",
+              "access": "UNKNOWN",
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "evidence/refactor/power2f-consumer-fresh-11/qualification-02/actual.generated.json"
+                  ],
+                  "source": {
+                    "commit": "8875b4f409b62be073a5c95a695dec21fcbd2deb",
+                    "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Power2fConsumerResearch.kt"
+                  },
+                  "limitation": "The selected read API supplies an unsigned raw16 representation. Status0 gates two full-halfword software copies, with no payload mask or content comparison in the qualified span. No physical bit partition, signedness or unit is established; those copies have not executed for this pending request."
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power2f-consumer-fresh-11/qualification-02/actual.generated.json",
+                    "evidence/refactor/power03-ring-original-fresh-10/study/discovery-cap8-v5-gpio110-power03-ring-six/original.generated.json"
+                  ],
+                  "limitation": "Physical owner, name, signedness, unit, reset, reply value, side effects and hardware state machine remain UNKNOWN. The pending request has no returned value; previous software/cache bytes cannot supply a reply."
+                },
+                "behavior": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power2f-consumer-fresh-11/qualification-02/actual.generated.json",
+                    "evidence/refactor/power03-ring-original-fresh-10/study/discovery-cap8-v5-gpio110-power03-ring-six/original.generated.json"
+                  ],
+                  "limitation": "Physical owner, name, signedness, unit, reset, reply value, side effects and hardware state machine remain UNKNOWN. The pending request has no returned value; previous software/cache bytes cannot supply a reply."
+                },
+                "unit": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power2f-consumer-fresh-11/qualification-02/actual.generated.json",
+                    "evidence/refactor/power03-ring-original-fresh-10/study/discovery-cap8-v5-gpio110-power03-ring-six/original.generated.json"
+                  ],
+                  "limitation": "Physical owner, name, signedness, unit, reset, reply value, side effects and hardware state machine remain UNKNOWN. The pending request has no returned value; previous software/cache bytes cannot supply a reply."
+                },
+                "access": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power2f-consumer-fresh-11/qualification-02/actual.generated.json",
+                    "evidence/refactor/power03-ring-original-fresh-10/study/discovery-cap8-v5-gpio110-power03-ring-six/original.generated.json"
+                  ],
+                  "limitation": "Physical owner, name, signedness, unit, reset, reply value, side effects and hardware state machine remain UNKNOWN. The pending request has no returned value; previous software/cache bytes cannot supply a reply."
+                }
+              },
+              "unknowns": [
+                "The full16 software representation gives no physical field name, scale, reset or behavior; no finer bit subdivision is qualified."
+              ],
+              "nextValidation": "Keep the full raw16 in a single finite HYPOTHESIS input; qualify actual call return and downstream use before proposing field meanings."
+            }
+          ],
+          "provenance": {
+            "selector": {
+              "confidence": "DAT",
+              "evidence": [
+                "evidence/refactor/power2f-consumer-fresh-11/qualification-02/actual.generated.json"
+              ],
+              "source": {
+                "commit": "8875b4f409b62be073a5c95a695dec21fcbd2deb",
+                "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Power2fConsumerResearch.kt"
+              },
+              "limitation": "Complete MOV r0,#47 at0x120C9E8 and BL at0x120C9EC to0x120BE60 identify this read request. Six bounded saved-frame edges support this selected caller, not a unique global caller."
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "evidence/refactor/power2f-consumer-fresh-11/qualification-02/actual.generated.json"
+              ],
+              "source": {
+                "commit": "8875b4f409b62be073a5c95a695dec21fcbd2deb",
+                "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Power2fConsumerResearch.kt"
+              },
+              "limitation": "The status0 path loads the unsigned halfword atFP-46 and copies all16 bits to software locations0x1878FC2 and0x1878FEE. This is a DAT software path only, not an observed reply, physical value or reset."
+            },
+            "direction": {
+              "confidence": "DAT",
+              "evidence": [
+                "evidence/refactor/power2f-consumer-fresh-11/qualification-02/actual.generated.json"
+              ],
+              "source": {
+                "commit": "8875b4f409b62be073a5c95a695dec21fcbd2deb",
+                "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Power2fConsumerResearch.kt"
+              },
+              "limitation": "The selected complete BL invokes the read API; request direction does not grant runtime permission."
+            },
+            "observation": {
+              "confidence": "SIM",
+              "evidence": [
+                "evidence/refactor/power03-ring-original-fresh-10/study/discovery-cap8-v5-gpio110-power03-ring-six/original.generated.json",
+                "evidence/refactor/power2f-consumer-fresh-11/qualification-02/actual.generated.json"
+              ],
+              "source": {
+                "commit": "4faef9700713b64d6fc0544fb278104fdbd8b82b",
+                "path": "evidence/refactor/power03-ring-original-fresh-10/study/discovery-cap8-v5-gpio110-power03-ring-six/original.generated.json"
+              },
+              "limitation": "The original six-input run consumes only two of its six selector3 HYPOTHESIS zero samples, then stops for missing explicit selector47 input with no returned value. Four selector3 samples remain; this is not a full-ring run. The prior cached value or transport response is not a reply to47; selector48 is DAT-only, not observed."
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": [
+                "evidence/refactor/power2f-consumer-fresh-11/qualification-02/actual.generated.json",
+                "evidence/refactor/power03-ring-original-fresh-10/study/discovery-cap8-v5-gpio110-power03-ring-six/original.generated.json"
+              ],
+              "limitation": "Physical owner, name, signedness, unit, reset, reply value, side effects and hardware state machine remain UNKNOWN. The pending request has no returned value; previous software/cache bytes cannot supply a reply."
+            },
+            "initial": {
+              "confidence": "UNKNOWN",
+              "evidence": [
+                "evidence/refactor/power2f-consumer-fresh-11/qualification-02/actual.generated.json",
+                "evidence/refactor/power03-ring-original-fresh-10/study/discovery-cap8-v5-gpio110-power03-ring-six/original.generated.json"
+              ],
+              "limitation": "Physical owner, name, signedness, unit, reset, reply value, side effects and hardware state machine remain UNKNOWN. The pending request has no returned value; previous software/cache bytes cannot supply a reply."
+            },
+            "behavior": {
+              "confidence": "UNKNOWN",
+              "evidence": [
+                "evidence/refactor/power2f-consumer-fresh-11/qualification-02/actual.generated.json",
+                "evidence/refactor/power03-ring-original-fresh-10/study/discovery-cap8-v5-gpio110-power03-ring-six/original.generated.json"
+              ],
+              "limitation": "Physical owner, name, signedness, unit, reset, reply value, side effects and hardware state machine remain UNKNOWN. The pending request has no returned value; previous software/cache bytes cannot supply a reply."
+            }
+          },
+          "evidence": [
+            "evidence/refactor/power2f-consumer-fresh-11/qualification-02/actual.generated.json",
+            "evidence/refactor/power03-ring-original-fresh-10/study/discovery-cap8-v5-gpio110-power03-ring-six/original.generated.json"
+          ],
+          "unknowns": [
+            "Physical device ownership, name, signedness, units, reset, reply, side effects and state machine are UNKNOWN.",
+            "Status0 and the full16 copy span are DAT observations; the current request has not returned and those stores are not dynamically proven.",
+            "Neither a physical sensor identity nor an edge to main LCD, EVF, shoulder display or completed boot is qualified."
+          ],
+          "nextValidation": "Freeze the actual missing47 baseline and compare it with one explicit HYPOTHESIS raw16 sample47=[0], keeping the same six selector3 inputs, realFlash, observations, permissions and budget. Trace actual return, copies and next refusal without repeat-last or a fabricated completion."
+        },
+        {
+          "id": "request.power-peer.selector0x30",
+          "selector": 48,
+          "wordBits": 16,
+          "name": "UNKNOWN",
+          "direction": "read",
+          "observationStatus": "REQUEST_OBSERVED_PENDING",
+          "implementationStatus": "NOT_IMPLEMENTED",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 65535,
+            "prohibited": 0
+          },
+          "behaviorId": null,
+          "sideEffects": "UNKNOWN",
+          "fields": [
+            {
+              "id": "request.power-peer.selector0x30.raw",
+              "bitOffset": 0,
+              "bitWidth": 16,
+              "type": "raw-bits",
+              "signed": false,
+              "unit": "UNKNOWN",
+              "access": "UNKNOWN",
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "evidence/refactor/power30-consumer-linux-fresh-12/qualification-02/actual.generated.json"
+                  ],
+                  "source": {
+                    "commit": "7a3a3eccb4a7f5e36149933b930ac49757ebed7d",
+                    "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Power30ConsumerResearch.kt"
+                  },
+                  "limitation": "The selected status0 path copies an unsigned raw16 halfword from FP-46 to two full-halfword software targets without a payload mask or content comparison. This representation establishes neither physical signedness nor a bit partition; the pending48 copy path has not returned."
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power30-consumer-linux-fresh-12/qualification-02/actual.generated.json",
+                    "evidence/refactor/power2f-original-fresh-11/study/discovery-cap8-v5-gpio110-power2f-zero/original.generated.json"
+                  ],
+                  "limitation": "Physical owner, name, signedness, unit, reset, reply value, side effects and hardware state machine remain UNKNOWN. The pending48 request has no returned value; reused local or prior software bytes cannot supply a reply."
+                },
+                "behavior": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power30-consumer-linux-fresh-12/qualification-02/actual.generated.json",
+                    "evidence/refactor/power2f-original-fresh-11/study/discovery-cap8-v5-gpio110-power2f-zero/original.generated.json"
+                  ],
+                  "limitation": "Physical owner, name, signedness, unit, reset, reply value, side effects and hardware state machine remain UNKNOWN. The pending48 request has no returned value; reused local or prior software bytes cannot supply a reply."
+                },
+                "unit": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power30-consumer-linux-fresh-12/qualification-02/actual.generated.json",
+                    "evidence/refactor/power2f-original-fresh-11/study/discovery-cap8-v5-gpio110-power2f-zero/original.generated.json"
+                  ],
+                  "limitation": "Physical owner, name, signedness, unit, reset, reply value, side effects and hardware state machine remain UNKNOWN. The pending48 request has no returned value; reused local or prior software bytes cannot supply a reply."
+                },
+                "access": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power30-consumer-linux-fresh-12/qualification-02/actual.generated.json",
+                    "evidence/refactor/power2f-original-fresh-11/study/discovery-cap8-v5-gpio110-power2f-zero/original.generated.json"
+                  ],
+                  "limitation": "Physical owner, name, signedness, unit, reset, reply value, side effects and hardware state machine remain UNKNOWN. The pending48 request has no returned value; reused local or prior software bytes cannot supply a reply."
+                }
+              },
+              "unknowns": [
+                "Full16 software representation does not establish a physical field name, scale, reset or bit meaning."
+              ],
+              "nextValidation": "Keep all16 bits in any separately frozen finite HYPOTHESIS input and qualify the actual return and downstream use before proposing field meanings."
+            }
+          ],
+          "provenance": {
+            "selector": {
+              "confidence": "DAT",
+              "evidence": [
+                "evidence/refactor/power30-consumer-linux-fresh-12/qualification-02/actual.generated.json"
+              ],
+              "source": {
+                "commit": "7a3a3eccb4a7f5e36149933b930ac49757ebed7d",
+                "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Power30ConsumerResearch.kt"
+              },
+              "limitation": "Complete MOV r0,#48 at0x120CA18 and BL at0x120CA1C to0x120BE60 identify the request. Six bounded saved-frame/prologue edges with saved selector48 and FP-46 bind this stopped caller, not a unique global caller."
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "evidence/refactor/power30-consumer-linux-fresh-12/qualification-02/actual.generated.json"
+              ],
+              "source": {
+                "commit": "7a3a3eccb4a7f5e36149933b930ac49757ebed7d",
+                "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Power30ConsumerResearch.kt"
+              },
+              "limitation": "Only API status r0==0 copies the entire unsigned16 halfword at FP-46 to software targets0x1878FC4 and0x1878FF2. The latter is a second full16 copy, with no narrower extraction in the qualified span; actual48 stores are not dynamically qualified."
+            },
+            "direction": {
+              "confidence": "DAT",
+              "evidence": [
+                "evidence/refactor/power30-consumer-linux-fresh-12/qualification-02/actual.generated.json"
+              ],
+              "source": {
+                "commit": "7a3a3eccb4a7f5e36149933b930ac49757ebed7d",
+                "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Power30ConsumerResearch.kt"
+              },
+              "limitation": "The selected complete BL invokes the existing read API; its direction grants no runtime permission."
+            },
+            "observation": {
+              "confidence": "SIM",
+              "evidence": [
+                "evidence/refactor/power2f-original-fresh-11/study/discovery-cap8-v5-gpio110-power2f-zero/original.generated.json",
+                "evidence/refactor/power30-consumer-linux-fresh-12/qualification-02/actual.generated.json"
+              ],
+              "source": {
+                "commit": "862b9e9ae5844ef062faed9f33166d4ffc21acdf",
+                "path": "evidence/refactor/power2f-original-fresh-11/study/discovery-cap8-v5-gpio110-power2f-zero/original.generated.json"
+              },
+              "limitation": "The accepted47-zero run completes47=[0] once as HYPOTHESIS then stops for missing explicit48 input with no returned value. Selector3 remains2/6 consumed. Captured raw48 software65535 and second target0 are stale/current software bytes, not a reply or reset; cache row48 payload is unrecorded."
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": [
+                "evidence/refactor/power30-consumer-linux-fresh-12/qualification-02/actual.generated.json",
+                "evidence/refactor/power2f-original-fresh-11/study/discovery-cap8-v5-gpio110-power2f-zero/original.generated.json"
+              ],
+              "limitation": "Physical owner, name, signedness, unit, reset, reply value, side effects and hardware state machine remain UNKNOWN. The pending48 request has no returned value; reused local or prior software bytes cannot supply a reply."
+            },
+            "initial": {
+              "confidence": "UNKNOWN",
+              "evidence": [
+                "evidence/refactor/power30-consumer-linux-fresh-12/qualification-02/actual.generated.json",
+                "evidence/refactor/power2f-original-fresh-11/study/discovery-cap8-v5-gpio110-power2f-zero/original.generated.json"
+              ],
+              "limitation": "Physical owner, name, signedness, unit, reset, reply value, side effects and hardware state machine remain UNKNOWN. The pending48 request has no returned value; reused local or prior software bytes cannot supply a reply."
+            },
+            "behavior": {
+              "confidence": "UNKNOWN",
+              "evidence": [
+                "evidence/refactor/power30-consumer-linux-fresh-12/qualification-02/actual.generated.json",
+                "evidence/refactor/power2f-original-fresh-11/study/discovery-cap8-v5-gpio110-power2f-zero/original.generated.json"
+              ],
+              "limitation": "Physical owner, name, signedness, unit, reset, reply value, side effects and hardware state machine remain UNKNOWN. The pending48 request has no returned value; reused local or prior software bytes cannot supply a reply."
+            }
+          },
+          "evidence": [
+            "evidence/refactor/power30-consumer-linux-fresh-12/qualification-02/actual.generated.json",
+            "evidence/refactor/power2f-original-fresh-11/study/discovery-cap8-v5-gpio110-power2f-zero/original.generated.json"
+          ],
+          "unknowns": [
+            "Physical device ownership, name, signedness, units, reset, reply, side effects and state machine are UNKNOWN.",
+            "Saved-return and DAT evidence bind this stopped caller, but do not supply a complete instruction/use-def history or an executed48 store.",
+            "No physical sensor identity, main LCD/EVF/shoulder display edge, full-ring mean or complete boot is qualified."
+          ],
+          "nextValidation": "Freeze the accepted47-zero realFlash baseline and compare48 absent with one explicit HYPOTHESIS raw16 sample48=[0]. Keep37/38/14, six-zero3, single-zero47, observations, permissions and budget fixed. Observe actual completion/copies and the next request/error; do not predeclare49 or fabricate completion."
+        },
+        {
+          "id": "request.power-peer.selector0x31",
+          "selector": 49,
+          "wordBits": 16,
+          "name": "UNKNOWN",
+          "direction": "read",
+          "observationStatus": "REQUEST_OBSERVED_PENDING",
+          "implementationStatus": "NOT_IMPLEMENTED",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 65535,
+            "prohibited": 0
+          },
+          "behaviorId": null,
+          "sideEffects": "UNKNOWN",
+          "fields": [
+            {
+              "id": "request.power-peer.selector0x31.raw",
+              "bitOffset": 0,
+              "bitWidth": 16,
+              "type": "raw-bits",
+              "signed": false,
+              "unit": "UNKNOWN",
+              "access": "UNKNOWN",
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "evidence/refactor/power31-consumer-linux-fresh-13/qualification-01/actual.generated.json"
+                  ],
+                  "source": {
+                    "commit": "481e43d581297e9c5ffb8a7c76df9ed9cc9a4eaa",
+                    "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Power31ConsumerResearch.kt"
+                  },
+                  "limitation": "The selected status0 path copies raw16 from FP-46 into software1878FC6, then complete UBFX E7E73453 extracts bits8..15 into a byte at1878FF6. This software extraction identifies no physical field; retain one complete raw16 field and all input bits."
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power31-consumer-linux-fresh-13/qualification-01/actual.generated.json",
+                    "evidence/refactor/power30-original-linux-fresh-12/study/discovery-cap8-v5-gpio110-power30-zero/original.generated.json"
+                  ],
+                  "limitation": "Physical owner/name/signedness/unit/reset/reply/side effects and hardware state machine remain UNKNOWN. Pending49 has no returned value; previous48 or reused FP-46 bytes cannot supply one."
+                },
+                "behavior": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power31-consumer-linux-fresh-13/qualification-01/actual.generated.json",
+                    "evidence/refactor/power30-original-linux-fresh-12/study/discovery-cap8-v5-gpio110-power30-zero/original.generated.json"
+                  ],
+                  "limitation": "Physical owner/name/signedness/unit/reset/reply/side effects and hardware state machine remain UNKNOWN. Pending49 has no returned value; previous48 or reused FP-46 bytes cannot supply one."
+                },
+                "unit": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power31-consumer-linux-fresh-13/qualification-01/actual.generated.json",
+                    "evidence/refactor/power30-original-linux-fresh-12/study/discovery-cap8-v5-gpio110-power30-zero/original.generated.json"
+                  ],
+                  "limitation": "Physical owner/name/signedness/unit/reset/reply/side effects and hardware state machine remain UNKNOWN. Pending49 has no returned value; previous48 or reused FP-46 bytes cannot supply one."
+                },
+                "access": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power31-consumer-linux-fresh-13/qualification-01/actual.generated.json",
+                    "evidence/refactor/power30-original-linux-fresh-12/study/discovery-cap8-v5-gpio110-power30-zero/original.generated.json"
+                  ],
+                  "limitation": "Physical owner/name/signedness/unit/reset/reply/side effects and hardware state machine remain UNKNOWN. Pending49 has no returned value; previous48 or reused FP-46 bytes cannot supply one."
+                }
+              },
+              "unknowns": [
+                "Full16 transport/software copy plus a DAT high8 software extraction do not establish a physical name, scale, reset, signedness, owner or hardware bit partition."
+              ],
+              "nextValidation": "Keep all16 bits in any separately frozen finite HYPOTHESIS input and qualify the actual return and downstream use before proposing field meanings."
+            }
+          ],
+          "provenance": {
+            "selector": {
+              "confidence": "DAT",
+              "evidence": [
+                "evidence/refactor/power31-consumer-linux-fresh-13/qualification-01/actual.generated.json"
+              ],
+              "source": {
+                "commit": "481e43d581297e9c5ffb8a7c76df9ed9cc9a4eaa",
+                "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Power31ConsumerResearch.kt"
+              },
+              "limitation": "Complete MOV r0,#49 at0x120CA48 and BL0x120CA4C→0x120BE60 identify the read. Six bounded saved-return/prologue edges and saved selector49/FP-46 bind this stopped caller, not a unique dynamic caller."
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "evidence/refactor/power31-consumer-linux-fresh-13/qualification-01/actual.generated.json"
+              ],
+              "source": {
+                "commit": "481e43d581297e9c5ffb8a7c76df9ed9cc9a4eaa",
+                "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Power31ConsumerResearch.kt"
+              },
+              "limitation": "Only API status r0==0 reaches STRH raw16 at0x120CA64→0x1878FC6, then UBFX #8,#8 at0x120CA70 and STRB at0x120CA74→0x1878FF6. No content branch exists before the next static request50. A high8 software byte does not license dropping lower input bits or naming a physical field; actual49 stores are not yet observed."
+            },
+            "direction": {
+              "confidence": "DAT",
+              "evidence": [
+                "evidence/refactor/power31-consumer-linux-fresh-13/qualification-01/actual.generated.json"
+              ],
+              "source": {
+                "commit": "481e43d581297e9c5ffb8a7c76df9ed9cc9a4eaa",
+                "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Power31ConsumerResearch.kt"
+              },
+              "limitation": "The selected complete BL invokes the existing read API; its direction grants no runtime permission."
+            },
+            "observation": {
+              "confidence": "SIM",
+              "evidence": [
+                "evidence/refactor/power30-original-linux-fresh-12/study/discovery-cap8-v5-gpio110-power30-zero/original.generated.json",
+                "evidence/refactor/power31-consumer-linux-fresh-13/qualification-01/actual.generated.json"
+              ],
+              "source": {
+                "commit": "e51f7e3c9e8b1b99ac4813b9238c0264aafb2909",
+                "path": "evidence/refactor/power30-original-linux-fresh-12/study/discovery-cap8-v5-gpio110-power30-zero/original.generated.json"
+              },
+              "limitation": "The accepted Linux48-zero run consumes one HYPOTHESIS48=0 then stops for missing explicit49 with no returned49 value. Raw49 software65535/high8 target0/local0 are captured software bytes, not replies or reset; selector3 remains2/6 and cache49 payload is unrecorded."
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": [
+                "evidence/refactor/power31-consumer-linux-fresh-13/qualification-01/actual.generated.json",
+                "evidence/refactor/power30-original-linux-fresh-12/study/discovery-cap8-v5-gpio110-power30-zero/original.generated.json"
+              ],
+              "limitation": "Physical owner/name/signedness/unit/reset/reply/side effects and hardware state machine remain UNKNOWN. Pending49 has no returned value; previous48 or reused FP-46 bytes cannot supply one."
+            },
+            "initial": {
+              "confidence": "UNKNOWN",
+              "evidence": [
+                "evidence/refactor/power31-consumer-linux-fresh-13/qualification-01/actual.generated.json",
+                "evidence/refactor/power30-original-linux-fresh-12/study/discovery-cap8-v5-gpio110-power30-zero/original.generated.json"
+              ],
+              "limitation": "Physical owner/name/signedness/unit/reset/reply/side effects and hardware state machine remain UNKNOWN. Pending49 has no returned value; previous48 or reused FP-46 bytes cannot supply one."
+            },
+            "behavior": {
+              "confidence": "UNKNOWN",
+              "evidence": [
+                "evidence/refactor/power31-consumer-linux-fresh-13/qualification-01/actual.generated.json",
+                "evidence/refactor/power30-original-linux-fresh-12/study/discovery-cap8-v5-gpio110-power30-zero/original.generated.json"
+              ],
+              "limitation": "Physical owner/name/signedness/unit/reset/reply/side effects and hardware state machine remain UNKNOWN. Pending49 has no returned value; previous48 or reused FP-46 bytes cannot supply one."
+            }
+          },
+          "evidence": [
+            "evidence/refactor/power31-consumer-linux-fresh-13/qualification-01/actual.generated.json",
+            "evidence/refactor/power30-original-linux-fresh-12/study/discovery-cap8-v5-gpio110-power30-zero/original.generated.json"
+          ],
+          "unknowns": [
+            "Physical ownership/name/signedness/unit/reset/reply/side effects/state machine remain UNKNOWN.",
+            "Bounded saved-stack and DAT evidence do not supply complete caller/use-def history, executed49 stores or cache49 payload.",
+            "Software bits8..15 extraction is not a physical field name or new hardware permission; main/EVF/menu/full-ring mean remain unqualified."
+          ],
+          "nextValidation": "Freeze the accepted48-zero Linux realFlash baseline; compare one HYPOTHESIS49=[0] with one49=[256], fixed length one, retaining every prior input, observation, permission and budget. Compare actual raw16/high8 software bytes and next outcome without assuming50, repeating input or inventing ready/ACK/IRQ/DMA."
+        },
+        {
+          "behaviorId": null,
+          "direction": "read",
+          "evidence": [
+            "evidence/refactor/power32-consumer-linux-fresh-14/qualification-02/actual.generated.json",
+            "evidence/refactor/power31-original-linux-fresh-13/study/discovery-cap8-v5-gpio110-power31-zero/original.generated.json"
+          ],
+          "fields": [
+            {
+              "access": "UNKNOWN",
+              "bitOffset": 0,
+              "bitWidth": 16,
+              "id": "request.power-peer.selector0x32.raw",
+              "nextValidation": "Preserve full16 finite HYPOTHESIS input and qualify actual return, software conversion and startup-poll continuation before physical interpretation.",
+              "provenance": {
+                "access": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power32-consumer-linux-fresh-14/qualification-02/actual.generated.json",
+                    "evidence/refactor/power31-original-linux-fresh-13/study/discovery-cap8-v5-gpio110-power31-zero/original.generated.json"
+                  ],
+                  "limitation": "Physical owner/name/signedness/unit/reset/reply/side effects and hardware state machine remain UNKNOWN. Pending50 has no returned value; previous49 or reused FP-46 bytes cannot supply one."
+                },
+                "behavior": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power32-consumer-linux-fresh-14/qualification-02/actual.generated.json",
+                    "evidence/refactor/power31-original-linux-fresh-13/study/discovery-cap8-v5-gpio110-power31-zero/original.generated.json"
+                  ],
+                  "limitation": "Physical owner/name/signedness/unit/reset/reply/side effects and hardware state machine remain UNKNOWN. Pending50 has no returned value; previous49 or reused FP-46 bytes cannot supply one."
+                },
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "evidence/refactor/power32-consumer-linux-fresh-14/qualification-02/actual.generated.json"
+                  ],
+                  "limitation": "Status0 copies complete raw16 from FP-46 into software1878FC8 and1878FCC. A selected software branch subtracts2732, divides10 toward zero and SXTH stores signed32 at1878FD4, or config4177 signed8 overrides it when config4176=2 or softwareF72=1. These operations identify no physical name, unit or hardware field partition; retain all16 input bits.",
+                  "source": {
+                    "commit": "0adf858ab0d31c6391d0615491200e803284c3c0",
+                    "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Power32ConsumerResearch.kt"
+                  }
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power32-consumer-linux-fresh-14/qualification-02/actual.generated.json",
+                    "evidence/refactor/power31-original-linux-fresh-13/study/discovery-cap8-v5-gpio110-power31-zero/original.generated.json"
+                  ],
+                  "limitation": "Physical owner/name/signedness/unit/reset/reply/side effects and hardware state machine remain UNKNOWN. Pending50 has no returned value; previous49 or reused FP-46 bytes cannot supply one."
+                },
+                "unit": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power32-consumer-linux-fresh-14/qualification-02/actual.generated.json",
+                    "evidence/refactor/power31-original-linux-fresh-13/study/discovery-cap8-v5-gpio110-power31-zero/original.generated.json"
+                  ],
+                  "limitation": "Physical owner/name/signedness/unit/reset/reply/side effects and hardware state machine remain UNKNOWN. Pending50 has no returned value; previous49 or reused FP-46 bytes cannot supply one."
+                }
+              },
+              "signed": false,
+              "type": "raw-bits",
+              "unit": "UNKNOWN",
+              "unknowns": [
+                "Full16 transport and signed software conversions do not establish physical signedness, name, unit, reset, owner or field partition."
+              ]
+            }
+          ],
+          "id": "request.power-peer.selector0x32",
+          "implementationStatus": "NOT_IMPLEMENTED",
+          "initial": {
+            "source": "UNKNOWN",
+            "value": null
+          },
+          "masks": {
+            "preserve": 0,
+            "prohibited": 0,
+            "unknown": 65535,
+            "writable": 0
+          },
+          "name": "UNKNOWN",
+          "nextValidation": "Choose one bounded full16 HYPOTHESIS using the qualified consumer and main-screen worker observations, holding accepted49-zero prefix and permissions fixed. raw3000 would convert to26 only on the selected arithmetic branch; actual configuration and subsequent paths remain unknown. Observe actual return and startup/LCD continuation; do not default to0/256, assume51 or fabricate readiness.",
+          "observationStatus": "REQUEST_OBSERVED_PENDING",
+          "provenance": {
+            "behavior": {
+              "confidence": "UNKNOWN",
+              "evidence": [
+                "evidence/refactor/power32-consumer-linux-fresh-14/qualification-02/actual.generated.json",
+                "evidence/refactor/power31-original-linux-fresh-13/study/discovery-cap8-v5-gpio110-power31-zero/original.generated.json"
+              ],
+              "limitation": "Physical owner/name/signedness/unit/reset/reply/side effects and hardware state machine remain UNKNOWN. Pending50 has no returned value; previous49 or reused FP-46 bytes cannot supply one."
+            },
+            "direction": {
+              "confidence": "DAT",
+              "evidence": [
+                "evidence/refactor/power32-consumer-linux-fresh-14/qualification-02/actual.generated.json"
+              ],
+              "limitation": "The selected complete BL invokes the existing read API; its direction grants no runtime permission.",
+              "source": {
+                "commit": "0adf858ab0d31c6391d0615491200e803284c3c0",
+                "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Power32ConsumerResearch.kt"
+              }
+            },
+            "initial": {
+              "confidence": "UNKNOWN",
+              "evidence": [
+                "evidence/refactor/power32-consumer-linux-fresh-14/qualification-02/actual.generated.json",
+                "evidence/refactor/power31-original-linux-fresh-13/study/discovery-cap8-v5-gpio110-power31-zero/original.generated.json"
+              ],
+              "limitation": "Physical owner/name/signedness/unit/reset/reply/side effects and hardware state machine remain UNKNOWN. Pending50 has no returned value; previous49 or reused FP-46 bytes cannot supply one."
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": [
+                "evidence/refactor/power32-consumer-linux-fresh-14/qualification-02/actual.generated.json",
+                "evidence/refactor/power31-original-linux-fresh-13/study/discovery-cap8-v5-gpio110-power31-zero/original.generated.json"
+              ],
+              "limitation": "Physical owner/name/signedness/unit/reset/reply/side effects and hardware state machine remain UNKNOWN. Pending50 has no returned value; previous49 or reused FP-46 bytes cannot supply one."
+            },
+            "observation": {
+              "confidence": "SIM",
+              "evidence": [
+                "evidence/refactor/power31-original-linux-fresh-13/study/discovery-cap8-v5-gpio110-power31-zero/original.generated.json",
+                "evidence/refactor/power32-consumer-linux-fresh-14/qualification-02/actual.generated.json"
+              ],
+              "limitation": "The published49-zero and49-tagged Linux runs each consume one finite49 sample then stop missing explicit50. Reused FP-46 is0/256 from49, not a50 reply. Both captured F72=0, FC8/FCC=65535, FD4=6280 are software bytes before50 completion, not reset or actual config getter return.",
+              "source": {
+                "commit": "852743f9ae9fe974f57e6df2f80d33c9fb903c07",
+                "path": "evidence/refactor/power31-original-linux-fresh-13/study/discovery-cap8-v5-gpio110-power31-zero/original.generated.json"
+              }
+            },
+            "selector": {
+              "confidence": "DAT",
+              "evidence": [
+                "evidence/refactor/power32-consumer-linux-fresh-14/qualification-02/actual.generated.json"
+              ],
+              "limitation": "Complete MOV r0,#50 at120CA7C and BL120CA80 to120BE60 identify the read. Six bounded saved-return/prologue edges and selector50/FP-46 bind both missing50 stops, not a unique dynamic caller.",
+              "source": {
+                "commit": "0adf858ab0d31c6391d0615491200e803284c3c0",
+                "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Power32ConsumerResearch.kt"
+              }
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "evidence/refactor/power32-consumer-linux-fresh-14/qualification-02/actual.generated.json"
+              ],
+              "limitation": "Only API r0==0 reaches STRH raw16 at120CC7C to1878FC8 and120CC88 to1878FCC. The derived signed32 software value uses selected bias2732/division10/SXTH or signed8 config4177 override; it does not narrow the transport or identify temperature, readiness or unit. Both success branches rejoin120CA8C; no next51 is inferred.",
+              "source": {
+                "commit": "0adf858ab0d31c6391d0615491200e803284c3c0",
+                "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Power32ConsumerResearch.kt"
+              }
+            }
+          },
+          "selector": 50,
+          "sideEffects": "UNKNOWN",
+          "unknowns": [
+            "Physical owner, name, input signedness, unit, reset, reply, side effects and hardware state machine are UNKNOWN.",
+            "Static50 success rejoins a software path writing1878F68, which startup polling reads; this establishes no physical ready or actual completed50 return.",
+            "Current config4176/4177 returns and downstream VFP/threshold execution are unobserved. No main-screen frame or complete boot is qualified."
+          ],
+          "wordBits": 16
+        },
+        {
+          "behaviorId": null,
+          "direction": "write",
+          "evidence": [
+            "evidence/refactor/power15-write-consumer-fresh-15/qualification-01/actual.generated.json",
+            "evidence/refactor/power32-mainframe-original-fresh-14/study/discovery-cap8-v5-gpio110-power32-3000-lcdinit/original.generated.json"
+          ],
+          "fields": [
+            {
+              "access": "UNKNOWN",
+              "bitOffset": 0,
+              "bitWidth": 16,
+              "id": "request.power-peer.selector0x0f.raw",
+              "nextValidation": "Qualify a new bounded experiment using existing masked-retained input only if explicitly selected: initial15=0 and maskC000 are HYPOTHESIS, not physical reset or writable bits. Preserve all prior finite inputs,permissions,128point trace and descriptor observations; keep undeclared-bit refusal. Observe actual checksum commit/API return and subsequent stop/LCD execution without predicting readiness.",
+              "provenance": {
+                "access": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power15-write-consumer-fresh-15/qualification-01/actual.generated.json",
+                    "evidence/refactor/power32-mainframe-original-fresh-14/study/discovery-cap8-v5-gpio110-power32-3000-lcdinit/original.generated.json"
+                  ],
+                  "limitation": "Physical name,owner,reset,unit,writable bits,side effects and hardware behavior are UNKNOWN. Captured0xC000 is one attempted software word; the checksum is pending and no register15 write event or stored value exists."
+                },
+                "behavior": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power15-write-consumer-fresh-15/qualification-01/actual.generated.json",
+                    "evidence/refactor/power32-mainframe-original-fresh-14/study/discovery-cap8-v5-gpio110-power32-3000-lcdinit/original.generated.json"
+                  ],
+                  "limitation": "Physical name,owner,reset,unit,writable bits,side effects and hardware behavior are UNKNOWN. Captured0xC000 is one attempted software word; the checksum is pending and no register15 write event or stored value exists."
+                },
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "evidence/refactor/power15-write-consumer-fresh-15/qualification-01/actual.generated.json"
+                  ],
+                  "source": {
+                    "commit": "b55c551d565b4a93c4d3a330df3cc9792ba6e50d",
+                    "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Power15WriteResearch.kt"
+                  },
+                  "limitation": "Selected write API120C0A4 takes full16. Post-poll12EDB0C constructs argument bits0,14,15 from raw14 bit0 and inverted raw0 bits3,14 while preserving other r5 bits, then UXTH. This is software construction, not a physical three-field partition or hardware write mask."
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power15-write-consumer-fresh-15/qualification-01/actual.generated.json",
+                    "evidence/refactor/power32-mainframe-original-fresh-14/study/discovery-cap8-v5-gpio110-power32-3000-lcdinit/original.generated.json"
+                  ],
+                  "limitation": "Physical name,owner,reset,unit,writable bits,side effects and hardware behavior are UNKNOWN. Captured0xC000 is one attempted software word; the checksum is pending and no register15 write event or stored value exists."
+                },
+                "unit": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power15-write-consumer-fresh-15/qualification-01/actual.generated.json",
+                    "evidence/refactor/power32-mainframe-original-fresh-14/study/discovery-cap8-v5-gpio110-power32-3000-lcdinit/original.generated.json"
+                  ],
+                  "limitation": "Physical name,owner,reset,unit,writable bits,side effects and hardware behavior are UNKNOWN. Captured0xC000 is one attempted software word; the checksum is pending and no register15 write event or stored value exists."
+                }
+              },
+              "signed": false,
+              "type": "raw-bits",
+              "unit": "UNKNOWN",
+              "unknowns": [
+                "Full16 attempted software transport does not identify physical fields,unit,reset,owner or hardware write permission."
+              ]
+            }
+          ],
+          "id": "request.power-peer.selector0x0f",
+          "implementationStatus": "NOT_IMPLEMENTED",
+          "initial": {
+            "source": "UNKNOWN",
+            "value": null
+          },
+          "masks": {
+            "preserve": 0,
+            "prohibited": 0,
+            "unknown": 65535,
+            "writable": 0
+          },
+          "name": "UNKNOWN",
+          "nextValidation": "Qualify a new bounded experiment using existing masked-retained input only if explicitly selected: initial15=0 and maskC000 are HYPOTHESIS, not physical reset or writable bits. Preserve all prior finite inputs,permissions,128point trace and descriptor observations; keep undeclared-bit refusal. Observe actual checksum commit/API return and subsequent stop/LCD execution without predicting readiness.",
+          "observationStatus": "REQUEST_OBSERVED_PENDING",
+          "provenance": {
+            "behavior": {
+              "confidence": "UNKNOWN",
+              "evidence": [
+                "evidence/refactor/power15-write-consumer-fresh-15/qualification-01/actual.generated.json",
+                "evidence/refactor/power32-mainframe-original-fresh-14/study/discovery-cap8-v5-gpio110-power32-3000-lcdinit/original.generated.json"
+              ],
+              "limitation": "Physical name,owner,reset,unit,writable bits,side effects and hardware behavior are UNKNOWN. Captured0xC000 is one attempted software word; the checksum is pending and no register15 write event or stored value exists."
+            },
+            "direction": {
+              "confidence": "DAT",
+              "evidence": [
+                "evidence/refactor/power15-write-consumer-fresh-15/qualification-01/actual.generated.json"
+              ],
+              "source": {
+                "commit": "b55c551d565b4a93c4d3a330df3cc9792ba6e50d",
+                "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Power15WriteResearch.kt"
+              },
+              "limitation": "Complete BL at12EDB0C invokes write API120C0A4, whose fixed formatter adds write header bit7. This definition grants no runtime access."
+            },
+            "initial": {
+              "confidence": "UNKNOWN",
+              "evidence": [
+                "evidence/refactor/power15-write-consumer-fresh-15/qualification-01/actual.generated.json",
+                "evidence/refactor/power32-mainframe-original-fresh-14/study/discovery-cap8-v5-gpio110-power32-3000-lcdinit/original.generated.json"
+              ],
+              "limitation": "Physical name,owner,reset,unit,writable bits,side effects and hardware behavior are UNKNOWN. Captured0xC000 is one attempted software word; the checksum is pending and no register15 write event or stored value exists."
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": [
+                "evidence/refactor/power15-write-consumer-fresh-15/qualification-01/actual.generated.json",
+                "evidence/refactor/power32-mainframe-original-fresh-14/study/discovery-cap8-v5-gpio110-power32-3000-lcdinit/original.generated.json"
+              ],
+              "limitation": "Physical name,owner,reset,unit,writable bits,side effects and hardware behavior are UNKNOWN. Captured0xC000 is one attempted software word; the checksum is pending and no register15 write event or stored value exists."
+            },
+            "observation": {
+              "confidence": "SIM",
+              "evidence": [
+                "evidence/refactor/power32-mainframe-original-fresh-14/study/discovery-cap8-v5-gpio110-power32-3000-lcdinit/original.generated.json"
+              ],
+              "source": {
+                "commit": "ca6dc8d4658b5c321c2371537a90acbb859663ee",
+                "path": "evidence/refactor/power32-mainframe-original-fresh-14/study/discovery-cap8-v5-gpio110-power32-3000-lcdinit/original.generated.json"
+              },
+              "limitation": "P32 raw3000 HYPOTHESIS completes selector50; core0 entry sample120C0A4 hasr0=15,r1=C000,LR=12EDB10. Three selected writer/formatter/submit points each retain6/6. Five pinned saved returns bind the attempt. Only8F,C0,00 completed; checksumB0 remains pending. No write15 commit,stored value,API return or main frame was observed."
+            },
+            "selector": {
+              "confidence": "DAT",
+              "evidence": [
+                "evidence/refactor/power15-write-consumer-fresh-15/qualification-01/actual.generated.json"
+              ],
+              "source": {
+                "commit": "b55c551d565b4a93c4d3a330df3cc9792ba6e50d",
+                "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Power15WriteResearch.kt"
+              },
+              "limitation": "Selected complete literal at12EDB08 is15, call12EDB0C to120C0A4. Saved stack and selected entry identify this bounded caller without claiming global uniqueness."
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "evidence/refactor/power15-write-consumer-fresh-15/qualification-01/actual.generated.json"
+              ],
+              "source": {
+                "commit": "b55c551d565b4a93c4d3a330df3cc9792ba6e50d",
+                "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Power15WriteResearch.kt"
+              },
+              "limitation": "Full16 write argument is packed by the existing formatter. Retain raw16; the three software BFI destinations do not establish physical access masks or named fields."
+            }
+          },
+          "selector": 15,
+          "sideEffects": "UNKNOWN",
+          "unknowns": [
+            "Initial word0 and writable-maskC000 proposal are explicit experiment HYPOTHESIS only, not catalog reset or physical permissions.",
+            "No ACK,ready,IRQ,DMA,display effect,complete boot or successful checksum return was established."
+          ],
+          "wordBits": 16
+        },
+        {
+          "id": "request.power-peer.selector0x25.write",
+          "selector": 37,
+          "wordBits": 16,
+          "name": "UNKNOWN",
+          "direction": "write",
+          "observationStatus": "REQUEST_OBSERVED_PENDING",
+          "implementationStatus": "NOT_IMPLEMENTED",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 65535,
+            "prohibited": 0
+          },
+          "behaviorId": null,
+          "sideEffects": "UNKNOWN",
+          "fields": [
+            {
+              "id": "request.power-peer.selector0x25.write.raw",
+              "bitOffset": 0,
+              "bitWidth": 16,
+              "type": "raw-bits",
+              "signed": false,
+              "unit": "UNKNOWN",
+              "access": "UNKNOWN",
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "evidence/refactor/power37-write-consumer-fresh-16/qualification-01/actual.generated.json"
+                  ],
+                  "source": {
+                    "commit": "7468fa07aa1150aebdf6bf728d32021490a3ae1e",
+                    "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Power37WriteResearch.kt"
+                  },
+                  "limitation": "Full16 argument is UXTH r4 at124C638 and selector37 literal124C63C precedes BL124C640 to120C0A4. Preserve raw16; attemptedFFFF does not establish physical bit names or a writable mask."
+                },
+                "access": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power37-write-consumer-fresh-16/qualification-01/actual.generated.json",
+                    "evidence/refactor/power0f-mask-original-fresh-15/study/discovery-cap8-v5-gpio110-power0f-maskc000-lcdinit/original.generated.json"
+                  ],
+                  "limitation": "Device owner,name,unit,reset,physical writable bits,side effects and hardware behavior remain UNKNOWN. Software argument width and a selected retained-word hypothesis grant no physical permission."
+                },
+                "behavior": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power37-write-consumer-fresh-16/qualification-01/actual.generated.json",
+                    "evidence/refactor/power0f-mask-original-fresh-15/study/discovery-cap8-v5-gpio110-power0f-maskc000-lcdinit/original.generated.json"
+                  ],
+                  "limitation": "Device owner,name,unit,reset,physical writable bits,side effects and hardware behavior remain UNKNOWN. Software argument width and a selected retained-word hypothesis grant no physical permission."
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power37-write-consumer-fresh-16/qualification-01/actual.generated.json",
+                    "evidence/refactor/power0f-mask-original-fresh-15/study/discovery-cap8-v5-gpio110-power0f-maskc000-lcdinit/original.generated.json"
+                  ],
+                  "limitation": "Device owner,name,unit,reset,physical writable bits,side effects and hardware behavior remain UNKNOWN. Software argument width and a selected retained-word hypothesis grant no physical permission."
+                },
+                "unit": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power37-write-consumer-fresh-16/qualification-01/actual.generated.json",
+                    "evidence/refactor/power0f-mask-original-fresh-15/study/discovery-cap8-v5-gpio110-power0f-maskc000-lcdinit/original.generated.json"
+                  ],
+                  "limitation": "Device owner,name,unit,reset,physical writable bits,side effects and hardware behavior remain UNKNOWN. Software argument width and a selected retained-word hypothesis grant no physical permission."
+                }
+              },
+              "unknowns": [
+                "Software argument packing does not establish a physical partition,mask,unit or reset."
+              ],
+              "nextValidation": "Qualify a new bounded experiment explicitly promoting37/38 from finite reads to initial0 plus masked-retained HYPOTHESIS only if selected. Preserve the original first-read zero prefix and all other finite inputs; keep ownership exclusive and undeclared-bit refusal. Observe real checksum commit,38 argument and later stop/LCD execution without predicting readiness."
+            }
+          ],
+          "provenance": {
+            "selector": {
+              "confidence": "DAT",
+              "evidence": [
+                "evidence/refactor/power37-write-consumer-fresh-16/qualification-01/actual.generated.json"
+              ],
+              "source": {
+                "commit": "7468fa07aa1150aebdf6bf728d32021490a3ae1e",
+                "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Power37WriteResearch.kt"
+              },
+              "limitation": "Selector37 literal and complete BL in124C488..124C6E0 identify this write-form request. The existing read-form ID remains separate and unchanged."
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "evidence/refactor/power37-write-consumer-fresh-16/qualification-01/actual.generated.json"
+              ],
+              "source": {
+                "commit": "7468fa07aa1150aebdf6bf728d32021490a3ae1e",
+                "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Power37WriteResearch.kt"
+              },
+              "limitation": "Full16 argument is UXTH r4 at124C638 and selector37 literal124C63C precedes BL124C640 to120C0A4. Preserve raw16; attemptedFFFF does not establish physical bit names or a writable mask."
+            },
+            "direction": {
+              "confidence": "DAT",
+              "evidence": [
+                "evidence/refactor/power37-write-consumer-fresh-16/qualification-01/actual.generated.json"
+              ],
+              "source": {
+                "commit": "7468fa07aa1150aebdf6bf728d32021490a3ae1e",
+                "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Power37WriteResearch.kt"
+              },
+              "limitation": "Selected API120C0A4 and complete formatter use protocol write header bit7. Direction distinguishes this request from the existing read-form coordinate; neither declaration grants runtime access."
+            },
+            "observation": {
+              "confidence": "SIM",
+              "evidence": [
+                "evidence/refactor/power0f-mask-original-fresh-15/study/discovery-cap8-v5-gpio110-power0f-maskc000-lcdinit/original.generated.json",
+                "evidence/refactor/power37-write-consumer-fresh-16/qualification-01/actual.generated.json"
+              ],
+              "source": {
+                "commit": "a803a15625ac525c9c712749d65f5226af3da6a6",
+                "path": "evidence/refactor/power0f-mask-original-fresh-15/study/discovery-cap8-v5-gpio110-power0f-maskc000-lcdinit/original.generated.json"
+              },
+              "limitation": "The P15 masked run stops at candidate read input cannot accept write register37. SPI pendingA5 has not completed word0; peerphase0 retains the previous frame. Seven qualified saved returns and saved packedA5FFFF5C bind attemptedFFFF. Shared writer entry observed9/retained8 is truncated; no selected37 entry sample,write37 event,checksum submission,API return or frame was observed."
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": [
+                "evidence/refactor/power37-write-consumer-fresh-16/qualification-01/actual.generated.json",
+                "evidence/refactor/power0f-mask-original-fresh-15/study/discovery-cap8-v5-gpio110-power0f-maskc000-lcdinit/original.generated.json"
+              ],
+              "limitation": "Device owner,name,unit,reset,physical writable bits,side effects and hardware behavior remain UNKNOWN. Software argument width and a selected retained-word hypothesis grant no physical permission."
+            },
+            "initial": {
+              "confidence": "UNKNOWN",
+              "evidence": [
+                "evidence/refactor/power37-write-consumer-fresh-16/qualification-01/actual.generated.json",
+                "evidence/refactor/power0f-mask-original-fresh-15/study/discovery-cap8-v5-gpio110-power0f-maskc000-lcdinit/original.generated.json"
+              ],
+              "limitation": "Device owner,name,unit,reset,physical writable bits,side effects and hardware behavior remain UNKNOWN. Software argument width and a selected retained-word hypothesis grant no physical permission."
+            },
+            "behavior": {
+              "confidence": "UNKNOWN",
+              "evidence": [
+                "evidence/refactor/power37-write-consumer-fresh-16/qualification-01/actual.generated.json",
+                "evidence/refactor/power0f-mask-original-fresh-15/study/discovery-cap8-v5-gpio110-power0f-maskc000-lcdinit/original.generated.json"
+              ],
+              "limitation": "Device owner,name,unit,reset,physical writable bits,side effects and hardware behavior remain UNKNOWN. Software argument width and a selected retained-word hypothesis grant no physical permission."
+            }
+          },
+          "evidence": [
+            "evidence/refactor/power37-write-consumer-fresh-16/qualification-01/actual.generated.json",
+            "evidence/refactor/power0f-mask-original-fresh-15/study/discovery-cap8-v5-gpio110-power0f-maskc000-lcdinit/original.generated.json"
+          ],
+          "unknowns": [
+            "Device owner,name,unit,reset,physical writable bits,side effects and hardware behavior remain UNKNOWN. Software argument width and a selected retained-word hypothesis grant no physical permission.",
+            "Pending headerA5 is not a submitted word or committed write.",
+            "Initial0 and proposed masksFFFF/00FF are explicit HYPOTHESIS only, not catalog reset or hardware permissions."
+          ],
+          "nextValidation": "Qualify a new bounded experiment explicitly promoting37/38 from finite reads to initial0 plus masked-retained HYPOTHESIS only if selected. Preserve the original first-read zero prefix and all other finite inputs; keep ownership exclusive and undeclared-bit refusal. Observe real checksum commit,38 argument and later stop/LCD execution without predicting readiness."
+        },
+        {
+          "id": "request.power-peer.selector0x26.write",
+          "selector": 38,
+          "wordBits": 16,
+          "name": "UNKNOWN",
+          "direction": "write",
+          "observationStatus": "STATIC_CANDIDATE",
+          "implementationStatus": "NOT_IMPLEMENTED",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 65535,
+            "prohibited": 0
+          },
+          "behaviorId": null,
+          "sideEffects": "UNKNOWN",
+          "fields": [
+            {
+              "id": "request.power-peer.selector0x26.write.raw",
+              "bitOffset": 0,
+              "bitWidth": 16,
+              "type": "raw-bits",
+              "signed": false,
+              "unit": "UNKNOWN",
+              "access": "UNKNOWN",
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "evidence/refactor/power37-write-consumer-fresh-16/qualification-01/actual.generated.json"
+                  ],
+                  "source": {
+                    "commit": "7468fa07aa1150aebdf6bf728d32021490a3ae1e",
+                    "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Power37WriteResearch.kt"
+                  },
+                  "limitation": "The full16 write API is called at124C67C after LDRB r1,[fp-21] and literal38. The numeric software argument is0..255; helper12A34E4 previously receives the local byte address, so its actual value and execution remain unobserved. Raw16 is retained; upper physical bits are not qualified as reserved or unwritable."
+                },
+                "access": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power37-write-consumer-fresh-16/qualification-01/actual.generated.json",
+                    "evidence/refactor/power0f-mask-original-fresh-15/study/discovery-cap8-v5-gpio110-power0f-maskc000-lcdinit/original.generated.json"
+                  ],
+                  "limitation": "Device owner,name,unit,reset,physical writable bits,side effects and hardware behavior remain UNKNOWN. Software argument width and a selected retained-word hypothesis grant no physical permission."
+                },
+                "behavior": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power37-write-consumer-fresh-16/qualification-01/actual.generated.json",
+                    "evidence/refactor/power0f-mask-original-fresh-15/study/discovery-cap8-v5-gpio110-power0f-maskc000-lcdinit/original.generated.json"
+                  ],
+                  "limitation": "Device owner,name,unit,reset,physical writable bits,side effects and hardware behavior remain UNKNOWN. Software argument width and a selected retained-word hypothesis grant no physical permission."
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power37-write-consumer-fresh-16/qualification-01/actual.generated.json",
+                    "evidence/refactor/power0f-mask-original-fresh-15/study/discovery-cap8-v5-gpio110-power0f-maskc000-lcdinit/original.generated.json"
+                  ],
+                  "limitation": "Device owner,name,unit,reset,physical writable bits,side effects and hardware behavior remain UNKNOWN. Software argument width and a selected retained-word hypothesis grant no physical permission."
+                },
+                "unit": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/power37-write-consumer-fresh-16/qualification-01/actual.generated.json",
+                    "evidence/refactor/power0f-mask-original-fresh-15/study/discovery-cap8-v5-gpio110-power0f-maskc000-lcdinit/original.generated.json"
+                  ],
+                  "limitation": "Device owner,name,unit,reset,physical writable bits,side effects and hardware behavior remain UNKNOWN. Software argument width and a selected retained-word hypothesis grant no physical permission."
+                }
+              },
+              "unknowns": [
+                "Software argument packing does not establish a physical partition,mask,unit or reset."
+              ],
+              "nextValidation": "Qualify a new bounded experiment explicitly promoting37/38 from finite reads to initial0 plus masked-retained HYPOTHESIS only if selected. Preserve the original first-read zero prefix and all other finite inputs; keep ownership exclusive and undeclared-bit refusal. Observe real checksum commit,38 argument and later stop/LCD execution without predicting readiness."
+            }
+          ],
+          "provenance": {
+            "selector": {
+              "confidence": "DAT",
+              "evidence": [
+                "evidence/refactor/power37-write-consumer-fresh-16/qualification-01/actual.generated.json"
+              ],
+              "source": {
+                "commit": "7468fa07aa1150aebdf6bf728d32021490a3ae1e",
+                "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Power37WriteResearch.kt"
+              },
+              "limitation": "Selector38 literal and complete BL in124C488..124C6E0 identify this write-form request. The existing read-form ID remains separate and unchanged."
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "evidence/refactor/power37-write-consumer-fresh-16/qualification-01/actual.generated.json"
+              ],
+              "source": {
+                "commit": "7468fa07aa1150aebdf6bf728d32021490a3ae1e",
+                "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Power37WriteResearch.kt"
+              },
+              "limitation": "The full16 write API is called at124C67C after LDRB r1,[fp-21] and literal38. The numeric software argument is0..255; helper12A34E4 previously receives the local byte address, so its actual value and execution remain unobserved. Raw16 is retained; upper physical bits are not qualified as reserved or unwritable."
+            },
+            "direction": {
+              "confidence": "DAT",
+              "evidence": [
+                "evidence/refactor/power37-write-consumer-fresh-16/qualification-01/actual.generated.json"
+              ],
+              "source": {
+                "commit": "7468fa07aa1150aebdf6bf728d32021490a3ae1e",
+                "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Power37WriteResearch.kt"
+              },
+              "limitation": "Selected API120C0A4 and complete formatter use protocol write header bit7. Direction distinguishes this request from the existing read-form coordinate; neither declaration grants runtime access."
+            },
+            "observation": {
+              "confidence": "DAT",
+              "evidence": [
+                "evidence/refactor/power37-write-consumer-fresh-16/qualification-01/actual.generated.json"
+              ],
+              "source": {
+                "commit": "7468fa07aa1150aebdf6bf728d32021490a3ae1e",
+                "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Power37WriteResearch.kt"
+              },
+              "limitation": "Only the same complete software constructor qualifies a later write38 call. Current execution stopped before write37 header acceptance. No dynamic write38,value,checksum event,API return or display effect is observed."
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": [
+                "evidence/refactor/power37-write-consumer-fresh-16/qualification-01/actual.generated.json",
+                "evidence/refactor/power0f-mask-original-fresh-15/study/discovery-cap8-v5-gpio110-power0f-maskc000-lcdinit/original.generated.json"
+              ],
+              "limitation": "Device owner,name,unit,reset,physical writable bits,side effects and hardware behavior remain UNKNOWN. Software argument width and a selected retained-word hypothesis grant no physical permission."
+            },
+            "initial": {
+              "confidence": "UNKNOWN",
+              "evidence": [
+                "evidence/refactor/power37-write-consumer-fresh-16/qualification-01/actual.generated.json",
+                "evidence/refactor/power0f-mask-original-fresh-15/study/discovery-cap8-v5-gpio110-power0f-maskc000-lcdinit/original.generated.json"
+              ],
+              "limitation": "Device owner,name,unit,reset,physical writable bits,side effects and hardware behavior remain UNKNOWN. Software argument width and a selected retained-word hypothesis grant no physical permission."
+            },
+            "behavior": {
+              "confidence": "UNKNOWN",
+              "evidence": [
+                "evidence/refactor/power37-write-consumer-fresh-16/qualification-01/actual.generated.json",
+                "evidence/refactor/power0f-mask-original-fresh-15/study/discovery-cap8-v5-gpio110-power0f-maskc000-lcdinit/original.generated.json"
+              ],
+              "limitation": "Device owner,name,unit,reset,physical writable bits,side effects and hardware behavior remain UNKNOWN. Software argument width and a selected retained-word hypothesis grant no physical permission."
+            }
+          },
+          "evidence": [
+            "evidence/refactor/power37-write-consumer-fresh-16/qualification-01/actual.generated.json",
+            "evidence/refactor/power0f-mask-original-fresh-15/study/discovery-cap8-v5-gpio110-power0f-maskc000-lcdinit/original.generated.json"
+          ],
+          "unknowns": [
+            "Device owner,name,unit,reset,physical writable bits,side effects and hardware behavior remain UNKNOWN. Software argument width and a selected retained-word hypothesis grant no physical permission.",
+            "The helper-modified local byte and dynamic write38 remain unknown.",
+            "Initial0 and proposed masksFFFF/00FF are explicit HYPOTHESIS only, not catalog reset or hardware permissions."
+          ],
+          "nextValidation": "Qualify a new bounded experiment explicitly promoting37/38 from finite reads to initial0 plus masked-retained HYPOTHESIS only if selected. Preserve the original first-read zero prefix and all other finite inputs; keep ownership exclusive and undeclared-bit refusal. Observe real checksum commit,38 argument and later stop/LCD execution without predicting readiness."
+        }
+      ],
+      "provenance": {
+        "coordinates": {
+          "confidence": "DAT",
+          "evidence": [
+            "evidence/refactor/rtc-selector25-research-fresh-02/actual-02.generated.json"
+          ],
+          "source": {
+            "commit": "5dd05496b66d0826d24fa34963540a845131108f",
+            "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/RtcSelector25Research.kt"
+          },
+          "limitation": "Selector coordinates belong to the external checksum protocol, not CPU addresses."
+        },
+        "transport": {
+          "confidence": "SOURCE",
+          "evidence": [
+            "components/power-peer/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/powerpeer/PowerPeerFactory.kt"
+          ],
+          "limitation": "Host transport identity only; this does not identify a physical peripheral."
+        },
+        "deviceOwner": {
+          "confidence": "UNKNOWN",
+          "evidence": [
+            "evidence/refactor/rtc-selector25-research-fresh-02/actual-02.generated.json"
+          ],
+          "limitation": "No qualified physical definition, reset, input value or behavior."
+        },
+        "width": {
+          "confidence": "DAT",
+          "evidence": [
+            "evidence/refactor/rtc-selector25-research-fresh-02/actual-02.generated.json"
+          ],
+          "source": {
+            "commit": "5dd05496b66d0826d24fa34963540a845131108f",
+            "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/RtcSelector25Research.kt"
+          },
+          "limitation": "Raw word width comes from the selected read API and halfword destinations, not a physical device specification."
+        }
+      },
+      "unknowns": [
+        "The host power-peer transport does not establish that these requests belong to RTC, battery or any physical chip."
+      ],
+      "nextValidation": "Promote only after device ownership, contract and behavior have separate evidence; candidates grant no access."
+    }
+  ],
+  "powerButtonBinding": {
+    "profile": "gfx100s-2.13-power-switch-v1",
+    "buttonKey": "power",
+    "coordinateKind": "PROTOCOL_SELECTOR",
+    "selector": 0,
+    "bit": 10,
+    "activeLow": true,
+    "confidence": "SOURCE",
+    "sampling": "Read request header; reply remains fixed through checksum; original guest owns cache refresh and event conversion",
+    "applicability": {
+      "body": "GFX100S",
+      "firmware": "2.13"
+    },
+    "evidence": [
+      "evidence/refactor/input-source-318-323/power-input-callback-327.md",
+      "evidence/refactor/power-switch-source-333-335/power-transport-335.md"
+    ],
+    "unknowns": [
+      "Physical board identity/reset/idle voltage and actual guest event delivery unverified; host active/released levels are selected HYP inputs."
+    ]
+  }
+}

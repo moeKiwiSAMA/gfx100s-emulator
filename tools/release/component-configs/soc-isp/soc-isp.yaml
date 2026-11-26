@@ -1,0 +1,4 @@
+# Internal GFX100S SoC hardware definition — no user edits needed.
+profile: "isp-banks-movie-capture-v3"
+initialFill: 0
+autoFrameIrqs: true

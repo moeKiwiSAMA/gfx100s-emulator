@@ -1,0 +1,2202 @@
+{
+  "schema": 1,
+  "id": "device.soc-dma",
+  "componentId": "soc-dma",
+  "depends": [],
+  "version": "0.0.1",
+  "name": "soc-dma",
+  "physicalIdentity": "UNKNOWN",
+  "implementationStatus": "PARTIAL",
+  "implementationSources": [
+    "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+    "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+  ],
+  "ports": [
+    {
+      "id": "definition.soc-dma.registers",
+      "size": 65536,
+      "kind": "MMIO",
+      "byteOrder": "little",
+      "backing": {
+        "source": "component-owned state",
+        "permissions": "per register; stateful checks remain"
+      },
+      "registers": [
+        {
+          "id": "reg.soc-dma.registers.o0",
+          "offset": 0,
+          "size": 4,
+          "count": 16,
+          "stride": 4096,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-dma",
+          "name": "o0",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+            "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-dma.registers.o0.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-dma.registers.o10",
+          "offset": 16,
+          "size": 4,
+          "count": 16,
+          "stride": 4096,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-dma",
+          "name": "o10",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+            "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-dma.registers.o10.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-dma.registers.o14",
+          "offset": 20,
+          "size": 4,
+          "count": 16,
+          "stride": 4096,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-dma",
+          "name": "o14",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+            "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-dma.registers.o14.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-dma.registers.o18",
+          "offset": 24,
+          "size": 4,
+          "count": 16,
+          "stride": 4096,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-dma",
+          "name": "o18",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+            "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-dma.registers.o18.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-dma.registers.o1c",
+          "offset": 28,
+          "size": 4,
+          "count": 16,
+          "stride": 4096,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-dma",
+          "name": "o1c",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+            "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-dma.registers.o1c.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-dma.registers.o20",
+          "offset": 32,
+          "size": 4,
+          "count": 16,
+          "stride": 4096,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-dma",
+          "name": "o20",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+            "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-dma.registers.o20.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-dma.registers.o24",
+          "offset": 36,
+          "size": 4,
+          "count": 16,
+          "stride": 4096,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-dma",
+          "name": "o24",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+            "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-dma.registers.o24.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-dma.registers.o28",
+          "offset": 40,
+          "size": 4,
+          "count": 16,
+          "stride": 4096,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-dma",
+          "name": "o28",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+            "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-dma.registers.o28.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-dma.registers.o2c",
+          "offset": 44,
+          "size": 4,
+          "count": 16,
+          "stride": 4096,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-dma",
+          "name": "o2c",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+            "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-dma.registers.o2c.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-dma.registers.o30",
+          "offset": 48,
+          "size": 4,
+          "count": 16,
+          "stride": 4096,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-dma",
+          "name": "o30",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+            "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-dma.registers.o30.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-dma.registers.o34",
+          "offset": 52,
+          "size": 4,
+          "count": 16,
+          "stride": 4096,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-dma",
+          "name": "o34",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+            "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-dma.registers.o34.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        }
+      ],
+      "unknownCoverage": "All gaps not listed by registers are UNKNOWN and refused by the known device.",
+      "implementationSources": [
+        "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+        "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+      ]
+    },
+    {
+      "id": "definition.soc-dma.mux",
+      "size": 32,
+      "kind": "MMIO",
+      "byteOrder": "little",
+      "backing": {
+        "source": "component-owned state",
+        "permissions": "per register; stateful checks remain"
+      },
+      "registers": [
+        {
+          "id": "reg.soc-dma.mux.o0",
+          "offset": 0,
+          "size": 4,
+          "count": 8,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-dma",
+          "name": "o0",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+            "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-dma.mux.o0.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        }
+      ],
+      "unknownCoverage": "All gaps not listed by registers are UNKNOWN and refused by the known device.",
+      "implementationSources": [
+        "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+        "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+      ]
+    },
+    {
+      "id": "definition.soc-dma.requests",
+      "size": 128,
+      "kind": "MMIO",
+      "byteOrder": "little",
+      "backing": {
+        "source": "component-owned state",
+        "permissions": "per register; stateful checks remain"
+      },
+      "registers": [
+        {
+          "id": "reg.soc-dma.requests.o0",
+          "offset": 0,
+          "size": 4,
+          "count": 32,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-dma",
+          "name": "o0",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+            "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-dma.requests.o0.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        }
+      ],
+      "unknownCoverage": "All gaps not listed by registers are UNKNOWN and refused by the known device.",
+      "implementationSources": [
+        "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DestinationRoutes.kt",
+        "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+      ]
+    },
+    {
+      "id": "definition.soc-dma.channel-word-rw",
+      "size": 4,
+      "kind": "MMIO",
+      "byteOrder": "little",
+      "backing": {
+        "source": "component-owned optional channel7Programming retained-words-zero-v1 HYPOTHESIS",
+        "permissions": "Aligned 32-bit RW when channel7Programming enabled"
+      },
+      "registers": [
+        {
+          "id": "reg.soc-dma.channel-word-rw.word",
+          "offset": 0,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-dma",
+          "name": "channel-word",
+          "namingBasis": "Kernel 0005A1F8 DMA channel 7 enable/control register",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS zero-initialized when channel7Programming enabled"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/kernel.bin",
+            "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+          ],
+          "tests": [
+            "components/soc-dma/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaChannelProgrammingTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/kernel.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/kernel.bin"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-dma.channel-word-rw.word.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Raw 32-bit word for channel-word",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/kernel.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/kernel.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest register transitions against hardware capture."
+            }
+          ],
+          "unknowns": [
+            "Physical identity, reset value, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Compare hardware register captures with component behavior."
+        }
+      ],
+      "unknownCoverage": "No address outside this aligned word is admitted.",
+      "implementationSources": [
+        "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+      ]
+    },
+    {
+      "id": "definition.soc-dma.channel-control",
+      "size": 4,
+      "kind": "MMIO",
+      "byteOrder": "little",
+      "backing": {
+        "source": "component-owned optional channel4/11Programming (write-words-v1 / control-readback-after-write-v1 HYPOTHESIS)",
+        "permissions": "Aligned 32-bit WO (write-words-v1) or RW after first write (control-readback-after-write-v1)"
+      },
+      "registers": [
+        {
+          "id": "reg.soc-dma.channel-control.word",
+          "offset": 0,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-dma",
+          "name": "channel-control",
+          "namingBasis": "Kernel 0005A1F8 DMA channel 4/11 control register (0xFFF3C010 + 4*ch)",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS readback requires control-readback-after-write-v1 after write"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/kernel.bin",
+            "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+          ],
+          "tests": [
+            "components/soc-dma/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaChannelProgrammingTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/kernel.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/kernel.bin"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-dma.channel-control.word.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Raw 32-bit word for channel-control",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/kernel.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/kernel.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest register transitions against hardware capture."
+            }
+          ],
+          "unknowns": [
+            "Physical identity, reset value, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Compare hardware register captures with component behavior."
+        }
+      ],
+      "unknownCoverage": "No address outside this aligned word is admitted.",
+      "implementationSources": [
+        "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+      ]
+    },
+    {
+      "id": "definition.soc-dma.channel-params-wo",
+      "size": 16,
+      "kind": "MMIO",
+      "byteOrder": "little",
+      "backing": {
+        "source": "component-owned optional channel4/11Programming parameter bank HYPOTHESIS",
+        "permissions": "Aligned 32-bit WO across 4 words (0xFFF3C100 + 16*ch); reads refuse"
+      },
+      "registers": [
+        {
+          "id": "reg.soc-dma.channel-params-wo.words",
+          "offset": 0,
+          "size": 4,
+          "count": 4,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-dma",
+          "name": "channel-params-wo",
+          "namingBasis": "Kernel 0005A1F8 DMA channel 4/11 descriptor bank (0xFFF3C140 / 0xFFF3C1B0)",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS write-only parameter words"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Refuse",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/kernel.bin",
+            "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+          ],
+          "tests": [
+            "components/soc-dma/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaChannelProgrammingTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/kernel.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/kernel.bin"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-dma.channel-params-wo.words.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Raw 32-bit word for channel-params-wo",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/kernel.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/kernel.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest register transitions against hardware capture."
+            }
+          ],
+          "unknowns": [
+            "Physical identity, reset value, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Compare hardware register captures with component behavior."
+        }
+      ],
+      "unknownCoverage": "No address outside these 4 aligned words is admitted.",
+      "implementationSources": [
+        "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+      ]
+    },
+    {
+      "id": "definition.soc-dma.channel-params-rw",
+      "size": 16,
+      "kind": "MMIO",
+      "byteOrder": "little",
+      "backing": {
+        "source": "component-owned optional channel7Programming parameter bank HYPOTHESIS",
+        "permissions": "Aligned 32-bit RW across 4 words (0xFFF3C170)"
+      },
+      "registers": [
+        {
+          "id": "reg.soc-dma.channel-params-rw.words",
+          "offset": 0,
+          "size": 4,
+          "count": 4,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-dma",
+          "name": "channel-params-rw",
+          "namingBasis": "Kernel 0005A1F8 DMA channel 7 descriptor bank (0xFFF3C170)",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS zero-initialized RW parameter words"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/kernel.bin",
+            "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+          ],
+          "tests": [
+            "components/soc-dma/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaChannelProgrammingTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/kernel.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/kernel.bin"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-dma.channel-params-rw.words.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Raw 32-bit word for channel-params-rw",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/kernel.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/kernel.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest register transitions against hardware capture."
+            }
+          ],
+          "unknowns": [
+            "Physical identity, reset value, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Compare hardware register captures with component behavior."
+        }
+      ],
+      "unknownCoverage": "No address outside these 4 aligned words is admitted.",
+      "implementationSources": [
+        "components/soc-dma/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/dma/DmaFactory.kt"
+      ]
+    }
+  ],
+  "unknowns": [
+    "Physical device identity, reset values, wiring and full state machine are not qualified."
+  ],
+  "nextValidation": "Trace selected original firmware consumers and retain refusal controls."
+}

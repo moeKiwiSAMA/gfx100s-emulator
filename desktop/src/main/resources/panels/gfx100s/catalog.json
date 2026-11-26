@@ -1,0 +1,2244 @@
+{
+  "schema": 2,
+  "model": "GFX100S",
+  "modelCode": "FF200003",
+  "coordinateSystem": "SVG viewBox units; origin top-left; uniform scale per tab",
+  "designStatus": "studio-original-schematic",
+  "geometryMeasured": false,
+  "firmwareControlsQualified": false,
+  "views": [
+    {
+      "id": "rear",
+      "title": "背面 / REAR",
+      "svg": "rear.svg",
+      "width": 1200,
+      "height": 800,
+      "controls": [
+        {
+          "id": "rear-lcd",
+          "physicalPartId": "rear-lcd",
+          "label": "LCD / TOUCH",
+          "labelZh": "主屏/触摸屏",
+          "x": 185,
+          "y": 326,
+          "width": 514,
+          "height": 386,
+          "kind": "display",
+          "buttonKey": null,
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-DISPLAYS",
+            "GFX-SRC-TOUCH"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "waiting-for-firmware-frame",
+          "firmwareBinding": "UNKNOWN",
+          "displayPort": "display.main",
+          "viewId": "rear",
+          "hitbox": {
+            "x": 185,
+            "y": 326,
+            "width": 514,
+            "height": 386
+          }
+        },
+        {
+          "id": "rear-evf",
+          "physicalPartId": "evf",
+          "label": "EVF",
+          "labelZh": "电子取景器",
+          "x": 416,
+          "y": 163,
+          "width": 174,
+          "height": 90,
+          "kind": "display",
+          "buttonKey": null,
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-DISPLAYS"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "waiting-for-firmware-frame",
+          "firmwareBinding": "UNKNOWN",
+          "displayPort": "display.evf",
+          "viewId": "rear",
+          "hitbox": {
+            "x": 416,
+            "y": 163,
+            "width": 174,
+            "height": 90
+          }
+        },
+        {
+          "id": "rear-eye-sensor",
+          "physicalPartId": "rear-eye-sensor",
+          "label": "EYE",
+          "labelZh": "眼传感器",
+          "x": 472,
+          "y": 282,
+          "width": 56,
+          "height": 26,
+          "kind": "sensor",
+          "buttonKey": null,
+          "componentId": "i2c-bus",
+          "settingKey": "eyeSensorNear",
+          "basis": [
+            "GFX-SRC-PARTS"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "host-state-only",
+          "firmwareBinding": "UNKNOWN",
+          "interaction": "latching",
+          "viewId": "rear",
+          "hitbox": {
+            "x": 472,
+            "y": 282,
+            "width": 56,
+            "height": 26
+          }
+        },
+        {
+          "id": "rear-command-dial",
+          "physicalPartId": "rear-command-dial",
+          "label": "REAR DIAL",
+          "labelZh": "后指令拨盘",
+          "x": 790,
+          "y": 230,
+          "width": 164,
+          "height": 42,
+          "kind": "encoder",
+          "buttonKey": "rearDialPress",
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-PARTS",
+            "GFX-SRC-BROCHURE"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "host-logical-only",
+          "firmwareBinding": "UNKNOWN",
+          "interaction": "momentary",
+          "viewId": "rear",
+          "hitbox": {
+            "x": 790,
+            "y": 230,
+            "width": 164,
+            "height": 42
+          }
+        },
+        {
+          "id": "rear-drive",
+          "physicalPartId": "rear-drive",
+          "label": "DRIVE",
+          "labelZh": "驱动模式",
+          "x": 181,
+          "y": 249,
+          "width": 44,
+          "height": 45,
+          "kind": "button",
+          "buttonKey": "drive",
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-PARTS",
+            "GFX-SRC-BROCHURE"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "host-logical-only",
+          "firmwareBinding": "UNKNOWN",
+          "interaction": "momentary",
+          "viewId": "rear",
+          "hitbox": {
+            "x": 181,
+            "y": 249,
+            "width": 44,
+            "height": 45
+          }
+        },
+        {
+          "id": "rear-delete",
+          "physicalPartId": "rear-delete",
+          "label": "DELETE",
+          "labelZh": "删除",
+          "x": 254,
+          "y": 249,
+          "width": 44,
+          "height": 45,
+          "kind": "button",
+          "buttonKey": "delete",
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-PARTS",
+            "GFX-SRC-BROCHURE"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "host-logical-only",
+          "firmwareBinding": "UNKNOWN",
+          "interaction": "momentary",
+          "viewId": "rear",
+          "hitbox": {
+            "x": 254,
+            "y": 249,
+            "width": 44,
+            "height": 45
+          }
+        },
+        {
+          "id": "rear-view-mode",
+          "physicalPartId": "rear-view-mode",
+          "label": "VIEW MODE",
+          "labelZh": "显示切换",
+          "x": 630,
+          "y": 155,
+          "width": 34,
+          "height": 34,
+          "kind": "button",
+          "buttonKey": null,
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-PARTS",
+            "GFX-SRC-BROCHURE"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "not-connected",
+          "firmwareBinding": "UNKNOWN",
+          "viewId": "rear",
+          "hitbox": {
+            "x": 630,
+            "y": 155,
+            "width": 34,
+            "height": 34
+          }
+        },
+        {
+          "id": "rear-sub-backlight",
+          "physicalPartId": "rear-sub-backlight",
+          "label": "LIGHT",
+          "labelZh": "肩屏背光",
+          "x": 630,
+          "y": 197,
+          "width": 34,
+          "height": 34,
+          "kind": "button",
+          "buttonKey": null,
+          "componentId": "soc-adc",
+          "settingKey": "lightButton",
+          "basis": [
+            "GFX-SRC-PARTS",
+            "GFX-SRC-BROCHURE"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "host-state-only",
+          "firmwareBinding": "UNKNOWN",
+          "interaction": "momentary",
+          "viewId": "rear",
+          "hitbox": {
+            "x": 630,
+            "y": 197,
+            "width": 34,
+            "height": 34
+          }
+        },
+        {
+          "id": "rear-diopter",
+          "physicalPartId": "diopter-adjustment",
+          "label": "DIOP.",
+          "labelZh": "屈光度调节",
+          "x": 324,
+          "y": 195,
+          "width": 44,
+          "height": 44,
+          "kind": "dial",
+          "buttonKey": null,
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-PARTS",
+            "GFX-SRC-BROCHURE"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "not-connected",
+          "firmwareBinding": "UNKNOWN",
+          "interaction": "unlock-rotate-lock",
+          "viewId": "rear",
+          "hitbox": {
+            "x": 324,
+            "y": 195,
+            "width": 44,
+            "height": 44
+          }
+        },
+        {
+          "id": "rear-focus-selector",
+          "physicalPartId": "rear-focus-selector",
+          "label": "Focus mode selector: S / C / M (top to bottom)",
+          "labelZh": "对焦模式拨杆：S/C/M（从上到下）",
+          "x": 650,
+          "y": 233,
+          "width": 62,
+          "height": 64,
+          "kind": "selector",
+          "buttonKey": "focusMode",
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-PARTS",
+            "GFX-SRC-BROCHURE"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "host-logical-only",
+          "firmwareBinding": "UNKNOWN",
+          "interaction": "latching",
+          "viewId": "rear",
+          "hitbox": {
+            "x": 650,
+            "y": 233,
+            "width": 62,
+            "height": 64
+          }
+        },
+        {
+          "id": "rear-af-on",
+          "physicalPartId": "rear-af-on",
+          "label": "AFON",
+          "labelZh": "自动对焦",
+          "x": 722,
+          "y": 234,
+          "width": 52,
+          "height": 52,
+          "kind": "button",
+          "buttonKey": "afOn",
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-PARTS",
+            "GFX-SRC-BROCHURE"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "host-logical-only",
+          "firmwareBinding": "UNKNOWN",
+          "interaction": "momentary",
+          "viewId": "rear",
+          "hitbox": {
+            "x": 722,
+            "y": 234,
+            "width": 52,
+            "height": 52
+          }
+        },
+        {
+          "id": "rear-q",
+          "physicalPartId": "rear-q",
+          "label": "Q",
+          "labelZh": "快速菜单",
+          "x": 991,
+          "y": 323,
+          "width": 48,
+          "height": 50,
+          "kind": "button",
+          "buttonKey": null,
+          "componentId": "soc-adc",
+          "settingKey": "qButton",
+          "basis": [
+            "GFX-SRC-PARTS",
+            "GFX-SRC-BROCHURE"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "host-state-only",
+          "firmwareBinding": "UNKNOWN",
+          "interaction": "momentary",
+          "viewId": "rear",
+          "hitbox": {
+            "x": 991,
+            "y": 323,
+            "width": 48,
+            "height": 50
+          }
+        },
+        {
+          "id": "rear-indicator",
+          "physicalPartId": "rear-indicator-tally",
+          "label": "LED",
+          "labelZh": "状态/信号灯",
+          "x": 1040,
+          "y": 367,
+          "width": 18,
+          "height": 25,
+          "kind": "indicator",
+          "buttonKey": null,
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-PARTS",
+            "GFX-SRC-BROCHURE"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "not-connected",
+          "firmwareBinding": "UNKNOWN",
+          "viewId": "rear",
+          "hitbox": {
+            "x": 1040,
+            "y": 367,
+            "width": 18,
+            "height": 25
+          }
+        },
+        {
+          "id": "rear-stick-up",
+          "physicalPartId": "focus-stick",
+          "label": "↑",
+          "labelZh": "对焦棒向上",
+          "x": 759,
+          "y": 345,
+          "width": 34,
+          "height": 24,
+          "kind": "button",
+          "buttonKey": "up",
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-PARTS",
+            "GFX-SRC-BROCHURE"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "host-logical-only",
+          "firmwareBinding": "UNKNOWN",
+          "interaction": "momentary",
+          "viewId": "rear",
+          "hitbox": {
+            "x": 759,
+            "y": 345,
+            "width": 34,
+            "height": 24
+          }
+        },
+        {
+          "id": "rear-stick-left",
+          "physicalPartId": "focus-stick",
+          "label": "←",
+          "labelZh": "对焦棒向左",
+          "x": 738,
+          "y": 369,
+          "width": 24,
+          "height": 30,
+          "kind": "button",
+          "buttonKey": "left",
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-PARTS",
+            "GFX-SRC-BROCHURE"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "host-logical-only",
+          "firmwareBinding": "UNKNOWN",
+          "interaction": "momentary",
+          "viewId": "rear",
+          "hitbox": {
+            "x": 738,
+            "y": 369,
+            "width": 24,
+            "height": 30
+          }
+        },
+        {
+          "id": "rear-stick-press",
+          "physicalPartId": "focus-stick",
+          "label": "●",
+          "labelZh": "对焦棒按下",
+          "x": 762,
+          "y": 369,
+          "width": 28,
+          "height": 28,
+          "kind": "button",
+          "buttonKey": "focusStickPress",
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-PARTS",
+            "GFX-SRC-BROCHURE"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "host-logical-only",
+          "firmwareBinding": "UNKNOWN",
+          "interaction": "momentary",
+          "viewId": "rear",
+          "hitbox": {
+            "x": 762,
+            "y": 369,
+            "width": 28,
+            "height": 28
+          }
+        },
+        {
+          "id": "rear-stick-right",
+          "physicalPartId": "focus-stick",
+          "label": "→",
+          "labelZh": "对焦棒向右",
+          "x": 790,
+          "y": 369,
+          "width": 24,
+          "height": 30,
+          "kind": "button",
+          "buttonKey": "right",
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-PARTS",
+            "GFX-SRC-BROCHURE"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "host-logical-only",
+          "firmwareBinding": "UNKNOWN",
+          "interaction": "momentary",
+          "viewId": "rear",
+          "hitbox": {
+            "x": 790,
+            "y": 369,
+            "width": 24,
+            "height": 30
+          }
+        },
+        {
+          "id": "rear-stick-down",
+          "physicalPartId": "focus-stick",
+          "label": "↓",
+          "labelZh": "对焦棒向下",
+          "x": 759,
+          "y": 400,
+          "width": 34,
+          "height": 24,
+          "kind": "button",
+          "buttonKey": "down",
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-PARTS",
+            "GFX-SRC-BROCHURE"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "host-logical-only",
+          "firmwareBinding": "UNKNOWN",
+          "interaction": "momentary",
+          "viewId": "rear",
+          "hitbox": {
+            "x": 759,
+            "y": 400,
+            "width": 34,
+            "height": 24
+          }
+        },
+        {
+          "id": "rear-ael",
+          "physicalPartId": "rear-ael",
+          "label": "AEL",
+          "labelZh": "曝光锁定",
+          "x": 749,
+          "y": 439,
+          "width": 54,
+          "height": 54,
+          "kind": "button",
+          "buttonKey": null,
+          "componentId": "soc-adc",
+          "settingKey": "aelButton",
+          "basis": [
+            "GFX-SRC-PARTS",
+            "GFX-SRC-BROCHURE"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "host-state-only",
+          "firmwareBinding": "UNKNOWN",
+          "interaction": "momentary",
+          "viewId": "rear",
+          "hitbox": {
+            "x": 749,
+            "y": 439,
+            "width": 54,
+            "height": 54
+          }
+        },
+        {
+          "id": "rear-menu-ok",
+          "physicalPartId": "menu-ok",
+          "label": "MENU/OK",
+          "labelZh": "菜单/确认",
+          "x": 748,
+          "y": 519,
+          "width": 56,
+          "height": 56,
+          "kind": "button",
+          "buttonKey": "menu",
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-MENUS",
+            "GFX-SRC-BROCHURE"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "host-logical-only",
+          "firmwareBinding": "UNKNOWN",
+          "interaction": "momentary",
+          "viewId": "rear",
+          "hitbox": {
+            "x": 748,
+            "y": 519,
+            "width": 56,
+            "height": 56
+          }
+        },
+        {
+          "id": "rear-playback",
+          "physicalPartId": "playback",
+          "label": "PLAY",
+          "labelZh": "回放",
+          "x": 750,
+          "y": 599,
+          "width": 52,
+          "height": 52,
+          "kind": "button",
+          "buttonKey": "play",
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-PARTS",
+            "GFX-SRC-BROCHURE"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "host-logical-only",
+          "firmwareBinding": "UNKNOWN",
+          "interaction": "momentary",
+          "viewId": "rear",
+          "hitbox": {
+            "x": 750,
+            "y": 599,
+            "width": 52,
+            "height": 52
+          }
+        },
+        {
+          "id": "rear-disp-back",
+          "physicalPartId": "disp-back",
+          "label": "DISP/BACK",
+          "labelZh": "显示/返回",
+          "x": 750,
+          "y": 669,
+          "width": 52,
+          "height": 52,
+          "kind": "button",
+          "buttonKey": "back",
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-PARTS",
+            "GFX-SRC-BROCHURE"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "host-logical-only",
+          "firmwareBinding": "UNKNOWN",
+          "interaction": "momentary",
+          "viewId": "rear",
+          "hitbox": {
+            "x": 750,
+            "y": 669,
+            "width": 52,
+            "height": 52
+          }
+        },
+        {
+          "id": "rear-speaker",
+          "physicalPartId": "rear-speaker",
+          "label": "SPEAKER",
+          "labelZh": "扬声器",
+          "x": 931,
+          "y": 696,
+          "width": 66,
+          "height": 23,
+          "kind": "audio",
+          "buttonKey": null,
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-PARTS",
+            "GFX-SRC-BROCHURE"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "not-connected",
+          "firmwareBinding": "UNKNOWN",
+          "viewId": "rear",
+          "hitbox": {
+            "x": 931,
+            "y": 696,
+            "width": 66,
+            "height": 23
+          }
+        }
+      ],
+      "dynamicStates": [
+        {
+          "id": "gfx-focus-lever-rotor",
+          "mode": "rotate-map",
+          "componentId": "soc-gpio",
+          "settingKey": "focusMode",
+          "pivotX": 680,
+          "pivotY": 265,
+          "angleMap": {
+            "AF-S": 23.2,
+            "S": 23.2,
+            "AF-C": 0.0,
+            "C": 0.0,
+            "MF": -25.9,
+            "M": -25.9
+          }
+        }
+      ]
+    },
+    {
+      "id": "top",
+      "title": "顶部 / TOP",
+      "svg": "top.svg",
+      "width": 1200,
+      "height": 800,
+      "controls": [
+        {
+          "id": "top-hot-shoe",
+          "physicalPartId": "top-hot-shoe",
+          "label": "HOT SHOE",
+          "labelZh": "热靴",
+          "x": 519,
+          "y": 449,
+          "width": 151,
+          "height": 129,
+          "kind": "connector",
+          "buttonKey": null,
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-PARTS",
+            "GFX-SRC-BROCHURE"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "not-connected",
+          "firmwareBinding": "UNKNOWN",
+          "viewId": "top",
+          "hitbox": {
+            "x": 519,
+            "y": 449,
+            "width": 151,
+            "height": 129
+          }
+        },
+        {
+          "id": "top-mode-dial",
+          "physicalPartId": "mode-dial",
+          "label": "P S A M · C1–C6",
+          "labelZh": "模式拨盘",
+          "x": 157.5,
+          "y": 412.5,
+          "width": 155,
+          "height": 155,
+          "kind": "dial",
+          "buttonKey": null,
+          "componentId": "soc-adc",
+          "settingKey": "modeDial",
+          "basis": [
+            "GFX-SRC-PARTS",
+            "GFX-SRC-BROCHURE"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "host-state-only",
+          "firmwareBinding": "UNKNOWN",
+          "interaction": "lock-then-select",
+          "viewId": "top",
+          "hitbox": {
+            "x": 157.5,
+            "y": 412.5,
+            "width": 155,
+            "height": 155
+          }
+        },
+        {
+          "id": "top-dial-lock",
+          "physicalPartId": "top-dial-lock",
+          "label": "LOCK",
+          "labelZh": "模式拨盘锁",
+          "x": 209,
+          "y": 464,
+          "width": 52,
+          "height": 52,
+          "kind": "button",
+          "buttonKey": null,
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-PARTS",
+            "GFX-SRC-BROCHURE"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "not-connected",
+          "firmwareBinding": "UNKNOWN",
+          "viewId": "top",
+          "hitbox": {
+            "x": 209,
+            "y": 464,
+            "width": 52,
+            "height": 52
+          }
+        },
+        {
+          "id": "top-still-movie",
+          "physicalPartId": "top-still-movie",
+          "label": "STILL / MOVIE",
+          "labelZh": "照片/视频切换",
+          "x": 210,
+          "y": 347.5,
+          "width": 54,
+          "height": 43,
+          "kind": "selector",
+          "buttonKey": "movieMode",
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-PARTS",
+            "GFX-SRC-BROCHURE"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "host-logical-only",
+          "firmwareBinding": "UNKNOWN",
+          "interaction": "latching",
+          "viewId": "top",
+          "hitbox": {
+            "x": 210,
+            "y": 347.5,
+            "width": 54,
+            "height": 43
+          }
+        },
+        {
+          "id": "top-shoulder",
+          "physicalPartId": "shoulder-lcd",
+          "label": "SECONDARY LCD",
+          "labelZh": "肩屏",
+          "x": 733,
+          "y": 393,
+          "width": 222,
+          "height": 167,
+          "kind": "display",
+          "buttonKey": null,
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-DISPLAYS",
+            "GFX-SRC-SPEC",
+            "GFX-SRC-BROCHURE"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "waiting-for-firmware-frame",
+          "firmwareBinding": "UNKNOWN",
+          "displayPort": "display.shoulder",
+          "viewId": "top",
+          "hitbox": {
+            "x": 733,
+            "y": 393,
+            "width": 222,
+            "height": 167
+          }
+        },
+        {
+          "id": "top-fn2",
+          "physicalPartId": "top-fn2",
+          "label": "Fn2",
+          "labelZh": "功能键2",
+          "x": 988,
+          "y": 386,
+          "width": 46,
+          "height": 46,
+          "kind": "button",
+          "buttonKey": null,
+          "componentId": "soc-adc",
+          "settingKey": "fn2Button",
+          "basis": [
+            "GFX-SRC-PARTS",
+            "GFX-SRC-BROCHURE"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "host-state-only",
+          "firmwareBinding": "UNKNOWN",
+          "interaction": "momentary",
+          "viewId": "top",
+          "hitbox": {
+            "x": 988,
+            "y": 386,
+            "width": 46,
+            "height": 46
+          }
+        },
+        {
+          "id": "top-fn3",
+          "physicalPartId": "top-fn3",
+          "label": "Fn3",
+          "labelZh": "功能键3",
+          "x": 988,
+          "y": 473,
+          "width": 46,
+          "height": 46,
+          "kind": "button",
+          "buttonKey": null,
+          "componentId": "soc-adc",
+          "settingKey": "fn3Button",
+          "basis": [
+            "GFX-SRC-PARTS",
+            "GFX-SRC-BROCHURE"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "host-state-only",
+          "firmwareBinding": "UNKNOWN",
+          "interaction": "momentary",
+          "viewId": "top",
+          "hitbox": {
+            "x": 988,
+            "y": 473,
+            "width": 46,
+            "height": 46
+          }
+        },
+        {
+          "id": "top-power",
+          "physicalPartId": "power-switch",
+          "label": "ON / OFF",
+          "labelZh": "电源开关",
+          "x": 901,
+          "y": 343,
+          "width": 113,
+          "height": 31,
+          "kind": "switch",
+          "buttonKey": "power",
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-PARTS",
+            "GFX-SRC-BROCHURE"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "host-logical-only",
+          "firmwareBinding": "UNKNOWN",
+          "interaction": "latching",
+          "viewId": "top",
+          "hitbox": {
+            "x": 901,
+            "y": 343,
+            "width": 113,
+            "height": 31
+          }
+        },
+        {
+          "id": "top-shutter-half",
+          "physicalPartId": "shutter",
+          "label": "SHUTTER ½",
+          "labelZh": "快门半按",
+          "x": 926,
+          "y": 267,
+          "width": 62,
+          "height": 31,
+          "kind": "button",
+          "buttonKey": "shutterHalf",
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-PARTS",
+            "GFX-SRC-BROCHURE"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "host-logical-only",
+          "firmwareBinding": "UNKNOWN",
+          "interaction": "momentary",
+          "viewId": "top",
+          "hitbox": {
+            "x": 926,
+            "y": 267,
+            "width": 62,
+            "height": 31
+          }
+        },
+        {
+          "id": "top-shutter-full",
+          "physicalPartId": "shutter",
+          "label": "SHUTTER FULL",
+          "labelZh": "快门全按",
+          "x": 926,
+          "y": 298,
+          "width": 62,
+          "height": 31,
+          "kind": "button",
+          "buttonKey": "shutterFull",
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-PARTS",
+            "GFX-SRC-BROCHURE"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "host-logical-only",
+          "firmwareBinding": "UNKNOWN",
+          "interaction": "momentary",
+          "viewId": "top",
+          "hitbox": {
+            "x": 926,
+            "y": 298,
+            "width": 62,
+            "height": 31
+          }
+        },
+        {
+          "id": "top-fn1",
+          "physicalPartId": "top-fn1",
+          "label": "Fn1 / ±",
+          "labelZh": "功能键1/曝光补偿",
+          "x": 1022,
+          "y": 306,
+          "width": 40,
+          "height": 40,
+          "kind": "button",
+          "buttonKey": null,
+          "componentId": "soc-adc",
+          "settingKey": "fn1Button",
+          "basis": [
+            "GFX-SRC-PARTS",
+            "GFX-SRC-BROCHURE"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "host-state-only",
+          "firmwareBinding": "UNKNOWN",
+          "interaction": "momentary",
+          "viewId": "top",
+          "hitbox": {
+            "x": 1022,
+            "y": 306,
+            "width": 40,
+            "height": 40
+          }
+        },
+        {
+          "id": "top-diopter",
+          "physicalPartId": "diopter-adjustment",
+          "label": "DIOP.",
+          "labelZh": "屈光度调节",
+          "x": 433,
+          "y": 557,
+          "width": 34,
+          "height": 65,
+          "kind": "dial",
+          "buttonKey": null,
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-PARTS",
+            "GFX-SRC-BROCHURE"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "not-connected",
+          "firmwareBinding": "UNKNOWN",
+          "interaction": "unlock-rotate-lock",
+          "viewId": "top",
+          "hitbox": {
+            "x": 433,
+            "y": 557,
+            "width": 34,
+            "height": 65
+          }
+        }
+      ],
+      "layers": [
+        {
+          "id": "lens-attached-top-art",
+          "visibleWhen": {
+            "componentId": "mount",
+            "settingKey": "attached",
+            "equals": true
+          }
+        }
+      ],
+      "dynamicStates": [
+        {
+          "id": "gfx-mode-dial-rotor",
+          "mode": "rotate-map",
+          "componentId": "soc-adc",
+          "settingKey": "modeDial",
+          "pivotX": 235,
+          "pivotY": 490,
+          "angleMap": {
+            "P": 0,
+            "S": 36,
+            "A": 72,
+            "M": 108,
+            "C1": 144,
+            "C2": 180,
+            "C3": -144,
+            "C4": -108,
+            "C5": -72,
+            "C6": -36
+          }
+        },
+        {
+          "id": "gfx-movie-selector-still",
+          "mode": "highlight-button",
+          "buttonKey": "movieMode",
+          "activeOpacity": 0,
+          "inactiveOpacity": 1
+        },
+        {
+          "id": "gfx-movie-selector-movie",
+          "mode": "highlight-button",
+          "buttonKey": "movieMode",
+          "activeOpacity": 1,
+          "inactiveOpacity": 0
+        }
+      ]
+    },
+    {
+      "id": "front",
+      "title": "前部 / FRONT",
+      "svg": "front.svg",
+      "width": 1200,
+      "height": 800,
+      "controls": [
+        {
+          "id": "front-command-dial",
+          "physicalPartId": "front-command-dial",
+          "label": "FRONT DIAL",
+          "labelZh": "前指令拨盘",
+          "x": 161,
+          "y": 303,
+          "width": 174,
+          "height": 43,
+          "kind": "encoder",
+          "buttonKey": "frontDialPress",
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-PARTS"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "host-logical-only",
+          "firmwareBinding": "UNKNOWN",
+          "interaction": "momentary",
+          "viewId": "front",
+          "hitbox": {
+            "x": 161,
+            "y": 303,
+            "width": 174,
+            "height": 43
+          }
+        },
+        {
+          "id": "front-mount",
+          "physicalPartId": "front-mount",
+          "label": "G MOUNT",
+          "labelZh": "G卡口",
+          "x": 424,
+          "y": 302,
+          "width": 392,
+          "height": 392,
+          "kind": "mount",
+          "buttonKey": null,
+          "componentId": "mount",
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-LENS-ATTACH"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "host-metadata-only",
+          "firmwareBinding": "UNKNOWN",
+          "viewId": "front",
+          "hitbox": {
+            "x": 424,
+            "y": 302,
+            "width": 392,
+            "height": 392
+          }
+        },
+        {
+          "id": "front-contacts",
+          "physicalPartId": "lens-contacts",
+          "label": "SIGNAL CONTACTS",
+          "labelZh": "镜头信号接点",
+          "x": 550,
+          "y": 607,
+          "width": 139,
+          "height": 37,
+          "kind": "contact-bus",
+          "buttonKey": null,
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-LENS-ATTACH",
+            "GFX-SRC-PARTS"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "not-connected",
+          "firmwareBinding": "UNKNOWN",
+          "viewId": "front",
+          "hitbox": {
+            "x": 550,
+            "y": 607,
+            "width": 139,
+            "height": 37
+          }
+        },
+        {
+          "id": "front-fn4",
+          "physicalPartId": "front-fn4",
+          "label": "Fn4",
+          "labelZh": "功能键4",
+          "x": 360,
+          "y": 429,
+          "width": 44,
+          "height": 44,
+          "kind": "button",
+          "buttonKey": "fn4",
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-PARTS"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "host-logical-only",
+          "firmwareBinding": "UNKNOWN",
+          "interaction": "momentary",
+          "viewId": "front",
+          "hitbox": {
+            "x": 360,
+            "y": 429,
+            "width": 44,
+            "height": 44
+          }
+        },
+        {
+          "id": "front-lens-release",
+          "physicalPartId": "front-lens-release",
+          "label": "LENS RELEASE",
+          "labelZh": "镜头释放",
+          "x": 376,
+          "y": 614,
+          "width": 52,
+          "height": 52,
+          "kind": "button",
+          "buttonKey": null,
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-LENS-ATTACH"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "not-connected",
+          "firmwareBinding": "UNKNOWN",
+          "viewId": "front",
+          "hitbox": {
+            "x": 376,
+            "y": 614,
+            "width": 52,
+            "height": 52
+          }
+        },
+        {
+          "id": "front-af-lamp",
+          "physicalPartId": "front-af-self-tally",
+          "label": "AF / SELF / TALLY",
+          "labelZh": "AF辅助/自拍/信号灯",
+          "x": 968,
+          "y": 289,
+          "width": 46,
+          "height": 46,
+          "kind": "indicator",
+          "buttonKey": null,
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-PARTS"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "not-connected",
+          "firmwareBinding": "UNKNOWN",
+          "viewId": "front",
+          "hitbox": {
+            "x": 968,
+            "y": 289,
+            "width": 46,
+            "height": 46
+          }
+        },
+        {
+          "id": "front-microphones",
+          "physicalPartId": "front-microphones",
+          "label": "MIC L / R",
+          "labelZh": "内置麦克风",
+          "x": 454,
+          "y": 264,
+          "width": 275,
+          "height": 26,
+          "kind": "audio",
+          "buttonKey": null,
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-PARTS"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "not-connected",
+          "firmwareBinding": "UNKNOWN",
+          "viewId": "front",
+          "hitbox": {
+            "x": 454,
+            "y": 264,
+            "width": 275,
+            "height": 26
+          }
+        },
+        {
+          "id": "lens-focus-ring",
+          "physicalPartId": "lens-focus-ring",
+          "label": "FOCUS RING",
+          "labelZh": "对焦环",
+          "x": 449,
+          "y": 333,
+          "width": 342,
+          "height": 60,
+          "kind": "encoder",
+          "buttonKey": null,
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-LENSES"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "not-connected",
+          "firmwareBinding": "UNKNOWN",
+          "interaction": "rotate",
+          "viewId": "front",
+          "hitbox": {
+            "x": 449,
+            "y": 333,
+            "width": 342,
+            "height": 60
+          }
+        },
+        {
+          "id": "lens-aperture-ring",
+          "physicalPartId": "lens-aperture-ring",
+          "label": "APERTURE RING",
+          "labelZh": "光圈环",
+          "x": 502,
+          "y": 652,
+          "width": 236,
+          "height": 33,
+          "kind": "encoder",
+          "buttonKey": null,
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-LENSES"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "not-connected",
+          "firmwareBinding": "UNKNOWN",
+          "interaction": "rotate",
+          "viewId": "front",
+          "hitbox": {
+            "x": 502,
+            "y": 652,
+            "width": 236,
+            "height": 33
+          }
+        },
+        {
+          "id": "lens-aperture-lock",
+          "physicalPartId": "lens-aperture-lock",
+          "label": "RING LOCK",
+          "labelZh": "光圈环锁",
+          "x": 782,
+          "y": 482,
+          "width": 38,
+          "height": 39,
+          "kind": "button",
+          "buttonKey": null,
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-LENSES"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "not-connected",
+          "firmwareBinding": "UNKNOWN",
+          "viewId": "front",
+          "hitbox": {
+            "x": 782,
+            "y": 482,
+            "width": 38,
+            "height": 39
+          }
+        },
+        {
+          "id": "lens-mark",
+          "physicalPartId": "lens-mark",
+          "label": "MOUNT MARK",
+          "labelZh": "卡口安装标记",
+          "x": 781,
+          "y": 375,
+          "width": 31,
+          "height": 31,
+          "kind": "mark",
+          "buttonKey": null,
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-LENS-ATTACH"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "not-connected",
+          "firmwareBinding": "UNKNOWN",
+          "viewId": "front",
+          "hitbox": {
+            "x": 781,
+            "y": 375,
+            "width": 31,
+            "height": 31
+          }
+        },
+        {
+          "id": "lens-contacts",
+          "physicalPartId": "lens-contacts",
+          "label": "CONTACT BUS",
+          "labelZh": "镜头触点总线",
+          "x": 823,
+          "y": 182,
+          "width": 115,
+          "height": 35,
+          "kind": "contact-bus",
+          "buttonKey": null,
+          "componentId": "mount",
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-LENSES"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "not-connected",
+          "firmwareBinding": "UNKNOWN",
+          "viewId": "front",
+          "hitbox": {
+            "x": 823,
+            "y": 182,
+            "width": 115,
+            "height": 35
+          }
+        },
+        {
+          "id": "lens-parameters",
+          "physicalPartId": "lens-parameters",
+          "label": "LENS PARAMETERS",
+          "labelZh": "镜头参数",
+          "x": 944,
+          "y": 182,
+          "width": 126,
+          "height": 35,
+          "kind": "setting-group",
+          "buttonKey": null,
+          "componentId": "lens",
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-LENSES"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "host-metadata-only",
+          "firmwareBinding": "UNKNOWN",
+          "viewId": "front",
+          "hitbox": {
+            "x": 944,
+            "y": 182,
+            "width": 126,
+            "height": 35
+          }
+        }
+      ],
+      "layers": [
+        {
+          "id": "lens-attached-art",
+          "visibleWhen": {
+            "componentId": "mount",
+            "settingKey": "attached",
+            "equals": true
+          },
+          "semantics": "host illustration only; does not establish electrical contact or optical execution"
+        }
+      ]
+    },
+    {
+      "id": "ports-left",
+      "title": "左侧接口 / LEFT",
+      "svg": "ports-left.svg",
+      "width": 1200,
+      "height": 800,
+      "controls": [
+        {
+          "id": "left-cover-1",
+          "physicalPartId": "left-cover-1",
+          "label": "COVER 1",
+          "labelZh": "上接口盖",
+          "x": 477,
+          "y": 278,
+          "width": 199,
+          "height": 159,
+          "kind": "cover",
+          "buttonKey": null,
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-PARTS"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "studio-mechanical",
+          "firmwareBinding": "UNKNOWN",
+          "viewId": "ports-left",
+          "hitbox": {
+            "x": 477,
+            "y": 278,
+            "width": 199,
+            "height": 159
+          },
+          "interaction": "cover-toggle"
+        },
+        {
+          "id": "left-cover-2",
+          "physicalPartId": "left-cover-2",
+          "label": "COVER 2",
+          "labelZh": "下接口盖",
+          "x": 477,
+          "y": 448,
+          "width": 199,
+          "height": 225,
+          "kind": "cover",
+          "buttonKey": null,
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-PARTS"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "studio-mechanical",
+          "firmwareBinding": "UNKNOWN",
+          "viewId": "ports-left",
+          "hitbox": {
+            "x": 477,
+            "y": 448,
+            "width": 199,
+            "height": 225
+          },
+          "interaction": "cover-toggle"
+        },
+        {
+          "id": "left-mic",
+          "physicalPartId": "left-mic",
+          "label": "MIC 3.5 mm",
+          "labelZh": "麦克风输入",
+          "x": 548,
+          "y": 301,
+          "width": 56,
+          "height": 56,
+          "kind": "connector",
+          "buttonKey": null,
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-PARTS",
+            "GFX-SRC-SPEC"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "not-connected",
+          "firmwareBinding": "UNKNOWN",
+          "viewId": "ports-left",
+          "hitbox": {
+            "x": 548,
+            "y": 301,
+            "width": 56,
+            "height": 56
+          }
+        },
+        {
+          "id": "left-headphones",
+          "physicalPartId": "left-headphones",
+          "label": "PHONES 3.5 mm",
+          "labelZh": "耳机输出",
+          "x": 548,
+          "y": 374,
+          "width": 56,
+          "height": 56,
+          "kind": "connector",
+          "buttonKey": null,
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-PARTS",
+            "GFX-SRC-SPEC"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "not-connected",
+          "firmwareBinding": "UNKNOWN",
+          "viewId": "ports-left",
+          "hitbox": {
+            "x": 548,
+            "y": 374,
+            "width": 56,
+            "height": 56
+          }
+        },
+        {
+          "id": "left-usb-c",
+          "physicalPartId": "left-usb-c",
+          "label": "USB TYPE-C",
+          "labelZh": "USB-C",
+          "x": 541,
+          "y": 461,
+          "width": 70,
+          "height": 35,
+          "kind": "connector",
+          "buttonKey": null,
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-PARTS",
+            "GFX-SRC-SPEC"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "not-connected",
+          "firmwareBinding": "UNKNOWN",
+          "viewId": "ports-left",
+          "hitbox": {
+            "x": 541,
+            "y": 461,
+            "width": 70,
+            "height": 35
+          }
+        },
+        {
+          "id": "left-hdmi",
+          "physicalPartId": "left-hdmi",
+          "label": "HDMI MICRO · D",
+          "labelZh": "微型HDMI D型",
+          "x": 541,
+          "y": 529,
+          "width": 70,
+          "height": 38,
+          "kind": "connector",
+          "buttonKey": null,
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-PARTS",
+            "GFX-SRC-SPEC"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "not-connected",
+          "firmwareBinding": "UNKNOWN",
+          "viewId": "ports-left",
+          "hitbox": {
+            "x": 541,
+            "y": 529,
+            "width": 70,
+            "height": 38
+          }
+        },
+        {
+          "id": "left-sync",
+          "physicalPartId": "left-sync",
+          "label": "SYNC",
+          "labelZh": "闪光同步端口",
+          "x": 548,
+          "y": 592,
+          "width": 56,
+          "height": 56,
+          "kind": "connector",
+          "buttonKey": null,
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-PARTS"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "not-connected",
+          "firmwareBinding": "UNKNOWN",
+          "viewId": "ports-left",
+          "hitbox": {
+            "x": 548,
+            "y": 592,
+            "width": 56,
+            "height": 56
+          }
+        }
+      ],
+      "layers": [
+        {
+          "id": "lens-attached-ports-left-art",
+          "visibleWhen": {
+            "componentId": "mount",
+            "settingKey": "attached",
+            "equals": true
+          },
+          "semantics": "owner-requested shallow cap projection; not measured optical geometry or contacts"
+        }
+      ],
+      "covers": [
+        {
+          "id": "left-cover-1",
+          "inside": [
+            "left-mic",
+            "left-headphones"
+          ],
+          "openHitbox": {
+            "x": 419,
+            "y": 294,
+            "width": 58,
+            "height": 129
+          }
+        },
+        {
+          "id": "left-cover-2",
+          "inside": [
+            "left-usb-c",
+            "left-hdmi",
+            "left-sync"
+          ],
+          "openHitbox": {
+            "x": 419,
+            "y": 455,
+            "width": 58,
+            "height": 198
+          }
+        }
+      ]
+    },
+    {
+      "id": "storage-right",
+      "title": "右侧卡仓 / RIGHT",
+      "svg": "storage-right.svg",
+      "width": 1200,
+      "height": 800,
+      "controls": [
+        {
+          "id": "right-card-cover",
+          "physicalPartId": "right-card-cover",
+          "label": "CARD COVER",
+          "labelZh": "可拆卸卡仓盖",
+          "x": 454,
+          "y": 342,
+          "width": 227,
+          "height": 330,
+          "kind": "cover",
+          "buttonKey": null,
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-CARDS"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "studio-mechanical",
+          "firmwareBinding": "UNKNOWN",
+          "viewId": "storage-right",
+          "hitbox": {
+            "x": 454,
+            "y": 342,
+            "width": 227,
+            "height": 330
+          },
+          "interaction": "cover-toggle"
+        },
+        {
+          "id": "right-card-latch",
+          "physicalPartId": "right-card-latch",
+          "label": "COVER LATCH",
+          "labelZh": "卡仓盖释放搭扣",
+          "x": 470,
+          "y": 451,
+          "width": 30,
+          "height": 63,
+          "kind": "latch",
+          "buttonKey": null,
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-CARDS"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "studio-mechanical",
+          "firmwareBinding": "UNKNOWN",
+          "viewId": "storage-right",
+          "hitbox": {
+            "x": 470,
+            "y": 451,
+            "width": 30,
+            "height": 63
+          },
+          "interaction": "cover-toggle"
+        },
+        {
+          "id": "right-slot-2",
+          "physicalPartId": "sd-slot-2",
+          "label": "SD SLOT 2",
+          "labelZh": "存储卡插槽2",
+          "x": 483,
+          "y": 372,
+          "width": 34,
+          "height": 127,
+          "kind": "storage-slot",
+          "buttonKey": null,
+          "componentId": "sdcard-reader",
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-CARDS"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "host-file-io-only",
+          "firmwareBinding": "UNKNOWN",
+          "storageSlot": 2,
+          "viewId": "storage-right",
+          "hitbox": {
+            "x": 483,
+            "y": 372,
+            "width": 34,
+            "height": 127
+          }
+        },
+        {
+          "id": "right-slot-1",
+          "physicalPartId": "sd-slot-1",
+          "label": "SD SLOT 1",
+          "labelZh": "存储卡插槽1",
+          "x": 483,
+          "y": 516,
+          "width": 34,
+          "height": 128,
+          "kind": "storage-slot",
+          "buttonKey": null,
+          "componentId": "sdcard-reader",
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-CARDS"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "host-file-io-only",
+          "firmwareBinding": "UNKNOWN",
+          "storageSlot": 1,
+          "viewId": "storage-right",
+          "hitbox": {
+            "x": 483,
+            "y": 516,
+            "width": 34,
+            "height": 128
+          }
+        },
+        {
+          "id": "right-remote",
+          "physicalPartId": "right-remote",
+          "label": "REMOTE 2.5 mm",
+          "labelZh": "遥控快门接口",
+          "x": 536,
+          "y": 256,
+          "width": 58,
+          "height": 58,
+          "kind": "connector",
+          "buttonKey": null,
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-PARTS",
+            "GFX-SRC-SPEC"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "not-connected",
+          "firmwareBinding": "UNKNOWN",
+          "viewId": "storage-right",
+          "hitbox": {
+            "x": 536,
+            "y": 256,
+            "width": 58,
+            "height": 58
+          }
+        },
+        {
+          "id": "right-remote-cover",
+          "physicalPartId": "right-remote-cover",
+          "label": "COVER",
+          "labelZh": "遥控接口盖",
+          "x": 525,
+          "y": 249,
+          "width": 81,
+          "height": 73,
+          "kind": "cover",
+          "buttonKey": null,
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-PARTS"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "studio-mechanical",
+          "firmwareBinding": "UNKNOWN",
+          "viewId": "storage-right",
+          "hitbox": {
+            "x": 525,
+            "y": 249,
+            "width": 81,
+            "height": 73
+          },
+          "interaction": "cover-toggle"
+        }
+      ],
+      "layers": [
+        {
+          "id": "lens-attached-storage-right-art",
+          "visibleWhen": {
+            "componentId": "mount",
+            "settingKey": "attached",
+            "equals": true
+          },
+          "semantics": "owner-requested shallow cap projection; not measured optical geometry or contacts"
+        }
+      ],
+      "covers": [
+        {
+          "id": "right-card-cover",
+          "latch": "right-card-latch",
+          "inside": [
+            "right-slot-1",
+            "right-slot-2"
+          ],
+          "openHitbox": {
+            "x": 688,
+            "y": 353,
+            "width": 99,
+            "height": 298
+          }
+        },
+        {
+          "id": "right-remote-cover",
+          "inside": [
+            "right-remote"
+          ],
+          "openHitbox": {
+            "x": 464,
+            "y": 256,
+            "width": 58,
+            "height": 55
+          }
+        }
+      ]
+    },
+    {
+      "id": "battery-bottom",
+      "title": "底部电池仓 / BOTTOM",
+      "svg": "battery-bottom.svg",
+      "width": 1200,
+      "height": 800,
+      "controls": [
+        {
+          "id": "bottom-battery",
+          "physicalPartId": "bottom-battery",
+          "label": "NP-W235",
+          "labelZh": "独立电池组件",
+          "x": 819,
+          "y": 432,
+          "width": 154,
+          "height": 183,
+          "kind": "battery",
+          "buttonKey": null,
+          "componentId": "battery",
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-BATTERY",
+            "GFX-SRC-SPEC"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "host-state-only",
+          "firmwareBinding": "UNKNOWN",
+          "viewId": "battery-bottom",
+          "hitbox": {
+            "x": 819,
+            "y": 432,
+            "width": 154,
+            "height": 183
+          }
+        },
+        {
+          "id": "bottom-battery-latch",
+          "physicalPartId": "bottom-battery-latch",
+          "label": "BATTERY LATCH",
+          "labelZh": "电池释放搭扣",
+          "x": 807,
+          "y": 392,
+          "width": 65,
+          "height": 32,
+          "kind": "latch",
+          "buttonKey": null,
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-BATTERY"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "not-connected",
+          "firmwareBinding": "UNKNOWN",
+          "viewId": "battery-bottom",
+          "hitbox": {
+            "x": 807,
+            "y": 392,
+            "width": 65,
+            "height": 32
+          }
+        },
+        {
+          "id": "bottom-battery-cover",
+          "physicalPartId": "bottom-battery-cover",
+          "label": "BATTERY COVER",
+          "labelZh": "电池盒盖",
+          "x": 787,
+          "y": 375,
+          "width": 224,
+          "height": 276,
+          "kind": "cover",
+          "buttonKey": null,
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-BATTERY"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "studio-mechanical",
+          "firmwareBinding": "UNKNOWN",
+          "viewId": "battery-bottom",
+          "hitbox": {
+            "x": 787,
+            "y": 375,
+            "width": 224,
+            "height": 276
+          },
+          "interaction": "cover-toggle"
+        },
+        {
+          "id": "bottom-cover-latch",
+          "physicalPartId": "bottom-cover-latch",
+          "label": "COVER LATCH",
+          "labelZh": "电池盒盖释放搭扣",
+          "x": 941,
+          "y": 467,
+          "width": 44,
+          "height": 48,
+          "kind": "latch",
+          "buttonKey": null,
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-BATTERY"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "studio-mechanical",
+          "firmwareBinding": "UNKNOWN",
+          "viewId": "battery-bottom",
+          "hitbox": {
+            "x": 941,
+            "y": 467,
+            "width": 44,
+            "height": 48
+          },
+          "interaction": "cover-toggle"
+        },
+        {
+          "id": "bottom-tripod",
+          "physicalPartId": "bottom-tripod",
+          "label": "TRIPOD",
+          "labelZh": "三脚架安装座",
+          "x": 518,
+          "y": 463,
+          "width": 112,
+          "height": 112,
+          "kind": "mounting",
+          "buttonKey": null,
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-PARTS"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "not-connected",
+          "firmwareBinding": "UNKNOWN",
+          "viewId": "battery-bottom",
+          "hitbox": {
+            "x": 518,
+            "y": 463,
+            "width": 112,
+            "height": 112
+          }
+        },
+        {
+          "id": "bottom-serial-plate",
+          "physicalPartId": "bottom-serial-plate",
+          "label": "SERIAL PLATE",
+          "labelZh": "序列号铭牌",
+          "x": 205,
+          "y": 454,
+          "width": 214,
+          "height": 116,
+          "kind": "plate",
+          "buttonKey": null,
+          "componentId": null,
+          "settingKey": null,
+          "basis": [
+            "GFX-SRC-PARTS"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "not-connected",
+          "firmwareBinding": "UNKNOWN",
+          "viewId": "battery-bottom",
+          "hitbox": {
+            "x": 205,
+            "y": 454,
+            "width": 214,
+            "height": 116
+          }
+        },
+        {
+          "id": "bottom-charge",
+          "physicalPartId": "bottom-charge",
+          "label": "CHARGE %",
+          "labelZh": "电池电量",
+          "x": 962,
+          "y": 272,
+          "width": 137,
+          "height": 34,
+          "kind": "setting",
+          "buttonKey": null,
+          "componentId": "battery",
+          "settingKey": "chargePercent",
+          "basis": [
+            "GFX-SRC-SPEC"
+          ],
+          "layoutClass": "SOURCE",
+          "geometryClass": "HYPOTHESIS",
+          "bindingStatus": "host-state-only",
+          "firmwareBinding": "UNKNOWN",
+          "valueKind": "DECIMAL",
+          "minimum": 0,
+          "maximum": 100,
+          "viewId": "battery-bottom",
+          "hitbox": {
+            "x": 962,
+            "y": 272,
+            "width": 137,
+            "height": 34
+          }
+        }
+      ],
+      "layers": [
+        {
+          "id": "lens-attached-battery-bottom-art",
+          "visibleWhen": {
+            "componentId": "mount",
+            "settingKey": "attached",
+            "equals": true
+          },
+          "semantics": "owner-requested shallow cap projection; not measured optical geometry or contacts"
+        }
+      ],
+      "covers": [
+        {
+          "id": "bottom-battery-cover",
+          "latch": "bottom-cover-latch",
+          "inside": [
+            "bottom-battery",
+            "bottom-battery-latch"
+          ],
+          "openHitbox": {
+            "x": 687,
+            "y": 393,
+            "width": 99,
+            "height": 243
+          }
+        }
+      ]
+    }
+  ],
+  "targetReference": {
+    "url": "https://www.fujifilm-x.com/global/products/cameras/gfx-eterna-55/simulator/",
+    "visualReferenceStatus": "home-and-menu-browser-screenshots-actually-viewed",
+    "styleRecord": "docs/ui/gfx100s/visual-reference.generated.json",
+    "pixelPerfectMatchClaim": false,
+    "scope": "Visual language only; GFX100S layout from its own official references; no ETERNA screen or body assets embedded."
+  }
+}

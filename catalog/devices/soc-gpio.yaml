@@ -1,0 +1,1412 @@
+{
+  "schema": 1,
+  "id": "device.soc-gpio",
+  "componentId": "soc-gpio",
+  "depends": [],
+  "version": "0.0.1",
+  "name": "soc-gpio",
+  "physicalIdentity": "UNKNOWN",
+  "implementationStatus": "PARTIAL",
+  "implementationSources": [
+    "components/soc-gpio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/gpio/GpioFactory.kt"
+  ],
+  "ports": [
+    {
+      "id": "definition.soc-gpio.main",
+      "size": 1024,
+      "kind": "MMIO",
+      "byteOrder": "little",
+      "backing": {
+        "source": "component-owned state",
+        "permissions": "per register; stateful checks remain"
+      },
+      "registers": [
+        {
+          "id": "reg.soc-gpio.main.o0",
+          "offset": 0,
+          "size": 4,
+          "count": 16,
+          "stride": 64,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-gpio",
+          "name": "output",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-gpio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/gpio/GpioFactory.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-gpio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/gpio/GpioFactory.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-gpio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/gpio/GpioFactory.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-gpio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/gpio/GpioFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-gpio.main.o0.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-gpio.main.o4",
+          "offset": 4,
+          "size": 4,
+          "count": 16,
+          "stride": 64,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-gpio",
+          "name": "direction",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-gpio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/gpio/GpioFactory.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-gpio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/gpio/GpioFactory.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-gpio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/gpio/GpioFactory.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-gpio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/gpio/GpioFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-gpio.main.o4.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-gpio.main.o8",
+          "offset": 8,
+          "size": 4,
+          "count": 16,
+          "stride": 64,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-gpio",
+          "name": "pull",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-gpio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/gpio/GpioFactory.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-gpio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/gpio/GpioFactory.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-gpio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/gpio/GpioFactory.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-gpio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/gpio/GpioFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-gpio.main.o8.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-gpio.main.oc",
+          "offset": 12,
+          "size": 4,
+          "count": 16,
+          "stride": 64,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-gpio",
+          "name": "function",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-gpio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/gpio/GpioFactory.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-gpio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/gpio/GpioFactory.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-gpio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/gpio/GpioFactory.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-gpio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/gpio/GpioFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-gpio.main.oc.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-gpio.main.o10",
+          "offset": 16,
+          "size": 4,
+          "count": 16,
+          "stride": 64,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-gpio",
+          "name": "mode",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-gpio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/gpio/GpioFactory.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-gpio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/gpio/GpioFactory.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-gpio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/gpio/GpioFactory.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-gpio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/gpio/GpioFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-gpio.main.o10.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-gpio.main.o14",
+          "offset": 20,
+          "size": 4,
+          "count": 16,
+          "stride": 64,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-gpio",
+          "name": "input",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [
+            {
+              "profile": "gfx100s-2.13-gpio-buttons-v1",
+              "buttonKey": "back",
+              "bank": 9,
+              "pin": 5,
+              "activeLow": true,
+              "logicalCode": 9,
+              "descriptorIndex": 23,
+              "confidence": "SOURCE",
+              "applicability": {
+                "body": "GFX100S",
+                "firmware": "2.13"
+              },
+              "evidence": [
+                "evidence/refactor/input-source-318-323/key-table-input-source-319.md",
+                "evidence/refactor/input-source-318-323/key-descriptor-mapping-322.md"
+              ],
+              "unknowns": [
+                "Physical reset, board measurements and original guest event delivery remain unverified."
+              ]
+            },
+            {
+              "profile": "gfx100s-2.13-gpio-buttons-v1",
+              "buttonKey": "shutterHalf",
+              "bank": 0,
+              "pin": 0,
+              "activeLow": true,
+              "logicalCode": 7,
+              "descriptorIndex": 4,
+              "confidence": "SOURCE",
+              "applicability": {
+                "body": "GFX100S",
+                "firmware": "2.13"
+              },
+              "evidence": [
+                "evidence/refactor/input-source-318-323/key-table-input-source-319.md",
+                "evidence/refactor/input-source-318-323/key-descriptor-mapping-322.md"
+              ],
+              "unknowns": [
+                "Physical reset, board measurements and original guest event delivery remain unverified."
+              ]
+            },
+            {
+              "profile": "gfx100s-2.13-gpio-buttons-v1",
+              "buttonKey": "shutterFull",
+              "bank": 0,
+              "pin": 1,
+              "activeLow": true,
+              "logicalCode": 8,
+              "descriptorIndex": 5,
+              "confidence": "SOURCE",
+              "applicability": {
+                "body": "GFX100S",
+                "firmware": "2.13"
+              },
+              "evidence": [
+                "evidence/refactor/input-source-318-323/key-table-input-source-319.md",
+                "evidence/refactor/input-source-318-323/key-descriptor-mapping-322.md"
+              ],
+              "unknowns": [
+                "Physical reset, board measurements and original guest event delivery remain unverified."
+              ]
+            },
+            {
+              "profile": "gfx100s-2.13-gpio-buttons-v2",
+              "buttonKey": "play",
+              "bank": 9,
+              "pin": 6,
+              "activeLow": true,
+              "logicalCode": 10,
+              "descriptorIndex": 24,
+              "confidence": "SOURCE",
+              "applicability": {
+                "body": "GFX100S",
+                "firmware": "2.13"
+              },
+              "evidence": [
+                "evidence/refactor/play-gpio-469-471/remaining-goal-469-report.md",
+                "evidence/refactor/input-source-318-323/key-table-input-source-319.md",
+                "evidence/refactor/input-source-318-323/key-descriptor-mapping-322.md"
+              ],
+              "unknowns": [
+                "Physical reset, board measurements and original guest event delivery remain unverified. v2 adds PLAY to the three v1 connections; selected external levels are HYPOTHESIS."
+              ]
+            },
+            {
+              "profile": "gfx100s-2.13-gpio-buttons-v3",
+              "buttonKey": "delete",
+              "bank": 6,
+              "pin": 2,
+              "activeLow": true,
+              "logicalCode": 8262,
+              "descriptorIndex": 25,
+              "confidence": "SOURCE",
+              "applicability": {
+                "body": "GFX100S",
+                "firmware": "2.13"
+              },
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "unknowns": [
+                "DAT row 01812AE4 and conversion row 01591EF0. External levels are modeled. Physical switch measurements and shortcut delivery remain unverified."
+              ]
+            },
+            {
+              "profile": "gfx100s-2.13-gpio-buttons-v3",
+              "buttonKey": "rearDialPress",
+              "bank": 0,
+              "pin": 13,
+              "activeLow": true,
+              "logicalCode": 36,
+              "descriptorIndex": 9,
+              "confidence": "SOURCE",
+              "applicability": {
+                "body": "GFX100S",
+                "firmware": "2.13"
+              },
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin",
+                "firmware-data/gfx100s/2.13/decoded/section5.bin"
+              ],
+              "unknowns": [
+                "Row 018128E4 calls 0123C82C. With gate 0187AE80 clear it reads GPIO selector D. Section5 01FFFF08 branches on key 24 to FUNCLOCK_RCMD_PUSH selector 306. Physical levels and format-page delivery remain unmeasured."
+              ]
+            },
+            {
+              "profile": "gfx100s-2.13-gpio-buttons-v4",
+              "buttonKey": "movieMode",
+              "bank": 7,
+              "pin": 5,
+              "activeLow": true,
+              "logicalCode": 12304,
+              "descriptorIndex": 31,
+              "confidence": "SOURCE",
+              "applicability": {
+                "body": "GFX100S",
+                "firmware": "2.13"
+              },
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "unknowns": [
+                "Rows 01812BA4 (id 0x8E, callback 0123C7D4) and 01812BC4 (id 0x93, callback 0123C7B0) read GPIO bank 7 pin 5 (selector 0x00070005). Low selects MOVIE mode (0x8E -> 0x3010 active), high selects STILL mode (0x93 -> 0x3010 inactive). Physical switch levels remain unmeasured."
+              ]
+            },
+            {
+              "profile": "gfx100s-2.13-gpio-buttons-v5",
+              "buttonKey": "drive",
+              "bank": 6,
+              "pin": 1,
+              "activeLow": true,
+              "confidence": "SOURCE",
+              "applicability": {
+                "body": "GFX100S",
+                "firmware": "2.13"
+              },
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "unknowns": [
+                "GPIO bank 6 pin 1 active-LOW opens Drive/Multi-Exp/Pixel-Shift menu (scr=0x0112) in GFX100S 2.13 firmware. Physical switch levels remain unmeasured."
+              ]
+            },
+            {
+              "profile": "gfx100s-2.13-gpio-buttons-v5",
+              "buttonKey": "afOn",
+              "bank": 0,
+              "pin": 14,
+              "activeLow": true,
+              "confidence": "SOURCE",
+              "applicability": {
+                "body": "GFX100S",
+                "firmware": "2.13"
+              },
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "unknowns": [
+                "GPIO bank 0 pin 14 active-LOW represents the rear AF-ON button in GFX100S 2.13 firmware. Physical switch levels remain unmeasured."
+              ]
+            },
+            {
+              "profile": "gfx100s-2.13-gpio-buttons-v5",
+              "buttonKey": "focusMode",
+              "bank": 7,
+              "pin": 13,
+              "activeLow": true,
+              "confidence": "SOURCE",
+              "applicability": {
+                "body": "GFX100S",
+                "firmware": "2.13"
+              },
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "unknowns": [
+                "GPIO bank 7 pin 13 active-LOW represents the rear Focus Mode lever in GFX100S 2.13 firmware. Physical switch levels remain unmeasured."
+              ]
+            },
+            {
+              "profile": "gfx100s-2.13-gpio-buttons-v6",
+              "buttonKey": "frontDialPress",
+              "bank": 2,
+              "pin": 2,
+              "activeLow": true,
+              "logicalCode": 8226,
+              "descriptorIndex": 45,
+              "confidence": "SOURCE",
+              "applicability": {
+                "body": "GFX100S",
+                "firmware": "2.13"
+              },
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "unknowns": [
+                "DAT row[45] 0x01812D64 (reader 0x0123C7F4) reads GPIO(2,2) active-LOW -> keyId 0x2A -> UI 0x2022 (KEY_CMD2_PUSH, deb=2). Physical switch levels remain unmeasured."
+              ]
+            },
+            {
+              "profile": "gfx100s-2.13-gpio-buttons-v6",
+              "buttonKey": "fn4",
+              "bank": 2,
+              "pin": 13,
+              "activeLow": true,
+              "logicalCode": 56,
+              "descriptorIndex": 46,
+              "confidence": "SOURCE",
+              "applicability": {
+                "body": "GFX100S",
+                "firmware": "2.13"
+              },
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "unknowns": [
+                "DAT row[46] 0x01812D84 reads GPIO(2,13) active-LOW -> keyId 0x21 -> UI 0x0038 (KEY_FUNCTION4 / Fn4, deb=2). Physical switch levels remain unmeasured."
+              ]
+            },
+            {
+              "profile": "gfx100s-2.13-gpio-buttons-v6",
+              "buttonKey": "focusStickPress",
+              "bank": 7,
+              "pin": 9,
+              "activeLow": true,
+              "logicalCode": 66,
+              "descriptorIndex": 18,
+              "confidence": "SOURCE",
+              "applicability": {
+                "body": "GFX100S",
+                "firmware": "2.13"
+              },
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "unknowns": [
+                "DAT row[18] 0x01812A04 + FSM 0x0123D8E0..0x0123DD50 shares active-LOW gate GPIO(7,9) with direction-input-v1: pulling GPIO(7,9) LOW while ADC Ch 9 remains idle enters state 5 -> keyId 0x47 -> UI 0x0042 (Focus Stick Center Push). Physical switch levels remain unmeasured."
+              ]
+            },
+            {
+              "profile": "gfx100s-2.13-direction-input-v1",
+              "buttonKeys": [
+                "up",
+                "right",
+                "down",
+                "left"
+              ],
+              "bank": 7,
+              "pin": 9,
+              "activeLow": true,
+              "confidence": "SOURCE",
+              "externalLevelConfidence": "HYPOTHESIS",
+              "evidence": [
+                "evidence/refactor/direction-input-482-485/direction-parameters-482-report.md",
+                "evidence/refactor/direction-input-482-485/direction-transport-483-report.md"
+              ],
+              "unknowns": [
+                "Qualified state machine requires a low gate with a valid ADC9 direction. Physical wiring role/reset and real voltage remain UNKNOWN.",
+                "Low gate with old neutral ADC across two scans can enter state5; preserve natural sampling, do not force state2. PUSH is not exposed by this profile."
+              ]
+            }
+          ],
+          "producerPcs": [],
+          "consumerPcs": [
+            "0x011DACD8",
+            "0x0123CEB4"
+          ],
+          "evidence": [
+            "components/soc-gpio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/gpio/GpioFactory.kt",
+            "evidence/refactor/input-source-318-323/key-table-input-source-319.md",
+            "evidence/refactor/input-source-318-323/key-descriptor-mapping-322.md",
+            "evidence/refactor/direction-input-482-485/direction-parameters-482-report.md",
+            "evidence/refactor/direction-input-482-485/direction-transport-483-report.md"
+          ],
+          "tests": [
+            "desktop/src/test/kotlin/com/github/nyabanban/fuji/emulator/desktop/GpioButtonModelsTest.kt",
+            "desktop/src/test/kotlin/com/github/nyabanban/fuji/emulator/desktop/GpioButtonAdmissionTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-gpio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/gpio/GpioFactory.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-gpio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/gpio/GpioFactory.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-gpio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/gpio/GpioFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-gpio.main.o14.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Use the optional profile for owner-thread button-to-GPIO reads; separately verify original scanner delivery without injecting its software queue."
+        },
+        {
+          "id": "reg.soc-gpio.main.o18",
+          "offset": 24,
+          "size": 4,
+          "count": 16,
+          "stride": 64,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-gpio",
+          "name": "control6",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-gpio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/gpio/GpioFactory.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-gpio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/gpio/GpioFactory.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-gpio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/gpio/GpioFactory.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-gpio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/gpio/GpioFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-gpio.main.o18.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-gpio.main.o1c",
+          "offset": 28,
+          "size": 4,
+          "count": 16,
+          "stride": 64,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-gpio",
+          "name": "control7",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-gpio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/gpio/GpioFactory.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-gpio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/gpio/GpioFactory.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-gpio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/gpio/GpioFactory.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-gpio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/gpio/GpioFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-gpio.main.o1c.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        }
+      ],
+      "unknownCoverage": "All gaps not listed by registers are UNKNOWN and refused by the known device.",
+      "implementationSources": [
+        "components/soc-gpio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/gpio/GpioFactory.kt"
+      ]
+    },
+    {
+      "id": "definition.soc-gpio.global-fff41500",
+      "size": 4,
+      "kind": "MMIO",
+      "byteOrder": "little",
+      "backing": {
+        "source": "component-owned state",
+        "permissions": "per register; stateful checks remain"
+      },
+      "registers": [
+        {
+          "id": "reg.soc-gpio.global-fff41500.word",
+          "offset": 0,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-gpio",
+          "name": "global_masked_control",
+          "namingBasis": "Boot ROM / Stage-1 IPL disassembly & component factory implementation",
+          "initial": {
+            "value": 0,
+            "source": "component-owned zero reset HYPOTHESIS; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-gpio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/gpio/GpioFactory.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "components/soc-gpio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/gpio/GpioFactory.kt"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "components/soc-gpio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/gpio/GpioFactory.kt"
+              ]
+            },
+            "name": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-gpio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/gpio/GpioFactory.kt"
+              ]
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-gpio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/gpio/GpioFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-gpio.global-fff41500.word.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Boot ROM masked 16-bit global GPIO control register at 0xFFF41500 (upper 16 bits = write mask, lower 16 bits = data)",
+              "initial": {
+                "value": 0,
+                "source": "HYPOTHESIS"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "components/soc-gpio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/gpio/GpioFactory.kt"
+                  ]
+                },
+                "initial": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": [
+                    "components/soc-gpio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/gpio/GpioFactory.kt"
+                  ]
+                }
+              },
+              "supportingEvidence": [
+                "components/soc-gpio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/gpio/GpioFactory.kt"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical reset and timing remain UNKNOWN."
+              ],
+              "nextValidation": "Compare Boot ROM / Stage-1 IPL cold-start execution against real hardware."
+            }
+          ],
+          "unknowns": [
+            "Physical electrical semantics remain incomplete."
+          ],
+          "nextValidation": "Original Boot ROM / Stage-1 IPL cold-start regression and refusal controls."
+        }
+      ],
+      "unknownCoverage": "Single aligned 32-bit masked-write register.",
+      "implementationSources": [
+        "components/soc-gpio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/gpio/GpioFactory.kt"
+      ]
+    }
+  ],
+  "unknowns": [
+    "Physical device identity, reset values, wiring and full state machine are not qualified."
+  ],
+  "nextValidation": "Trace selected original firmware consumers and retain refusal controls.",
+  "profiles": [
+    "disabled",
+    "gfx100s-2.13-gpio-buttons-v1",
+    "gfx100s-2.13-gpio-buttons-v2",
+    "gfx100s-2.13-gpio-buttons-v3",
+    "gfx100s-2.13-gpio-buttons-v4",
+    "gfx100s-2.13-gpio-buttons-v5",
+    "gfx100s-2.13-gpio-buttons-v6"
+  ]
+}

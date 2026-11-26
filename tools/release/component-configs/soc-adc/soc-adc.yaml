@@ -1,0 +1,5 @@
+# Internal GFX100S SoC hardware definition — no user edits needed.
+profile: "adc-source-functional-experimental-v1"
+inputFile: "input.json"
+menuButtonProfile: "gfx100s-2.13-menu-adc-v1"
+directionButtonProfile: "gfx100s-2.13-direction-input-v1"

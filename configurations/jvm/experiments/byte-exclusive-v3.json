@@ -1,0 +1,4 @@
+{
+  "profile": "arm-byte-halfword-word-exclusive-logical-experimental-v3",
+  "reservationGranule": 64
+}

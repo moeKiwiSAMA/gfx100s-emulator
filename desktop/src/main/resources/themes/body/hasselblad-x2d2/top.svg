@@ -1,0 +1,203 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 340" width="1000" height="340">
+  <title>Hasselblad X2D II 100C · top</title>
+  <defs>
+    <linearGradient id="shell" x1="0%" y1="0%" x2="25%" y2="100%">
+      <stop offset="0%" stop-color="#818079"/>
+      <stop offset="9%" stop-color="#72716c"/>
+      <stop offset="36%" stop-color="#575653"/>
+      <stop offset="72%" stop-color="#494947"/>
+      <stop offset="99%" stop-color="#3b3a39"/>
+    </linearGradient>
+    <linearGradient id="chamfer" x1="0%" y1="0%" x2="100%" y2="23%">
+      <stop offset="0%" stop-color="#9c9a91"/>
+      <stop offset="22%" stop-color="#71716b"/>
+      <stop offset="62%" stop-color="#504f4c"/>
+      <stop offset="100%" stop-color="#31312f"/>
+    </linearGradient>
+    <linearGradient id="hand" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#20201f"/>
+      <stop offset="12%" stop-color="#3d3c39"/>
+      <stop offset="38%" stop-color="#55534e"/>
+      <stop offset="60%" stop-color="#43423e"/>
+      <stop offset="83%" stop-color="#292826"/>
+      <stop offset="100%" stop-color="#171716"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="20%" y1="0%" x2="40%" y2="100%">
+      <stop offset="0%" stop-color="#9b9a92"/>
+      <stop offset="18%" stop-color="#5e5e59"/>
+      <stop offset="51%" stop-color="#252525"/>
+      <stop offset="95%" stop-color="#111110"/>
+      <stop offset="100%" stop-color="#53524e"/>
+    </linearGradient>
+    <linearGradient id="steel" x1="0%" y1="0%" x2="84%" y2="100%">
+      <stop offset="0%" stop-color="#666869"/>
+      <stop offset="19%" stop-color="#c8c9c8"/>
+      <stop offset="32%" stop-color="#f0f0ed"/>
+      <stop offset="50%" stop-color="#97989a"/>
+      <stop offset="70%" stop-color="#545557"/>
+      <stop offset="88%" stop-color="#c8c9c8"/>
+      <stop offset="100%" stop-color="#777976"/>
+    </linearGradient>
+    <radialGradient id="button" cx="36%" cy="23%" r="80%">
+      <stop offset="0%" stop-color="#666560"/>
+      <stop offset="43%" stop-color="#494844"/>
+      <stop offset="84%" stop-color="#33322f"/>
+      <stop offset="100%" stop-color="#242422"/>
+    </radialGradient>
+    <linearGradient id="orange" x1="12%" y1="0%" x2="76%" y2="100%">
+      <stop offset="0%" stop-color="#ffd889"/>
+      <stop offset="22%" stop-color="#ffbc54"/>
+      <stop offset="49%" stop-color="#f4a13b"/>
+      <stop offset="80%" stop-color="#c6751c"/>
+      <stop offset="100%" stop-color="#9b5419"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#263038"/>
+      <stop offset="18%" stop-color="#141b20"/>
+      <stop offset="63%" stop-color="#090d10"/>
+      <stop offset="100%" stop-color="#171c1d"/>
+    </linearGradient>
+    <pattern id="metal" width="242" height="242" patternUnits="userSpaceOnUse" data-texture="textures/anodized-titanium.png"/>
+    <linearGradient id="key-counterbore" x1="15%" y1="10%" x2="88%" y2="94%">
+      <stop offset="0%" stop-color="#1b1b1a"/>
+      <stop offset="44%" stop-color="#222221"/>
+      <stop offset="82%" stop-color="#333330"/>
+      <stop offset="100%" stop-color="#686762"/>
+    </linearGradient>
+    <linearGradient id="key-face" x1="0%" y1="0%" x2="100%" y2="72%">
+      <stop offset="0%" stop-color="#484844"/>
+      <stop offset="60%" stop-color="#3c3c39"/>
+      <stop offset="100%" stop-color="#32322f"/>
+    </linearGradient>
+    <g id="exposure-key-cap">
+      <circle cx="0" cy="0" r="20" fill="url(#key-counterbore)"/>
+      <circle cx="0" cy="0" r="16.1" fill="#101010"/>
+      <circle cx="0" cy="-0.3" r="13.25" fill="url(#key-face)"/>
+      <circle cx="0" cy="-0.3" r="13" fill="url(#metal)" opacity="0.08"/>
+      <path d="M -12.8 1.1 A 13 13 0 0 1 -4.8 -12.25" stroke="#74736b" stroke-width="0.4" fill="none"/>
+      <path d="M 12.1 15.7 A 20 20 0 0 0 19.5 -4.1" stroke="#939189" stroke-width="0.35" fill="none"/>
+    </g>
+  </defs>
+  <g>
+  <rect x="230" y="174" width="17" height="34" rx="5" fill="url(#steel)"/>
+  <rect x="234" y="177" width="8" height="28" rx="3" fill="#777773"/>
+  <rect x="238" y="179" width="6" height="24" rx="3" fill="#232221"/>
+</g>
+  <g>
+  <rect x="838" y="174" width="17" height="34" rx="5" fill="url(#steel)"/>
+  <rect x="842" y="177" width="8" height="28" rx="3" fill="#777773"/>
+  <rect x="846" y="179" width="6" height="24" rx="3" fill="#232221"/>
+</g>
+  <path d="M 284 90 L 301 58 H 568 L 583 89 Z" fill="url(#hand)"/>
+  <path d="M 251 108 Q 249 102 261 99 L 278 90 H 663 Q 681 88 690 74 L 708 34 Q 723 4 753 5 Q 782 5 800 19 Q 836 45 837 87 L 837 248 Q 836 278 814 286 Q 782 298 762 284 Q 744 271 729 252 Q 720 241 705 241 H 292 Q 269 241 257 231 L 248 217 Z" fill="url(#shell)" stroke="#181819" stroke-width="1.7"/>
+<path d="M 251 108 Q 249 102 261 99 L 278 90 H 663 Q 681 88 690 74 L 708 34 Q 723 4 753 5 Q 782 5 800 19 Q 836 45 837 87 L 837 248 Q 836 278 814 286 Q 782 298 762 284 Q 744 271 729 252 Q 720 241 705 241 H 292 Q 269 241 257 231 L 248 217 Z" fill="url(#metal)" opacity="0.08"/>
+  <path d="M 249 111 L 280 94 L 315 103 L 315 229 Q 283 239 263 228 L 249 217 Z" fill="url(#chamfer)"/>
+  <path d="M 262 102 L 280 93 H 665 Q 685 90 692 70 L 708 37" fill="none" stroke="#a09d91" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 281 92 H 609 Q 601 92 595 99 L 574 123 Q 569 129 562 130 H 549 Q 540 120 522 120 H 369 Q 351 120 346 131 L 310 130 Z" fill="url(#chamfer)"/>
+  <text x="449" y="110" text-anchor="middle" font-size="12" fill="#282824">H A S S E L B L A D</text>
+  <path d="M 334 143 Q 334 124 356 122 H 527 Q 548 126 548 143 V 233 H 333 Z" fill="url(#shell)" stroke="#33332e" stroke-width="1.5"/>
+  <rect x="337" y="233" width="211" height="80" rx="8" fill="#222321"/>
+  <rect x="342" y="235" width="202" height="74" rx="7" fill="url(#hand)"/>
+  <rect x="348" y="242" width="190" height="59" rx="5" fill="none" stroke="#42423c" stroke-width="1.2"/>
+  <rect x="385" y="141" width="111" height="93" rx="4" fill="#252622"/>
+  <rect x="390" y="145" width="101" height="85" rx="3" fill="url(#edge)"/>
+  <rect x="390" y="148" width="9" height="80" rx="1" fill="url(#steel)"/>
+  <rect x="482" y="148" width="9" height="80" rx="1" fill="url(#steel)"/>
+  <rect x="400" y="145" width="81" height="84" rx="3" fill="#383935"/>
+  <rect x="405" y="155" width="70" height="67" rx="2" fill="#494a43"/>
+  <path d="M 410 159 h 60" fill="none" stroke="#393a33" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 410 164 h 60" fill="none" stroke="#393a33" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 410 169 h 60" fill="none" stroke="#393a33" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 410 174 h 60" fill="none" stroke="#393a33" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 410 179 h 60" fill="none" stroke="#393a33" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 410 184 h 60" fill="none" stroke="#393a33" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 410 189 h 60" fill="none" stroke="#393a33" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 410 194 h 60" fill="none" stroke="#393a33" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 410 199 h 60" fill="none" stroke="#393a33" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 410 204 h 60" fill="none" stroke="#393a33" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 410 209 h 60" fill="none" stroke="#393a33" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 410 214 h 60" fill="none" stroke="#393a33" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 410 219 h 60" fill="none" stroke="#393a33" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 590 231 H 701 Q 720 232 740 248" fill="none" stroke="#232420" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <g id="top-mode-dial" data-control-id="top-mode-dial" data-view-id="top">
+    <use href="#exposure-key-cap" x="609" y="128"/>
+    <path d="M 605.35 131.85 V 123.8 L 609 129.4 L 612.65 123.8 V 131.85" fill="none" stroke="#dfded7" stroke-width="0.9" stroke-linejoin="round"/>
+    <rect x="588" y="107" width="42" height="42" fill="none" stroke="none" data-hitbox="true"/>
+  </g>
+  <g id="top-fn1" data-control-id="top-fn1" data-view-id="top">
+    <use href="#exposure-key-cap" x="658" y="128"/>
+    <text x="658" y="127" text-anchor="middle" font-size="8.4" fill="#dfded7">ISO</text>
+    <path d="M 651.5 128.25 H 664.5" fill="none" stroke="#cfcec7" stroke-width="0.6"/>
+    <text x="658" y="136.5" text-anchor="middle" font-size="8.4" fill="#dfded7">WB</text>
+    <rect x="637" y="107" width="42" height="42" fill="none" stroke="none" data-hitbox="true"/>
+  </g>
+  <text x="607" y="190" text-anchor="start" font-size="21" fill="#282823">X2D</text>
+  <text x="652" y="190" text-anchor="start" font-size="14" fill="#282823">II</text>
+  <text x="608" y="204" text-anchor="start" font-size="7.3" fill="#292923">HANDMADE</text>
+  <text x="608" y="214" text-anchor="start" font-size="7.3" fill="#292923">IN SWEDEN</text>
+  <rect x="687" y="108" width="108" height="108" rx="7" fill="#68655e"/>
+  <rect x="688" y="110" width="106" height="106" rx="6" fill="#21231f"/>
+  <g id="top-shoulder" data-control-id="top-shoulder" data-view-id="top">
+    <rect x="694" y="116" width="94" height="94" rx="3" fill="url(#glass)"/>
+    <rect x="694" y="116" width="94" height="94" fill="none" stroke="none" data-hitbox="true"/>
+  </g>
+  <g id="top-power" data-control-id="top-power" data-view-id="top">
+    <g>
+  <circle cx="775" cy="252.5" r="21.7" fill="#171617"/>
+  <circle cx="775" cy="251" r="20" fill="url(#edge)"/>
+  <circle cx="775" cy="251" r="17.4" fill="url(#button)"/>
+  <path d="M 761.6 239.4 q 12.4 -12.4 26.8 0" fill="none" stroke="#858380" stroke-width="0.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.7"/>
+</g>
+    <path d="M 775 241 v 11 m -5 -8 a 8 8 0 1 0 10 0" fill="none" stroke="#dad9cf" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="787" cy="239" r="2" fill="#8caf81" id="x2d-power-led"/>
+    <rect x="749" y="225" width="53" height="53" fill="none" stroke="none" data-hitbox="true"/>
+  </g>
+  <g id="top-shutter-full" data-control-id="top-shutter-full" data-view-id="top">
+    <ellipse cx="754" cy="55" rx="33" ry="30" fill="#393832"/>
+    <ellipse cx="754" cy="51" rx="29" ry="26" fill="#604c2b"/>
+    <ellipse cx="754" cy="50" rx="26" ry="24" fill="url(#orange)"/>
+    <path d="M 734 39 Q 748 22 771 34" fill="none" stroke="#ffdb86" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 745 55 l 6 -12 2 0 -2 6 5 -6 2 0 -4 12 h -2 l 2 -6 -5 6 z" fill="#8e5925"/>
+    <rect x="716" y="18" width="76" height="70" fill="none" stroke="none" data-hitbox="true"/>
+  </g>
+  <rect x="39" y="29" width="150" height="262" rx="10" fill="#1f2324" stroke="#505554" stroke-width="1"/>
+  <text x="114.5" y="54" text-anchor="middle" font-size="13" fill="#c2c4bb">GFX100S</text>
+  <path d="M 54 63 H 175" fill="none" stroke="#505452" stroke-width="1"/>
+  <g id="top-focus-selector" data-control-id="top-focus-selector" data-view-id="top">
+    <rect x="54" y="74" width="121" height="39" rx="6" fill="#252929" stroke="#535751" stroke-width="0.8"/>
+    <path d="M 94 80 V 107 M 135 80 V 107" fill="none" stroke="#454b47" stroke-width="0.8"/>
+    <text x="73.5" y="96" text-anchor="middle" font-size="11" fill="#e1e2da">AF-S</text>
+    <text x="114.5" y="96" text-anchor="middle" font-size="11" fill="#e1e2da">AF-C</text>
+    <text x="155.5" y="96" text-anchor="middle" font-size="11" fill="#e1e2da">MF</text>
+    <rect x="53" y="72" width="123" height="43" fill="none" stroke="none" data-hitbox="true"/>
+  </g>
+  <g id="top-shutter-half" data-control-id="top-shutter-half" data-view-id="top">
+    <rect x="54" y="135" width="120" height="29" rx="6" fill="#303535" stroke="#535751" stroke-width="0.8"/>
+    <text x="114" y="154" text-anchor="middle" font-size="11" fill="#d5d5cc">S1  ·  AF</text>
+    <rect x="53" y="134" width="122" height="31" fill="none" stroke="none" data-hitbox="true"/>
+  </g>
+  <g id="top-movie-mode" data-control-id="top-movie-mode" data-view-id="top">
+    <rect x="54" y="171" width="120" height="29" rx="6" fill="#252929" stroke="#535751" stroke-width="0.8"/>
+    <g id="x2d-still-selected">
+      <rect x="56" y="173" width="56" height="25" rx="4" fill="#52615d"/>
+      <path d="M 72 195 H 96" fill="none" stroke="#d1dacf" stroke-width="1.3"/>
+    </g>
+    <g id="x2d-movie-selected" opacity="0">
+      <rect x="115" y="173" width="57" height="25" rx="4" fill="#70433e"/>
+      <path d="M 132 195 H 156" fill="none" stroke="#f0a48f" stroke-width="1.3"/>
+    </g>
+    <text x="84" y="189" text-anchor="middle" font-size="11" fill="#e1e2da">STILL</text>
+    <text x="144" y="189" text-anchor="middle" font-size="11" fill="#e1e2da">MOVIE</text>
+    <rect x="53" y="170" width="122" height="31" fill="none" stroke="none" data-hitbox="true"/>
+  </g>
+  <g id="top-drive" data-control-id="top-drive" data-view-id="top">
+    <rect x="54" y="207" width="120" height="29" rx="6" fill="#303535" stroke="#535751" stroke-width="0.8"/>
+    <text x="114" y="226" text-anchor="middle" font-size="11" fill="#d5d5cc">DRIVE</text>
+    <rect x="53" y="206" width="122" height="31" fill="none" stroke="none" data-hitbox="true"/>
+  </g>
+  <g id="top-fn2" data-control-id="top-fn2" data-view-id="top">
+    <rect x="54" y="243" width="120" height="29" rx="6" fill="#303535" stroke="#535751" stroke-width="0.8"/>
+    <text x="114" y="262" text-anchor="middle" font-size="11" fill="#d5d5cc">Fn2  ·  WB</text>
+    <rect x="53" y="242" width="122" height="31" fill="none" stroke="none" data-hitbox="true"/>
+  </g>
+</svg>

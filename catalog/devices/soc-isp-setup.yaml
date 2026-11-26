@@ -1,0 +1,954 @@
+{
+  "schema": 1,
+  "id": "device.soc-isp-setup",
+  "componentId": "soc-isp-setup",
+  "depends": [],
+  "version": "0.0.1",
+  "name": "soc-isp-setup",
+  "physicalIdentity": "UNKNOWN",
+  "implementationStatus": "PARTIAL",
+  "profiles": [
+    "disabled",
+    "isp-setup-retained-experimental-v1"
+  ],
+  "implementationSources": [
+    "components/soc-isp-setup/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispsetup/IspSetupFactory.kt"
+  ],
+  "ports": [
+    {
+      "id": "definition.soc-isp-setup.ctrl-low",
+      "size": 20,
+      "kind": "MMIO",
+      "byteOrder": "little",
+      "backing": {
+        "source": "component-owned state (paired controller low bank +0x08..+0x18, stride 0x29000 HYPOTHESIS)",
+        "permissions": "Aligned 32-bit WO at +0x0/+0x8/+0xc and RW at +0x4/+0x10; strictly excludes 0xFFF4F01C INV-SYS-F01C-001"
+      },
+      "registers": [
+        {
+          "id": "reg.soc-isp-setup.ctrl-low.setup",
+          "offset": 0,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-isp-setup",
+          "name": "setup-word",
+          "namingBasis": "Section4 011E17B0 setup word (+0x08)",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit initialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Refuse",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            "0x011e17bc"
+          ],
+          "consumerPcs": [],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin",
+            "components/soc-isp-setup/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispsetup/IspSetupFactory.kt"
+          ],
+          "tests": [
+            "components/soc-isp-setup/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/ispsetup/IspSetupFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-isp-setup/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispsetup/IspSetupFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-isp-setup.ctrl-low.setup.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Raw 32-bit word for setup-word",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest register transitions against hardware capture."
+            }
+          ],
+          "unknowns": [
+            "Physical identity, reset value, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Compare hardware register captures with component behavior."
+        },
+        {
+          "id": "reg.soc-isp-setup.ctrl-low.runtime-control",
+          "offset": 4,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-isp-setup",
+          "name": "runtime-control",
+          "namingBasis": "Section4 011E1A54 RMW bits 5..9 (+0x0C)",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit initialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            "0x011e1a78"
+          ],
+          "consumerPcs": [
+            "0x011e1a68"
+          ],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin",
+            "components/soc-isp-setup/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispsetup/IspSetupFactory.kt"
+          ],
+          "tests": [
+            "components/soc-isp-setup/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/ispsetup/IspSetupFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-isp-setup/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispsetup/IspSetupFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-isp-setup.ctrl-low.runtime-control.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Raw 32-bit word for runtime-control",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest register transitions against hardware capture."
+            }
+          ],
+          "unknowns": [
+            "Physical identity, reset value, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Compare hardware register captures with component behavior."
+        },
+        {
+          "id": "reg.soc-isp-setup.ctrl-low.setup-tail",
+          "offset": 8,
+          "size": 4,
+          "count": 2,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-isp-setup",
+          "name": "setup-tail",
+          "namingBasis": "Section4 011E181C/011E1830 tail writes (+0x10, +0x14)",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit initialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Refuse",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            "0x011e181c",
+            "0x011e1830"
+          ],
+          "consumerPcs": [],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin",
+            "components/soc-isp-setup/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispsetup/IspSetupFactory.kt"
+          ],
+          "tests": [
+            "components/soc-isp-setup/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/ispsetup/IspSetupFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-isp-setup/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispsetup/IspSetupFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-isp-setup.ctrl-low.setup-tail.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Raw 32-bit word for setup-tail",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest register transitions against hardware capture."
+            }
+          ],
+          "unknowns": [
+            "Physical identity, reset value, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Compare hardware register captures with component behavior."
+        },
+        {
+          "id": "reg.soc-isp-setup.ctrl-low.mode",
+          "offset": 16,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-isp-setup",
+          "name": "mode-word",
+          "namingBasis": "Section4 011E198C/011E199C RMW mode word (+0x18)",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit initialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            "0x011e199c"
+          ],
+          "consumerPcs": [
+            "0x011e198c"
+          ],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin",
+            "components/soc-isp-setup/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispsetup/IspSetupFactory.kt"
+          ],
+          "tests": [
+            "components/soc-isp-setup/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/ispsetup/IspSetupFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-isp-setup/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispsetup/IspSetupFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-isp-setup.ctrl-low.mode.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Raw 32-bit word for mode-word",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest register transitions against hardware capture."
+            }
+          ],
+          "unknowns": [
+            "Physical identity, reset value, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Compare hardware register captures with component behavior."
+        }
+      ],
+      "unknownCoverage": "No address outside these 5 aligned words is admitted; 0xFFF4F01C remains unmapped for diagnosticProfiles.",
+      "implementationSources": [
+        "components/soc-isp-setup/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispsetup/IspSetupFactory.kt"
+      ]
+    },
+    {
+      "id": "definition.soc-isp-setup.ctrl1-poll",
+      "size": 4,
+      "kind": "MMIO",
+      "byteOrder": "little",
+      "backing": {
+        "source": "component-owned state (fff7801c-write1-read0-once-v1 / fff7801c-setup-repeat-v1 HYPOTHESIS)",
+        "permissions": "Aligned 32-bit RW poll handshake (write 1 -> read 0)"
+      },
+      "registers": [
+        {
+          "id": "reg.soc-isp-setup.ctrl1-poll.word",
+          "offset": 0,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-isp-setup",
+          "name": "poll-word",
+          "namingBasis": "Section4 01294DDC/01294DEC and 011E1744/011E174C poll at 0xFFF7801C",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS write 1 arms read 0"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            "0x01294ddc",
+            "0x011e1744"
+          ],
+          "consumerPcs": [
+            "0x01294dec",
+            "0x011e174c"
+          ],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin",
+            "components/soc-isp-setup/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispsetup/IspSetupFactory.kt"
+          ],
+          "tests": [
+            "components/soc-isp-setup/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/ispsetup/IspSetupFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-isp-setup/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispsetup/IspSetupFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-isp-setup.ctrl1-poll.word.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Raw 32-bit word for poll-word",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest register transitions against hardware capture."
+            }
+          ],
+          "unknowns": [
+            "Physical identity, reset value, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Compare hardware register captures with component behavior."
+        }
+      ],
+      "unknownCoverage": "Controller 0 +0x1C (0xFFF4F01C) is NOT mapped here (owned by INV-SYS-F01C-001 diagnosticProfiles).",
+      "implementationSources": [
+        "components/soc-isp-setup/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispsetup/IspSetupFactory.kt"
+      ]
+    },
+    {
+      "id": "definition.soc-isp-setup.ctrl-high",
+      "size": 12,
+      "kind": "MMIO",
+      "byteOrder": "little",
+      "backing": {
+        "source": "component-owned state (paired controller high bank +0x20/+0x28, hole at +0x24 HYPOTHESIS)",
+        "permissions": "Aligned 32-bit WO at offsets 0x0 and 0x8; offset 0x4 refuses"
+      },
+      "registers": [
+        {
+          "id": "reg.soc-isp-setup.ctrl-high.o0",
+          "offset": 0,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-isp-setup",
+          "name": "mode-setup-0",
+          "namingBasis": "Section4 011E1958 write at +0x20",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit initialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Refuse",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            "0x011e1958"
+          ],
+          "consumerPcs": [],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin",
+            "components/soc-isp-setup/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispsetup/IspSetupFactory.kt"
+          ],
+          "tests": [
+            "components/soc-isp-setup/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/ispsetup/IspSetupFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-isp-setup/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispsetup/IspSetupFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-isp-setup.ctrl-high.o0.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Raw 32-bit word for mode-setup-0",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest register transitions against hardware capture."
+            }
+          ],
+          "unknowns": [
+            "Physical identity, reset value, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Compare hardware register captures with component behavior."
+        },
+        {
+          "id": "reg.soc-isp-setup.ctrl-high.o8",
+          "offset": 8,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-isp-setup",
+          "name": "mode-setup-2",
+          "namingBasis": "Section4 011E1978 write at +0x28",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit initialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Refuse",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            "0x011e1978"
+          ],
+          "consumerPcs": [],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin",
+            "components/soc-isp-setup/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispsetup/IspSetupFactory.kt"
+          ],
+          "tests": [
+            "components/soc-isp-setup/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/ispsetup/IspSetupFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-isp-setup/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispsetup/IspSetupFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-isp-setup.ctrl-high.o8.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Raw 32-bit word for mode-setup-2",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest register transitions against hardware capture."
+            }
+          ],
+          "unknowns": [
+            "Physical identity, reset value, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Compare hardware register captures with component behavior."
+        }
+      ],
+      "unknownCoverage": "Offset 0x4 (+0x24) between the two setup words is UNKNOWN and refused by the known device.",
+      "implementationSources": [
+        "components/soc-isp-setup/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispsetup/IspSetupFactory.kt"
+      ]
+    }
+  ],
+  "unknowns": [
+    "Physical ISP setup controller identity, reset values, and clock/power semantics remain UNKNOWN."
+  ],
+  "nextValidation": "Compare paired setup controller transitions against hardware traces."
+}

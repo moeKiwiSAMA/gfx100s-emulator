@@ -1,0 +1,165 @@
+#version 450
+/*
+ * FUJIFILM GFX100S Emulator - Vulkan 1.1 Compute Optical Pipeline (GLSL 450)
+ * Reference shader source for:
+ *   Pass 1 (optics_warp): IBIS 5-axis shift/roll, Brown-Conrady distortion (k1/k2/p1/p2),
+ *                         zoom, lateral R/B chromatic aberration, cos^p + mechanical vignetting.
+ *   Pass 2 (pupil_bokeh): Thin-lens CoC from depth buffer + true 2D entrance-pupil bokeh mask
+ *                         (CIRCLE, POLYGON blades, STAR_5 five-pointed star, HEART, RING).
+ */
+
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+
+layout(constant_id = 0) const uint SPEC_PUPIL_SHAPE = 0xFFFFFFFFu; /* 0..4=specialized, 0xFFFFFFFF=UBO */
+
+layout(std430, set = 0, binding = 0) readonly buffer InputBuf {
+    vec4 pixels[]; /* (r, g, b, depthMeters) */
+} inBuf;
+
+layout(std430, set = 0, binding = 1) writeonly buffer OutputBuf {
+    vec4 pixels[]; /* (r, g, b, depthMeters) */
+} outBuf;
+
+layout(std140, set = 0, binding = 2) uniform OpticsUniform {
+    uvec4 dims;       /* srcW, srcH, dstW, dstH */
+    vec4  distort;    /* k1, k2, p1, p2 */
+    vec4  caVig;      /* caRedScale, caBlueScale, cos4Power, mechVig */
+    vec4  lens;       /* focalMm, sensorWidthMm, focusDistM, fNumber */
+    vec4  ibis0;      /* invZoom, ibisShiftX, ibisShiftY, ibisCosRoll */
+    vec4  ibis1;      /* ibisSinRoll, maxBokehPx, bladeRoundness, catsEye */
+    vec4  bokehExtra; /* onionRing, rimHighlight, planarDepthM, imageCircleMm */
+    uvec4 mode;       /* pupilShape, bladeCount, borderClamp, flags */
+} u;
+
+/*
+ * True 2D Entrance-Pupil transmittance mask at screen-aligned PSF coordinates
+ * s = (-dx, -dy) / cocPx in [-1, 1]^2 (s.y < 0 is TOP of screen, s.y > 0 is BOTTOM of screen).
+ */
+float evaluatePupilMask(vec2 s, float scale, uint shape, uint bladeCount, float roundness, float rimHighlight, float onionRing) {
+    float r = length(s);
+    if (r > 1.0) return 0.0;
+
+    float inside = 1.0;
+    if (shape == 0u) {
+        /* CIRCLE */
+        inside = 1.0;
+    } else if (shape == 1u) {
+        /* POLYGON (5..11 aperture blades; bladeCount=6, roundness=0 -> razor-sharp HEXAGON) */
+        float n = max(float(bladeCount), 5.0);
+        float a = atan(s.y, s.x) + 1.57079632679;
+        float sector = 6.28318530718 / n;
+        float halfSec = sector * 0.5;
+        float localA = mod(a + 6.28318530718, sector) - halfSec;
+        float polyR = cos(halfSec) / max(cos(localA), 0.1);
+        float effR = mix(polyR, 1.0, clamp(roundness, 0.0, 1.0));
+        inside = ((u.mode.w & 8u) != 0u) ? clamp((scale * effR - r) / 0.045 + 0.5, 0.0, 1.0)
+                                        : (r <= effR ? 1.0 : 0.0);
+    } else if (shape == 2u) {
+        /* STAR_5: Exact straight-edged geometric 5-pointed star (rIn=0.382, rOut=1.0, tip UP) */
+        float theta = atan(s.y, s.x) + 1.57079632679;
+        float sector = 1.25663706144;  /* 2*pi / 5 */
+        float halfSec = 0.62831853072; /* pi / 5 */
+        float modA = mod(theta + 6.28318530718, sector);
+        float phi = min(modA, sector - modA);
+        float denom = 0.382 * sin(halfSec - phi) + sin(phi);
+        float starR = 0.2245339664 / max(denom, 1e-5); /* 1.0 * 0.382 * sin(pi/5) */
+        inside = clamp((scale * starR - r) / 0.045 + 0.5, 0.0, 1.0);
+    } else if (shape == 3u) {
+        /* HEART: Upright full-size implicit heart (x^2 + y^2 - 1)^3 - x^2 * y^3 <= 0
+         * Top lobes + cleft at s.y < 0 (hy > 0), pointed tip at s.y > 0 (hy < 0). */
+        vec2 h = vec2(s.x * 1.28, -s.y * 1.34) / scale + vec2(0.0, 0.12);
+        float q = dot(h, h) - 1.0;
+        float f = q * q * q - (h.x * h.x) * (h.y * h.y * h.y);
+        inside = clamp(0.5 - f / 0.05, 0.0, 1.0);
+    } else if (shape == 4u) {
+        /* RING: Catadioptric mirror-lens central obstruction annulus */
+        float outerM = clamp((scale - r) / 0.045 + 0.5, 0.0, 1.0);
+        float innerM = clamp((r - 0.5 * scale) / 0.045 + 0.5, 0.0, 1.0);
+        inside = outerM * innerM;
+    }
+
+    if (inside <= 0.0) return 0.0;
+    float gain = 1.0;
+    if (rimHighlight > 0.0) {
+        gain += rimHighlight * pow(clamp(r, 0.0, 1.0), 4.0);
+    }
+    if (onionRing > 0.0) {
+        gain *= (1.0 + onionRing * 0.25 * cos(r * 25.1327412));
+    }
+    return inside * max(gain, 0.0);
+}
+
+void main() {
+    uint x = gl_GlobalInvocationID.x;
+    uint y = gl_GlobalInvocationID.y;
+    uint dstW = u.dims.z;
+    uint dstH = u.dims.w;
+    if (x >= dstW || y >= dstH) return;
+
+    uint idx = y * dstW + x;
+    vec4 center = inBuf.pixels[idx];
+    float maxR = u.ibis1.y;
+    if (maxR < 0.5 || (u.mode.w & 2u) == 0u) {
+        outBuf.pixels[idx] = center;
+        return;
+    }
+
+    /* Thin-lens Circle-of-Confusion radius in pixels */
+    float fMm = u.lens.x;
+    float sFocusMm = max(u.lens.z * 1000.0, fMm + 1.0);
+    float sDepthMm = max(((u.mode.w & 1u) != 0u && center.a > 0.01 ? center.a : u.bokehExtra.z) * 1000.0, 10.0);
+    float cocMm = abs(sDepthMm - sFocusMm) / sDepthMm * (fMm * fMm) / max(u.lens.w * (sFocusMm - fMm), 1e-3);
+    float cocPx = clamp(0.5 * cocMm * (float(dstW) / max(u.lens.y, 1.0)), 0.0, maxR);
+    if (cocPx < 0.5) {
+        outBuf.pixels[idx] = center;
+        return;
+    }
+
+    uint effShape = (SPEC_PUPIL_SHAPE != 0xFFFFFFFFu) ? SPEC_PUPIL_SHAPE : u.mode.x;
+    bool useHalf = ((u.mode.w & 4u) != 0u) && (cocPx > 8.0);
+    uint bufBase = useHalf ? ((dstW * dstH + 15u) & ~15u) : 0u;
+    uint bufW = useHalf ? (dstW >> 1u) : dstW;
+    uint bufH = useHalf ? (dstH >> 1u) : dstH;
+    int cx = useHalf ? int(x >> 1u) : int(x);
+    int cy = useHalf ? int(y >> 1u) : int(y);
+    float stepF = useHalf ? 2.0 : 1.0;
+    float invStep = useHalf ? 0.5 : 1.0;
+    float oxF = useHalf ? (((x & 1u) != 0u) ? -0.5 : 0.5) : 0.0;
+    float oyF = useHalf ? (((y & 1u) != 0u) ? -0.5 : 0.5) : 0.0;
+    int rad = int(ceil(cocPx * invStep));
+    float angle = float((u.mode.w >> 4u) & 16383u) * (6.28318530718 / 16384.0);
+    float scale = 1.0 - float(u.mode.w >> 18u) * (0.6 / 16383.0);
+    mat2 inverseRotation = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
+    bool plainCircle = (effShape == 0u) && (u.bokehExtra.y <= 0.0) && (u.bokehExtra.x <= 0.0);
+
+    vec3 acc = vec3(0.0);
+    float wSum = 0.0;
+    for (int dy = -rad; dy <= rad; ++dy) {
+        float dfy = float(dy) * stepF + oyF;
+        float pyN = dfy / cocPx;
+        float pySq = pyN * pyN;
+        if (pySq > 1.0) continue;
+        float remX = sqrt(max(1.0 - pySq, 0.0)) * cocPx;
+        int dxMin = max(-rad, int(ceil((-remX - oxF) * invStep)));
+        int dxMax = min(rad, int(floor((remX - oxF) * invStep)));
+        int ny = clamp(cy + dy, 0, int(bufH) - 1);
+        uint rowOff = bufBase + uint(ny) * bufW;
+        for (int dx = dxMin; dx <= dxMax; ++dx) {
+            float dfx = float(dx) * stepF + oxF;
+            float pxN = dfx / cocPx;
+            float rSq = pxN * pxN + pySq;
+            if (rSq > 1.0) continue;
+            float w = plainCircle
+                ? 1.0
+                : evaluatePupilMask(inverseRotation * vec2(-pxN, -pyN), scale, effShape, u.mode.y, u.ibis1.z, u.bokehExtra.y, u.bokehExtra.x);
+            if (w > 0.0) {
+                int nx = clamp(cx + dx, 0, int(bufW) - 1);
+                vec4 samplePx = inBuf.pixels[rowOff + uint(nx)];
+                acc += samplePx.rgb * w;
+                wSum += w;
+            }
+        }
+    }
+    vec3 rgb = (wSum > 0.0) ? (acc / wSum) : center.rgb;
+    outBuf.pixels[idx] = vec4(rgb, center.a);
+}

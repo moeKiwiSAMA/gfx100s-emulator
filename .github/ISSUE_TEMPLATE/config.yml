@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Firmware & Hardware Dump Setup Guide
+    url: https://github.com/moeKiwiSAMA/gfx100s-emulator/blob/main/docs/FIRMWARE.md
+    about: How to obtain official GFX100S v2.13 firmware (GXUP0004.DAT), verify its SHA-256 hash, and initialize flash/nor-flash.bin.
+  - name: Emulator User Manual
+    url: https://github.com/moeKiwiSAMA/gfx100s-emulator/blob/main/docs/manual/USER_MANUAL.md
+    about: Documentation for workspace views, body/UI themes, lenses, optical filters, 3D scenes, dual SD cards, audio, Vulkan GPU settings, and troubleshooting.

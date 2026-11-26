@@ -1,0 +1,121 @@
+#version 450
+/*
+ * FUJIFILM GFX100S Emulator - Vulkan 1.1 Compute CMOS Readout & Noise Shader (GLSL 450)
+ *
+ * Implements stateless counter-based SplitMix64 (emulated via portable 32-bit uint
+ * arithmetic so zero shaderInt64 capability is needed) + Box-Muller photon shot noise
+ * & ISO-scaled Gaussian read noise + Bayer CFA mosaic quantization (8..16-bit),
+ * matching CmosNoiseModel.kt.
+ */
+
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+
+layout(std430, set = 0, binding = 0) readonly buffer InputRgbBuf {
+    vec4 pixels[]; /* linear radiance (r, g, b, unused) */
+} inBuf;
+
+layout(std430, set = 0, binding = 1) writeonly buffer OutputBayerBuf {
+    uint samples[]; /* 1 uint32 per pixel (low 8 or 16 bits packed on CPU or direct u16) */
+} outBuf;
+
+layout(std140, set = 0, binding = 2) uniform CmosUniform {
+    uvec4 geom;    /* width, height, bayerPattern, bitDepth */
+    uvec4 adc;     /* maxCode, blackLevel, enableNoise, iso */
+    vec4  sensor;  /* baseIso, fullWellElectrons, opticalExposureScale, readNoiseBaseElectrons */
+    uvec4 noise;   /* floatBitsToUint(readNoiseIsoSlope), seedLo, seedHi, frameIndexLo */
+} u;
+
+/* Portable 64-bit unsigned addition via uvec2(lo, hi) */
+uvec2 u64_add(uvec2 a, uvec2 b) {
+    uint lo = a.x + b.x;
+    uint carry = (lo < a.x) ? 1u : 0u;
+    return uvec2(lo, a.y + b.y + carry);
+}
+
+/* Portable 64-bit unsigned multiply (low 64 bits) via umulExtended */
+uvec2 u64_mul(uvec2 a, uvec2 b) {
+    uint lo, hi;
+    umulExtended(a.x, b.x, hi, lo);
+    hi += a.x * b.y + a.y * b.x;
+    return uvec2(lo, hi);
+}
+
+/* Portable 64-bit logical right shift for 0 < s < 32 */
+uvec2 u64_shr(uvec2 a, uint s) {
+    return uvec2((a.x >> s) | (a.y << (32u - s)), a.y >> s);
+}
+
+/* Exact SplitMix64 bit-mixer matching CmosNoiseModel.splitMix64() */
+uvec2 splitmix64(uvec2 z0) {
+    const uvec2 GAMMA = uvec2(0x7F4A7C15u, 0x9E3779B9u);
+    const uvec2 MUL1  = uvec2(0x1CE4E5B9u, 0xBF58476Du);
+    const uvec2 MUL2  = uvec2(0x133111EBu, 0x94D049BBu);
+    uvec2 z = u64_add(z0, GAMMA);
+    z = u64_mul(z ^ u64_shr(z, 30u), MUL1);
+    z = u64_mul(z ^ u64_shr(z, 27u), MUL2);
+    return z ^ u64_shr(z, 31u);
+}
+
+float u64_to_unit_float(uvec2 v) {
+    /* Top 24 bits -> uniform in (0, 1) */
+    return (float(v.y >> 8u) + 0.5) * (1.0 / 16777216.0);
+}
+
+uint selectBayerChannel(uint pattern, uint x, uint y) {
+    uint xo = x & 1u;
+    uint yo = y & 1u;
+    if (pattern == 0u) return (yo == 0u) ? ((xo == 0u) ? 0u : 1u) : ((xo == 0u) ? 1u : 2u); /* RGGB */
+    if (pattern == 1u) return (yo == 0u) ? ((xo == 0u) ? 1u : 0u) : ((xo == 0u) ? 2u : 1u); /* GRBG */
+    if (pattern == 2u) return (yo == 0u) ? ((xo == 0u) ? 1u : 2u) : ((xo == 0u) ? 0u : 1u); /* GBRG */
+    return (yo == 0u) ? ((xo == 0u) ? 2u : 1u) : ((xo == 0u) ? 1u : 0u);                     /* BGGR */
+}
+
+void main() {
+    uint x = gl_GlobalInvocationID.x;
+    uint y = gl_GlobalInvocationID.y;
+    uint w = u.geom.x;
+    uint h = u.geom.y;
+    if (x >= w || y >= h) return;
+
+    uint idx = y * w + x;
+    vec4 px = inBuf.pixels[idx];
+    uint ch = selectBayerChannel(u.geom.z, x, y);
+    float rad = (ch == 0u) ? px.r : ((ch == 1u) ? px.g : px.b);
+    rad = max(rad, 0.0);
+
+    float fullWell = u.sensor.y;
+    float expectedE = rad * u.sensor.z * fullWell;
+    float isoGain = float(u.adc.w) / max(u.sensor.x, 1.0);
+    float usableRange = float(u.adc.x - u.adc.y);
+    float eToAdu = (usableRange / fullWell) * isoGain;
+
+    float adu;
+    if (u.adc.z == 0u) {
+        float clampedE = min(expectedE, fullWell);
+        adu = float(u.adc.y) + clampedE * eToAdu;
+    } else {
+        const uvec2 GAMMA = uvec2(0x7F4A7C15u, 0x9E3779B9u);
+        const uvec2 MUL1  = uvec2(0x1CE4E5B9u, 0xBF58476Du);
+        uvec2 seed = uvec2(u.noise.y, u.noise.z);
+        uvec2 frameKey = u64_mul(uvec2(u.noise.w, 0u), GAMMA);
+        uvec2 pixKey = u64_mul(uvec2(idx, 0u), MUL1);
+        uvec2 baseKey = splitmix64(seed ^ frameKey ^ pixKey);
+        float u1 = clamp(u64_to_unit_float(splitmix64(baseKey)), 1e-7, 1.0);
+        float u2 = u64_to_unit_float(splitmix64(u64_add(baseKey, uvec2(1u, 0u))));
+        float radius = sqrt(-2.0 * log(u1));
+        float theta = 6.28318530718 * u2;
+        float zShot = radius * cos(theta);
+        float zRead = radius * sin(theta);
+        float rawE = max(0.0, expectedE + zShot * sqrt(max(expectedE, 0.0)));
+        float clampedE = min(rawE, fullWell);
+        float readSlope = uintBitsToFloat(u.noise.x);
+        float readE = u.sensor.w * (1.0 + readSlope * max(0.0, isoGain - 1.0));
+        adu = float(u.adc.y) + clampedE * eToAdu + zRead * readE * eToAdu;
+    }
+
+    uint code = uint(clamp(floor(adu + 0.5), 0.0, float(u.adc.x)));
+    // Internal fused ISP modes mirror the host Bayer upload conversion.
+    if (u.geom.w == 0u) code = (code * 4095u) / 255u;
+    if (u.geom.w == 1u) code >>= 4u;
+    outBuf.samples[idx] = code;
+}

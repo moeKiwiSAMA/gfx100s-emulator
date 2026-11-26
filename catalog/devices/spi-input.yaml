@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "id": "device.spi-input",
+  "componentId": "spi-input",
+  "depends": [],
+  "version": "0.0.1",
+  "name": "spi-input",
+  "physicalIdentity": "UNKNOWN",
+  "implementationStatus": "HOST_CONTRACT_ONLY",
+  "implementationSources": [
+    "components/spi-input/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/spiinput/SpiInputFactory.kt"
+  ],
+  "ports": [],
+  "unknowns": [
+    "Physical device identity, reset values, wiring and full state machine are not qualified."
+  ],
+  "nextValidation": "Trace selected original firmware consumers and retain refusal controls."
+}

@@ -1,0 +1,109 @@
+# ==============================================================================
+# FUJIFILM GFX100S (固件 2.13) — Dynarmic ARMv7-A AVX2 JIT Turbo 配置样例
+#
+# 使用 `cpuEngine: dynarmic`（或 `auto`：检测到 Dynarmic 原生库时自动启用，
+# 否则回退至 Unicorn Fast-Step v2）。仅在 `relaxed` 模式下可用；`strict` 与
+# `discovery` 始终使用 Unicorn 保证 100% 确定性与资格门控兼容。
+#
+# 构建原生 Dynarmic 引擎（一次性）：
+#   Linux  : ./gradlew :cpu-unicorn:buildDynarmicNative
+#   Win64  : ./gradlew :cpu-unicorn:buildDynarmicNativeWindowsCross
+# ==============================================================================
+
+schema: 1
+components: runtime/compoments
+componentConfigs: configs/components
+httpPort: 8787
+firmwareMetadata: configs/firmware/gfx100s-213-release.yaml
+norFlashFile: flash/nor-flash.bin
+factoryFlashFile: runtime/templates/factory-flash/nor-flash-2.13.bin
+bootRomFile: bootrom/boot-rom.bin
+
+# CPU 后端选择：dynarmic（发行版默认，无需 nativeLibrary）| auto | unicorn（需额外配置 nativeLibrary）
+cpuEngine: dynarmic
+# relaxed 模式默认启用宿主机多线程 4 核并行（可改为 false 回退单线程轮转）
+smpHostThreads: true
+
+instructionBudget: unlimited
+transactionLimit: 65536
+executionMode: relaxed
+relaxedBootstrapRam: gfx100s-full-boot-ddr-v1
+audio: true
+addressDictionary: configs/catalog.compiled.json
+
+clusterProfile: four-context-functional-experimental-v1
+clusterReset:
+  profile: secondary-reset-schedule-experimental-v1
+  releaseTicks:
+    - 0
+    - 32768
+    - 32768
+    - 32768
+
+mmuProfile: arm-short-descriptor-native-experimental-v1
+wordExclusive:
+  profile: arm-byte-halfword-word-exclusive-logical-experimental-v3
+  reservationGranule: 64
+cbarInput: 4294901760
+
+idleClock:
+  profile: next-deadline-functional-experimental-v1
+  maxAdvances: 65536
+  maxIdleTicks: 1000000000
+
+undefinedExceptionProfile: arm-vfp-disabled-undefined-experimental-v1
+prefetchAbortProfile: arm32-native-prefetch-entry-experimental-v1
+
+flashPartitionScope: dat-partition-octet-experimental-v3
+powerBlockScope: dat-checksummed-four-halfword-experimental-v1
+powerRegister2Bit8Profile: masked-bit8-retained-experimental-v1
+flashReadPairScope: dat-secondary-read-pair-experimental-v1
+flashWritableSetScope: dat-bkup-octet-secondary504-write-set-experimental-v2
+
+discovery:
+  profile: gfx100s-sd-finite-lens-completion-a300-diagnostic-v1
+  logCapacity: 4096
+  diskBudgetBytes: 268435456
+  imageScalerF000: fff7f000-irq133-completion-v1
+  imageScalerE000: fff7e000-irq132-completion-v1
+  playDspFa00: fa000000-ready-idle-v1
+  ispAutoSync: isp-tg-auto-sync-v1
+  imageFace7c000: face-detect-irq123-v1
+  sdPhySeed:
+    slot0:
+      - 268435456
+      - 0
+    slot1:
+      - 268435456
+      - 0
+
+enabledDevices:
+  - soc-system-control
+  - soc-configuration
+  - soc-gic
+  - soc-timer
+  - soc-flash
+  - soc-dma
+  - soc-sd-host
+  - soc-spi
+  - soc-i2c
+  - soc-adc
+  - soc-gpio
+  - soc-selection
+  - soc-temperature
+  - soc-dram
+  - soc-serial-engine
+  - soc-vglib-init
+  - soc-isp
+  - soc-jpeg
+  - soc-audio
+  - sdcard-reader
+  - buttons
+  - battery
+  - i2c-bus
+  - mount
+  - cmos
+  - power-peer
+  - rtc
+  - flash-image
+  - system-memory

@@ -1,0 +1,15 @@
+schema: 1
+components: compoments
+httpPort: 8787
+firmwareMetadata: config/firmware/gfx100s-213.yaml
+firmwareFile: ""
+nativeLibrary: ""
+instructionBudget: 100000
+enabledDevices: [soc-gpio, soc-timer, soc-dma, soc-configuration]
+
+executionMode: discovery
+addressDictionary: config/catalog.compiled.json
+discovery:
+  profile: gfx100s-sd-finite-v1
+  logCapacity: 16384
+  diskBudgetBytes: 33554432

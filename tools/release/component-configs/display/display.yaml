@@ -1,0 +1,15 @@
+# ==============================================================================
+# Rear Tilting LCD & Electronic Viewfinder (EVF)
+# File: configs/components/display/display.yaml
+#
+# Controls display preferences for the rear LCD monitor and OLED EVF.
+# Native GFX100S panel dimensions (1024x768 LCD, 1280x960 EVF) are fixed in
+# hardware and applied automatically.
+# ==============================================================================
+
+# Display backlight brightness multiplier (0.0 = dark, 1.0 = full brightness).
+brightness: 1.0
+
+# --- Examples (uncomment and replace the value above) -------------------------
+# Dimmed display for low-light / night shooting:
+# brightness: 0.6

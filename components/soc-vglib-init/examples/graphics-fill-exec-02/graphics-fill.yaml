@@ -1,0 +1,12 @@
+{
+  "profile": "graphics-fill-retained-experimental-v2",
+  "initialWords": [0, 0, 0, 0],
+  "statusReads": [],
+  "accessLimit": 512,
+  "execution": {
+    "profile": "q0-register-shared-ram-fill-experimental-v2",
+    "surfaceBase": 109654016,
+    "surfaceBytes": 3145728,
+    "submissionLimit": 2
+  }
+}

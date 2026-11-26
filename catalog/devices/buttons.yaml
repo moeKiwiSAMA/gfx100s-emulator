@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "id": "device.buttons",
+  "componentId": "buttons",
+  "depends": [],
+  "version": "0.0.1",
+  "name": "buttons",
+  "physicalIdentity": "UNKNOWN",
+  "implementationStatus": "HOST_CONTRACT_ONLY",
+  "implementationSources": [
+    "components/buttons/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/buttons/ButtonsFactory.kt"
+  ],
+  "ports": [],
+  "unknowns": [
+    "Physical device identity, reset values, wiring and full state machine are not qualified."
+  ],
+  "nextValidation": "Trace selected original firmware consumers and retain refusal controls."
+}

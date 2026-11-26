@@ -1,0 +1,19 @@
+# ==============================================================================
+# SD Card Example 1: Dual Host-Folder Sync Mode (directory — Release Default)
+#
+# Copy to configs/components/sdcard-reader/sdcard-reader.yaml to activate.
+# Host folders runtime/compoments/sdcard-reader/sd-card-slot-1/ and
+# sd-card-slot-2/ stay live-synced as 4 GiB FAT32 SD cards so you can
+# drag-and-drop photos directly into DCIM/100_FUJI/.
+# ==============================================================================
+slot1Inserted: true
+slot1Backend: "directory"
+slot1Image: "sd-card-slot-1"
+slot1ReadOnly: false
+slot1CapacityBytes: 4294967296
+
+slot2Inserted: true
+slot2Backend: "directory"
+slot2Image: "sd-card-slot-2"
+slot2ReadOnly: false
+slot2CapacityBytes: 4294967296

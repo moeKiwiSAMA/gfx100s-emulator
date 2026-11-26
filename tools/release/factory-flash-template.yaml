@@ -1,0 +1,144 @@
+# GFX100S 2.13 模拟出厂配置 Flash 模板（DAT + HYPOTHESIS / FACTORY_TEMPLATE）
+#
+# 本模板与权威 Flash 字典 `catalog/flash/gfx100s-213.yaml` 保持单一事实来源，并由 `:address-catalog:verifyCatalog` 强校验。
+# - 不包含任何真实个人相机的机身序列号、用户偏好或私有校准数据；
+# - `bank-14` (`factory-config.img`) 直接由公开固件包 `GXUP0004.DAT` 内置的官方 `0x72000` 字节出厂校准表
+#   （`0x000C0274` 按位取反，`section4 @ 0x0129E738`）播种，再叠加下方合成 `HYPOTHESIS` 电池阈值补丁；
+# - 保持与 `components/flash-image` (`SupplementalRegions` / `WritableRegions`) 100% 相同的分区与 COW 布局；
+# - 修改或新增字段时，须同步维护 `catalog/flash/gfx100s-213.yaml`（`applyInFactoryTemplate: true`），
+#   `:generateFactoryFlashTemplate` 会自动生成带精确 SHA-256（及 BlockA/B 2D 奇偶校验 ECC）的出厂 Flash 镜像。
+
+schema: 1
+profile: gfx100s-213-factory-flash-template-v2
+dictionaryRef: catalog/flash/gfx100s-213.yaml
+evidenceClass: HYPOTHESIS
+defaultFillByte: 0xff
+
+flashImageConfig:
+  tailProfile: dat-end-block-ff-experimental-v1
+  regionsProfile: explicit-readonly-regions-experimental-v1
+  regionsFile: regions.json
+  mutationProfile: explicit-disjoint-copy-on-write-program-experimental-v3
+  mutationFile: mutable.json
+
+domains:
+  - id: dat-part12-lens-cache-ff
+    offset: 0x02fe0000
+    length: 0x00500000
+    file: factory-part12-lens-cache.img
+    defaultFillByte: 0xff
+    role: lens-eeprom-cache-part12
+  - id: dat-bank13-read508
+    offset: 0x034e0000
+    length: 0x00020000
+    file: factory-bank13-read508.img
+    defaultFillByte: 0xff
+    role: bank13-lens-directory-and-boot-config
+  - id: blank-ff-experiment
+    offset: 0x03500000
+    length: 0x00840000
+    file: factory-config.img
+    defaultFillByte: 0x00
+    datSeed:
+      datOffset: 0x000c0274
+      length: 0x00072000
+      invertBytes: true
+      confidence: DAT
+    role: persistent-config-storage-bank14
+  - id: dat-domain490-497-ff
+    offset: 0x03d40000
+    length: 0x00100000
+    file: factory-domain490-497.img
+    defaultFillByte: 0xff
+    role: settings-and-writable-primary-bank
+  - id: dat-range504-ff
+    offset: 0x03f00000
+    length: 0x00040000
+    file: factory-domain504-505.img
+    defaultFillByte: 0xff
+    role: writable-secondary-bank
+  - id: dat-secondary-read506-507-ff
+    offset: 0x03f40000
+    length: 0x00040000
+    file: factory-domain506-507.img
+    defaultFillByte: 0xff
+    role: secondary-readonly-domain
+  - id: dat-tail-config508-ff
+    offset: 0x03f80000
+    length: 0x00020000
+    file: factory-domain508.img
+    defaultFillByte: 0xff
+    role: tail-factory-config-block-508
+
+writableRegions:
+  primaryRegionId: dat-domain490-497-ff
+  entries:
+    - regionId: dat-part12-lens-cache-ff
+      file: cow-part12-lens-cache.img
+      writableOffset: 0x02fe0000
+      writableLength: 0x00500000
+      programLaw: strict-one-to-zero-no-page-wrap-experimental-v1
+      programPageBytes: 256
+    - regionId: dat-bank13-read508
+      file: cow-bank13.img
+      writableOffset: 0x034e0000
+      writableLength: 0x00020000
+      programLaw: strict-one-to-zero-no-page-wrap-experimental-v1
+      programPageBytes: 256
+    - regionId: dat-domain490-497-ff
+      file: cow-domain490-497.img
+      writableOffset: 0x03d40000
+      writableLength: 0x00100000
+      programLaw: strict-one-to-zero-no-page-wrap-experimental-v1
+      programPageBytes: 256
+    - regionId: dat-range504-ff
+      file: cow-domain504-505.img
+      writableOffset: 0x03f00000
+      writableLength: 0x00040000
+      programLaw: strict-one-to-zero-no-page-wrap-experimental-v1
+      programPageBytes: 256
+    - regionId: dat-secondary-read506-507-ff
+      file: cow-domain506-507.img
+      writableOffset: 0x03f40000
+      writableLength: 0x00040000
+      programLaw: strict-one-to-zero-no-page-wrap-experimental-v1
+      programPageBytes: 256
+    - regionId: dat-tail-config508-ff
+      file: cow-domain508.img
+      writableOffset: 0x03f80000
+      writableLength: 0x00020000
+      programLaw: strict-one-to-zero-no-page-wrap-experimental-v1
+      programPageBytes: 256
+
+# 已研究定界且在出厂模板中生效的合成字段补丁（须与 catalog/flash/gfx100s-213.yaml 逐项一致）：
+fields:
+  - id: bank14.battery_end_adc_threshold
+    regionId: blank-ff-experiment
+    relativeOffset: 0x000003e7
+    hex: "f501"
+    confidence: HYPOTHESIS
+    note: "电池 END ADC 关机阈值（501=0x01F5，约 5920 mV；既低于标称 7400 mV 的 626 与静态 power-peer 回退值 502 避免开机误关机，又在电量耗尽 5800 mV 时使 sel03=490 <= 501 真实触发固件 BATT_STS_END=0x06 自动关机）。"
+  - id: bank14.bt_bd_addr
+    regionId: blank-ff-experiment
+    relativeOffset: 0x0000798a
+    hex: "02464a100001"
+    confidence: HYPOTHESIS
+    note: "合成确定性本地管理（LAA）蓝牙 BD_ADDR（02:46:4A:10:00:01），与 Wi-Fi MAC 连续，不含真实个人机身数据。"
+  - id: bank14.wireless_camera_name
+    regionId: blank-ff-experiment
+    relativeOffset: 0x00008a42
+    hex: "46554a4946494c4d2d474658313030532d454d55312020202020202020202020"
+    confidence: HYPOTHESIS
+    note: "合成 32 字节空格填充无线/蓝牙相机名称（FUJIFILM-GFX100S-EMU1），保留 9 字节 FUJIFILM- 前缀以兼容 S4 0x012ABD30 BLE ScanRsp 截断逻辑。"
+  - id: bank14.wireless_camera_name_len
+    regionId: blank-ff-experiment
+    relativeOffset: 0x00008a63
+    hex: "15"
+    confidence: DAT
+    note: "bank14.wireless_camera_name 有效字节长度（21 = 0x15，对应 FUJIFILM-GFX100S-EMU1，消除尾部空格）。"
+  - id: bank14.wifi_mac_address
+    regionId: blank-ff-experiment
+    relativeOffset: 0x00008ab9
+    hex: "02464a100000"
+    confidence: HYPOTHESIS
+    note: "合成确定性本地管理（LAA）Wi-Fi MAC 地址（02:46:4A:10:00:00），使 CONNECTION SETTING -> INFORMATION 显示有效非零地址。"

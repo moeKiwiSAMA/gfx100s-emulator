@@ -1,0 +1,15 @@
+# ==============================================================================
+# Focal-Plane & Electronic Shutter Assembly
+# File: configs/components/shutter/shutter.yaml
+#
+# Enables the GFX100S mechanical, electronic front-curtain (EFCS), and silent
+# electronic shutter assembly. Mechanical curtain transit and full-frame
+# rolling-shutter timings use authentic GFX100S hardware defaults automatically.
+# ==============================================================================
+
+# Enable the camera shutter mechanism.
+enabled: true
+
+# --- Examples (uncomment to customize) ----------------------------------------
+# Start with a custom camera shutter actuation count:
+# initialShutterCount: 1250

@@ -1,0 +1,88 @@
+# Changelog — v0.3.0 (2026-11-26)
+
+`v0.3.0` is a landmark release for the **FUJIFILM GFX100S 2.13 JVM Emulator**: **100% pure MIT** open-source licensing (zero Logback, zero Unicorn, **`desktop.jar` slimmed to `2.53 MB`** even with photorealistic hybrid PNG+SVG body textures, deduplicated **`84 MiB`** Linux AppImage, **0 Kotlin compiler warnings** across owned modules), authentic **Unified 64 MiB QSPI NOR Flash** booting, a **zero-firmware-hack unified Vulkan 1.1 Compute + 4-Core SMP performance overhaul** (GPU 3D Scene Rasterizer `15.4×–19.2×`, GPU Pass 0..6 Optics→ISP→Stats fusion + `21.6×` 2×2 bokeh pyramid / Stage-1 VRAM cache, Plugin SPI v1.0 custom `.spv` compute shaders, C++ MMIO read-mirroring, AVX-512/AVX2 native ISP & built-in zero-dependency multi-threaded 102MP C JPEG encoder), **real hardware Video `.MOV` recording (with Movie `SHR2/SVR2` + full 16×16 AE grid fix) & 102MP Lossless RAW / 400MP Pixel Shift / In-Camera RAW Conversion**, rock-solid **AE/AF/Eye-AF boxes**, and a completely modernized **Theme System v2 (photorealistic GFX100S, Hasselblad X2D II 100C & 907X/CFV 100C hybrid themes with rotating mechanical dials/levers & quick-click shutter), 6-Language UI, 3-in-1 3D Bokeh Studio + Milk Frog GLB/Audio, Keyboard & Multi-Gamepad, and 39-Endpoint OpenAPI 3.1** user experience.
+
+---
+
+## 1. Pure MIT License, Codebase Slim-Down & Clean Public Packaging
+
+- **100% Pure MIT Licensing**: Removed `ch.qos.logback` (replaced with an in-house pure-MIT SLF4J 2.0 `FujiLogging` provider with async `.log.gz` rotation and clean JSON stdout) and completely pruned GPL-tainted Unicorn (`:cpu-unicorn` -> `:cpu-dynarmic`, `unicorn=excluded` verified in Linux/Windows releases).
+- **69k-LOC Desktop Slim-Down & Deduplicated Packaging**: Pruned obsolete Phase-1/2 reverse-engineering scaffolding (`desktop.jar` stays slim at **`2.53 MB`** `< 3 MB` including photorealistic PNG+SVG body theme assets), deduplicated the Linux AppImage to **`84 MiB`**, eliminated **189 Kotlin compiler warnings** across owned modules, and audited every hot FFM path for zero per-frame arena/segment allocation churn.
+- **Built-in Zero-Dependency 102MP Native C JPEG Encoder & Multi-Distro Codec Loader (`65fcae29c`, `b4f4dd79f`)**: Added a built-in zero-dependency multi-threaded baseline YCbCr 4:2:2 JPEG encoder directly inside `libfuji_codec.so` / `fuji_codec.dll` (**`291 ms`** for 102MP without external `libjpeg` on Windows, eliminating the 610 MB GC spike, and caching the optical frame for `1.5 vSec` to generate the `160×120` EXIF thumbnail) alongside multi-distro `libjpeg.so.62` / `libjpeg-turbo` dynamic discovery.
+- **Explicit License Governance & Zero Proprietary Binaries**: Added root [LICENSE](../LICENSE) and [THIRD_PARTY_LICENSES.md](../THIRD_PARTY_LICENSES.md); public builds (`-PfujiBundleStockBins=false`) ship zero proprietary firmware or BootROM binaries with clear drop-in guides (`flash/PUT_HERE`, `bootrom/PUT_HERE`).
+
+---
+
+## 2. Authentic Unified 64 MiB QSPI NOR Flash & Real-Silicon Hardware Fidelity
+
+- **Unified 64 MiB QSPI NOR Flash (`REAL-FLASH-BOOT-W10`)**:
+  - Replaced split partition/COW files with a single authentic 64 MiB Micron `MT25QU512ABB` image (`flash/nor-flash.bin`) enforcing real `4 KiB` / `64 KiB` sector erases (`0xFF`) and `256 B` NOR `1 -> 0` page programming under an exclusive `.lock` lease.
+  - Added a **4-surface Host Flasher** (GUI, Console CLI, HTTP REST API, and launcher CLI) to flash `GXUP0004.DAT` directly into `nor-flash.bin`.
+  - **Stock In-Camera `RESET -> INITIALIZE`**: Unmodified GFX100S firmware now cleanly erases and re-seeds live `BKUP` settings sectors directly inside `nor-flash.bin`.
+  - Supports drop-in `flash/PUT_HERE` and `bootrom/PUT_HERE` layouts (default Flash-Direct boot from `nor-flash.bin[0x20000..0x3FFFF]`; opt-in `--boot-rom` full mask-ROM path).
+- **Real-Silicon BootROM & Hardware Breakthroughs (Zero Firmware Patches)**:
+  - **Exact Physical RAM Proven (`RE-BOOTROM-DEEP` + `SILICON-FIDELITY-W9`)**: Confirmed **`8.0 GiB` (`8,192 MiB`) Quad-Channel Dual-Rank `LPDDR4-2400`** (`4 × Socionext UMC` + `4 × Cadence Denali PI/PHY`, `1,200 MHz` CK / `2,400 MT/s` / `19.2 GB/s`), 13 PLLs / 54 clock dividers / 71 clock domains, and `0xFFF48004[4:0]` 5-bit AVS silicon speed bin; exposed full hardware telemetry in `soc-dram`, `soc-configuration`, and `soc-system-control`.
+  - **ARMv7-A 40-Bit Supersection LPDDR4 Pools (`BUG-V3-7-1`)**: Full 40-bit `PA[39:32]` Supersection decoding in Dynarmic & page-table walkers eliminates Movie-mode high-bank aliasing onto executable low RAM.
+  - **102MP Still Capture, Lossless RAW, 400MP Pixel Shift & In-Camera RAW Conversion**:
+    - `CCDIF 0xFFF6E018` readout pacing (`STILL_FRAME_IRQ_PERIOD = 21M` ticks) cures `EFCS` / `MS` post-capture black-screen freezes (**15/15 consecutive live `ES`/`MS`/`EFCS` shots** resume `scr=0x0102`) and completes **16/16 400MP Pixel Shift Multi Shot** with 9 real `biscom` sub-pixel shifts.
+    - Full Fujifilm `LSRAW` (`0xFFFA2000`, `IRQ 137`) 16-bit Bayer gradient-adaptive Golomb-Rice hardware codec unlocks **`LOSSLESS`** and **`COMPRESSED`** `.RAF` recording.
+    - HDMAC 6-word hardware `LLI` chains (**8,760-descriptor** `~207 MB` gather) + Still ISP color pipeline unlock in-camera **`PLAY BACK MENU -> RAW CONVERSION`** outputting fresh `.JPG`s (`ACROS`, `MONOCHROME+Ye`, `Velvia`, etc.).
+  - **Real Hardware Movie Recording & Video Assist**:
+    - Full **ARM Mali-V61 RASC MVE v2.4** 6-ring protocol + H.264/H.265 bitstream encoder + route-44 unaligned DMA + exact `48.000 kHz` 24-bit chained I2S audio rings: unmodified firmware records genuine **1080p 59.94 fps H.264 + 24-bit 48 kHz stereo QuickTime `.MOV`** files with live headphone monitoring.
+    - **Long-Video Phase-Lock & Cross-Cluster FAT32 Closure (`8a3a9767e`)**: Maps Mali-V61 `BUF_CODE_PARAM(9)` Q16.16 frame rates to exact zero-remainder 54 MHz periods (`900,900` ticks @ `59.94 fps`) and preserves pre-allocated dirty FAT1/FAT2 chains across 128-cluster boundaries (`DirectoryFat32BlockStore`), curing the 300-frame auto-stop & chain truncation: verified **`35.40 vSec` / `2,100` frames / `31.21 MiB` (`32,728,064 B`) `DSCF0002.MOV` with `0.0000s` A/V drift** and clean playback + post-video capture.
+    - **IMX461 Movie Mode `SHR2/SVR2` & Full 16×16 AE Grid Fix (`8d1f71058`)**: Decodes IMX461 Movie electronic shutter registers `SHR2` (`0x0023/0x0024`) and `SVR2` (`0x001F/0x0020`) against `MDSEL 0x92/0x91` line period (`~38.65 kHz`) and always populates all `16×16` (`256`) primary AE grid cells (`0xFFF7005C/60`), curing Movie standby/recording solid-white blowout (**`71.3% -> 2.6%`** overexposed pixels) and restoring real Movie electronic shutter readout.
+    - Hardware `LCDC0`/`LCDC1` per-plane diagonal **`ZEBRA`** overlay (`+0x154..+0x190`) and 3-stage **`F-Log VIEW ASSIST`** (`F-Gamut -> BT.709`, `+0x418..+0x4D4`).
+  - **Optics, AF, IBIS, Sensors & Power Polish**:
+    - **2-Way `LENSCOM` SPI0 Sync** (`cmd 0x020/0x022/0x024/0x030/0x061/0x062/0x0A0`) + Active-LOW `KEY_LENS_DET` `GPIO(0,11)` (`F 0` on dumb manual adapters, zero red-screen lock).
+    - **5-Axis IBIS & Cross-Lens 3D FoV**: Preserves `IS MODE = OFF`, delivers **`9.12×`** real shake cancellation in `CONTINUOUS`, and scales 3D scene FoV authentically across `20 mm` / `45 mm` / `110 mm` lenses.
+    - **Rock-Solid AE & IMX461 Dual-Native HCG (`dd820b4c0` + `fa90ec9a6`)**: Calibrated exact **`3.0×` (`+1.585 EV`)** IMX461 `HCG` (`0x002D` b0) dual-native step + `0x003A..0x003D` fine digital gain, latched transient FilmSim `SHR=1705..1715` mode-table reloads (`Imx461ExposureLatch`, curing 200 ms black flash & `+5 EV` AE spikes), and eliminated multi-frame `AsyncOpticsWorker` AE feedback lag via single-submit GPU-ISP fusion with stats.
+    - **AF / Face / Eye-AF Boxes & Calibrated PDAF (`59ea5696b` + `dd820b4c0`)**: Decoded full-state DMP OpenVG `StrokePath` + Color Transform `0x180f01e` so idle AF, touch AF, green lock, `!AF`, and Face/Eye-AF boxes render crisply on Rear LCD (`0` dropped OpenVG shapes); calibrated PDAF `0.402 mm/px` sensitivity, vertical AF ROI `0xFFF70124/128`, and Single-Point Block-0 mapping (`qr-ball` 5.5 m / 0.93 m lock in `800 ms`), plus `±90°` portrait face/iris detection (`1.41 ms/frame`), MF Dual Display `PIC0` `UYVY` & `CCDIF` hardware zoom (`3.79× / 5.35× / 8.04×`), full Film Simulation (`Nostalgic Neg.`, `Bleach Bypass`, `SEPIA`, `ACROS`) & `SUPER FINE` JPEG.
+    - **Tilting-LCD, Touch, HDMAC 34-Bit & Power Polish**: `MMA8452Q` `M_lcd^-1` mounting matrix restores flat-LCD `TMD2772` EVF auto-switch while preserving real `>29.8°` lockout; calibrated `105 ms` `T91` touch-to-focus & 4-way directional touch swipes; top-plate **`Fn1 / ±` EV** button on `soc-adc` CH6 with Studio hold-assist; HDMAC 34-bit AXI upper bank `0xFFF4A800..0xFFF4A87F`, Sub-MCU APO `sel 0x11=0x2` standby wake, `TIMER_IRQ_OFF_NEXT_OTHER` WFI coherence, `SPI5` shared 8-bit EVF + 16-bit LCD bus & `0xFFF4A400` `POWER_HOLD` early-boot stall fix (`BUG-31`).
+    - **Wave 14 Pre-Release Gauntlet & Zero-Drift Timing Closure**: Added read-only `IspColorStatePort` (`soc-isp.color-state`) so live **102MP still JPEGs & EXIF thumbnails** apply live WB gains and all 19 Film Simulations (`PROVIA` / `Velvia` `2.71×` chroma / pure monochrome `ACROS` `0.00` chroma / `SEPIA`); phase-locked `48 kHz` I2S audio chained-ring DMA and `59.94 Hz` / `27 Hz` continuous LCDC V-Sync (`0` cumulative tick drift across 1,000 audio beats & 120 NTSC frames); converged **10/10 manual E2E suites (`16/16` methods)** and the **4-phase pre-`v0.3.0` combinatorial long-session gauntlet** (`P/A/S/M/C1`, lenses, optical filters, all 4 3D scenes, `EFCS`/`ES`/`MS`, burst, `.MOV` + playback, sleep/wake) with zero MMIO/flash/kernel errors.
+
+---
+
+## 3. Massive Performance Overhaul (Zero Firmware Hacks)
+
+Every optimization below runs strictly on unmodified GFX100S 2.13 firmware with **0 firmware patches** and explicit `WARN [FALLBACK][...]` diagnostics on any fallback:
+
+| Layer | Optimization | Verified Result |
+| --- | --- | --- |
+| **CPU Execution** | True 4-Core Host-Threaded Dynarmic SMP (`DYNARMIC-SMP-MT-W10`) + **MT Epoch-Start Barrier (`fix/w14-smp-dabt-fix`)** | **`3.68×`** ARM32 compute throughput; **`70/70` (`40` 33M + `30` `STAGE_6`) = `0` cold-boot DABTs** |
+| **MMIO & Host Idle** | 72-Window / 414-Slot C++ MMIO Read-Mirror + WFI Host-Idle Sleep (`W11-MMIO-MIRROR-WFI`) | **`-82.6%`** boot / **`-95.7%`** idle upcalls, **`-30.6%`** idle host CPU% |
+| **Vulkan GPU 3D + Optics + Stats** | Unified Vulkan 1.1 Compute: GPU 3D Scene Rasterizer + Pass 0 UV/Filters + Pass 1..5 Optics/ISP + **2×2 Energy-Preserving Bokeh Pyramid + `DEVICE_LOCAL` Stage-1/ISP/Stats VRAM (`ec1482d8d`, `0ef55021a`)** + Pass 6 GPU Stats (`2320/2320`) + Still `FLAG_SRC_CROP` + `VkPipelineCache` (`FVPC`) / Ring-2 / Spec Constants / HWM `HOST_CACHED` | **`15.4×–19.2×`** 3D rasterization, **`21.6×`** AF-ON bokeh speedup (`0` LSB diff), zero PCIe Bayer/atomic stalls, **`~1,000×`** less alloc |
+| **CPU ISP & Filters** | Multi-threaded AVX-512 / AVX2 / SSE2 Native CPU ISP & Spatial Filter Bridge | **`11.5×`** ISP demosaic + 3D LUT, **`9.5×–48×`** spatial filters |
+| **Display Compositing** | Single-Pass AVX2/AVX-512 `LCDC -> PixelBuffer` (`INT_ARGB_PRE`) + Direct DRAM | **`5.4×`** direct DRAM scanout (`29.65×` VGLIB SHA-256 skip in `relaxed`) |
+| **102MP RAW & JPEG** | Native MT C `LSRAW` Strip Codec + **Built-in Zero-Dependency MT C Baseline `YUV422` Streaming JPEG & `DirectGuestRamPort` 102MP Upscale (`65fcae29c`, `c9d2bf4fe`)** + Dynamic `libjpeg-turbo` Bridge | **`7.3×`** LSRAW (bit-exact), **`91.6 ms`** (`libjpeg`) / **`156.5 ms`** (built-in C) 102MP scaled JPEG, **`4.8×`** TurboJPEG |
+| **Guest RAM Bulk I/O** | `DirectGuestRamPort` Zero-Copy across DMA / JPEG / ISP / VGLIB / SDMA | **`4×–8×`** bulk copy, **`4.3×`** 8,760-LLI RAW gather |
+| **SD Card & Flash I/O** | 32 MiB Async Write-Back / 256 KiB Read-Ahead + `CMD18`/`CMD25` Coalescing; Lazy Flash SHA-256 | **`535×`** fewer syscalls (`3,344 MB/s` SDMA); **`3,700×`** Flash hash speedup |
+
+---
+
+## 4. Modular Optics SPI v2, Theme System v2 & Photographer UX
+
+- **Modular Optics Plugin SPI v1.0 / v2 & Custom Vulkan `.spv` Compute Shaders ([PLUGIN-SPI-V1-SPEC.md](PLUGIN-SPI-V1-SPEC.md))**:
+  - Dynamic external `.jar` auto-discovery & live `/lens rescan` / `/filter rescan` for lenses (`lenses/*.jar`), mount adapters, and optical filters (`filters/*.jar`) with declarative `FilterParamSpec` auto-generated UI controls, `BokehMaskShape.CUSTOM`, and first-class **`vulkanSpirvPass(...)`** (`PRE_OPTICS_FILTER` / `POST_OPTICS_RGB`, fixed `set=0` ABI on `DEVICE_LOCAL` VRAM) so third-party plugins ship custom SPIR-V compute shaders alongside CPU fallbacks.
+  - Decoupled **`:components:optical-filter`** ordered multi-slot matte-box rack (up to 12 stackable/reorderable slots): **Uniform/Variable ND** (`ND2..ND1000`, `0..10 EV`, exact `-3.00 EV` meter shift on `ND8`), **Real-Physics UV** (`PRO_MRC` / `STANDARD` / `CHEAP_POOR` veiling glare + double-reflection ghosting + softness / `CUSTOM`, offloaded to Vulkan Pass 0), **Crisp Shaped Aperture Bokeh Mask** (`STAR_5` / `HEART` / `HEXAGON` / `RING` real entrance-pupil convolution with single-slot replacement UX & `opticalStateVersion()` `filterStack` revision cache invalidation, `ec1482d8d`), **Star Cross** (`4/6/8pt`), **Black Mist** (`1/8..1`), and **Graduated ND** (`0..5 EV`).
+- **AF-ON Bokeh Sweep Speedup & Static Fused LiveView Cache (`ec1482d8d`)**:
+  - Added a 2×2 energy-preserving bokeh pyramid + `DEVICE_LOCAL` Stage-1 AE/WB/LUT VRAM cache (**`21.6×`** AF-ON sweep speedup, `0` LSB diff) and static fused LiveView cache so rapid AF-ON sweeps with shaped bokeh masks stay fluid.
+- **3-in-1 3D Bokeh Studio & Milk Frog GLB/Audio Scenes (`SCENE3D-HDR-POLISH-W11`)**:
+  - Polished HDR specular highlights, 3-in-1 3D Bokeh Studio scenes, **`scene://milk-frog`** (animated GLB 3D scene with Face/Eye-AF tracking & synchronized audio), **`scene://mona-lisa`** (smooth 60 fps Eye-AF cadence), `scene://qr-ball`, `scene://star-bokeh`, `scene://depth-studio`, and `scene://resolution-chart`.
+- **Theme System v2 (`THEME-V2-W10`), Photorealistic Hybrid PNG+SVG Body Themes, Rotating Dials/Levers & Quick-Click Shutter (`65e4c0962`, `5e61f7926`)**:
+  - 29 semantic `-fuji-*` CSS design tokens, studio-lit **hybrid PNG+SVG (`<image>`)** body artwork (G-mount/XCD-mount CMOS & metallic/Voronoi leatherette textures for **GFX100S**, **Hasselblad X2D II 100C**, and **Hasselblad 907X & CFV 100C**, all bundled inside `desktop.jar = 2.53 MB < 3 MB`), zero-blanking display surface continuity across Body Theme hot-switches, bilinear-smoothed Minimal EVF HUD fit (`280×210`), `daylight-studio` dial/VU semantic polish, and clean `380 px` narrow-sidebar fit across all 6 locales (`en`, `zh_CN`, `ja_JP`, `de_DE`, `fr_FR`, `es_ES`).
+  - **Rotating Mechanical Controls & Quick-Click Shutter (`65e4c0962`)**: Real rotating top-plate **Mode Dial** (`P/S/A/M/C1..C6`, `-36°/step`) and **`S/C/M` Focus Lever** pointer (`gfx-focus-lever-rotor`, `x2d-focus-lever-rotor`), plus a **`650 ms` quick-click `S2` shutter pulse** so a brisk single mouse click reliably triggers 102MP still capture without needing a long press.
+  - Built-in Body Themes (`origin`, `hasselblad-x2d2`, `hasselblad-907x`, `compact-rangefinder` + `./themes/body/<id>/`) and orthogonal UI Themes (`origin`, `nordic-minimal`, `daylight-studio`, `vintage-brass`, `olive-field` + `./themes/ui/<id>.css`), persisted in `<run-dir>/profile.yaml` with live Hot-Reload.
+- **6-Language Reactive i18n (`en` Default)**:
+  - Instant zero-restart switching across **`en`**, **`zh_CN`**, **`ja_JP`**, **`de_DE`**, **`fr_FR`**, and **`es_ES`** (with strict English fallback and `WARN [FALLBACK][i18n]` diagnostics) covering all Studio panels, themes, lenses, adapters, filters, `/lang` CLI, and `GET/POST /api/lang`.
+- **39-Endpoint Zero-Drift HTTP Control API Doc Generator**:
+  - Generates OpenAPI 3.1.0 ([docs/api/http-openapi.json](api/http-openapi.json)), Markdown ([docs/api/http-control-api.md](api/http-control-api.md)), and offline zero-CDN interactive Swagger HTML ([docs/api/http-control-api.html](api/http-control-api.html)), served live at `/api/docs` and `/api/openapi.json`.
+- **User-Selectable Vulkan GPU (`VULKAN-GPU-SELECTOR-W11`)**:
+  - Enumerate and hot-switch Vulkan adapters without restarting via Studio UI, `/gpu` (`/vulkan`) CLI, or `profile.yaml` (`graphics.opticsBackend`, `graphics.vulkanDevice`), complete with 6-language **Same-GPU Game Interop** guidance for zero-copy external game capture.
+- **Minimal Always-on-Top Detached EVF Window (`EVF-MINIMAL-PIN-W11`)**:
+  - Edge-to-edge detached EVF viewport with one-click Always-on-Top pin persisted in `profile.yaml` (`windows.evfAlwaysOnTop`).
+- **Keyboard & Multi-Gamepad Input Bindings (`INPUT-BINDING-GAMEPAD`)**:
+  - Rebindable keyboard shortcuts (clean empty default keyboard map to avoid accidental triggers) and multi-gamepad support with an ergonomic **2-stage `RT` shutter** (half-press AF / full-press release) default controller profile.
+- **Per-Button UI Lock (`UI-BUTTON-LOCK-W10`)**:
+  - Independent per-control lock badges (`GPIO` / `ADC` / `VIEW MODE`) and one-click `Unlock All` for multi-button hold combos (e.g., `Fn1/±` + dial, boot-hold `DISP/BACK`).
+- **Photographer-Friendly Release Configs (`YAML-CLEANUP-W9`)**:
+  - Pruned internal SoC wiring from user-facing `configs/components/*.yaml`, leaving clean English-documented photographer settings and examples (`battery.yaml`, `optical-filter.yaml`, `lens.yaml`, `cmos.yaml`, etc.).

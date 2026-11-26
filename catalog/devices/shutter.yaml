@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "id": "device.shutter",
+  "componentId": "shutter",
+  "depends": [],
+  "version": "0.0.1",
+  "name": "shutter",
+  "physicalIdentity": "GFX100S 44x33mm Medium-Format Focal-Plane & Electronic Shutter Assembly (Motor 1 GPIO(1,0) PWM -> CAM1 GPIO(0,3) EXTINT #3 IRQ 154/170; Motor 2 GPIO(7,7..8) H-bridge -> CAM2 GPIO(0,5) EXTINT #5 IRQ 156/172 + Curtain Optical Gate GPIO(0,10) EXTINT #10 IRQ 161/177; CCDTG TG_ACT 0xFFF6C184 electronic rolling-readout telemetry)",
+  "implementationStatus": "PARTIAL",
+  "implementationSources": [
+    "components/shutter/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/shutter/ShutterFactory.kt",
+    "components/shutter/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/shutter/ShutterMechanism.kt"
+  ],
+  "ports": [],
+  "unknowns": [
+    "Motor 1 PWM (GPIO(1,0) -> GPIO(0,3) IRQ 154/170), Motor 2 H-bridge (GPIO(7,7..8) -> GPIO(0,5) IRQ 156/172), optical gate (GPIO(0,10) IRQ 161/177), and CCDTG TG_ACT (0xFFF6C184) decoupling follow DAT section4 0x0176c744 / 0x011b5b4c and section5 0x024e5d78..0x02509338; exact mechanical leaf spring/solenoid inertia curve and BIS sub-MCU SPI2 closed-loop timing remain modeled."
+  ],
+  "nextValidation": "Verify live GXUP0004.DAT MS, EFCS, and ES captures via standalone shutter component with zero curtainPulses during Electronic Shutter (BUG-A2-5)."
+}

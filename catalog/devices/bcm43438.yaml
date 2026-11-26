@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "id": "device.bcm43438",
+  "componentId": "bcm43438",
+  "depends": [],
+  "version": "0.0.1",
+  "name": "bcm43438",
+  "physicalIdentity": "Broadcom BCM43438A1 / BCM43430A1 Wi-Fi 802.11b/g/n FullMAC SDIO + Bluetooth 4.1 BLE H4 UART combo IC",
+  "implementationStatus": "PARTIAL",
+  "implementationSources": [
+    "components/bcm43438/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/bcm43438/Bcm43438Factory.kt",
+    "components/bcm43438/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/bcm43438/Bcm43438BtController.kt",
+    "components/bcm43438/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/bcm43438/Bcm43430WifiController.kt",
+    "components/bcm43438/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/bcm43438/VirtualWifiPeer.kt"
+  ],
+  "ports": [],
+  "unknowns": [
+    "BT_REG_ON (GPIO Bank 12 Pin 3) and WL_REG_ON (GPIO Bank 12 Pin 0) power sequencing, PL011 UART1 H4 PatchRAM, and SDHC ch=2 0xFFFCC000 SDIO FullMAC bring-up follow DAT section4/section5 and Wi-Fi overlay evidence; RF neighbor discovery (FujiEmu Host) and loopback Ethernet/PTP-IP peer are deterministic SIM models."
+  ],
+  "nextValidation": "Verify live GXUP0004.DAT BLE pairing, Bluetooth scan/discovery, and Wi-Fi SoftAP/STA communication."
+}

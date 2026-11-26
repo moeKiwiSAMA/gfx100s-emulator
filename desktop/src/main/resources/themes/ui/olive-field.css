@@ -1,0 +1,204 @@
+/* Olive Field UI Theme (-fuji-backdrop: #171C17)
+ * Matte field-instrument olive surfaces paired with warm sand-gold (#C9B37E) readouts. */
+.root {
+    -fuji-backdrop: #171C17;
+    -fuji-bg-base: #171C17;
+    -fuji-bg-surface: #1D231D;
+    -fuji-bg-card: #1F261F;
+    -fuji-bg-elevated: #262F26;
+    -fuji-bg-input: #101410;
+    -fuji-bg-header-top: #212821;
+    -fuji-bg-header-bot: #171D17;
+    -fuji-border: #303A30;
+    -fuji-border-strong: #415041;
+    -fuji-text-primary: #E2E8DF;
+    -fuji-text-secondary: #CBD5C7;
+    -fuji-text-muted: #92A18F;
+    -fuji-accent: #C9B37E;
+    -fuji-accent-hover: #DFCA96;
+    -fuji-accent-fg: #151A15;
+    -fuji-ok: #7BD48E;
+    -fuji-warn: #DFC276;
+    -fuji-danger: #E88272;
+    -fuji-badge-bg: #222922;
+    -fuji-selection-bg: #2F3B2F;
+    -fuji-source-3d-bg: #1C2B1E;
+    -fuji-source-3d-border: #5E8F64;
+    -fuji-source-3d-fg: #A8DFAF;
+    -fuji-source-2d-bg: #22291F;
+    -fuji-source-2d-border: #A9935E;
+    -fuji-source-2d-fg: #E6D5A6;
+    -fuji-ring-active-border: #C9B37E;
+    -fuji-ring-active-fg: #EBDCAD;
+    -fx-accent: #C9B37E;
+    -fx-focus-color: #C9B37E;
+    -fx-faint-focus-color: rgba(201, 179, 126, 0.14);
+    -fx-selection-bar: #2F3B2F;
+    -fx-selection-bar-non-focused: #252E25;
+    -fx-default-button: #596E52;
+    -fx-mark-color: #F0F3ED;
+    -fx-text-base-color: #E2E8DF;
+    -fx-text-background-color: #E2E8DF;
+    -fx-base: #1D231D;
+    -fx-control-inner-background: #101410;
+}
+
+.studio-shell,
+.camera-studio,
+.studio-sidebar,
+.studio-sidebar .tab-content-area,
+.studio-sidebar .scroll-pane,
+.studio-sidebar .scroll-pane > .viewport,
+.studio-sidebar .scroll-pane > .corner {
+    -fx-background-color: #171C17;
+}
+
+.studio-console-header {
+    -fx-background-color: linear-gradient(to bottom, #212821 0%, #171D17 100%);
+    -fx-border-color: transparent transparent #2E382E transparent;
+}
+.studio-brand-mark { -fx-text-fill: #EEF2EB; }
+.studio-brand-model { -fx-text-fill: #C9B37E; }
+.studio-brand-sep { -fx-background-color: #3E4A3E; }
+
+.studio-header-btn {
+    -fx-background-color: linear-gradient(to bottom, #6E8262 0%, #495941 100%);
+    -fx-border-color: #8CA17F;
+    -fx-text-fill: #FFFFFF;
+}
+.studio-header-btn:hover {
+    -fx-background-color: linear-gradient(to bottom, #7E9471 0%, #56684D 100%);
+    -fx-border-color: #C9B37E;
+}
+
+.studio-header-btn-secondary {
+    -fx-background-color: #202720;
+    -fx-border-color: #354135;
+    -fx-text-fill: #D7E0D4;
+}
+.studio-header-btn-secondary:hover {
+    -fx-background-color: #2A342A;
+    -fx-border-color: #C9B37E;
+    -fx-text-fill: #FFFFFF;
+}
+
+.studio-header-combo {
+    -fx-background-color: #1D241D;
+    -fx-border-color: #354135;
+    -fx-text-fill: #E2E8DF;
+}
+.studio-header-combo .list-cell { -fx-text-fill: #E2E8DF; }
+.studio-header-combo .arrow-button .arrow { -fx-background-color: #C9B37E; }
+
+.studio-face-frame {
+    -fx-background-color: #171C17;
+    -fx-border-color: #2D372D;
+}
+.studio-face-frame-focused { -fx-border-color: #C9B37E; }
+.studio-face-bar {
+    -fx-background-color: linear-gradient(to bottom, #202720 0%, #181E18 100%);
+    -fx-border-color: transparent transparent #2B352B transparent;
+}
+.studio-face-handle { -fx-text-fill: #A1AF9E; }
+
+.studio-statusbar {
+    -fx-background-color: #121612;
+    -fx-border-color: #2A342A transparent transparent transparent;
+}
+.studio-statusbar .label, .studio-control-status { -fx-text-fill: #9AA997; }
+
+.studio-sidebar {
+    -fx-border-color: transparent transparent transparent #2A342A;
+}
+.studio-sidebar .label, .studio-sidebar .check-box { -fx-text-fill: #E2E8DF; }
+.studio-sidebar .tab-header-area .tab-header-background {
+    -fx-background-color: #131813;
+    -fx-border-color: transparent transparent #2A342A transparent;
+}
+.studio-sidebar .tab:selected {
+    -fx-background-color: #202720;
+    -fx-border-color: transparent transparent #C9B37E transparent;
+}
+.studio-sidebar .tab .tab-label { -fx-text-fill: #93A390; }
+.studio-sidebar .tab:selected .tab-label { -fx-text-fill: #F5F8F2; }
+
+.studio-card {
+    -fx-background-color: #1F261F;
+    -fx-border-color: #303A30;
+}
+.studio-section-title { -fx-text-fill: #C9B37E; }
+.studio-hint-text { -fx-text-fill: #92A18F; }
+
+.studio-sidebar .titled-pane > .title {
+    -fx-background-color: linear-gradient(to bottom, #262F26 0%, #1E251E 100%);
+    -fx-border-color: #354135;
+}
+.studio-sidebar .titled-pane > .content {
+    -fx-background-color: #1A201A;
+    -fx-border-color: transparent #354135 #354135 #354135;
+}
+
+.studio-sidebar .button,
+.studio-input-key,
+.studio-setting-switch {
+    -fx-background-color: linear-gradient(to bottom, #313C31 0%, #1C231C 100%);
+    -fx-border-color: #415041;
+    -fx-text-fill: #E5ECE2;
+}
+.studio-sidebar .button:hover,
+.studio-input-key:hover,
+.studio-setting-switch:hover {
+    -fx-background-color: linear-gradient(to bottom, #3D4B3D 0%, #252E25 100%);
+    -fx-border-color: #C9B37E;
+    -fx-text-fill: #FFFFFF;
+}
+.studio-input-key:selected,
+.studio-setting-switch:selected,
+.studio-sidebar .toggle-button.studio-seg-btn:selected {
+    -fx-background-color: linear-gradient(to bottom, #D7C28D 0%, #A9935E 100%);
+    -fx-border-color: #EBDCAD;
+    -fx-text-fill: #151A15;
+}
+.studio-sidebar .toggle-button.studio-seg-btn {
+    -fx-background-color: linear-gradient(to bottom, #273027 0%, #192019 100%);
+    -fx-border-color: #354135;
+    -fx-text-fill: #CBD5C7;
+}
+.studio-sidebar .button.studio-chip-btn {
+    -fx-background-color: #222922;
+    -fx-border-color: #384438;
+    -fx-text-fill: #D8E2D5;
+}
+.studio-sidebar .button.studio-chip-btn:hover {
+    -fx-background-color: #2C362C;
+    -fx-border-color: #C9B37E;
+}
+
+.studio-sidebar .text-field,
+.studio-sidebar .text-area,
+.studio-sidebar .text-area .content,
+.studio-sidebar .combo-box {
+    -fx-background-color: #101410;
+    -fx-border-color: #354135;
+    -fx-text-fill: #EAF0E7;
+}
+.studio-sidebar .text-field:focused,
+.studio-sidebar .text-area:focused { -fx-border-color: #C9B37E; }
+.combo-box-popup .list-view,
+.combo-box-popup .list-view .list-cell {
+    -fx-background-color: #1D241D;
+    -fx-text-fill: #E2E8DF;
+}
+.combo-box-popup .list-view .list-cell:hover,
+.combo-box-popup .list-view .list-cell:selected {
+    -fx-background-color: #596E52;
+    -fx-text-fill: #FFFFFF;
+}
+.studio-sidebar .slider .thumb {
+    -fx-background-color: #C9B37E;
+    -fx-border-color: #E8D9B0;
+}
+.studio-sidebar .check-box:selected .box {
+    -fx-background-color: #596E52;
+    -fx-border-color: #C9B37E;
+}

@@ -1,0 +1,4873 @@
+{
+  "schema": 1,
+  "id": "device.soc-vglib-init",
+  "componentId": "soc-vglib-init",
+  "depends": [],
+  "version": "0.0.1",
+  "name": "vglib-associated finite register candidate",
+  "physicalIdentity": "UNKNOWN",
+  "implementationStatus": "PARTIAL",
+  "implementationSources": [
+    "components/soc-vglib-init/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/vglib/VglibInitFactory.kt",
+    "components/soc-vglib-init/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/vglib/ModeWordInput.kt",
+    "components/soc-vglib-init/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/vglib/LcdcSnapshotInput.kt",
+    "components/soc-vglib-init/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/vglib/LcdcFunctional.kt",
+    "components/soc-vglib-init/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/vglib/LcdcIrq118.kt",
+    "components/soc-vglib-init/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/vglib/Lcdc0ContinuousIrqs.kt"
+  ],
+  "profiles": [
+    "disabled",
+    "vglib-full-lane-init-experimental-v1",
+    "lcdc-instance1-unready-experimental-v1",
+    "lcdc-functional-experimental-v1"
+  ],
+  "ports": [
+    {
+      "id": "definition.soc-vglib-init.registers",
+      "size": 6340,
+      "kind": "MMIO",
+      "byteOrder": "little",
+      "backing": {
+        "source": "Explicit finite full-lane input; no register storage or physical reset assumption",
+        "permissions": "Exact READ4/WRITE4 pairs only",
+        "sequenceProfile": "vglib-full-lane-init-experimental-v1",
+        "graphicsFillTail": {
+          "profile": "graphics-fill-retained-experimental-v2",
+          "offsets": [16, 20, 24, 28],
+          "statusOffset": 52,
+          "submitMask": 1,
+          "accessLimitMaximum": 16384,
+          "laneMask": 15,
+          "commandCompletion":{"setting":"commandIrq92Tick","line":92,"statusBit":31,"clearOffsets":[6144,4128],"postStatusOffset":88,"sample":0,"capacity":1,"confidence":"HYPOTHESIS"},
+          "commandPairSequence":{"limitSetting":"commandPairLimit","maxPairs":64,"irqSetting":"commandIrq92Followups","confidence":"HYPOTHESIS"},
+          "datePageSuccessor":{"control":65535,"geometryCount":1724,"materialCount":3411,"textureDraws":14,"confidence":"HYPOTHESIS"},
+          "commandExecution":{"profile":"axis-rect-morton-rgba-low-alpha-over-v1","pairs":1,"maxDraws":11,"confidence":"HYPOTHESIS"},
+          "solidCommandExecution":{"profile":"axis-rect-morton-opaque-gray-v1","pairs":1,"maxDraws":11,"maxSolidRects":45,"confidence":"HYPOTHESIS"},
+          "rgbaSolidCommandExecution":{"profile":"axis-rect-morton-rgba-solid-alpha-v1","pairs":1,"maxDraws":256,"maxSolidRects":512,"maxGroups":1024,"confidence":"HYPOTHESIS"},
+          "commandRegisters": {
+            "setting":"commandInitialWords","offsets":[4628,4760,4308,4316,4304,4324,4332,4320],
+            "startOffsets":[4304,4320],"startValue":1,"laneMask":15,"completionEvents":"NONE","confidence":"HYPOTHESIS"
+          },
+          "copyRegisters": {
+            "offsets": [3072,3076,3080,3084,3088,3096,3104,3108,3112],
+            "submitOffset": 3096,
+            "submitValue": 1,
+            "copyIrq92": {
+              "setting": "graphicsCopyIrq92Tick", "sink": "soc-gic.lines", "line": 92,
+              "trigger": "level", "capacity": 1, "statusReads": [1073741824, 0],
+              "control": 3096, "clearValue": 0, "confidence": "HYPOTHESIS",
+              "source": "P668 callback 01401EC4 tests bit30 and branches to 01401E88 to clear C18. The selected second level requires a completed copy readback."
+            },
+            "execution": {
+              "profile": "same-geometry-shared-ram-copy-experimental-v1",
+              "geometryWord": 50332672, "surfaceBytes": 3145728, "control": 1,
+              "mode2Morton8x8": {"control":2,"geometryWord":2097392,"sourceStrideBytes":960,"tileEdge":8,"confidence":"HYPOTHESIS"},
+              "mode2Workspace": {"maxBytes":10485760,"maxWidth":240,"maxHeight":32,"bytesPerWord":4,"tileEdge":8,"confidence":"HYPOTHESIS"},
+              "mode2AlignedTiles": {"setting":"mode2TileProfile","profile":"aligned-8x8-1024x768-v1","minWidth":8,"maxWidth":1024,"minHeight":8,"maxHeight":768,"tileEdge":8,"bytesPerWord":4,"confidence":"HYPOTHESIS"},
+              "areaPageWorkspaceTile": {"control":2,"geometryWord":2621584,"sourceStrideBytes":576,"tileEdge":8,"confidence":"HYPOTHESIS"},
+              "submissionLimitMaximum": 513, "completionEvents": "NONE",
+              "confidence": "HYPOTHESIS"
+            },
+            "confidence": "HYPOTHESIS",
+            "source": "INV-GRAPHICS-TRANSFER-FFFD0C00 and DAT writer 014024C4. Optional retained u32 words with explicit initial values. The guest's final C18 write records the programmed registers."
+          },
+          "execution": {
+            "profile": "q0-register-shared-ram-fill-experimental-v2",
+            "opcode": 4, "q0": 0, "control": 252707329, "bytesPerUnit": 4,
+            "maxBytes": 3145728, "submissionLimitMaximum": 513, "completionEvents": "NONE",
+            "confidence": "HYPOTHESIS",
+            "source": "surface-audit-01, P743/P748 qualify the software opcode4/Q0 path and geometry. The device uses the submitted registers for a bounded little-endian u32 fill into selected shared RAM."
+          },
+          "readConfidence": "HYPOTHESIS",
+          "source": "INV-GRAPHICS-FILL-FFFD0010. DAT 014023D8 programs four words through the full-lane 01401D70 helper. DAT 01401E44 reads status. Initial words and finite status samples come from graphics-fill.yaml. Retention and recording a submission on control bit0 are HYPOTHESIS."
+        },
+        "fillIrq92": {
+          "setting": "graphicsFillIrq92Tick", "sink": "soc-gic.lines", "line": 92,
+          "trigger": "level", "capacity": 1, "statusReads": [67108864, 0],
+          "confidence": "HYPOTHESIS",
+          "source": "Registered graphics callback 01401E30, bit26 clear via 01401EDC and wake at 01401F08. Guest distributor configuration selects core0 level IRQ92. Physical assertion and timing unknown."
+        },
+        "irq92Successors": {
+          "setting": "graphicsIrq92Sequence", "capacity": 512, "trigger": "successful-submission",
+          "prefix": ["fill", "copy"], "latencyTicks": 1, "sink": "soc-gic.lines", "line": 92,
+          "fillStatus": 67108864, "copyStatus": 1073741824, "confidence": "HYPOTHESIS"
+        },
+        "finiteFullLaneRmw": [
+          {
+            "offset": 6336,
+            "writeValue": 4294967295
+          },
+          {
+            "offset": 4288,
+            "writeValue": 4294967295
+          },
+          {
+            "offset": 4292,
+            "writeValue": 4294967295
+          },
+          {
+            "offset": 6144,
+            "writeValue": 0
+          },
+          {
+            "offset": 4096,
+            "writeValue": 0
+          },
+          {
+            "offset": 4128,
+            "writeValue": 0
+          },
+          {
+            "offset": 6272,
+            "writeValue": 305419896
+          },
+          {
+            "offset": 4256,
+            "writeValue": 305419896
+          },
+          {
+            "offset": 6336,
+            "writeValue": 4294967280
+          },
+          {
+            "offset": 4292,
+            "writeValue": 4294967280
+          },
+          {
+            "offset": 4680,
+            "writeValue": 1
+          },
+          {
+            "offset": 3096,
+            "writeValue": 0
+          },
+          {
+            "offset": 28,
+            "writeValue": 0
+          },
+          {
+            "offset": 52,
+            "writeValue": 0
+          },
+          {
+            "offset": 3100,
+            "writeValue": 32768
+          },
+          {
+            "offset": 6144,
+            "writeValue": 0
+          },
+          {
+            "offset": 6272,
+            "writeValue": 305419896
+          },
+          {
+            "offset": 6336,
+            "writeValue": 4294967280
+          }
+        ],
+        "readConfidence": "HYPOTHESIS",
+        "defaultReadSample": 0,
+        "scope": "SOURCE addresses/write values; reads explicit HYPOTHESIS, read side effects/reset/IRQ/hardware identity UNKNOWN"
+      },
+      "registers": [
+        {
+          "id": "reg.soc-vglib-init.registers.o001c",
+          "offset": 28,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-vglib-init",
+          "name": "offset001c",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN physical reset; explicit finite read samples are HYPOTHESIS"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Only an explicit expected sequence step; physical effects UNKNOWN",
+            "write": "Observed expected write only; no storage/clear/IRQ effect",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            20979232
+          ],
+          "consumerPcs": [
+            20979184
+          ],
+          "evidence": [
+            "evidence/refactor/fffd-bank-scope-249/README.md"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/fffd-bank-scope-249/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/fffd-bank-scope-249/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "evidence/refactor/fffd-bank-scope-249/README.md"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-vglib-init.registers.o001c.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Raw bits consumed only in a SOURCE-qualified full-lane RMW sequence; physical semantics UNKNOWN",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-vglib-init.registers.o0034",
+          "offset": 52,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-vglib-init",
+          "name": "offset0034",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN physical reset; explicit finite read samples are HYPOTHESIS"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Only an explicit expected sequence step; physical effects UNKNOWN",
+            "write": "Observed expected write only; no storage/clear/IRQ effect",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            20979232
+          ],
+          "consumerPcs": [
+            20979184
+          ],
+          "evidence": [
+            "evidence/refactor/fffd-bank-scope-249/README.md"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/fffd-bank-scope-249/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/fffd-bank-scope-249/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "evidence/refactor/fffd-bank-scope-249/README.md"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-vglib-init.registers.o0034.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Raw bits consumed only in a SOURCE-qualified full-lane RMW sequence; physical semantics UNKNOWN",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-vglib-init.registers.o0c18",
+          "offset": 3096,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-vglib-init",
+          "name": "offset0c18",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN physical reset; explicit finite read samples are HYPOTHESIS"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Only an explicit expected sequence step; physical effects UNKNOWN",
+            "write": "Observed expected write only; no storage/clear/IRQ effect",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            20979232
+          ],
+          "consumerPcs": [
+            20979184
+          ],
+          "evidence": [
+            "evidence/refactor/fffd-bank-scope-249/README.md"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/fffd-bank-scope-249/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/fffd-bank-scope-249/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "evidence/refactor/fffd-bank-scope-249/README.md"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-vglib-init.registers.o0c18.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Raw bits consumed only in a SOURCE-qualified full-lane RMW sequence; physical semantics UNKNOWN",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-vglib-init.registers.o0c1c",
+          "offset": 3100,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-vglib-init",
+          "name": "offset0c1c",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN physical reset; explicit finite read samples are HYPOTHESIS"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Only an explicit expected sequence step; physical effects UNKNOWN",
+            "write": "Observed expected write only; no storage/clear/IRQ effect",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            20979232
+          ],
+          "consumerPcs": [
+            20979184
+          ],
+          "evidence": [
+            "evidence/refactor/fffd-bank-scope-249/README.md"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/fffd-bank-scope-249/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/fffd-bank-scope-249/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "evidence/refactor/fffd-bank-scope-249/README.md"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-vglib-init.registers.o0c1c.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Raw bits consumed only in a SOURCE-qualified full-lane RMW sequence; physical semantics UNKNOWN",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-vglib-init.registers.o1000",
+          "offset": 4096,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-vglib-init",
+          "name": "offset1000",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN physical reset; explicit finite read samples are HYPOTHESIS"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Only an explicit expected sequence step; physical effects UNKNOWN",
+            "write": "Observed expected write only; no storage/clear/IRQ effect",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            20979232
+          ],
+          "consumerPcs": [
+            20979184
+          ],
+          "evidence": [
+            "evidence/refactor/fffd-bank-scope-249/README.md"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/fffd-bank-scope-249/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/fffd-bank-scope-249/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "evidence/refactor/fffd-bank-scope-249/README.md"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-vglib-init.registers.o1000.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Raw bits consumed only in a SOURCE-qualified full-lane RMW sequence; physical semantics UNKNOWN",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-vglib-init.registers.o1020",
+          "offset": 4128,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-vglib-init",
+          "name": "offset1020",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN physical reset; explicit finite read samples are HYPOTHESIS"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Only an explicit expected sequence step; physical effects UNKNOWN",
+            "write": "Observed expected write only; no storage/clear/IRQ effect",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            20979232
+          ],
+          "consumerPcs": [
+            20979184
+          ],
+          "evidence": [
+            "evidence/refactor/fffd-bank-scope-249/README.md"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/fffd-bank-scope-249/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/fffd-bank-scope-249/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "evidence/refactor/fffd-bank-scope-249/README.md"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-vglib-init.registers.o1020.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Raw bits consumed only in a SOURCE-qualified full-lane RMW sequence; physical semantics UNKNOWN",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-vglib-init.registers.o10a0",
+          "offset": 4256,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-vglib-init",
+          "name": "offset10a0",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN physical reset; explicit finite read samples are HYPOTHESIS"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Only an explicit expected sequence step; physical effects UNKNOWN",
+            "write": "Observed expected write only; no storage/clear/IRQ effect",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            20979232
+          ],
+          "consumerPcs": [
+            20979184
+          ],
+          "evidence": [
+            "evidence/refactor/fffd-bank-scope-249/README.md"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/fffd-bank-scope-249/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/fffd-bank-scope-249/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "evidence/refactor/fffd-bank-scope-249/README.md"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-vglib-init.registers.o10a0.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Raw bits consumed only in a SOURCE-qualified full-lane RMW sequence; physical semantics UNKNOWN",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-vglib-init.registers.o10c0",
+          "offset": 4288,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-vglib-init",
+          "name": "offset10c0",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN physical reset; explicit finite read samples are HYPOTHESIS"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Only an explicit expected sequence step; physical effects UNKNOWN",
+            "write": "Observed expected write only; no storage/clear/IRQ effect",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            20979232
+          ],
+          "consumerPcs": [
+            20979184
+          ],
+          "evidence": [
+            "evidence/refactor/fffd-bank-scope-249/README.md"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/fffd-bank-scope-249/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/fffd-bank-scope-249/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "evidence/refactor/fffd-bank-scope-249/README.md"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-vglib-init.registers.o10c0.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Raw bits consumed only in a SOURCE-qualified full-lane RMW sequence; physical semantics UNKNOWN",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-vglib-init.registers.o10c4",
+          "offset": 4292,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-vglib-init",
+          "name": "offset10c4",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN physical reset; explicit finite read samples are HYPOTHESIS"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Only an explicit expected sequence step; physical effects UNKNOWN",
+            "write": "Observed expected write only; no storage/clear/IRQ effect",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            20979232
+          ],
+          "consumerPcs": [
+            20979184
+          ],
+          "evidence": [
+            "evidence/refactor/fffd-bank-scope-249/README.md"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/fffd-bank-scope-249/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/fffd-bank-scope-249/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "evidence/refactor/fffd-bank-scope-249/README.md"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-vglib-init.registers.o10c4.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Raw bits consumed only in a SOURCE-qualified full-lane RMW sequence; physical semantics UNKNOWN",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-vglib-init.registers.o1248",
+          "offset": 4680,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-vglib-init",
+          "name": "offset1248",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN physical reset; explicit finite read samples are HYPOTHESIS"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Only an explicit expected sequence step; physical effects UNKNOWN",
+            "write": "Observed expected write only; no storage/clear/IRQ effect",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            20979232
+          ],
+          "consumerPcs": [
+            20979184
+          ],
+          "evidence": [
+            "evidence/refactor/fffd-bank-scope-249/README.md"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/fffd-bank-scope-249/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/fffd-bank-scope-249/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "evidence/refactor/fffd-bank-scope-249/README.md"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-vglib-init.registers.o1248.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Raw bits consumed only in a SOURCE-qualified full-lane RMW sequence; physical semantics UNKNOWN",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-vglib-init.registers.o1800",
+          "offset": 6144,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-vglib-init",
+          "name": "offset1800",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN physical reset; explicit finite read samples are HYPOTHESIS"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Only an explicit expected sequence step; physical effects UNKNOWN",
+            "write": "Observed expected write only; no storage/clear/IRQ effect",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            20979232
+          ],
+          "consumerPcs": [
+            20979184
+          ],
+          "evidence": [
+            "evidence/refactor/fffd-bank-scope-249/README.md"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/fffd-bank-scope-249/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/fffd-bank-scope-249/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "evidence/refactor/fffd-bank-scope-249/README.md"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-vglib-init.registers.o1800.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Raw bits consumed only in a SOURCE-qualified full-lane RMW sequence; physical semantics UNKNOWN",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-vglib-init.registers.o1880",
+          "offset": 6272,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-vglib-init",
+          "name": "offset1880",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN physical reset; explicit finite read samples are HYPOTHESIS"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Only an explicit expected sequence step; physical effects UNKNOWN",
+            "write": "Observed expected write only; no storage/clear/IRQ effect",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            20979232
+          ],
+          "consumerPcs": [
+            20979184
+          ],
+          "evidence": [
+            "evidence/refactor/fffd-bank-scope-249/README.md"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/fffd-bank-scope-249/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/fffd-bank-scope-249/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "evidence/refactor/fffd-bank-scope-249/README.md"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-vglib-init.registers.o1880.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Raw bits consumed only in a SOURCE-qualified full-lane RMW sequence; physical semantics UNKNOWN",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-vglib-init.registers.o18c0",
+          "offset": 6336,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-vglib-init",
+          "name": "offset18c0",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN physical reset; explicit finite read samples are HYPOTHESIS"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Only an explicit expected sequence step; physical effects UNKNOWN",
+            "write": "Observed expected write only; no storage/clear/IRQ effect",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            20979232
+          ],
+          "consumerPcs": [
+            20979184
+          ],
+          "evidence": [
+            "evidence/refactor/fffd-bank-scope-249/README.md"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/fffd-bank-scope-249/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/fffd-bank-scope-249/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "evidence/refactor/fffd-bank-scope-249/README.md"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-vglib-init.registers.o18c0.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Raw bits consumed only in a SOURCE-qualified full-lane RMW sequence; physical semantics UNKNOWN",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        }
+      ],
+      "unknownCoverage": "All gaps, wrong widths, order/value mismatches and exhausted steps refuse without consumption.",
+      "implementationSources": [
+        "components/soc-vglib-init/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/vglib/VglibInitFactory.kt"
+      ]
+    },
+    {
+      "id": "definition.soc-vglib-init.mode-word",
+      "size": 4,
+      "kind": "MMIO",
+      "byteOrder": "little",
+      "backing": {
+        "source": "Finite software-path READ4 then masked WRITE4 only",
+        "permissions": "One exact pair, then refuse",
+        "sequenceProfile": "vglib-mode-word-experimental-v1",
+        "secondPairProfile": "vglib-mode-word-case4-twice-experimental-v2",
+        "secondPairLimit": 1,
+        "additionalPairsProfile": "vglib-mode-word-case4-samples-experimental-v3",
+        "maxAdditionalPairs": 16,
+        "additionalPairsSource": "Mode 5 no-card third READ4 at tick 423156359, helper 0005AFE0, LR 01255740, selector r6=4. Each additional sample is an explicit HYPOTHESIS paired with the case4 masked WRITE4 at 0005AF98. The 16-pair tail limit is a model budget.",
+        "secondPairSource": "DAT case4 selector r6=4 at 01255744, clear r1[9:8] at 0125587C/80, WRITE4 r1 via 012557D8. Second old word is an independent explicit HYPOTHESIS.",
+        "sourcePreserveMask": 4294966527,
+        "readConfidence": "HYPOTHESIS",
+        "defaultReadSample": 0,
+        "scope": "SOURCE clear bits8/9 and preserve other30 only for current branch; old sample HYPOTHESIS, not reset. Shared physical hardware with FFFD bank UNKNOWN.",
+        "sourcePreserveMaskConfidence": "SOURCE"
+      },
+      "registers": [
+        {
+          "id": "reg.soc-vglib-init.mode-word.o0",
+          "offset": 0,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-vglib-init",
+          "name": "mode-word-candidate",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN physical reset; explicit HYPOTHESIS read sample only"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "One explicit HYPOTHESIS sample only; physical read side effects UNKNOWN",
+            "write": "One SOURCE masked write old&FFFFFCFF accepted; physical effects UNKNOWN",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            372632
+          ],
+          "consumerPcs": [
+            372704
+          ],
+          "evidence": [
+            "evidence/refactor/control-word-scope-257/README.md"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/control-word-scope-257/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/control-word-scope-257/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "evidence/refactor/control-word-scope-257/README.md"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-vglib-init.mode-word.o0.low-preserved",
+              "bitOffset": 0,
+              "bitWidth": 8,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Current SOURCE branch transfers these eight old-value bits unchanged; physical meaning UNKNOWN",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/control-word-scope-257/README.md"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "evidence/refactor/control-word-scope-257/README.md"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            },
+            {
+              "id": "reg.soc-vglib-init.mode-word.o0.cleared-candidate",
+              "bitOffset": 8,
+              "bitWidth": 2,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Current r6=4 SOURCE branch clears bits8/9 before write; not a physical writable/clear law",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/control-word-scope-257/README.md"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "evidence/refactor/control-word-scope-257/README.md"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            },
+            {
+              "id": "reg.soc-vglib-init.mode-word.o0.high-preserved",
+              "bitOffset": 10,
+              "bitWidth": 22,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Current SOURCE branch transfers these twenty-two old-value bits unchanged; physical meaning UNKNOWN",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/control-word-scope-257/README.md"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "evidence/refactor/control-word-scope-257/README.md"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Hardware identity/reset/bit meaning/read and write side effects remain UNKNOWN; preserved source bits are not a physical preserve-mask law."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        }
+      ],
+      "unknownCoverage": "All other words, widths, directions, repetitions and side effects UNKNOWN and refused.",
+      "implementationSources": [
+        "components/soc-vglib-init/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/vglib/ModeWordInput.kt"
+      ]
+    },
+    {
+      "id": "definition.soc-vglib-init.lcdc-snapshot",
+      "size": 1540,
+      "kind": "MMIO",
+      "byteOrder": "little",
+      "backing": {
+        "source": "Complete current nonzero-instance software snapshot path",
+        "permissions": "140 exact ordered READ4 only, then refuse",
+        "sequenceProfile": "lcdc-instance1-snapshot-experimental-v1",
+        "sourceReadOffsets": [
+          8,
+          48,
+          20,
+          32,
+          64,
+          68,
+          72,
+          76,
+          80,
+          84,
+          88,
+          92,
+          96,
+          100,
+          104,
+          304,
+          308,
+          312,
+          316,
+          320,
+          324,
+          328,
+          332,
+          336,
+          340,
+          344,
+          348,
+          352,
+          356,
+          360,
+          364,
+          368,
+          372,
+          376,
+          380,
+          384,
+          388,
+          392,
+          396,
+          400,
+          404,
+          408,
+          412,
+          416,
+          420,
+          424,
+          428,
+          432,
+          436,
+          440,
+          444,
+          448,
+          456,
+          460,
+          464,
+          468,
+          472,
+          476,
+          480,
+          484,
+          488,
+          492,
+          496,
+          500,
+          504,
+          508,
+          512,
+          516,
+          520,
+          524,
+          528,
+          532,
+          536,
+          540,
+          544,
+          548,
+          552,
+          556,
+          560,
+          564,
+          568,
+          572,
+          576,
+          580,
+          584,
+          588,
+          592,
+          596,
+          600,
+          604,
+          608,
+          612,
+          616,
+          620,
+          624,
+          628,
+          632,
+          636,
+          640,
+          644,
+          648,
+          652,
+          656,
+          660,
+          664,
+          668,
+          672,
+          676,
+          680,
+          684,
+          688,
+          692,
+          696,
+          700,
+          704,
+          708,
+          712,
+          716,
+          720,
+          724,
+          728,
+          732,
+          736,
+          740,
+          744,
+          748,
+          752,
+          756,
+          760,
+          764,
+          768,
+          772,
+          776,
+          780,
+          784,
+          788,
+          792,
+          796,
+          800,
+          1536
+        ],
+        "sourceReadOffsetsConfidence": "SOURCE",
+        "readConfidence": "HYPOTHESIS",
+        "defaultReadSample": 0,
+        "scope": "Zero samples are an explicit experiment, not reset or framebuffer geometry. Guest alone writes shadow/flags/return; shared physical hardware UNKNOWN."
+      },
+      "registers": [
+        {
+          "id": "reg.soc-vglib-init.lcdc-snapshot.o8",
+          "offset": 8,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-vglib-init",
+          "name": "snapshot-word-8",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN physical reset; explicit HYPOTHESIS read sample only"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Finite explicit HYPOTHESIS sample; physical read effects UNKNOWN",
+            "write": "Refused; this selected software path only reads",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [
+            372704
+          ],
+          "evidence": [
+            "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+            "evidence/refactor/fffa9008-scope-264/README.md"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-vglib-init.lcdc-snapshot.o8.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "UNKNOWN",
+              "definition": "Raw returned word copied by guest into software shadow; physical packing and reset UNKNOWN",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                    "evidence/refactor/fffa9008-scope-264/README.md"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical panel assignment, bit meaning, reset and read effects unknown."
+              ],
+              "nextValidation": "Follow original consumers without treating HYP samples as measured geometry."
+            }
+          ],
+          "unknowns": [
+            "Software read/shadow relation does not establish physical reset, geometry, framebuffer or read side effects."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-vglib-init.lcdc-snapshot.o30",
+          "offset": 48,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-vglib-init",
+          "name": "snapshot-word-30",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN physical reset; explicit HYPOTHESIS read sample only"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Finite explicit HYPOTHESIS sample; physical read effects UNKNOWN",
+            "write": "Refused; this selected software path only reads",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [
+            372704
+          ],
+          "evidence": [
+            "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+            "evidence/refactor/fffa9008-scope-264/README.md"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-vglib-init.lcdc-snapshot.o30.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "UNKNOWN",
+              "definition": "Raw returned word copied by guest into software shadow; physical packing and reset UNKNOWN",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                    "evidence/refactor/fffa9008-scope-264/README.md"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical panel assignment, bit meaning, reset and read effects unknown."
+              ],
+              "nextValidation": "Follow original consumers without treating HYP samples as measured geometry."
+            }
+          ],
+          "unknowns": [
+            "Software read/shadow relation does not establish physical reset, geometry, framebuffer or read side effects."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-vglib-init.lcdc-snapshot.o14",
+          "offset": 20,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-vglib-init",
+          "name": "snapshot-word-14",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN physical reset; explicit HYPOTHESIS read sample only"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Finite explicit HYPOTHESIS sample; physical read effects UNKNOWN",
+            "write": "Refused; this selected software path only reads",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [
+            372704
+          ],
+          "evidence": [
+            "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+            "evidence/refactor/fffa9008-scope-264/README.md"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-vglib-init.lcdc-snapshot.o14.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "UNKNOWN",
+              "definition": "Raw returned word copied by guest into software shadow; physical packing and reset UNKNOWN",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                    "evidence/refactor/fffa9008-scope-264/README.md"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical panel assignment, bit meaning, reset and read effects unknown."
+              ],
+              "nextValidation": "Follow original consumers without treating HYP samples as measured geometry."
+            }
+          ],
+          "unknowns": [
+            "Software read/shadow relation does not establish physical reset, geometry, framebuffer or read side effects."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-vglib-init.lcdc-snapshot.o20",
+          "offset": 32,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-vglib-init",
+          "name": "snapshot-word-20",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN physical reset; explicit HYPOTHESIS read sample only"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Finite explicit HYPOTHESIS sample; physical read effects UNKNOWN",
+            "write": "Refused; this selected software path only reads",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [
+            372704
+          ],
+          "evidence": [
+            "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+            "evidence/refactor/fffa9008-scope-264/README.md"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-vglib-init.lcdc-snapshot.o20.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "UNKNOWN",
+              "definition": "Raw returned word copied by guest into software shadow; physical packing and reset UNKNOWN",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                    "evidence/refactor/fffa9008-scope-264/README.md"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical panel assignment, bit meaning, reset and read effects unknown."
+              ],
+              "nextValidation": "Follow original consumers without treating HYP samples as measured geometry."
+            }
+          ],
+          "unknowns": [
+            "Software read/shadow relation does not establish physical reset, geometry, framebuffer or read side effects."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-vglib-init.lcdc-snapshot.o40",
+          "offset": 64,
+          "size": 4,
+          "count": 11,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-vglib-init",
+          "name": "snapshot-word-40",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN physical reset; explicit HYPOTHESIS read sample only"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Finite explicit HYPOTHESIS sample; physical read effects UNKNOWN",
+            "write": "Refused; this selected software path only reads",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [
+            372704
+          ],
+          "evidence": [
+            "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+            "evidence/refactor/fffa9008-scope-264/README.md"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-vglib-init.lcdc-snapshot.o40.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "UNKNOWN",
+              "definition": "Raw returned word copied by guest into software shadow; physical packing and reset UNKNOWN",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                    "evidence/refactor/fffa9008-scope-264/README.md"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical panel assignment, bit meaning, reset and read effects unknown."
+              ],
+              "nextValidation": "Follow original consumers without treating HYP samples as measured geometry."
+            }
+          ],
+          "unknowns": [
+            "Software read/shadow relation does not establish physical reset, geometry, framebuffer or read side effects."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-vglib-init.lcdc-snapshot.o130",
+          "offset": 304,
+          "size": 4,
+          "count": 37,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-vglib-init",
+          "name": "snapshot-word-130",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN physical reset; explicit HYPOTHESIS read sample only"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Finite explicit HYPOTHESIS sample; physical read effects UNKNOWN",
+            "write": "Refused; this selected software path only reads",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [
+            372704
+          ],
+          "evidence": [
+            "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+            "evidence/refactor/fffa9008-scope-264/README.md"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-vglib-init.lcdc-snapshot.o130.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "UNKNOWN",
+              "definition": "Raw returned word copied by guest into software shadow; physical packing and reset UNKNOWN",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                    "evidence/refactor/fffa9008-scope-264/README.md"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical panel assignment, bit meaning, reset and read effects unknown."
+              ],
+              "nextValidation": "Follow original consumers without treating HYP samples as measured geometry."
+            }
+          ],
+          "unknowns": [
+            "Software read/shadow relation does not establish physical reset, geometry, framebuffer or read side effects."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-vglib-init.lcdc-snapshot.o1c8",
+          "offset": 456,
+          "size": 4,
+          "count": 87,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-vglib-init",
+          "name": "snapshot-word-1c8",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN physical reset; explicit HYPOTHESIS read sample only"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Finite explicit HYPOTHESIS sample; physical read effects UNKNOWN",
+            "write": "Refused; this selected software path only reads",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [
+            372704
+          ],
+          "evidence": [
+            "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+            "evidence/refactor/fffa9008-scope-264/README.md"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-vglib-init.lcdc-snapshot.o1c8.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "UNKNOWN",
+              "definition": "Raw returned word copied by guest into software shadow; physical packing and reset UNKNOWN",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                    "evidence/refactor/fffa9008-scope-264/README.md"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical panel assignment, bit meaning, reset and read effects unknown."
+              ],
+              "nextValidation": "Follow original consumers without treating HYP samples as measured geometry."
+            }
+          ],
+          "unknowns": [
+            "Software read/shadow relation does not establish physical reset, geometry, framebuffer or read side effects."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-vglib-init.lcdc-snapshot.o600",
+          "offset": 1536,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-vglib-init",
+          "name": "snapshot-word-600",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN physical reset; explicit HYPOTHESIS read sample only"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Finite explicit HYPOTHESIS sample; physical read effects UNKNOWN",
+            "write": "Refused; this selected software path only reads",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [
+            372704
+          ],
+          "evidence": [
+            "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+            "evidence/refactor/fffa9008-scope-264/README.md"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-vglib-init.lcdc-snapshot.o600.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "UNKNOWN",
+              "definition": "Raw returned word copied by guest into software shadow; physical packing and reset UNKNOWN",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                    "evidence/refactor/fffa9008-scope-264/README.md"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical panel assignment, bit meaning, reset and read effects unknown."
+              ],
+              "nextValidation": "Follow original consumers without treating HYP samples as measured geometry."
+            }
+          ],
+          "unknowns": [
+            "Software read/shadow relation does not establish physical reset, geometry, framebuffer or read side effects."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        }
+      ],
+      "unknownCoverage": "Only the listed words in exact SOURCE order are supplied once. Holes, writes, other widths, repeats and exhaustion refuse.",
+      "implementationSources": [
+        "components/soc-vglib-init/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/vglib/LcdcSnapshotInput.kt"
+      ]
+    },
+    {
+      "id": "definition.soc-vglib-init.lcdc-unready",
+      "size": 1540,
+      "kind": "MMIO",
+      "byteOrder": "little",
+      "backing": {
+        "source": "Complete current nonzero-instance software snapshot path",
+        "permissions": "Unchanged140 ordered READ4 prefix; then exact offset0 WRITE4(0) once and at most400000 READ4(0). Reject every unexpected operation.",
+        "sequenceProfile": "lcdc-instance1-unready-experimental-v1",
+        "sourceReadOffsets": [
+          8,
+          48,
+          20,
+          32,
+          64,
+          68,
+          72,
+          76,
+          80,
+          84,
+          88,
+          92,
+          96,
+          100,
+          104,
+          304,
+          308,
+          312,
+          316,
+          320,
+          324,
+          328,
+          332,
+          336,
+          340,
+          344,
+          348,
+          352,
+          356,
+          360,
+          364,
+          368,
+          372,
+          376,
+          380,
+          384,
+          388,
+          392,
+          396,
+          400,
+          404,
+          408,
+          412,
+          416,
+          420,
+          424,
+          428,
+          432,
+          436,
+          440,
+          444,
+          448,
+          456,
+          460,
+          464,
+          468,
+          472,
+          476,
+          480,
+          484,
+          488,
+          492,
+          496,
+          500,
+          504,
+          508,
+          512,
+          516,
+          520,
+          524,
+          528,
+          532,
+          536,
+          540,
+          544,
+          548,
+          552,
+          556,
+          560,
+          564,
+          568,
+          572,
+          576,
+          580,
+          584,
+          588,
+          592,
+          596,
+          600,
+          604,
+          608,
+          612,
+          616,
+          620,
+          624,
+          628,
+          632,
+          636,
+          640,
+          644,
+          648,
+          652,
+          656,
+          660,
+          664,
+          668,
+          672,
+          676,
+          680,
+          684,
+          688,
+          692,
+          696,
+          700,
+          704,
+          708,
+          712,
+          716,
+          720,
+          724,
+          728,
+          732,
+          736,
+          740,
+          744,
+          748,
+          752,
+          756,
+          760,
+          764,
+          768,
+          772,
+          776,
+          780,
+          784,
+          788,
+          792,
+          796,
+          800,
+          1536
+        ],
+        "sourceReadOffsetsConfidence": "SOURCE",
+        "readConfidence": "HYPOTHESIS",
+        "defaultReadSample": 0,
+        "scope": "Explicit retained-zero no-completion exploration. No reset/ready/ACK/IRQ/clear/DMA/frame law; physical write/read effects UNKNOWN.",
+        "controlReadLimitMaximum": 400000,
+        "controlInitialValue": 0,
+        "controlWriteValue": 0,
+        "controlReadValue": 0,
+        "controlConfidence": "HYPOTHESIS"
+      },
+      "registers": [
+        {
+          "id": "reg.soc-vglib-init.lcdc-unready.o0",
+          "offset": 0,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-vglib-init",
+          "name": "unreadyControlWord",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN physical reset; explicit HYPOTHESIS read sample only"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Finite explicit retained0 only after the single control write; not physical readiness",
+            "write": "Single retained0 after140 snapshot reads only; no physical side effect asserted",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            372632
+          ],
+          "consumerPcs": [
+            372704
+          ],
+          "evidence": [
+            "evidence/refactor/lcdc-snapshot-caller-268/README.md",
+            "evidence/refactor/state-reuse-scope-442-443/lcdc-unready-scope-443-report.md"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-caller-268/README.md",
+                "evidence/refactor/state-reuse-scope-442-443/lcdc-unready-scope-443-report.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-caller-268/README.md",
+                "evidence/refactor/state-reuse-scope-442-443/lcdc-unready-scope-443-report.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "evidence/refactor/state-reuse-scope-442-443/lcdc-unready-scope-443-report.md"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-vglib-init.lcdc-unready.o0.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "UNKNOWN",
+              "definition": "Explicit experimental control word retained0; firmware bit0 poll remains zero. Physical bit meaning UNKNOWN.",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": [
+                    "evidence/refactor/lcdc-snapshot-caller-268/README.md",
+                    "evidence/refactor/state-reuse-scope-442-443/lcdc-unready-scope-443-report.md"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "evidence/refactor/lcdc-snapshot-caller-268/README.md",
+                "evidence/refactor/state-reuse-scope-442-443/lcdc-unready-scope-443-report.md"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical panel assignment, bit meaning, reset and read effects unknown."
+              ],
+              "nextValidation": "Observe unchanged firmware scheduling under the finite non-completing input; do not infer physical readiness."
+            }
+          ],
+          "unknowns": [
+            "Software write0 followed by polling bit0 does not establish physical write effects, reset, readiness or completion."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-vglib-init.lcdc-unready.o8",
+          "offset": 8,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-vglib-init",
+          "name": "snapshot-word-8",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN physical reset; explicit HYPOTHESIS read sample only"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Finite explicit HYPOTHESIS sample; physical read effects UNKNOWN",
+            "write": "Refused; this selected software path only reads",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [
+            372704
+          ],
+          "evidence": [
+            "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+            "evidence/refactor/fffa9008-scope-264/README.md"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-vglib-init.lcdc-unready.o8.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "UNKNOWN",
+              "definition": "Raw returned word copied by guest into software shadow; physical packing and reset UNKNOWN",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                    "evidence/refactor/fffa9008-scope-264/README.md"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical panel assignment, bit meaning, reset and read effects unknown."
+              ],
+              "nextValidation": "Follow original consumers without treating HYP samples as measured geometry."
+            }
+          ],
+          "unknowns": [
+            "Software read/shadow relation does not establish physical reset, geometry, framebuffer or read side effects."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-vglib-init.lcdc-unready.o30",
+          "offset": 48,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-vglib-init",
+          "name": "snapshot-word-30",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN physical reset; explicit HYPOTHESIS read sample only"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Finite explicit HYPOTHESIS sample; physical read effects UNKNOWN",
+            "write": "Refused; this selected software path only reads",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [
+            372704
+          ],
+          "evidence": [
+            "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+            "evidence/refactor/fffa9008-scope-264/README.md"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-vglib-init.lcdc-unready.o30.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "UNKNOWN",
+              "definition": "Raw returned word copied by guest into software shadow; physical packing and reset UNKNOWN",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                    "evidence/refactor/fffa9008-scope-264/README.md"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical panel assignment, bit meaning, reset and read effects unknown."
+              ],
+              "nextValidation": "Follow original consumers without treating HYP samples as measured geometry."
+            }
+          ],
+          "unknowns": [
+            "Software read/shadow relation does not establish physical reset, geometry, framebuffer or read side effects."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-vglib-init.lcdc-unready.o14",
+          "offset": 20,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-vglib-init",
+          "name": "snapshot-word-14",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN physical reset; explicit HYPOTHESIS read sample only"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Finite explicit HYPOTHESIS sample; physical read effects UNKNOWN",
+            "write": "Refused; this selected software path only reads",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [
+            372704
+          ],
+          "evidence": [
+            "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+            "evidence/refactor/fffa9008-scope-264/README.md"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-vglib-init.lcdc-unready.o14.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "UNKNOWN",
+              "definition": "Raw returned word copied by guest into software shadow; physical packing and reset UNKNOWN",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                    "evidence/refactor/fffa9008-scope-264/README.md"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical panel assignment, bit meaning, reset and read effects unknown."
+              ],
+              "nextValidation": "Follow original consumers without treating HYP samples as measured geometry."
+            }
+          ],
+          "unknowns": [
+            "Software read/shadow relation does not establish physical reset, geometry, framebuffer or read side effects."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-vglib-init.lcdc-unready.o20",
+          "offset": 32,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-vglib-init",
+          "name": "snapshot-word-20",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN physical reset; explicit HYPOTHESIS read sample only"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Finite explicit HYPOTHESIS sample; physical read effects UNKNOWN",
+            "write": "Refused; this selected software path only reads",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [
+            372704
+          ],
+          "evidence": [
+            "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+            "evidence/refactor/fffa9008-scope-264/README.md"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-vglib-init.lcdc-unready.o20.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "UNKNOWN",
+              "definition": "Raw returned word copied by guest into software shadow; physical packing and reset UNKNOWN",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                    "evidence/refactor/fffa9008-scope-264/README.md"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical panel assignment, bit meaning, reset and read effects unknown."
+              ],
+              "nextValidation": "Follow original consumers without treating HYP samples as measured geometry."
+            }
+          ],
+          "unknowns": [
+            "Software read/shadow relation does not establish physical reset, geometry, framebuffer or read side effects."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-vglib-init.lcdc-unready.o40",
+          "offset": 64,
+          "size": 4,
+          "count": 11,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-vglib-init",
+          "name": "snapshot-word-40",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN physical reset; explicit HYPOTHESIS read sample only"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Finite explicit HYPOTHESIS sample; physical read effects UNKNOWN",
+            "write": "Refused; this selected software path only reads",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [
+            372704
+          ],
+          "evidence": [
+            "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+            "evidence/refactor/fffa9008-scope-264/README.md"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-vglib-init.lcdc-unready.o40.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "UNKNOWN",
+              "definition": "Raw returned word copied by guest into software shadow; physical packing and reset UNKNOWN",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                    "evidence/refactor/fffa9008-scope-264/README.md"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical panel assignment, bit meaning, reset and read effects unknown."
+              ],
+              "nextValidation": "Follow original consumers without treating HYP samples as measured geometry."
+            }
+          ],
+          "unknowns": [
+            "Software read/shadow relation does not establish physical reset, geometry, framebuffer or read side effects."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-vglib-init.lcdc-unready.o130",
+          "offset": 304,
+          "size": 4,
+          "count": 37,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-vglib-init",
+          "name": "snapshot-word-130",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN physical reset; explicit HYPOTHESIS read sample only"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Finite explicit HYPOTHESIS sample; physical read effects UNKNOWN",
+            "write": "Refused; this selected software path only reads",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [
+            372704
+          ],
+          "evidence": [
+            "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+            "evidence/refactor/fffa9008-scope-264/README.md"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-vglib-init.lcdc-unready.o130.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "UNKNOWN",
+              "definition": "Raw returned word copied by guest into software shadow; physical packing and reset UNKNOWN",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                    "evidence/refactor/fffa9008-scope-264/README.md"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical panel assignment, bit meaning, reset and read effects unknown."
+              ],
+              "nextValidation": "Follow original consumers without treating HYP samples as measured geometry."
+            }
+          ],
+          "unknowns": [
+            "Software read/shadow relation does not establish physical reset, geometry, framebuffer or read side effects."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-vglib-init.lcdc-unready.o1c8",
+          "offset": 456,
+          "size": 4,
+          "count": 87,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-vglib-init",
+          "name": "snapshot-word-1c8",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN physical reset; explicit HYPOTHESIS read sample only"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Finite explicit HYPOTHESIS sample; physical read effects UNKNOWN",
+            "write": "Refused; this selected software path only reads",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [
+            372704
+          ],
+          "evidence": [
+            "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+            "evidence/refactor/fffa9008-scope-264/README.md"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-vglib-init.lcdc-unready.o1c8.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "UNKNOWN",
+              "definition": "Raw returned word copied by guest into software shadow; physical packing and reset UNKNOWN",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                    "evidence/refactor/fffa9008-scope-264/README.md"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical panel assignment, bit meaning, reset and read effects unknown."
+              ],
+              "nextValidation": "Follow original consumers without treating HYP samples as measured geometry."
+            }
+          ],
+          "unknowns": [
+            "Software read/shadow relation does not establish physical reset, geometry, framebuffer or read side effects."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-vglib-init.lcdc-unready.o600",
+          "offset": 1536,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-vglib-init",
+          "name": "snapshot-word-600",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN physical reset; explicit HYPOTHESIS read sample only"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Finite explicit HYPOTHESIS sample; physical read effects UNKNOWN",
+            "write": "Refused; this selected software path only reads",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [
+            372704
+          ],
+          "evidence": [
+            "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+            "evidence/refactor/fffa9008-scope-264/README.md"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-vglib-init.lcdc-unready.o600.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "UNKNOWN",
+              "definition": "Raw returned word copied by guest into software shadow; physical packing and reset UNKNOWN",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                    "evidence/refactor/fffa9008-scope-264/README.md"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "evidence/refactor/lcdc-snapshot-tail-265/README.md",
+                "evidence/refactor/fffa9008-scope-264/README.md"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical panel assignment, bit meaning, reset and read effects unknown."
+              ],
+              "nextValidation": "Follow original consumers without treating HYP samples as measured geometry."
+            }
+          ],
+          "unknowns": [
+            "Software read/shadow relation does not establish physical reset, geometry, framebuffer or read side effects."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        }
+      ],
+      "unknownCoverage": "Only the listed words in exact SOURCE order are supplied once. Holes, writes, other widths, repeats and exhaustion refuse.",
+      "implementationSources": [
+        "components/soc-vglib-init/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/vglib/LcdcSnapshotInput.kt"
+      ]
+    },
+    {
+      "id": "definition.soc-vglib-init.lcdc-functional",
+      "size": 4096,
+      "kind": "MMIO",
+      "byteOrder": "little",
+      "backing": {
+        "source": "Behavioural LCD-controller bank for both software instances",
+        "permissions": "Aligned READ4/WRITE4 over the whole bank. Words are retained; word0 bit0 reads 1 after a guest WRITE4(0). Other widths or unaligned accesses refuse.",
+        "sequenceProfile": "lcdc-functional-experimental-v1",
+        "optionalScanoutBudget": {
+          "setting": "scanoutFrameLimit",
+          "default": 1,
+          "maximum": 256,
+          "unit": "successful frame publications",
+          "exhaustion": "retain MMIO words and skip pixel reads"
+        },
+        "optionalFirstScanout": {
+          "setting": "firstScanout",
+          "profile": "lcdc1-osd0-main-640x480-rgb565le-v1",
+          "confidence": "HYPOTHESIS",
+          "instance": 1,
+          "upperOffset": 64,
+          "lowOffset": 68,
+          "upperMask": 3,
+          "width": 640,
+          "height": 480,
+          "strideBytes": 1280,
+          "format": "RGB565LE",
+          "memory": "cpu.memory",
+          "output": "display.main"
+        },
+        "optionalRgbaScanout": {
+          "setting": "firstScanout", "profile": "lcdc1-osd0-1024x768-rgba-nearest-v1",
+          "confidence": "HYPOTHESIS", "instance": 1, "upperOffset": 64, "lowOffset": 68,
+          "commitOffset": 96, "control": 66560, "origin": 0, "unitScale": 268439552,
+          "width": 1024, "height": 768, "strideBytes": 4096,
+          "format": "LE-u32-RRGGBBAA", "scaling": "center-nearest-640x480-straight-ARGB",
+          "memory": "cpu.memory", "output": "display.main"
+        },
+        "optionalCompositeScanout": {
+          "setting": "firstScanout", "profile": "lcdc1-pic-yuv-osd0-nearest-v1",
+          "confidence": "HYPOTHESIS", "instance": 1, "enableOffset": 8, "commitOffset": 1536,
+          "osd0": {"controlOffset": 48, "upperOffset": 64, "lowOffset": 68, "format": "LE-u32-RRGGBBAA", "strideBytes": 4096, "width": 1024, "height": 768, "unitScale": 268439552},
+          "pic1": {"alphaOffset": 352, "upperOffset": 356, "lowOffset": 360, "strideOffset": 364, "outExtentOffset": 368, "positionOffset": 372, "sizeOffset": 376, "scaleOffset": 380, "format": "YUV422-16bpp-single-plane", "csc": "BT.601-full-range", "unitScale": 268439552},
+          "scaling": "center-nearest-640x480-straight-ARGB", "memory": "cpu.memory", "output": "display.main"
+        },
+        "optionalEvfScanoutBudget": {
+          "setting": "evfScanoutFrameLimit",
+          "default": 1,
+          "maximum": 256,
+          "unit": "successful EVF frame publications",
+          "exhaustion": "retain MMIO words and skip pixel reads"
+        },
+        "optionalEvfFirstScanout": {
+          "setting": "evfScanout",
+          "profile": "lcdc1-osd0-main-640x480-rgb565le-v1",
+          "confidence": "HYPOTHESIS",
+          "instance": 0,
+          "upperOffset": 64,
+          "lowOffset": 68,
+          "upperMask": 3,
+          "width": 640,
+          "height": 480,
+          "strideBytes": 1280,
+          "format": "RGB565LE",
+          "memory": "cpu.memory",
+          "output": "display.evf"
+        },
+        "optionalEvfRgbaScanout": {
+          "setting": "evfScanout", "profile": "lcdc1-osd0-1024x768-rgba-nearest-v1",
+          "confidence": "HYPOTHESIS", "instance": 0, "upperOffset": 64, "lowOffset": 68,
+          "commitOffset": 96, "control": 66560, "origin": 0, "unitScale": 268439552,
+          "width": 1024, "height": 768, "strideBytes": 4096,
+          "format": "LE-u32-RRGGBBAA", "scaling": "center-nearest-640x480-straight-ARGB",
+          "memory": "cpu.memory", "output": "display.evf"
+        },
+        "optionalEvfCompositeScanout": {
+          "setting": "evfScanout", "profile": "lcdc1-pic-yuv-osd0-nearest-v1",
+          "confidence": "HYPOTHESIS", "instance": 0, "enableOffset": 8, "commitOffset": 1536,
+          "osd0": {"controlOffset": 48, "upperOffset": 64, "lowOffset": 68, "format": "LE-u32-RRGGBBAA", "strideBytes": 4096, "width": 1024, "height": 768, "unitScale": 268439552},
+          "pic1": {"alphaOffset": 352, "upperOffset": 356, "lowOffset": 360, "strideOffset": 364, "outExtentOffset": 368, "positionOffset": 372, "sizeOffset": 376, "scaleOffset": 380, "format": "YUV422-16bpp-single-plane", "csc": "BT.601-full-range", "unitScale": 268439552},
+          "scaling": "center-nearest-640x480-straight-ARGB", "memory": "cpu.memory", "output": "display.evf"
+        },
+        "framePhaseEdge": {
+          "setting": "irq117Tick", "disabledValue": 0, "clock": "absolute-owner-virtual-tick",
+          "instance": 1, "group": 0, "line": 117, "sink": "soc-gic.lines", "capacity": 1,
+          "precondition": "enabled-edge-low-nonpending", "confidence": "HYPOTHESIS",
+          "followups": { "setting": "irq117FollowupTicks", "maxAdditionalEdges": 32, "clock": "absolute-owner-virtual-tick", "order": "strictly-increasing", "restore": "append-only" },
+          "source": "DAT 016D551C points to 0126FB9C calling 0126F98C(1,0). SIM at-404 route 01871B9C pairs line 117 with this callback."
+        },
+        "optionalEdge": {
+          "frameSyncFollowups": { "setting": "frameSyncFollowupTicks", "maxAdditionalEdges": 256, "clock": "absolute-owner-virtual-tick", "order": "strictly-increasing", "restore": "append-only", "confidence": "HYPOTHESIS" },
+          "frameSyncResume": { "setting": "frameSyncResumeTick", "disabledValue": 0, "additionalEdges": 32, "clock": "absolute-owner-virtual-tick", "restore": "append-only", "confidence": "HYPOTHESIS" },
+          "frameSync": {
+            "setting": "frameSyncStartTick", "disabledValue": 0, "periodTicks": 2000000,
+            "capacity": 32, "clock": "absolute-owner-virtual-tick", "pending": "gic-coalesces-edges", "confidence": "HYPOTHESIS"
+          },
+          "setting": "irq118Tick",
+          "disabledValue": 0,
+          "instance": 1,
+          "line": 118,
+          "sink": "soc-gic.lines",
+          "capacity": 1,
+          "confidence": "HYPOTHESIS",
+          "clock": "absolute-owner-virtual-tick",
+          "source": "DAT section4 callback table at 016D5520 and wrappers at 0126FB84 and 012708A8. IRQ118 registration observed in P951. External edge timing is an experimental input.",
+          "evidence": "evidence/refactor/display-capture-951/README.md"
+        },
+        "readConfidence": "HYPOTHESIS",
+        "defaultReadSample": 0,
+        "scope": "Explicit behavioural bring-up model. Completion bit, zero initial content and retention are HYPOTHESIS derived from the consumer loop at 12645C0; reset duration, clock/power preconditions, IRQ and scan-out are not modelled by these words.",
+        "controlCompletionMask": 1,
+        "controlCompletionTrigger": "WRITE4(0) at offset0",
+        "controlConfidence": "HYPOTHESIS"
+      },
+      "registers": [
+        {
+          "id": "reg.soc-vglib-init.lcdc-functional.o0",
+          "offset": 0,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-vglib-init",
+          "name": "functionalControlWord",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN physical reset; explicit HYPOTHESIS zero initial content"
+          },
+          "masks": {
+            "writable": 4294967294,
+            "preserve": 0,
+            "unknown": 1,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Retained value; bit0 forced to1 once a guest WRITE4(0) has been accepted",
+            "write": "Retained; WRITE4(0) arms the completion bit",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            372632
+          ],
+          "consumerPcs": [
+            372704
+          ],
+          "evidence": [
+            "evidence/refactor/lcdc-snapshot-caller-268/README.md",
+            "evidence/refactor/lcdc-reference-order-799-803/x70-lcdc-reset-801-report.md",
+            "evidence/refactor/display-bringup-950/README.md"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-caller-268/README.md",
+                "evidence/refactor/lcdc-reference-order-799-803/x70-lcdc-reset-801-report.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-caller-268/README.md",
+                "evidence/refactor/lcdc-reference-order-799-803/x70-lcdc-reset-801-report.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "evidence/refactor/display-bringup-950/README.md"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-vglib-init.lcdc-functional.o0.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "UNKNOWN",
+              "definition": "Control word. Firmware writes0 and polls bit0 until set; the model reports bit0 set after that write. Physical bit meaning UNKNOWN.",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": [
+                    "evidence/refactor/display-bringup-950/README.md"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": [
+                    "evidence/refactor/display-bringup-950/README.md"
+                  ]
+                }
+              },
+              "supportingEvidence": [
+                "evidence/refactor/lcdc-snapshot-caller-268/README.md",
+                "evidence/refactor/lcdc-reference-order-799-803/x70-lcdc-reset-801-report.md",
+                "evidence/refactor/display-bringup-950/README.md"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Reset duration, preconditions and the physical meaning of bit0 are unknown; only the consumer expectation is known."
+              ],
+              "nextValidation": "Compare with later firmware consumers; no physical measurement available."
+            }
+          ],
+          "unknowns": [
+            "Reset duration, preconditions and the physical meaning of bit0 are unknown; only the consumer expectation is known."
+          ],
+          "nextValidation": "Original firmware continuation under the explicit behavioural hypothesis; compare every later consumer of these words."
+        },
+        {
+          "id": "reg.soc-vglib-init.lcdc-functional.words",
+          "offset": 4,
+          "size": 4,
+          "count": 1023,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-vglib-init",
+          "name": "functionalRetainedWords",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN physical reset; explicit HYPOTHESIS zero initial content"
+          },
+          "masks": {
+            "writable": 4294967295,
+            "preserve": 0,
+            "unknown": 0,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Last accepted guest write, initially zero",
+            "write": "Retained without side effect",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            372632
+          ],
+          "consumerPcs": [
+            372704
+          ],
+          "evidence": [
+            "evidence/refactor/lcdc-snapshot-caller-268/README.md",
+            "evidence/refactor/lcdc-reference-order-799-803/x70-lcdc-reset-801-report.md",
+            "evidence/refactor/display-bringup-950/README.md"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-caller-268/README.md",
+                "evidence/refactor/lcdc-reference-order-799-803/x70-lcdc-reset-801-report.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/lcdc-snapshot-caller-268/README.md",
+                "evidence/refactor/lcdc-reference-order-799-803/x70-lcdc-reset-801-report.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "evidence/refactor/display-bringup-950/README.md"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-vglib-init.lcdc-functional.words.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "UNKNOWN",
+              "definition": "Retained word; meaning per offset remains with the firmware writers until separately identified.",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": [
+                    "evidence/refactor/display-bringup-950/README.md"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": [
+                    "evidence/refactor/display-bringup-950/README.md"
+                  ]
+                }
+              },
+              "supportingEvidence": [
+                "evidence/refactor/lcdc-snapshot-caller-268/README.md",
+                "evidence/refactor/lcdc-reference-order-799-803/x70-lcdc-reset-801-report.md",
+                "evidence/refactor/display-bringup-950/README.md"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Per-word reset values, read-only/status bits and side effects are unknown."
+              ],
+              "nextValidation": "Compare with later firmware consumers; no physical measurement available."
+            }
+          ],
+          "unknowns": [
+            "Per-word reset values, read-only/status bits and side effects are unknown."
+          ],
+          "nextValidation": "Original firmware continuation under the explicit behavioural hypothesis; compare every later consumer of these words."
+        }
+      ],
+      "unknownCoverage": "Whole4096-byte bank is retained storage. Words never written read zero. No word other than offset0 has modelled status behaviour.",
+      "implementationSources": [
+        "components/soc-vglib-init/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/vglib/LcdcFunctional.kt"
+      ]
+    }
+  ],
+  "unknowns": [
+    "Physical identity, reset, read side effects, storage/W1C/clear/IRQ/rendering laws UNKNOWN",
+    "FFF49700 and FFFD bank are software-path grouped; same physical device is UNKNOWN."
+  ],
+  "nextValidation": "Run the original with the explicit finite inputs; stop on any new transaction without extending implicitly"
+}

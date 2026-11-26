@@ -1,0 +1,53 @@
+# ==============================================================================
+# Dual SD Card Reader (Slot 1 & Slot 2)
+# File: configs/components/sdcard-reader/sdcard-reader.yaml
+#
+# Configures the camera's two SD card slots. By default, both slots use
+# "directory" mode so you can drag-and-drop JPEG/RAF photos directly between
+# your computer and the camera's DCIM/100_FUJI folders:
+#   - Slot 1 folder: runtime/compoments/sdcard-reader/sd-card-slot-1/
+#   - Slot 2 folder: runtime/compoments/sdcard-reader/sd-card-slot-2/
+#
+# Supported storage backends (slot1Backend / slot2Backend):
+#   - directory : Live two-way sync with a local host folder (default)
+#   - qcow2     : Sparse copy-on-write virtual card image (optional read-only backing file)
+#   - raw       : Raw sector-for-sector .img card image
+#
+# Slot insertion (slot*Inserted) and write-protect lock (slot*ReadOnly) can
+# also be toggled live while the camera is running.
+# ==============================================================================
+
+# --- Slot 1 (Primary SD Card) -------------------------------------------------
+# Whether a card is inserted (true = inserted, false = empty slot).
+slot1Inserted: true
+# Storage mode: directory | qcow2 | raw
+slot1Backend: "directory"
+# Folder or image name under runtime/compoments/sdcard-reader/.
+slot1Image: "sd-card-slot-1"
+# Physical write-protect lock switch (false = writable, true = read-only).
+slot1ReadOnly: false
+# Virtual card capacity in bytes (must be a multiple of 512; 4294967296 = 4 GiB).
+slot1CapacityBytes: 4294967296
+
+# --- Slot 2 (Secondary SD Card) -----------------------------------------------
+slot2Inserted: true
+slot2Backend: "directory"
+slot2Image: "sd-card-slot-2"
+slot2ReadOnly: false
+slot2CapacityBytes: 4294967296
+
+# --- Examples (uncomment and replace the Slot 1 / Slot 2 fields above) --------
+# Single-card setup (leave Slot 2 empty):
+# slot2Inserted: false
+#
+# Lock Slot 1 to read-only playback mode:
+# slot1ReadOnly: true
+#
+# Copy-on-write QCOW2 virtual card (see configs/examples/sdcard-reader-qcow2-cow.yaml):
+# slot1Backend: "qcow2"
+# slot1Image: "sd-card-slot-1.qcow2"
+# slot1BackingFile: ""
+#
+# Raw disk image card (see configs/examples/sdcard-reader-raw-boot.yaml):
+# slot1Backend: "raw"
+# slot1Image: "sd-card-slot-1.img"

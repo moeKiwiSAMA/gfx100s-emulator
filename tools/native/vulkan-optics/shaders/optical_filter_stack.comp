@@ -1,0 +1,217 @@
+#version 450
+/*
+ * FUJIFILM GFX100S Emulator - Vulkan 1.1 Compute Pass 0: Optical Filter Stack
+ *
+ * Executes physically modeled front-of-lens optical filters in linear radiance space
+ * immediately before Pass 1 (optics_warp) within the SAME command-buffer submission:
+ *   - bit0 (0x1): ND scalar attenuation (ndTransmission = 2^(-stops))
+ *   - bit1 (0x2): Graduated ND (GND) with arbitrary horizon, feather, and rotation angle
+ *   - bit2 (0x4): Black Mist highlight halation / bloom with subtle warm shift
+ *   - bit3 (0x8): Star Cross-Screen (4-, 6-, or 8-point diffraction spikes)
+ *   - bit4 (0x10): UV Protective Filter (micro-softness, point-symmetric ghosting, veiling glare, glass tint)
+ *
+ * Depth channel (.w) is preserved bit-for-bit for downstream thin-lens CoC bokeh.
+ * When enableFlags == 0 this pass is completely skipped on the host (zero GPU overhead).
+ */
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+
+layout(std430, binding = 0) readonly buffer InBuffer {
+    vec4 srcPixels[];
+};
+
+layout(std430, binding = 1) writeonly buffer OutBuffer {
+    vec4 dstPixels[];
+};
+
+layout(std140, binding = 2) uniform FilterParams {
+    uint  width;
+    uint  height;
+    uint  enableFlags;
+    uint  starPoints;
+
+    float ndTransmission;
+    float gndTopTransmission;
+    float gndHorizonY;
+    float gndFeather;
+
+    float gndSinAngle;
+    float gndCosAngle;
+    float mistStrength;
+    float mistThreshold;
+
+    float mistRadiusPx;
+    float starStrength;
+    float starThreshold;
+    float starRadiusPx;
+
+    float starAngleRad;
+    float mistWarmth;
+    float uvVeilingGlare;
+    float uvGhostIntensity;
+
+    float uvSoftness;
+    float uvTintR;
+    float uvTintG;
+    float uvTintB;
+
+    float uvGhostRadiusPx;
+    uint  reserved0;
+    uint  reserved1;
+    uint  reserved2;
+} u;
+
+const float PI = 3.14159265359;
+
+vec3 sampleClamped(int sx, int sy) {
+    int cx = clamp(sx, 0, int(u.width) - 1);
+    int cy = clamp(sy, 0, int(u.height) - 1);
+    return srcPixels[uint(cy) * u.width + uint(cx)].rgb;
+}
+
+float lumaOf(vec3 c) {
+    return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+}
+
+void main() {
+    uint x = gl_GlobalInvocationID.x;
+    uint y = gl_GlobalInvocationID.y;
+    if (x >= u.width || y >= u.height) return;
+
+    uint idx = y * u.width + x;
+    vec4 base = srcPixels[idx];
+    vec3 col = base.rgb;
+
+    /* 0. UV Protective Filter (micro-softness, point-symmetric ghosting, veiling glare, glass tint) */
+    if ((u.enableFlags & 16u) != 0u) {
+        if (u.uvSoftness > 1e-4) {
+            int rSoft = (u.uvSoftness >= 0.25) ? 2 : 1;
+            vec3 acc = col;
+            acc += sampleClamped(int(x) - rSoft, int(y));
+            acc += sampleClamped(int(x) + rSoft, int(y));
+            acc += sampleClamped(int(x), int(y) - rSoft);
+            acc += sampleClamped(int(x), int(y) + rSoft);
+            acc += sampleClamped(int(x) - rSoft, int(y) - rSoft);
+            acc += sampleClamped(int(x) + rSoft, int(y) - rSoft);
+            acc += sampleClamped(int(x) - rSoft, int(y) + rSoft);
+            acc += sampleClamped(int(x) + rSoft, int(y) + rSoft);
+            col = mix(col, acc / 9.0, clamp(u.uvSoftness, 0.0, 1.0));
+        }
+        if (u.uvGhostIntensity > 1e-4) {
+            float rx = float(u.width - 1u) - float(x);
+            float ry = float(u.height - 1u) - float(y);
+            float gr = clamp(u.uvGhostRadiusPx, 2.0, 16.0);
+            float grA = gr * 0.5;
+            float grD = gr * 0.75;
+            vec3 gAcc = vec3(0.0);
+            int offsetsX[9] = int[9](0, -1, 1, 0, 0, -1, 1, -1, 1);
+            int offsetsY[9] = int[9](0, 0, 0, -1, 1, -1, -1, 1, 1);
+            float scales[9] = float[9](0.0, grA, grA, grA, grA, grD, grD, grD, grD);
+            for (int k = 0; k < 9; ++k) {
+                vec3 gs = sampleClamped(int(floor(rx + float(offsetsX[k]) * scales[k] + 0.5)),
+                                        int(floor(ry + float(offsetsY[k]) * scales[k] + 0.5)));
+                float gl = lumaOf(gs);
+                float gex = max(gl - 0.45, 0.0) / max(gl, 1e-4);
+                gAcc += gs * gex;
+            }
+            float gain = u.uvGhostIntensity * 2.4 / 9.0;
+            col += gAcc * vec3(gain * 0.90, gain * 1.24, gain * 1.06);
+        }
+        if (u.uvVeilingGlare > 1e-4) {
+            vec3 meanAcc = vec3(0.0);
+            float coords[3] = float[3](0.15, 0.50, 0.85);
+            for (int sy = 0; sy < 3; ++sy) {
+                int py = int(floor(coords[sy] * float(u.height - 1u) + 0.5));
+                for (int sx = 0; sx < 3; ++sx) {
+                    int px = int(floor(coords[sx] * float(u.width - 1u) + 0.5));
+                    meanAcc += sampleClamped(px, py);
+                }
+            }
+            vec3 meanRgb = meanAcc / 9.0;
+            float contrastKeep = max(1.0 - 0.28 * u.uvVeilingGlare, 0.55);
+            col = col * contrastKeep + meanRgb * (u.uvVeilingGlare * 0.50);
+        }
+        col *= vec3(u.uvTintR, u.uvTintG, u.uvTintB);
+    }
+
+    /* 1. Black Mist highlight halation / bloom (2 concentric 8-tap rings + 4-tap core) */
+    if ((u.enableFlags & 4u) != 0u && u.mistStrength > 0.0 && u.mistRadiusPx >= 0.5) {
+        vec3 halo = vec3(0.0);
+        float wSum = 0.0;
+        float rInner = u.mistRadiusPx * 0.45;
+        float rOuter = u.mistRadiusPx;
+        for (int k = 0; k < 8; ++k) {
+            float ang = float(k) * (PI * 0.25);
+            float ca = cos(ang);
+            float sa = sin(ang);
+
+            /* Inner ring */
+            vec3 c1 = sampleClamped(int(floor(float(x) + ca * rInner + 0.5)),
+                                    int(floor(float(y) + sa * rInner + 0.5)));
+            float l1 = lumaOf(c1);
+            float ex1 = max(l1 - u.mistThreshold, 0.0) / max(l1, 1e-4);
+            halo += c1 * (ex1 * 0.65);
+            wSum += 0.65;
+
+            /* Outer ring */
+            vec3 c2 = sampleClamped(int(floor(float(x) + ca * rOuter + 0.5)),
+                                    int(floor(float(y) + sa * rOuter + 0.5)));
+            float l2 = lumaOf(c2);
+            float ex2 = max(l2 - u.mistThreshold, 0.0) / max(l2, 1e-4);
+            halo += c2 * (ex2 * 0.35);
+            wSum += 0.35;
+        }
+        vec3 mistTint = vec3(1.0 + u.mistWarmth, 1.0, max(0.0, 1.0 - u.mistWarmth * 0.5));
+        col += (halo / max(wSum, 1.0)) * u.mistStrength * mistTint;
+    }
+
+    /* 2. Star Cross-Screen (4-, 6-, or 8-point diffraction spikes) */
+    if ((u.enableFlags & 8u) != 0u && u.starStrength > 0.0 && u.starRadiusPx >= 1.0) {
+        uint axes = clamp(u.starPoints / 2u, 2u, 4u);
+        float stepAng = PI / float(axes);
+        vec3 spikeAcc = vec3(0.0);
+        float sNorm = 0.0;
+        for (uint a = 0u; a < axes; ++a) {
+            float ang = u.starAngleRad + float(a) * stepAng;
+            float dx = cos(ang);
+            float dy = sin(ang);
+            for (int step = 1; step <= 8; ++step) {
+                float frac = float(step) / 8.0;
+                float dist = frac * u.starRadiusPx;
+                float falloff = exp(-2.2 * frac);
+
+                vec3 cp = sampleClamped(int(floor(float(x) + dx * dist + 0.5)),
+                                        int(floor(float(y) + dy * dist + 0.5)));
+                float lp = lumaOf(cp);
+                float expP = max(lp - u.starThreshold, 0.0) / max(lp, 1e-4);
+
+                vec3 cn = sampleClamped(int(floor(float(x) - dx * dist + 0.5)),
+                                        int(floor(float(y) - dy * dist + 0.5)));
+                float ln = lumaOf(cn);
+                float expN = max(ln - u.starThreshold, 0.0) / max(ln, 1e-4);
+
+                spikeAcc += (cp * expP + cn * expN) * falloff;
+                sNorm += 2.0 * falloff;
+            }
+        }
+        col += (spikeAcc / max(sNorm, 1.0)) * u.starStrength;
+    }
+
+    /* 3. Scalar ND attenuation */
+    if ((u.enableFlags & 1u) != 0u) {
+        col *= clamp(u.ndTransmission, 0.0, 1.0);
+    }
+
+    /* 4. Graduated ND (GND) smoothstep attenuation */
+    if ((u.enableFlags & 2u) != 0u) {
+        float nx = (float(x) + 0.5) / float(u.width) - 0.5;
+        float ny = (float(y) + 0.5) / float(u.height) - 0.5;
+        float proj = -nx * u.gndSinAngle + ny * u.gndCosAngle + 0.5;
+        float feather = max(u.gndFeather, 0.005);
+        float t = clamp((proj - (u.gndHorizonY - feather)) / (2.0 * feather), 0.0, 1.0);
+        float sm = t * t * (3.0 - 2.0 * t);
+        float gndAtten = mix(clamp(u.gndTopTransmission, 0.0, 1.0), 1.0, sm);
+        col *= gndAtten;
+    }
+
+    dstPixels[idx] = vec4(max(col, vec3(0.0)), base.w);
+}

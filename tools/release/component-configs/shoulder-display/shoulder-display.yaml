@@ -1,0 +1,21 @@
+# ==============================================================================
+# Top-Plate Monochrome Status Sub-LCD (Shoulder Display)
+# File: configs/components/shoulder-display/shoulder-display.yaml
+#
+# Controls preferences for the camera's top-plate 1.8" monochrome status screen.
+# ==============================================================================
+
+# Sub-LCD display contrast / brightness multiplier (0.0 to 1.0).
+brightness: 1.0
+
+# Display orientation ("upright" = normal right-side-up top-plate view).
+orientation: "upright"
+
+# Fixed GFX100S top sub-LCD panel geometry and transport binding (do not change).
+width: 304
+height: 230
+profile: "dotlcd-serial1-experimental-v1"
+
+# --- Examples (uncomment and replace brightness above) ------------------------
+# Slightly dimmer top-plate screen:
+# brightness: 0.75

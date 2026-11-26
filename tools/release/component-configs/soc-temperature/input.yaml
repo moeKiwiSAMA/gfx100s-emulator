@@ -1,0 +1,20 @@
+---
+schema: 1
+profile: "gfx100s-temperature-functional-experimental-v1"
+conversionTicks: 10
+initialWords:
+  fff4700c: 0
+  fff47028: 0
+  fff47810: 0
+  fff47814: 0
+  fff47818: 0
+  fff47820: 0
+  fff47824: 0
+  fff47828: 15
+  fff47830: 0
+  fff47834: 0
+  fff47840: 0
+  fff47844: 0
+  fff47848: 0
+  fff4784c: 0
+  fff47850: 0

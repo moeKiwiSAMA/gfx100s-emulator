@@ -1,0 +1,10 @@
+enabled: false
+busPort: "i2c-bus.bus2"
+address7: 85
+irqLine: 153
+resetGpioBank: 7
+resetGpioPin: 2
+touchEnabled: true
+touchPressed: false
+touchX: 0
+touchY: 0

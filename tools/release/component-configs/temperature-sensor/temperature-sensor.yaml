@@ -1,0 +1,17 @@
+# ==============================================================================
+# Camera Body Temperature Sensor
+# File: configs/components/temperature-sensor/temperature-sensor.yaml
+#
+# Controls the simulated camera body thermal sensor reading. Can be adjusted
+# live to test thermal monitoring behavior.
+# ==============================================================================
+
+# Raw 12-bit thermal reading (0 to 4095, or -1 for sensor absent; 200 = nominal room temperature).
+rawSample: 200
+
+# --- Examples (uncomment and replace rawSample above) -------------------------
+# Cool ambient environment:
+# rawSample: 120
+#
+# Warm body after extended video recording:
+# rawSample: 600

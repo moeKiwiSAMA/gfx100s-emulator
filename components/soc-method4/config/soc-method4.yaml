@@ -1,0 +1,4 @@
+profile: method4-functional-experimental-v1
+memoryPort: cpu.memory
+interruptPort: ''
+irq: 128

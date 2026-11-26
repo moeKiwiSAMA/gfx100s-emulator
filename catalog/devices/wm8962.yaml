@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "id": "device.wm8962",
+  "componentId": "wm8962",
+  "depends": [],
+  "version": "0.0.1",
+  "name": "wm8962",
+  "physicalIdentity": "Wolfson / Cirrus Logic WM8962 Ultra-Low-Power Audio Codec (I2C1 0x1A + SPI4 wm8962.spi, Device ID 0x6243)",
+  "implementationStatus": "PARTIAL",
+  "implementationSources": [
+    "components/wm8962/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/wm8962/Wm8962Factory.kt",
+    "components/wm8962/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/wm8962/Wm8962CodecDevice.kt"
+  ],
+  "ports": [],
+  "unknowns": [
+    "Shared 16-bit register file, DSP2 Program/Data/Calibration RAM (0x2000..0x46FF), Device ID 0x6243, 2-wire I2C 0x1A framing, 4-wire SPI4 framing, and speaker/headphone/ADC/DAC routing follow WM8962 datasheet and DAT section4 0x01291EF8..0x01294308; DSP2 instruction execution remains modeled."
+  ],
+  "nextValidation": "Verify live GXUP0004.DAT SPI4 WM8962 init, DSP2 download, and live speaker/headphone routing."
+}

@@ -1,0 +1,12 @@
+# ==============================================================================
+# Built-in Audio Codec (WM8962 — Speaker, Microphone & Headphone Output)
+# File: configs/components/wm8962/wm8962.yaml
+#
+# Enables the camera's audio codec for shutter sounds, menu beeps, video
+# playback audio, and microphone recording. To mute host audio output without
+# disabling the camera chip, set audio: false in configs/emulator.yaml or pass
+# --no-audio on the command line.
+# ==============================================================================
+
+# Enable the camera's built-in audio codec.
+enabled: true

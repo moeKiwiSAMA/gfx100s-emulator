@@ -1,0 +1,3 @@
+# Internal GFX100S SoC hardware definition — no user edits needed.
+profile: "selection-special-retention-experimental-v1"
+inputFile: "words.json"

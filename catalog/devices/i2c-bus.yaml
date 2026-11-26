@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "id": "device.i2c-bus",
+  "componentId": "i2c-bus",
+  "depends": [],
+  "version": "0.0.1",
+  "name": "i2c-bus",
+  "physicalIdentity": "UNKNOWN",
+  "implementationStatus": "HOST_CONTRACT_ONLY",
+  "implementationSources": [
+    "components/i2c-bus/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/i2cbus/I2cBusFactory.kt",
+    "components/i2c-bus/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/i2cbus/EyeTransfers.kt",
+    "components/i2c-bus/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/i2cbus/LiveEyeSensor.kt"
+  ],
+  "ports": [],
+  "unknowns": [
+    "Physical device identity, reset values, wiring and full state machine are not qualified.",
+    "The optional controller 1 eye-sensor-finite-v1 input for address 0x39 supplies HYPOTHESIS ACKs and finite raw bytes to the DAT consumer at 01213840. See components/display/eye-sensor.md.",
+    "The live boolean setting eyeSensorNear (host-state-only) drives a stateful 0x39 HYPOTHESIS eye-sensor responder (0xB3/0xB8/0xA8/0xE5) on bus 1 once activated while preserving inactive empty-bus NACKs and finite replay."
+  ],
+  "nextValidation": "Trace selected original firmware consumers and retain refusal controls."
+}

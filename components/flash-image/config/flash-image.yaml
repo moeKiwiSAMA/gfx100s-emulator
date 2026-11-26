@@ -1,0 +1,4 @@
+sourcePort: firmware.update
+tailProfile: strict
+regionsProfile: strict
+regionsFile: ''

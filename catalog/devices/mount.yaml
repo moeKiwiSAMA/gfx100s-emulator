@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "id": "device.mount",
+  "componentId": "mount",
+  "depends": [],
+  "version": "0.0.1",
+  "name": "mount",
+  "physicalIdentity": "UNKNOWN",
+  "implementationStatus": "HOST_CONTRACT_ONLY",
+  "implementationSources": [
+    "components/mount/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/mount/MountFactory.kt"
+  ],
+  "ports": [],
+  "unknowns": [
+    "Physical device identity, reset values, wiring and full state machine are not qualified."
+  ],
+  "nextValidation": "Trace selected original firmware consumers and retain refusal controls."
+}

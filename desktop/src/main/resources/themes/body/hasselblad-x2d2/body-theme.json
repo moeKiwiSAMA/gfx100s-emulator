@@ -1,0 +1,141 @@
+{
+  "schema": 2,
+  "id": "hasselblad-x2d2",
+  "name": "Hasselblad X2D II 100C",
+  "nameZh": "哈苏 X2D II 100C",
+  "description": "Nordic medium-format flagship body with machined dark-anodized chassis, sculpted grip, orange shutter release, and 3-panel layout.",
+  "descriptionZh": "北欧中画幅旗舰机身：CNC 阳极氧化深灰机身、人体工学手柄、标志性橙色快门与三面板布局。",
+  "recommendedUiTheme": "nordic-minimal",
+  "i18n": {
+    "names": {
+      "en": "Hasselblad X2D II 100C",
+      "zh_CN": "哈苏 X2D II 100C",
+      "ja_JP": "ハッセルブラッド X2D II 100C",
+      "de_DE": "Hasselblad X2D II 100C",
+      "fr_FR": "Hasselblad X2D II 100C",
+      "es_ES": "Hasselblad X2D II 100C"
+    },
+    "descriptions": {
+      "en": "Nordic medium-format flagship body with machined dark-anodized chassis, sculpted grip, orange shutter release, and 3-panel layout.",
+      "zh_CN": "北欧中画幅旗舰机身：CNC 阳极氧化深灰机身、人体工学手柄、标志性橙色快门与三面板布局。",
+      "ja_JP": "北欧ミドルフォーマットフラッグシップ：CNCアルマイトボディ、象徴的なオレンジシャッター、3パネル構成。",
+      "de_DE": "Nordisches Mittelformat-Flaggschiff mit gefrästem eloxiertem Gehäuse, orangefarbenem Auslöser und 3-Panel-Layout.",
+      "fr_FR": "Boîtier moyen format nordique en aluminium anodisé usiné CNC, déclencheur orange emblématique et agencement 3 panneaux.",
+      "es_ES": "Cuerpo insignia de formato medio nórdico en aluminio anodizado CNC, disparador naranja y diseño de 3 paneles."
+    }
+  },
+  "brandLabel": "HASSELBLAD",
+  "modelLabel": "X2D II 100C",
+  "layout": {
+    "width": 1440,
+    "height": 840,
+    "entryMinWidth": 340,
+    "configuration": { "x": 930, "y": 10, "width": 500, "height": 820 },
+    "faces": {
+      "top":   { "slot": { "x": 10,  "y": 10,  "width": 910, "height": 290 }, "crop": { "x": 0, "y": 0, "width": 1000, "height": 340 }, "rotationDegrees": 0 },
+      "rear":  { "slot": { "x": 10,  "y": 310, "width": 560, "height": 520 }, "crop": { "x": 0, "y": 0, "width": 1000, "height": 720 }, "rotationDegrees": 0 },
+      "front": { "slot": { "x": 580, "y": 310, "width": 340, "height": 520 }, "crop": { "x": 0, "y": 0, "width": 820,  "height": 720 }, "rotationDegrees": 0 }
+    }
+  },
+  "views": [
+    {
+      "id": "rear",
+      "title": "背面 / REAR · X2D II",
+      "titleZh": "背面 · X2D II",
+      "titles": {
+        "en": "REAR · X2D II",
+        "zh_CN": "背面 · X2D II",
+        "ja_JP": "背面 · X2D II",
+        "de_DE": "RÜCKSEITE · X2D II",
+        "fr_FR": "ARRIÈRE · X2D II",
+        "es_ES": "TRASERA · X2D II"
+      },
+      "svg": "rear.svg",
+      "width": 1000,
+      "height": 720,
+      "controls": [
+        { "id": "rear-evf", "viewId": "rear", "label": "Electronic Viewfinder (EVF)", "labelZh": "齐平电子取景器 EVF", "x": 282, "y": 87, "width": 114, "height": 82, "hitbox": { "x": 282, "y": 87, "width": 114, "height": 82 }, "kind": "display", "displayPort": "display.evf", "cornerRadius": 6, "bindingStatus": "host-display-bridge", "firmwareBinding": "LCDC0", "interaction": "inspect" },
+        { "id": "rear-eye-sensor", "viewId": "rear", "role": "eye-sensor", "label": "EVF Eye Sensor", "labelZh": "眼传感器（切换 EVF）", "x": 425, "y": 94, "width": 40, "height": 58, "hitbox": { "x": 425, "y": 94, "width": 40, "height": 58 }, "kind": "sensor", "componentId": "tmd2772", "settingKey": "eyeSensorNear", "bindingStatus": "host-i2c-sensor", "firmwareBinding": "I2C1@0x39", "interaction": "latching" },
+        { "id": "rear-view-mode", "viewId": "rear", "role": "view-mode", "label": "View Mode", "labelZh": "取景切换键", "x": 190, "y": 201, "width": 63, "height": 24, "hitbox": { "x": 190, "y": 201, "width": 63, "height": 24 }, "kind": "button", "bindingStatus": "host-gpio-key", "firmwareBinding": "GPIO7.6", "interaction": "momentary" },
+        { "id": "rear-lcd", "viewId": "rear", "label": "3.6\" Touch LCD", "labelZh": "3.6 英寸触控主屏", "x": 91, "y": 263, "width": 489, "height": 349, "hitbox": { "x": 91, "y": 263, "width": 489, "height": 349 }, "kind": "display", "displayPort": "display.main", "cornerRadius": 6, "bindingStatus": "host-display-bridge", "firmwareBinding": "LCDC1+TOUCH", "interaction": "inspect" },
+        { "id": "rear-command-dial", "viewId": "rear", "role": "rear-command-dial", "label": "Rear Scroll Wheel", "labelZh": "后指令拨轮", "x": 819, "y": 159, "width": 126, "height": 52, "hitbox": { "x": 819, "y": 159, "width": 126, "height": 52 }, "kind": "dial", "buttonKey": "rearDialPress", "bindingStatus": "host-logic-only", "firmwareBinding": "ADC+GPIO", "interaction": "momentary" },
+        { "id": "rear-af-on", "viewId": "rear", "label": "AF-D / AF-ON", "labelZh": "AF-D 对焦锁定", "x": 641, "y": 149, "width": 54, "height": 54, "hitbox": { "x": 641, "y": 149, "width": 54, "height": 54 }, "kind": "button", "buttonKey": "afOn", "bindingStatus": "host-logic-only", "firmwareBinding": "GPIO", "interaction": "momentary" },
+        { "id": "rear-q", "viewId": "rear", "label": "AE-L / GFX Quick Menu", "labelZh": "AE-L / GFX 快捷菜单", "x": 572, "y": 149, "width": 54, "height": 54, "hitbox": { "x": 572, "y": 149, "width": 54, "height": 54 }, "kind": "button", "componentId": "soc-adc", "settingKey": "qButton", "bindingStatus": "host-adc-key", "firmwareBinding": "ADC", "interaction": "momentary" },
+        { "id": "rear-joy-up", "viewId": "rear", "label": "5D Joystick Up", "labelZh": "5D 摇杆 · 上", "x": 717, "y": 295, "width": 28, "height": 25, "hitbox": { "x": 717, "y": 295, "width": 28, "height": 25 }, "kind": "button", "buttonKey": "up", "bindingStatus": "host-logic-only", "firmwareBinding": "GPIO", "interaction": "momentary" },
+        { "id": "rear-joy-down", "viewId": "rear", "label": "5D Joystick Down", "labelZh": "5D 摇杆 · 下", "x": 717, "y": 352, "width": 28, "height": 25, "hitbox": { "x": 717, "y": 352, "width": 28, "height": 25 }, "kind": "button", "buttonKey": "down", "bindingStatus": "host-logic-only", "firmwareBinding": "GPIO", "interaction": "momentary" },
+        { "id": "rear-joy-left", "viewId": "rear", "label": "5D Joystick Left", "labelZh": "5D 摇杆 · 左", "x": 687, "y": 321, "width": 29, "height": 30, "hitbox": { "x": 687, "y": 321, "width": 29, "height": 30 }, "kind": "button", "buttonKey": "left", "bindingStatus": "host-logic-only", "firmwareBinding": "GPIO", "interaction": "momentary" },
+        { "id": "rear-joy-right", "viewId": "rear", "label": "5D Joystick Right", "labelZh": "5D 摇杆 · 右", "x": 746, "y": 321, "width": 29, "height": 30, "hitbox": { "x": 746, "y": 321, "width": 29, "height": 30 }, "kind": "button", "buttonKey": "right", "bindingStatus": "host-logic-only", "firmwareBinding": "GPIO", "interaction": "momentary" },
+        { "id": "rear-joy-press", "viewId": "rear", "label": "5D Joystick Press", "labelZh": "5D 摇杆 · 按下", "x": 717, "y": 321, "width": 28, "height": 30, "hitbox": { "x": 717, "y": 321, "width": 28, "height": 30 }, "kind": "button", "buttonKey": "focusStickPress", "bindingStatus": "host-logic-only", "firmwareBinding": "GPIO", "interaction": "momentary" },
+        { "id": "rear-menu", "viewId": "rear", "label": "MENU / OK", "labelZh": "菜单 / 确认", "x": 601, "y": 515, "width": 42, "height": 84, "hitbox": { "x": 601, "y": 515, "width": 42, "height": 84 }, "kind": "button", "buttonKey": "menu", "bindingStatus": "host-logic-only", "firmwareBinding": "GPIO", "interaction": "momentary" },
+        { "id": "rear-back", "viewId": "rear", "label": "Circle / GFX DISP-BACK", "labelZh": "圆圈键 / GFX 显示与返回", "x": 601, "y": 341, "width": 42, "height": 84, "hitbox": { "x": 601, "y": 341, "width": 42, "height": 84 }, "kind": "button", "buttonKey": "back", "bindingStatus": "host-logic-only", "firmwareBinding": "GPIO", "interaction": "momentary" },
+        { "id": "rear-play", "viewId": "rear", "label": "Playback (▷)", "labelZh": "回放", "x": 601, "y": 254, "width": 42, "height": 84, "hitbox": { "x": 601, "y": 254, "width": 42, "height": 84 }, "kind": "button", "buttonKey": "play", "bindingStatus": "host-logic-only", "firmwareBinding": "GPIO", "interaction": "momentary" },
+        { "id": "rear-delete", "viewId": "rear", "label": "Delete", "labelZh": "删除", "x": 601, "y": 428, "width": 42, "height": 84, "hitbox": { "x": 601, "y": 428, "width": 42, "height": 84 }, "kind": "button", "buttonKey": "delete", "bindingStatus": "host-logic-only", "firmwareBinding": "GPIO", "interaction": "momentary" }
+      ]
+    },
+    {
+      "id": "top",
+      "title": "顶面 / TOP · X2D II",
+      "titleZh": "顶面 · X2D II",
+      "titles": {
+        "en": "TOP · X2D II",
+        "zh_CN": "顶面 · X2D II",
+        "ja_JP": "上面 · X2D II",
+        "de_DE": "OBERSEITE · X2D II",
+        "fr_FR": "DESSUS · X2D II",
+        "es_ES": "SUPERIOR · X2D II"
+      },
+      "svg": "top.svg",
+      "width": 1000,
+      "height": 340,
+      "dynamicStates": [
+        { "id": "x2d-still-selected", "mode": "highlight-button", "buttonKey": "movieMode", "activeOpacity": 0.0, "inactiveOpacity": 1.0 },
+        { "id": "x2d-movie-selected", "mode": "highlight-button", "buttonKey": "movieMode", "activeOpacity": 1.0, "inactiveOpacity": 0.0 },
+        {
+          "id": "x2d-power-led",
+          "mode": "highlight-button",
+          "buttonKey": "power",
+          "activeOpacity": 1.0,
+          "inactiveOpacity": 0.15
+        }
+      ],
+      "controls": [
+        { "id": "top-focus-selector", "viewId": "top", "role": "focus-mode-segments", "label": "GFX focus mode", "labelZh": "GFX 对焦模式", "x": 53, "y": 72, "width": 123, "height": 43, "hitbox": { "x": 53, "y": 72, "width": 123, "height": 43 }, "kind": "switch", "buttonKey": "focusMode", "bindingStatus": "host-logic-only", "firmwareBinding": "GPIO", "interaction": "latching" },
+        { "id": "top-mode-dial", "viewId": "top", "role": "exposure-mode-button", "label": "M / Exposure mode", "labelZh": "M / 曝光模式", "x": 588, "y": 107, "width": 42, "height": 42, "hitbox": { "x": 588, "y": 107, "width": 42, "height": 42 }, "kind": "button", "componentId": "soc-adc", "settingKey": "modeDial", "bindingStatus": "host-adc-dial", "firmwareBinding": "ADC", "interaction": "inspect" },
+        { "id": "top-movie-mode", "viewId": "top", "label": "Still / Movie", "labelZh": "静态 / 视频", "x": 53, "y": 170, "width": 122, "height": 31, "hitbox": { "x": 53, "y": 170, "width": 122, "height": 31 }, "kind": "switch", "buttonKey": "movieMode", "bindingStatus": "host-logic-only", "firmwareBinding": "GPIO", "interaction": "latching" },
+        { "id": "top-shoulder", "viewId": "top", "label": "Top status display", "labelZh": "肩部状态屏", "x": 694, "y": 116, "width": 94, "height": 94, "hitbox": { "x": 694, "y": 116, "width": 94, "height": 94 }, "kind": "display", "displayPort": "display.shoulder", "cornerRadius": 6, "bindingStatus": "host-display-bridge", "firmwareBinding": "SUB-LCD", "interaction": "inspect" },
+        { "id": "top-power", "viewId": "top", "label": "ON / OFF Power", "labelZh": "电源开关", "x": 749, "y": 225, "width": 53, "height": 53, "hitbox": { "x": 749, "y": 225, "width": 53, "height": 53 }, "kind": "switch", "buttonKey": "power", "bindingStatus": "host-logic-only", "firmwareBinding": "POWER", "interaction": "latching" },
+        { "id": "top-drive", "viewId": "top", "label": "GFX drive mode", "labelZh": "GFX 驱动模式", "x": 53, "y": 206, "width": 122, "height": 31, "hitbox": { "x": 53, "y": 206, "width": 122, "height": 31 }, "kind": "button", "buttonKey": "drive", "bindingStatus": "host-logic-only", "firmwareBinding": "GPIO", "interaction": "momentary" },
+        { "id": "top-shutter-half", "viewId": "top", "label": "Shutter Half Press (S1)", "labelZh": "橙色快门半按 (AF/AE)", "x": 53, "y": 134, "width": 122, "height": 31, "hitbox": { "x": 53, "y": 134, "width": 122, "height": 31 }, "kind": "button", "buttonKey": "shutterHalf", "bindingStatus": "host-logic-only", "firmwareBinding": "GPIO", "interaction": "momentary" },
+        { "id": "top-shutter-full", "viewId": "top", "label": "Metallic Orange Shutter (S2)", "labelZh": "橙色快门全按", "x": 716, "y": 18, "width": 76, "height": 70, "hitbox": { "x": 716, "y": 18, "width": 76, "height": 70 }, "kind": "button", "buttonKey": "shutterFull", "bindingStatus": "host-logic-only", "firmwareBinding": "GPIO", "interaction": "momentary" },
+        { "id": "top-fn1", "viewId": "top", "label": "ISO-WB / GFX Fn1", "labelZh": "ISO-WB / GFX Fn1", "x": 637, "y": 107, "width": 42, "height": 42, "hitbox": { "x": 637, "y": 107, "width": 42, "height": 42 }, "kind": "button", "componentId": "soc-adc", "settingKey": "fn1Button", "bindingStatus": "host-adc-key", "firmwareBinding": "ADC", "interaction": "momentary" },
+        { "id": "top-fn2", "viewId": "top", "label": "WB / Fn2", "labelZh": "Fn2 快捷键", "x": 53, "y": 242, "width": 122, "height": 31, "hitbox": { "x": 53, "y": 242, "width": 122, "height": 31 }, "kind": "button", "componentId": "soc-adc", "settingKey": "fn2Button", "bindingStatus": "host-adc-key", "firmwareBinding": "ADC", "interaction": "momentary" }
+      ]
+    },
+    {
+      "id": "front",
+      "title": "正面 / FRONT · X2D II",
+      "titleZh": "正面 · X2D II",
+      "titles": {
+        "en": "FRONT · X2D II",
+        "zh_CN": "正面 · X2D II",
+        "ja_JP": "正面 · X2D II",
+        "de_DE": "FRONT · X2D II",
+        "fr_FR": "AVANT · X2D II",
+        "es_ES": "FRONTAL · X2D II"
+      },
+      "svg": "front.svg",
+      "width": 820,
+      "height": 720,
+      "layers": [
+        { "id": "x2d-lens-attached", "visibleWhen": { "componentId": "mount", "settingKey": "attached", "equals": true } },
+        { "id": "x2d-lens-detached", "visibleWhen": { "componentId": "mount", "settingKey": "attached", "equals": false } }
+      ],
+      "controls": [
+        { "id": "front-command-dial", "viewId": "front", "role": "front-command-dial", "label": "Front Control Dial", "labelZh": "前指令拨轮", "x": 57, "y": 197, "width": 127, "height": 42, "hitbox": { "x": 57, "y": 197, "width": 127, "height": 42 }, "kind": "dial", "buttonKey": "frontDialPress", "bindingStatus": "host-logic-only", "firmwareBinding": "GPIO", "interaction": "momentary" },
+        { "id": "front-fn4", "viewId": "front", "label": "Front Custom Button", "labelZh": "前部自定义键 Fn4", "x": 296, "y": 537, "width": 52, "height": 52, "hitbox": { "x": 296, "y": 537, "width": 52, "height": 52 }, "kind": "button", "buttonKey": "fn4", "bindingStatus": "host-logic-only", "firmwareBinding": "GPIO", "interaction": "momentary" },
+        { "id": "front-lens-release", "viewId": "front", "label": "Lens Release Button", "labelZh": "镜头释放按钮", "x": 700, "y": 538, "width": 56, "height": 56, "hitbox": { "x": 700, "y": 538, "width": 56, "height": 56 }, "kind": "button", "componentId": "mount", "bindingStatus": "host-config-inspect", "firmwareBinding": "MOUNT", "interaction": "inspect" },
+        { "id": "front-mount", "viewId": "front", "label": "Machined Silver Lens Mount", "labelZh": "精密银色镜头卡口", "x": 349, "y": 195, "width": 350, "height": 397, "hitbox": { "x": 349, "y": 195, "width": 350, "height": 397 }, "kind": "mount", "componentId": "mount", "bindingStatus": "host-config-inspect", "firmwareBinding": "MOUNT", "interaction": "inspect" }
+      ]
+    }
+  ]
+}

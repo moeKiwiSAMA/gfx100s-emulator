@@ -1,0 +1,15 @@
+# ==============================================================================
+# CMOS 取景样例 5：零依赖实时桌面 / 区域 / 游戏窗口抓屏取景（screen-capture）
+#
+# 使用方法：复制到 configs/components/cmos/cmos.yaml 生效。
+# 说明：后台守护线程异步抓取最新画面并写入无锁最新帧槽位，绝不阻塞模拟器主循环；
+#   在无图形界面的服务器/CI 环境下自动优雅回退到内置测试卡。
+#
+# 支持的 sourceFile URI 格式（可选 ?fps=1..60，默认 24）：
+#   - 主屏幕全屏抓取    ："screen://primary" 或 "screen://primary?fps=30"
+#   - 指定屏幕区域抓取  ："screen://region/0,0,1280,720?fps=24"
+#   - 指定游戏/应用窗口 ："window://Minecraft?fps=24"（需系统 PATH 含 ffmpeg；Windows 使用 gdigrab / Linux 使用 x11grab）
+# ==============================================================================
+sourceKind: "screen-capture"
+sourceFile: "screen://primary"
+loop: true

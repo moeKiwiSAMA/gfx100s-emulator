@@ -1,0 +1,2453 @@
+{
+  "schema": 1,
+  "id": "device.soc-uart",
+  "componentId": "soc-uart",
+  "depends": [],
+  "version": "0.0.1",
+  "name": "soc-uart",
+  "physicalIdentity": "UNKNOWN",
+  "implementationStatus": "PARTIAL",
+  "profiles": [
+    "disabled",
+    "retained-uart-experimental-v1",
+    "pl011-tx-ready-experimental-v1",
+    "pl011-multi-uart-experimental-v1"
+  ],
+  "implementationSources": [
+    "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+  ],
+  "ports": [
+    {
+      "id": "definition.soc-uart.uart-bank",
+      "size": 48,
+      "kind": "MMIO",
+      "byteOrder": "little",
+      "backing": {
+        "source": "component-owned state (retained u32 HYPOTHESIS)",
+        "permissions": "Aligned 32-bit RW/RO/WO per evidenced register; gaps 0x04..0x17 and 0x1c..0x23 refuse"
+      },
+      "registers": [
+        {
+          "id": "reg.soc-uart.uart-bank.o0",
+          "offset": 0,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-uart",
+          "name": "o0",
+          "namingBasis": "Section4/native-uart-03 write-only offset 0x00; physical register name UNKNOWN",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit initialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Refuse",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            "0x011dce88",
+            "0x011dccf4",
+            "0x011dcd24",
+            "0x011dcd3c",
+            "0x011dd3c8"
+          ],
+          "consumerPcs": [],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin"
+          ],
+          "tests": [
+            "components/soc-uart/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-uart.uart-bank.o0.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Raw UART bank write-only word at offset 0x00",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical TX/FIFO semantics."
+              ],
+              "nextValidation": "Compare writes with hardware UART."
+            }
+          ],
+          "unknowns": [
+            "Physical UART identity, FIFO, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Observe UART transactions."
+        },
+        {
+          "id": "reg.soc-uart.uart-bank.o18",
+          "offset": 24,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-uart",
+          "name": "o18",
+          "namingBasis": "Section4/native-uart-03 read-only offset 0x18; physical register name UNKNOWN",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit initialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "Refuse",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [
+            "0x011dcf74",
+            "0x011dcd30",
+            "0x011dd35c"
+          ],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin"
+          ],
+          "tests": [
+            "components/soc-uart/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-uart.uart-bank.o18.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Raw UART bank read-only word at offset 0x18",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical flag bits."
+              ],
+              "nextValidation": "Compare flag samples with hardware."
+            }
+          ],
+          "unknowns": [
+            "Physical flag bits and FIFO behavior remain UNKNOWN."
+          ],
+          "nextValidation": "Compare flag samples with hardware."
+        },
+        {
+          "id": "reg.soc-uart.uart-bank.o24",
+          "offset": 36,
+          "size": 4,
+          "count": 2,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-uart",
+          "name": "o24",
+          "namingBasis": "Section4/native-uart-03 write-only offsets 0x24 and 0x28; physical register names UNKNOWN",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit initialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Refuse",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            "0x011dce88",
+            "0x011dccf4",
+            "0x011dcd24",
+            "0x011dcd3c",
+            "0x011dd3c8"
+          ],
+          "consumerPcs": [],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin"
+          ],
+          "tests": [
+            "components/soc-uart/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-uart.uart-bank.o24.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Raw UART bank write-only words at offsets 0x24 and 0x28",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical divider/line-control semantics."
+              ],
+              "nextValidation": "Compare writes with hardware UART."
+            }
+          ],
+          "unknowns": [
+            "Physical UART identity and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Observe UART configuration writes."
+        },
+        {
+          "id": "reg.soc-uart.uart-bank.o2c",
+          "offset": 44,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-uart",
+          "name": "o2c",
+          "namingBasis": "Section4/native-uart-03 read-write offset 0x2C; physical register name UNKNOWN",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit initialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            "0x011dce88",
+            "0x011dccf4",
+            "0x011dcd24",
+            "0x011dcd3c",
+            "0x011dd3c8"
+          ],
+          "consumerPcs": [
+            "0x011dcf74",
+            "0x011dcd30",
+            "0x011dd35c"
+          ],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin"
+          ],
+          "tests": [
+            "components/soc-uart/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-uart.uart-bank.o2c.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Raw UART bank read-write word at offset 0x2C",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings."
+              ],
+              "nextValidation": "Compare guest readbacks with hardware."
+            }
+          ],
+          "unknowns": [
+            "Physical UART identity and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Observe subsequent firmware configuration."
+        }
+      ],
+      "unknownCoverage": "All gaps not listed by registers (0x04..0x17 and 0x1c..0x23) are UNKNOWN and refused by the known device.",
+      "implementationSources": [
+        "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+      ]
+    },
+    {
+      "id": "definition.soc-uart.uart-config",
+      "size": 4,
+      "kind": "MMIO",
+      "byteOrder": "little",
+      "backing": {
+        "source": "component-owned state (retained u32 HYPOTHESIS)",
+        "permissions": "Aligned 32-bit RW"
+      },
+      "registers": [
+        {
+          "id": "reg.soc-uart.uart-config.o0",
+          "offset": 0,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-uart",
+          "name": "uart-config",
+          "namingBasis": "Section4 caller 011DD27C selects bank 0..2 and writes offset 30h",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit initialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            "0x011dd324",
+            "0x011dd264",
+            "0x011dd114"
+          ],
+          "consumerPcs": [
+            "0x011dd244",
+            "0x011dd1f4",
+            "0x011dd0e0",
+            "0x011dd1a8"
+          ],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin"
+          ],
+          "tests": [
+            "components/soc-uart/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-uart.uart-config.o0.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Raw UART configuration word at offset 0x30",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical register meaning and read value."
+              ],
+              "nextValidation": "Observe later reads and selected bank."
+            }
+          ],
+          "unknowns": [
+            "Physical UART identity and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Observe subsequent firmware configuration."
+        }
+      ],
+      "unknownCoverage": "All gaps not listed by registers are UNKNOWN and refused by the known device.",
+      "implementationSources": [
+        "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+      ]
+    },
+    {
+      "id": "definition.soc-uart.uart-tail",
+      "size": 8,
+      "kind": "MMIO",
+      "byteOrder": "little",
+      "backing": {
+        "source": "component-owned state (retained u32 HYPOTHESIS)",
+        "permissions": "Aligned 32-bit RW"
+      },
+      "registers": [
+        {
+          "id": "reg.soc-uart.uart-tail.o0",
+          "offset": 0,
+          "size": 4,
+          "count": 2,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-uart",
+          "name": "uart-tail",
+          "namingBasis": "Section4 011DD3E8/3FC and 011DCDE4/DF0 perform word RMW at offsets 34h and 38h",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit initialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            "0x011dd3fc",
+            "0x011dcdf0",
+            "0x011dcd98"
+          ],
+          "consumerPcs": [
+            "0x011dd3e8",
+            "0x011dcde4",
+            "0x011dcd8c"
+          ],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin"
+          ],
+          "tests": [
+            "components/soc-uart/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-uart.uart-tail.o0.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Raw UART tail word at offsets 0x34 and 0x38",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical effects of the written bits."
+              ],
+              "nextValidation": "Compare guest readback with hardware."
+            }
+          ],
+          "unknowns": [
+            "Physical UART identity and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Observe subsequent firmware configuration."
+        }
+      ],
+      "unknownCoverage": "All gaps not listed by registers are UNKNOWN and refused by the known device.",
+      "implementationSources": [
+        "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+      ]
+    },
+    {
+      "id": "definition.soc-uart.pl011-channel",
+      "size": 76,
+      "kind": "MMIO",
+      "byteOrder": "little",
+      "backing": {
+        "source": "component-owned multi-channel PL011 state (HYPOTHESIS TXFE|RXFE=0x90)",
+        "permissions": "Aligned 32-bit RW/RO/WO per DAT-evidenced PL011 register; intermediate holes refuse"
+      },
+      "registers": [
+        {
+          "id": "reg.soc-uart.pl011-channel.dr",
+          "offset": 0,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-uart",
+          "name": "dr",
+          "namingBasis": "PL011 UARTDR at +0x00 across channels 0..2 (0x011DCC00..0x011DD480)",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS functional reset; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            "0x011dce88"
+          ],
+          "consumerPcs": [
+            "0x011dced0"
+          ],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin"
+          ],
+          "tests": [
+            "components/soc-uart/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+              ]
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-uart.pl011-channel.dr.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "PL011 data register (TX write / empty RX read 0)",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": [
+                    "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+                  ]
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical reset value and timing remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest accesses against hardware captures."
+            }
+          ],
+          "unknowns": [
+            "Physical reset value, timing, and full hardware side effects remain UNKNOWN."
+          ],
+          "nextValidation": "Validate against real hardware register captures."
+        },
+        {
+          "id": "reg.soc-uart.pl011-channel.fr",
+          "offset": 24,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-uart",
+          "name": "fr",
+          "namingBasis": "PL011 UARTFR at +0x18 (TXFE=1, RXFE=1, BUSY=0 -> 0x90)",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS functional reset; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "Refuse",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [
+            "0x011dcf74"
+          ],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin"
+          ],
+          "tests": [
+            "components/soc-uart/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+              ]
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-uart.pl011-channel.fr.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "PL011 flag register returning 0x90 (TXFE|RXFE)",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": [
+                    "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+                  ]
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical reset value and timing remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest accesses against hardware captures."
+            }
+          ],
+          "unknowns": [
+            "Physical reset value, timing, and full hardware side effects remain UNKNOWN."
+          ],
+          "nextValidation": "Validate against real hardware register captures."
+        },
+        {
+          "id": "reg.soc-uart.pl011-channel.ibrd",
+          "offset": 36,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-uart",
+          "name": "ibrd",
+          "namingBasis": "PL011 UARTIBRD at +0x24",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS functional reset; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            "0x011dccf4"
+          ],
+          "consumerPcs": [],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin"
+          ],
+          "tests": [
+            "components/soc-uart/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+              ]
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-uart.pl011-channel.ibrd.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "PL011 integer baud-rate divisor",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": [
+                    "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+                  ]
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical reset value and timing remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest accesses against hardware captures."
+            }
+          ],
+          "unknowns": [
+            "Physical reset value, timing, and full hardware side effects remain UNKNOWN."
+          ],
+          "nextValidation": "Validate against real hardware register captures."
+        },
+        {
+          "id": "reg.soc-uart.pl011-channel.fbrd",
+          "offset": 40,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-uart",
+          "name": "fbrd",
+          "namingBasis": "PL011 UARTFBRD at +0x28",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS functional reset; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            "0x011dcd24"
+          ],
+          "consumerPcs": [],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin"
+          ],
+          "tests": [
+            "components/soc-uart/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+              ]
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-uart.pl011-channel.fbrd.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "PL011 fractional baud-rate divisor",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": [
+                    "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+                  ]
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical reset value and timing remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest accesses against hardware captures."
+            }
+          ],
+          "unknowns": [
+            "Physical reset value, timing, and full hardware side effects remain UNKNOWN."
+          ],
+          "nextValidation": "Validate against real hardware register captures."
+        },
+        {
+          "id": "reg.soc-uart.pl011-channel.lcr-h",
+          "offset": 44,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-uart",
+          "name": "lcr-h",
+          "namingBasis": "PL011 UARTLCR_H at +0x2C",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS functional reset; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            "0x011dcd3c",
+            "0x011dd16c",
+            "0x011dd3c8"
+          ],
+          "consumerPcs": [
+            "0x011dcd30",
+            "0x011dd160",
+            "0x011dd35c"
+          ],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin"
+          ],
+          "tests": [
+            "components/soc-uart/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+              ]
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-uart.pl011-channel.lcr-h.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "PL011 line control register",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": [
+                    "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+                  ]
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical reset value and timing remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest accesses against hardware captures."
+            }
+          ],
+          "unknowns": [
+            "Physical reset value, timing, and full hardware side effects remain UNKNOWN."
+          ],
+          "nextValidation": "Validate against real hardware register captures."
+        },
+        {
+          "id": "reg.soc-uart.pl011-channel.cr",
+          "offset": 48,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-uart",
+          "name": "cr",
+          "namingBasis": "PL011 UARTCR at +0x30 (bit0 UARTEN)",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS functional reset; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            "0x011dd114",
+            "0x011dd264",
+            "0x011dd324"
+          ],
+          "consumerPcs": [
+            "0x011dd0e0",
+            "0x011dd1a8",
+            "0x011dd1f4",
+            "0x011dd244"
+          ],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin"
+          ],
+          "tests": [
+            "components/soc-uart/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+              ]
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-uart.pl011-channel.cr.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "PL011 control register (bit0 UARTEN ungates clock on ch1)",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": [
+                    "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+                  ]
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical reset value and timing remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest accesses against hardware captures."
+            }
+          ],
+          "unknowns": [
+            "Physical reset value, timing, and full hardware side effects remain UNKNOWN."
+          ],
+          "nextValidation": "Validate against real hardware register captures."
+        },
+        {
+          "id": "reg.soc-uart.pl011-channel.ifls",
+          "offset": 52,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-uart",
+          "name": "ifls",
+          "namingBasis": "PL011 UARTIFLS at +0x34",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS functional reset; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            "0x011dd3fc"
+          ],
+          "consumerPcs": [
+            "0x011dd3e8"
+          ],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin"
+          ],
+          "tests": [
+            "components/soc-uart/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+              ]
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-uart.pl011-channel.ifls.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "PL011 interrupt FIFO level select register",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": [
+                    "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+                  ]
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical reset value and timing remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest accesses against hardware captures."
+            }
+          ],
+          "unknowns": [
+            "Physical reset value, timing, and full hardware side effects remain UNKNOWN."
+          ],
+          "nextValidation": "Validate against real hardware register captures."
+        },
+        {
+          "id": "reg.soc-uart.pl011-channel.imsc",
+          "offset": 56,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-uart",
+          "name": "imsc",
+          "namingBasis": "PL011 UARTIMSC at +0x38",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS functional reset; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            "0x011dcd98",
+            "0x011dcdf0",
+            "0x011dce50"
+          ],
+          "consumerPcs": [
+            "0x011dcd8c",
+            "0x011dcde4"
+          ],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin"
+          ],
+          "tests": [
+            "components/soc-uart/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+              ]
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-uart.pl011-channel.imsc.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "PL011 interrupt mask set/clear register",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": [
+                    "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+                  ]
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical reset value and timing remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest accesses against hardware captures."
+            }
+          ],
+          "unknowns": [
+            "Physical reset value, timing, and full hardware side effects remain UNKNOWN."
+          ],
+          "nextValidation": "Validate against real hardware register captures."
+        },
+        {
+          "id": "reg.soc-uart.pl011-channel.ris",
+          "offset": 60,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-uart",
+          "name": "ris",
+          "namingBasis": "PL011 UARTRIS at +0x3C",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS functional reset; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "Refuse",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [
+            "0x011dcfc0"
+          ],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin"
+          ],
+          "tests": [
+            "components/soc-uart/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+              ]
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-uart.pl011-channel.ris.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "PL011 raw interrupt status register",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": [
+                    "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+                  ]
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical reset value and timing remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest accesses against hardware captures."
+            }
+          ],
+          "unknowns": [
+            "Physical reset value, timing, and full hardware side effects remain UNKNOWN."
+          ],
+          "nextValidation": "Validate against real hardware register captures."
+        },
+        {
+          "id": "reg.soc-uart.pl011-channel.mis",
+          "offset": 64,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-uart",
+          "name": "mis",
+          "namingBasis": "PL011 UARTMIS at +0x40 (RIS & IMSC)",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS functional reset; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "Refuse",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [
+            "0x011dd008"
+          ],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin"
+          ],
+          "tests": [
+            "components/soc-uart/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+              ]
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-uart.pl011-channel.mis.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "PL011 masked interrupt status register",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": [
+                    "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+                  ]
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical reset value and timing remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest accesses against hardware captures."
+            }
+          ],
+          "unknowns": [
+            "Physical reset value, timing, and full hardware side effects remain UNKNOWN."
+          ],
+          "nextValidation": "Validate against real hardware register captures."
+        },
+        {
+          "id": "reg.soc-uart.pl011-channel.icr",
+          "offset": 68,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-uart",
+          "name": "icr",
+          "namingBasis": "PL011 UARTICR at +0x44 (W1C)",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS functional reset; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Refuse",
+            "write": "component behaviorId",
+            "w1c": "clears matching bits in UARTRIS",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            "0x011dd050"
+          ],
+          "consumerPcs": [],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin"
+          ],
+          "tests": [
+            "components/soc-uart/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+              ]
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-uart.pl011-channel.icr.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "PL011 interrupt clear register (W1C on RIS)",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": [
+                    "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+                  ]
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical reset value and timing remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest accesses against hardware captures."
+            }
+          ],
+          "unknowns": [
+            "Physical reset value, timing, and full hardware side effects remain UNKNOWN."
+          ],
+          "nextValidation": "Validate against real hardware register captures."
+        },
+        {
+          "id": "reg.soc-uart.pl011-channel.dmacr",
+          "offset": 72,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-uart",
+          "name": "dmacr",
+          "namingBasis": "PL011 UARTDMACR at +0x48",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS functional reset; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            "0x011dcca4"
+          ],
+          "consumerPcs": [
+            "0x011dcc8c",
+            "0x011dd09c"
+          ],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin"
+          ],
+          "tests": [
+            "components/soc-uart/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+              ]
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-uart.pl011-channel.dmacr.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "PL011 DMA control register",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": [
+                    "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+                  ]
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical reset value and timing remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest accesses against hardware captures."
+            }
+          ],
+          "unknowns": [
+            "Physical reset value, timing, and full hardware side effects remain UNKNOWN."
+          ],
+          "nextValidation": "Validate against real hardware register captures."
+        }
+      ],
+      "unknownCoverage": "All gaps not listed by registers within [0, 0x4C) are UNKNOWN and refused.",
+      "implementationSources": [
+        "components/soc-uart/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/uart/UartFactory.kt"
+      ]
+    }
+  ],
+  "unknowns": [
+    "Physical UART device identity, reset values, FIFO/IRQ behavior, and timing are not qualified."
+  ],
+  "nextValidation": "Compare UART bank, config, and tail accesses with real hardware."
+}

@@ -1,0 +1,41 @@
+{
+  "schema": 1,
+  "evidenceClass": "SOURCE",
+  "url": "https://www.fujifilm-x.com/global/products/cameras/gfx-eterna-55/simulator/",
+  "observedAtUtc": "2026-11-10T03:34:42.482Z",
+  "observationMethod": "View of two actual browser screenshots captured after normal authorized browser entry succeeded; no screenshots are redistributed.",
+  "model": "GFX ETERNA 55",
+  "applicability": "Visual/interaction reference only; GFX100S physical layout remains based on its own official manual and images.",
+  "modelLayoutCopied": false,
+  "firmwarePixelsCopied": false,
+  "screenshots": [
+    {
+      "state": "home",
+      "privateRelativePath": "local/eterna-reference-observation-01/home.png",
+      "bytes": 67476,
+      "sha256": "dba9c98c8b503a38065262572d34483d52d42263f1806cebde55546d70a4d098",
+      "fileModifiedAtUtc": "2026-11-10T03:19:59.684Z",
+      "inspectedByDesignAgent": true
+    },
+    {
+      "state": "menu",
+      "privateRelativePath": "local/eterna-reference-observation-01/menu.png",
+      "bytes": 65140,
+      "sha256": "3c5822a01b5e92d6ce9e50235a8f5d083c7598ea8abe6410fe06ef86f8926af2",
+      "fileModifiedAtUtc": "2026-11-10T03:20:30.199Z",
+      "inspectedByDesignAgent": true
+    }
+  ],
+  "observations": [
+    "Product body forms the interaction surface.",
+    "Dark material layers, inset black display and engraved white physical labels.",
+    "Round buttons, ribbed dial and transparent hotspots retain physical positions.",
+    "Home and menu demonstration images are host simulation and do not establish GFX100S firmware output."
+  ],
+  "limitations": [
+    "The supplied screenshots are cropped browser viewport observations, not a measured complete 3D/CAD model.",
+    "The original ETERNA camera controls and screen content are not reused in the GFX100S artwork.",
+    "Material gradients and studio composition remain original design interpretation."
+  ],
+  "id": "GFX-STYLE-ETERNASIM-001"
+}

@@ -1,0 +1,178 @@
+# ==============================================================================
+# FUJIFILM GFX100S (固件 2.13) 模拟器主运行配置 — Linux x86_64 发行版
+#
+# 本文件位于发行包最外层 configs/emulator.yaml。
+# 默认以 `relaxed`（日常无限指令游玩模式）启动：
+#   - 持续运行至用户关闭窗口，不会因为指令上限或未建模的外设寄存器而中断；
+#   - 重启自动持久化可写 Flash 与双槽位 SD 卡内容。
+#
+# 如需切换研究/调试模式，请参考同级目录下的 configs/examples/ 样例文件：
+#   - configs/examples/emulator-relaxed-default.yaml    （默认日常游玩模式）
+#   - configs/examples/emulator-discovery-research.yaml （外设探索与有限预算研究模式）
+#   - configs/examples/emulator-strict-gate.yaml        （严格硬件门控校验模式）
+# ==============================================================================
+
+# 配置文件架构版本（固定为 1）
+schema: 1
+
+# 硬件组件 JAR、二进制资产与虚拟 SD 卡根目录（相对于发行包根目录）
+components: runtime/compoments
+
+# 独立外置的组件配置目录（所有 .yaml / .json 均在此目录下，方便直接编辑）
+componentConfigs: configs/components
+
+# 本地 HTTP 控制与状态查询接口端口（0 表示禁用或随机端口，默认 8787 -> http://127.0.0.1:8787）
+httpPort: 8787
+
+# 固件内存布局与 MMIO 设备地址元数据（由编译后地址目录生成，与下方启用的设备配置严格匹配）
+firmwareMetadata: configs/firmware/gfx100s-213-release.yaml
+
+# 64 MiB 片上 QSPI NOR Flash 镜像（默认位于发行包最外层 flash/nor-flash.bin，预刷 FUJIFILM GFX100S 2.13 原厂固件 + 无隐私出厂校准分区，直接从 Flash 启动）
+# 可通过主机工具（--flash-dat / /flash write / UI Flash 菜单）或相机内 DISP/BACK 固件升级直接刷写任意 2.13 原厂或自定义固件。
+norFlashFile: flash/nor-flash.bin
+
+# 不可变原厂 2.13 出厂 Flash 模板（用于一键恢复出厂 Flash，删除 flash/nor-flash.bin 后启动亦会自动重建）
+factoryFlashFile: runtime/templates/factory-flash/nor-flash-2.13.bin
+
+# SPX4 32 KiB BootROM 掩膜镜像（位于发行包最外层 bootrom/boot-rom.bin，SHA-256 校验，供真机冷启动路径使用）
+bootRomFile: bootrom/boot-rom.bin
+# 默认通过已验证的 Flash-Direct 从 flash/nor-flash.bin 启动；如需实验性完整 BootROM 冷启（PC=0xFFF00000），取消下一行注释或使用 --boot-rom 启动参数
+# bootRomBoot: true
+
+# CPU 执行引擎（原生 Dynarmic ARMv7-A AVX2 JIT 引擎 runtime/native/libfuji_dynarmic.so，纯 MIT 许可）
+cpuEngine: dynarmic
+
+# 多核宿主机线程并行执行开关（仅在 relaxed + dynarmic 下生效）：
+#   - true（relaxed 默认）：当 2..4 个 ARM 核心同时可运行时在独立宿主机线程并行执行，单核活跃时自动零开销直通；
+#   - false：强制单线程时间片轮转（兼容调试或排查时序问题）；亦可通过 -Dfuji.smp.host.threads=false 或 --smp-host-threads false 覆盖。
+smpHostThreads: true
+
+# 指令执行预算：
+#   - relaxed 模式支持 `unlimited`（无限运行，推荐日常游玩）或正整数；
+#   - discovery / strict 模式必须填写有限正整数（1..300000000）。
+instructionBudget: unlimited
+
+# 内存/MMIO 事务追踪环形缓冲区容量
+transactionLimit: 65536
+
+# 运行模式：
+#   - relaxed   ：日常完整游玩模式（自动持久化 Flash、自动初始化双 SD 卡目录、未建模 MMIO 柔和保值）
+#   - discovery ：外设发现与研究模式（有限指令预算，开启外设访问记录，拒绝宽松补丁）
+#   - strict    ：严格门控模式（拒绝一切未建模外设访问与自定义固件）
+executionMode: relaxed
+
+# relaxed 模式全量 DDR 内存窗口扩展（补齐开机、取景、菜单与回放所需的全部高地址 DDR 区域）
+relaxedBootstrapRam: gfx100s-full-boot-ddr-v1
+
+# 启用本机音频输出（对接 WM8962 编解码器与双路 I2S 音频 DMA，播放快门/操作提示音）
+audio: true
+
+# 实时时钟节拍限速（将 54 MHz 虚拟硬件时钟对齐宿主机 1.0x 真实时间，避免 OOBE/菜单空闲期 WFI 加速导致 10 秒触发 2 分钟自动关机黑屏）
+realTimePacer:
+  enabled: true
+  targetRatio: 1.0
+  ticksPerRealSecond: 54000000
+
+# 匿名运行遥测与退出日志上报（默认关闭；如需开启可将 enabled 改为 true）
+telemetry:
+  enabled: false
+  endpoint: https://fuji-ingest.kiwi.cat
+  ingestToken: fuji-ingest-dev-token
+  uploadLogOnExit: true
+
+# 编译后的全量硬件寄存器地址字典（供调试器与外设诊断使用）
+addressDictionary: configs/catalog.compiled.json
+
+# ==================== 4 核 ARMv7-A Cortex-A7 (SPX4) 处理器配置 ====================
+# 启用四核 SMP 调度模型
+clusterProfile: four-context-functional-experimental-v1
+
+# 四核复位释放节拍表：Core 0 立即启动，Core 1..3 在 32768 节拍后由次核调度释放
+clusterReset:
+  profile: secondary-reset-schedule-experimental-v1
+  releaseTicks:
+    - 0
+    - 32768
+    - 32768
+    - 32768
+
+# 启用 ARMv7 短描述符原生 MMU 页表翻译
+mmuProfile: arm-short-descriptor-native-experimental-v1
+
+# 启用多核原子独占访存（LDREX/STREX，64 字节保留粒度）
+wordExclusive:
+  profile: arm-byte-halfword-word-exclusive-logical-experimental-v3
+  reservationGranule: 64
+
+# Cortex-A7 外设基址寄存器 CBAR（0xFFFF0000，对应 GICD=0xFFFF1000 / GICC=0xFFFF2000）
+cbarInput: 4294901760
+
+# 空闲时钟快进策略（全核 WFI 休眠时直接推进至下一个定时器/外设事件，显著降低空闲 CPU 占用）
+idleClock:
+  profile: next-deadline-functional-experimental-v1
+  maxAdvances: 65536
+  maxIdleTicks: 1000000000
+
+# 启用 VFP/NEON 延迟禁用未定义异常与原生预取中止入口
+undefinedExceptionProfile: arm-vfp-disabled-undefined-experimental-v1
+prefetchAbortProfile: arm32-native-prefetch-entry-experimental-v1
+
+# ==================== Flash 持久化与电源控制器配置 ====================
+# 可写 Flash 分区四元组、校验电源块、次级读取对与 504 KiB 写时复制（COW）集合
+flashPartitionScope: dat-partition-octet-experimental-v3
+powerBlockScope: dat-checksummed-four-halfword-experimental-v1
+powerRegister2Bit8Profile: masked-bit8-retained-experimental-v1
+flashReadPairScope: dat-secondary-read-pair-experimental-v1
+flashWritableSetScope: dat-bkup-octet-secondary504-write-set-experimental-v2
+
+# ==================== 外设协调与影像管线完成信号配置 ====================
+discovery:
+  profile: gfx100s-sd-finite-lens-completion-a300-diagnostic-v1
+  logCapacity: 4096
+  diskBudgetBytes: 268435456
+  # UniResz 缩放引擎（0xFFF7F000 / IRQ 133）与 0xFFF7E000 / IRQ 132 完成信号
+  imageScalerF000: fff7f000-irq133-completion-v1
+  imageScalerE000: fff7e000-irq132-completion-v1
+  # 回放 DSP（0xFA000000）就绪状态、ISP 时序同步与人脸检测就绪状态
+  playDspFa00: fa000000-ready-idle-v1
+  ispAutoSync: isp-tg-auto-sync-v1
+  imageFace7c000: face-detect-irq123-v1
+  # 双 SD 卡槽 PHY 保留寄存器种子（对应槽位 0 与槽位 1）
+  inputs:
+    gfx100s.sd.slot0.phy.candidate:
+      strategy: retained-bytes
+      file: configs/discovery/slot0-phy.seed.bin
+      sha256: 41c3901f093c7786f252f0a02279a7e750952c3479b7d48144c5239b9a846259
+    gfx100s.sd.slot1.phy.candidate:
+      strategy: retained-bytes
+      file: configs/discovery/slot1-phy.seed.bin
+      sha256: 41c3901f093c7786f252f0a02279a7e750952c3479b7d48144c5239b9a846259
+
+# ==================== 已启用的 26 个片上外设（SoC）组件列表 ====================
+enabledDevices:
+  - soc-gpio           # 机身按键、拨盘、STILL/MOVIE 切换杆与双卡槽插入检测 GPIO
+  - soc-timer          # 54 MHz 8 通道硬件定时器（Ch6 显示 / Ch7 RTOS 节拍）
+  - soc-dma            # 系统多通道 DMA 引擎（Flash、SPI、串口、音频 I2S 等）
+  - soc-configuration  # 系统配置与启动参数寄存器
+  - soc-flash          # QSPI NOR Flash 控制器（对接可写 COW 镜像）
+  - soc-gic            # ARM GICv2 四核中断控制器
+  - soc-keyed-io       # 密钥化 I/O 寄存器窗口
+  - soc-system-control # 系统时钟、电源门控与复位控制
+  - soc-method4        # Method4 固件解压缩硬件加速器
+  - soc-spi            # 多路 SPI 控制器（电源微控、镜头通信、肩屏、WM8962 音频）
+  - soc-adc            # 12 通道 SAR ADC 按键阶梯（MENU/OK、Q、Fn、方向键等）
+  - soc-i2c            # I2C 控制器（I2C1 眼传感器 @ 0x39、I2C2 电容触摸屏 @ 0x55）
+  - soc-selection      # 片上复用与选择字寄存器
+  - soc-temperature    # 机内温度传感器接口
+  - soc-dram           # DRAM 控制器与初始化命令模式
+  - soc-serial-engine  # CSIO 串行引擎（负责取景切换/菜单/回放等状态同步）
+  - soc-sd-host        # 双卡槽 SDHCI/UHS-I/II 主机控制器（v9 全功能）
+  - soc-sdio           # SDHCI v3.00 无线 SDIO 主机控制器（0xFFFCC000，GIC 224/225，对接 BCM43438A1）
+  - soc-vglib-init     # VGLIB 2D 绘图加速与 LCDC1(后屏)/LCDC0(EVF) 扫描输出控制器
+  - soc-hdmi           # HDMI 接口控制器
+  - soc-panel          # 显示面板初始化控制器
+  - soc-uart           # PL011 串口控制器
+  - soc-isp-cmd        # ISP 命令队列控制器
+  - soc-isp-setup      # ISP 初始化与双路 I2S 音频 DMA 接口
+  - soc-isp            # 图像信号处理器（CMOS 实时取景、测光与统计块）
+  - soc-jpeg           # 硬件 JPEG 编解码引擎（支持拍照硬件编码与回放硬件解码）

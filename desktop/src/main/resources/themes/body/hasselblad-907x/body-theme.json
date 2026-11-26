@@ -1,0 +1,132 @@
+{
+  "schema": 2,
+  "id": "hasselblad-907x",
+  "name": "Hasselblad 907X & CFV 100C",
+  "nameZh": "哈苏 907X & CFV 100C",
+  "description": "Modular medium-format digital back with satin chrome trim, grained black leatherette, minimalist waist-level rear deck, and classic 3-panel layout.",
+  "descriptionZh": "经典模块化中画幅数码后背：拉丝镀铬边框、荔枝纹黑蒙皮、极简腰平取景背面与三面板布局。",
+  "recommendedUiTheme": "daylight-studio",
+  "i18n": {
+    "names": {
+      "en": "Hasselblad 907X & CFV 100C",
+      "zh_CN": "哈苏 907X & CFV 100C",
+      "ja_JP": "ハッセルブラッド 907X & CFV 100C",
+      "de_DE": "Hasselblad 907X & CFV 100C",
+      "fr_FR": "Hasselblad 907X & CFV 100C",
+      "es_ES": "Hasselblad 907X & CFV 100C"
+    },
+    "descriptions": {
+      "en": "Modular medium-format digital back with satin chrome trim, grained black leatherette, minimalist waist-level rear deck, and classic 3-panel layout.",
+      "zh_CN": "经典模块化中画幅数码后背：拉丝镀铬边框、荔枝纹黑蒙皮、极简腰平取景背面与三面板布局。",
+      "ja_JP": "モジュラー中判デジタルバック：サテンクローム枠、シボ革外装、ミニマルな背面デッキの3パネル構成。",
+      "de_DE": "Modulares Mittelformat-Digitalrückteil mit satiniertem Chromrahmen, genarbtem Lederbezug und minimalistischem 3-Panel-Layout.",
+      "fr_FR": "Dos numérique moyen format modulaire à bordure chrome satiné, cuir grainé noir et agencement minimaliste à 3 panneaux.",
+      "es_ES": "Respaldo digital modular de formato medio con marco cromado satinado, piel granulada negra y diseño minimalista de 3 paneles."
+    }
+  },
+  "brandLabel": "HASSELBLAD",
+  "modelLabel": "907X & CFV 100C",
+  "layout": {
+    "width": 1420,
+    "height": 840,
+    "entryMinWidth": 340,
+    "configuration": { "x": 910, "y": 10, "width": 500, "height": 820 },
+    "faces": {
+      "top":   { "slot": { "x": 10,  "y": 10,  "width": 890, "height": 270 }, "crop": { "x": 0, "y": 0, "width": 900, "height": 320 }, "rotationDegrees": 0 },
+      "rear":  { "slot": { "x": 10,  "y": 290, "width": 470, "height": 540 }, "crop": { "x": 0, "y": 0, "width": 900, "height": 740 }, "rotationDegrees": 0 },
+      "front": { "slot": { "x": 490, "y": 290, "width": 410, "height": 540 }, "crop": { "x": 0, "y": 0, "width": 820, "height": 740 }, "rotationDegrees": 0 }
+    }
+  },
+  "views": [
+    {
+      "id": "rear",
+      "title": "后背 / REAR · CFV 100C",
+      "titleZh": "后背 · CFV 100C",
+      "titles": {
+        "en": "REAR · CFV 100C",
+        "zh_CN": "后背 · CFV 100C",
+        "ja_JP": "背面 · CFV 100C",
+        "de_DE": "RÜCKSEITE · CFV 100C",
+        "fr_FR": "ARRIÈRE · CFV 100C",
+        "es_ES": "TRASERA · CFV 100C"
+      },
+      "svg": "rear.svg",
+      "dynamicStates": [
+        { "id": "cfv-power-led", "mode": "highlight-button", "buttonKey": "power", "activeOpacity": 1.0, "inactiveOpacity": 0.15 }
+      ],
+      "width": 900,
+      "height": 740,
+      "controls": [
+        { "id": "rear-lcd", "viewId": "rear", "label": "CFV 100C Tilting Touch LCD", "labelZh": "CFV 100C 翻转触控屏", "x": 195, "y": 167, "width": 468, "height": 351, "hitbox": { "x": 195, "y": 167, "width": 468, "height": 351 }, "kind": "display", "displayPort": "display.main", "cornerRadius": 6, "bindingStatus": "host-display-bridge", "firmwareBinding": "LCDC1+TOUCH", "interaction": "inspect" },
+        { "id": "top-power", "viewId": "rear", "label": "CFV Power", "labelZh": "电源开关", "x": 565, "y": 545, "width": 70, "height": 34, "hitbox": { "x": 565, "y": 545, "width": 70, "height": 34 }, "kind": "switch", "buttonKey": "power", "bindingStatus": "host-logic-only", "firmwareBinding": "POWER", "interaction": "latching" },
+        { "id": "rear-play", "viewId": "rear", "label": "Playback", "labelZh": "回放", "x": 479, "y": 545, "width": 70, "height": 34, "hitbox": { "x": 479, "y": 545, "width": 70, "height": 34 }, "kind": "button", "buttonKey": "play", "bindingStatus": "host-logic-only", "firmwareBinding": "GPIO", "interaction": "momentary" },
+        { "id": "rear-delete", "viewId": "rear", "label": "Delete", "labelZh": "删除", "x": 307, "y": 545, "width": 70, "height": 34, "hitbox": { "x": 307, "y": 545, "width": 70, "height": 34 }, "kind": "button", "buttonKey": "delete", "bindingStatus": "host-logic-only", "firmwareBinding": "GPIO", "interaction": "momentary" },
+        { "id": "rear-menu", "viewId": "rear", "label": "MENU / OK", "labelZh": "菜单 / 确认", "x": 221, "y": 545, "width": 70, "height": 34, "hitbox": { "x": 221, "y": 545, "width": 70, "height": 34 }, "kind": "button", "buttonKey": "menu", "bindingStatus": "host-logic-only", "firmwareBinding": "GPIO", "interaction": "momentary" },
+        { "id": "rear-back", "viewId": "rear", "label": "DISP / BACK", "labelZh": "返回 / 显示", "x": 393, "y": 545, "width": 70, "height": 34, "hitbox": { "x": 393, "y": 545, "width": 70, "height": 34 }, "kind": "button", "buttonKey": "back", "bindingStatus": "host-logic-only", "firmwareBinding": "GPIO", "interaction": "momentary" },
+        { "id": "rear-af-on", "viewId": "rear", "label": "AF / Exposure Lock", "labelZh": "AF-ON 对焦锁", "x": 539, "y": 652, "width": 89, "height": 48, "hitbox": { "x": 539, "y": 652, "width": 89, "height": 48 }, "kind": "button", "buttonKey": "afOn", "bindingStatus": "host-logic-only", "firmwareBinding": "GPIO", "interaction": "momentary" },
+        { "id": "rear-nav-left", "viewId": "rear", "label": "Nav Left", "labelZh": "左", "x": 154, "y": 652, "width": 64, "height": 48, "hitbox": { "x": 154, "y": 652, "width": 64, "height": 48 }, "kind": "button", "buttonKey": "left", "bindingStatus": "host-logic-only", "firmwareBinding": "GPIO", "interaction": "momentary" },
+        { "id": "rear-nav-up", "viewId": "rear", "label": "Nav Up", "labelZh": "上", "x": 231, "y": 652, "width": 64, "height": 48, "hitbox": { "x": 231, "y": 652, "width": 64, "height": 48 }, "kind": "button", "buttonKey": "up", "bindingStatus": "host-logic-only", "firmwareBinding": "GPIO", "interaction": "momentary" },
+        { "id": "rear-nav-center", "viewId": "rear", "label": "Focus Center", "labelZh": "对焦居中", "x": 308, "y": 652, "width": 64, "height": 48, "hitbox": { "x": 308, "y": 652, "width": 64, "height": 48 }, "kind": "button", "buttonKey": "focusStickPress", "bindingStatus": "host-logic-only", "firmwareBinding": "GPIO", "interaction": "momentary" },
+        { "id": "rear-nav-down", "viewId": "rear", "label": "Nav Down", "labelZh": "下", "x": 385, "y": 652, "width": 64, "height": 48, "hitbox": { "x": 385, "y": 652, "width": 64, "height": 48 }, "kind": "button", "buttonKey": "down", "bindingStatus": "host-logic-only", "firmwareBinding": "GPIO", "interaction": "momentary" },
+        { "id": "rear-nav-right", "viewId": "rear", "label": "Nav Right", "labelZh": "右", "x": 462, "y": 652, "width": 64, "height": 48, "hitbox": { "x": 462, "y": 652, "width": 64, "height": 48 }, "kind": "button", "buttonKey": "right", "bindingStatus": "host-logic-only", "firmwareBinding": "GPIO", "interaction": "momentary" },
+        { "id": "rear-q", "viewId": "rear", "label": "Quick Menu (Q)", "labelZh": "快捷菜单 Q", "x": 641, "y": 652, "width": 64, "height": 48, "hitbox": { "x": 641, "y": 652, "width": 64, "height": 48 }, "kind": "button", "componentId": "soc-adc", "settingKey": "qButton", "bindingStatus": "host-adc-key", "firmwareBinding": "ADC", "interaction": "momentary" }
+      ]
+    },
+    {
+      "id": "top",
+      "title": "顶面 / TOP · 907X+CFV",
+      "titleZh": "顶面 · 907X+CFV",
+      "titles": {
+        "en": "TOP · 907X+CFV",
+        "zh_CN": "顶面 · 907X+CFV",
+        "ja_JP": "上面 · 907X+CFV",
+        "de_DE": "OBERSEITE · 907X+CFV",
+        "fr_FR": "DESSUS · 907X+CFV",
+        "es_ES": "SUPERIOR · 907X+CFV"
+      },
+      "svg": "top.svg",
+      "width": 900,
+      "height": 320,
+      "dynamicStates": [
+        { "id": "cfv-still-selected", "mode": "highlight-button", "buttonKey": "movieMode", "activeOpacity": 0.0, "inactiveOpacity": 1.0 },
+        { "id": "cfv-movie-selected", "mode": "highlight-button", "buttonKey": "movieMode", "activeOpacity": 1.0, "inactiveOpacity": 0.0 }
+      ],
+      "controls": [
+        { "id": "top-mode-dial", "viewId": "top", "label": "GFX Auxiliary Exposure Mode", "labelZh": "模拟器辅助曝光模式", "x": 384, "y": 118, "width": 118, "height": 51, "hitbox": { "x": 384, "y": 118, "width": 118, "height": 51 }, "kind": "dial", "componentId": "soc-adc", "settingKey": "modeDial", "bindingStatus": "host-adc-dial", "firmwareBinding": "ADC", "interaction": "inspect" },
+        { "id": "top-movie-mode", "viewId": "top", "label": "GFX Auxiliary Capture Mode", "labelZh": "模拟器辅助拍照 / 录像", "x": 719, "y": 86, "width": 138, "height": 45, "hitbox": { "x": 719, "y": 86, "width": 138, "height": 45 }, "kind": "switch", "buttonKey": "movieMode", "bindingStatus": "host-logic-only", "firmwareBinding": "GPIO", "interaction": "latching" },
+        { "id": "top-shoulder", "viewId": "top", "label": "GFX Auxiliary Status Screen", "labelZh": "模拟器辅助状态屏", "x": 529, "y": 84, "width": 174, "height": 115, "hitbox": { "x": 529, "y": 84, "width": 174, "height": 115 }, "kind": "display", "displayPort": "display.shoulder", "cornerRadius": 5, "bindingStatus": "host-display-bridge", "firmwareBinding": "SUB-LCD", "interaction": "inspect" },
+        { "id": "top-drive", "viewId": "top", "label": "Drive Mode", "labelZh": "驱动模式", "x": 727, "y": 151, "width": 122, "height": 43, "hitbox": { "x": 727, "y": 151, "width": 122, "height": 43 }, "kind": "button", "buttonKey": "drive", "bindingStatus": "host-logic-only", "firmwareBinding": "GPIO", "interaction": "momentary" },
+        { "id": "rear-command-dial", "viewId": "top", "role": "rear-command-dial", "label": "Control Wheel", "labelZh": "指令拨轮", "x": 713, "y": 228, "width": 142, "height": 44, "hitbox": { "x": 713, "y": 228, "width": 142, "height": 44 }, "kind": "dial", "buttonKey": "rearDialPress", "bindingStatus": "host-logic-only", "firmwareBinding": "ADC+GPIO", "interaction": "momentary" },
+        { "id": "rear-view-mode", "viewId": "top", "role": "view-mode", "label": "View Mode", "labelZh": "取景切换", "x": 384, "y": 228, "width": 145, "height": 44, "hitbox": { "x": 384, "y": 228, "width": 145, "height": 44 }, "kind": "button", "bindingStatus": "host-gpio-key", "firmwareBinding": "GPIO7.6", "interaction": "momentary" },
+        { "id": "rear-eye-sensor", "viewId": "top", "role": "eye-sensor", "label": "External EVF Sensor", "labelZh": "外接取景眼传感", "x": 547, "y": 228, "width": 145, "height": 44, "hitbox": { "x": 547, "y": 228, "width": 145, "height": 44 }, "kind": "sensor", "componentId": "tmd2772", "settingKey": "eyeSensorNear", "bindingStatus": "host-i2c-sensor", "firmwareBinding": "I2C1@0x39", "interaction": "latching" }
+      ]
+    },
+    {
+      "id": "front",
+      "title": "正面 / FRONT · 907X",
+      "titleZh": "正面 · 907X",
+      "titles": {
+        "en": "FRONT · 907X",
+        "zh_CN": "正面 · 907X",
+        "ja_JP": "正面 · 907X",
+        "de_DE": "FRONT · 907X",
+        "fr_FR": "AVANT · 907X",
+        "es_ES": "FRONTAL · 907X"
+      },
+      "svg": "front.svg",
+      "layers": [
+        { "id": "lens-attached-art", "visibleWhen": { "componentId": "mount", "settingKey": "attached", "equals": true } },
+        { "id": "lens-detached-art", "visibleWhen": { "componentId": "mount", "settingKey": "attached", "equals": false } }
+      ],
+      "width": 820,
+      "height": 740,
+      "controls": [
+        { "id": "front-mount", "viewId": "front", "label": "907X Chrome XCD Bayonet", "labelZh": "907X 银色精密卡口", "x": 163, "y": 98, "width": 504, "height": 504, "hitbox": { "x": 163, "y": 98, "width": 504, "height": 504 }, "kind": "mount", "componentId": "mount", "bindingStatus": "host-config-inspect", "firmwareBinding": "MOUNT", "interaction": "inspect" },
+        { "id": "front-lens-release", "viewId": "front", "label": "Chrome Lens Release", "labelZh": "银色镜头释放钮", "x": 609, "y": 550, "width": 62, "height": 62, "hitbox": { "x": 609, "y": 550, "width": 62, "height": 62 }, "kind": "button", "componentId": "mount", "bindingStatus": "host-config-inspect", "firmwareBinding": "MOUNT", "interaction": "inspect" },
+        { "id": "front-command-dial", "viewId": "front", "role": "front-command-dial", "label": "Front Control Ring", "labelZh": "前快门外环拨轮", "x": 133, "y": 532, "width": 103, "height": 22, "hitbox": { "x": 133, "y": 532, "width": 103, "height": 22 }, "kind": "dial", "buttonKey": "frontDialPress", "bindingStatus": "host-logic-only", "firmwareBinding": "GPIO", "interaction": "momentary" },
+        { "id": "top-shutter-half", "viewId": "front", "label": "Front Shutter Half (S1)", "labelZh": "前置快门半按 (S1)", "x": 313, "y": 680, "width": 194, "height": 44, "hitbox": { "x": 313, "y": 680, "width": 194, "height": 44 }, "kind": "button", "buttonKey": "shutterHalf", "bindingStatus": "host-logic-only", "firmwareBinding": "GPIO", "interaction": "momentary" },
+        { "id": "top-shutter-full", "viewId": "front", "label": "907X Front Shutter Release (S2)", "labelZh": "907X 经典前置快门 (S2)", "x": 156, "y": 554, "width": 58, "height": 56, "hitbox": { "x": 156, "y": 554, "width": 58, "height": 56 }, "kind": "button", "buttonKey": "shutterFull", "bindingStatus": "host-logic-only", "firmwareBinding": "GPIO", "interaction": "momentary" }
+      ]
+    }
+  ]
+}

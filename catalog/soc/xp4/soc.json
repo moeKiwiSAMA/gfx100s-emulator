@@ -1,0 +1,1 @@
+{"schema":1,"id":"xp4","architecture":"arm32","blocks":[{"id":"gpio","base":4294184960,"size":1024,"kind":"gpio"},{"id":"interval-timer","base":4294165248,"size":80,"kind":"timer"},{"id":"dma","base":4294836224,"size":65536,"kind":"dma"}]}

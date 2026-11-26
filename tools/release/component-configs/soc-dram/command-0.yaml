@@ -1,0 +1,721 @@
+---
+schema: 1
+bank: 0
+profile: "gfx100s-dram-snapshot-functional-experimental-v3"
+firmwareSha256: "ea997915ac5accc79699392b47909bb29506f66ec8d571e5804dd1fb0408fd12"
+modes:
+  "0":
+  - offset: 20480
+    value: 16793856
+  - offset: 20484
+    value: 16793856
+  - offset: 20488
+    value: 16793856
+  - offset: 20492
+    value: 16793856
+  - offset: 20496
+    value: 16793856
+  - offset: 20500
+    value: 16793856
+  - offset: 20504
+    value: 16793856
+  - offset: 20508
+    value: 16793856
+  - offset: 20512
+    value: 16793856
+  - offset: 20516
+    value: 16793856
+  - offset: 20520
+    value: 16793856
+  - offset: 20524
+    value: 16793856
+  - offset: 20528
+    value: 16793856
+  - offset: 20532
+    value: 16793856
+  - offset: 20536
+    value: 16793856
+  - offset: 20540
+    value: 16793856
+  - offset: 20544
+    value: 16793856
+  - offset: 20548
+    value: 16793856
+  - offset: 20552
+    value: 16793856
+  - offset: 20556
+    value: 16793856
+  - offset: 20560
+    value: 16793856
+  - offset: 20564
+    value: 16793856
+  - offset: 20568
+    value: 16793856
+  - offset: 20992
+    value: 4
+  - offset: 20996
+    value: 4
+  - offset: 21000
+    value: 4
+  - offset: 21004
+    value: 8
+  - offset: 21008
+    value: 7
+  - offset: 21012
+    value: 2
+  - offset: 21016
+    value: 3
+  - offset: 21020
+    value: 7
+  - offset: 21024
+    value: 1
+  - offset: 21028
+    value: 1
+  - offset: 21032
+    value: 7
+  - offset: 21036
+    value: 6
+  - offset: 21040
+    value: 4
+  - offset: 21044
+    value: 5
+  - offset: 21048
+    value: 5
+  - offset: 21052
+    value: 8
+  - offset: 21056
+    value: 4
+  - offset: 21060
+    value: 6
+  - offset: 21064
+    value: 8
+  - offset: 21068
+    value: 4
+  - offset: 21072
+    value: 8
+  - offset: 21076
+    value: 6
+  - offset: 21080
+    value: 8
+  - offset: 21084
+    value: 0
+  - offset: 21504
+    value: 129
+  - offset: 21508
+    value: 129
+  - offset: 21512
+    value: 129
+  - offset: 21516
+    value: 129
+  - offset: 21520
+    value: 129
+  - offset: 21524
+    value: 129
+  - offset: 21528
+    value: 129
+  - offset: 21532
+    value: 129
+  - offset: 21536
+    value: 129
+  - offset: 21540
+    value: 129
+  - offset: 21544
+    value: 129
+  - offset: 21548
+    value: 129
+  - offset: 21552
+    value: 129
+  - offset: 21556
+    value: 129
+  - offset: 21560
+    value: 129
+  - offset: 21564
+    value: 129
+  - offset: 21568
+    value: 129
+  - offset: 21572
+    value: 129
+  - offset: 21576
+    value: 129
+  - offset: 21580
+    value: 129
+  - offset: 21584
+    value: 129
+  - offset: 21588
+    value: 129
+  - offset: 21592
+    value: 129
+  - offset: 21380
+    value: 1
+  "1":
+  - offset: 20480
+    value: 16793856
+  - offset: 20484
+    value: 16793856
+  - offset: 20488
+    value: 16793856
+  - offset: 20492
+    value: 16793856
+  - offset: 20496
+    value: 16793856
+  - offset: 20500
+    value: 16793856
+  - offset: 20504
+    value: 16793856
+  - offset: 20508
+    value: 16793856
+  - offset: 20512
+    value: 16793856
+  - offset: 20516
+    value: 16793856
+  - offset: 20520
+    value: 16793856
+  - offset: 20524
+    value: 16793856
+  - offset: 20528
+    value: 16793856
+  - offset: 20532
+    value: 16793856
+  - offset: 20536
+    value: 16793856
+  - offset: 20540
+    value: 16793856
+  - offset: 20544
+    value: 16793856
+  - offset: 20548
+    value: 16793856
+  - offset: 20552
+    value: 16793856
+  - offset: 20556
+    value: 16793856
+  - offset: 20560
+    value: 16793856
+  - offset: 20564
+    value: 16793856
+  - offset: 20568
+    value: 16793856
+  - offset: 20992
+    value: 4
+  - offset: 20996
+    value: 4
+  - offset: 21000
+    value: 4
+  - offset: 21004
+    value: 4
+  - offset: 21008
+    value: 6
+  - offset: 21012
+    value: 1
+  - offset: 21016
+    value: 2
+  - offset: 21020
+    value: 5
+  - offset: 21024
+    value: 1
+  - offset: 21028
+    value: 1
+  - offset: 21032
+    value: 5
+  - offset: 21036
+    value: 4
+  - offset: 21040
+    value: 3
+  - offset: 21044
+    value: 3
+  - offset: 21048
+    value: 3
+  - offset: 21052
+    value: 4
+  - offset: 21056
+    value: 3
+  - offset: 21060
+    value: 5
+  - offset: 21064
+    value: 2
+  - offset: 21068
+    value: 4
+  - offset: 21072
+    value: 4
+  - offset: 21076
+    value: 4
+  - offset: 21080
+    value: 2
+  - offset: 21084
+    value: 0
+  - offset: 21504
+    value: 129
+  - offset: 21508
+    value: 129
+  - offset: 21512
+    value: 129
+  - offset: 21516
+    value: 129
+  - offset: 21520
+    value: 129
+  - offset: 21524
+    value: 129
+  - offset: 21528
+    value: 129
+  - offset: 21532
+    value: 129
+  - offset: 21536
+    value: 129
+  - offset: 21540
+    value: 129
+  - offset: 21544
+    value: 129
+  - offset: 21548
+    value: 129
+  - offset: 21552
+    value: 129
+  - offset: 21556
+    value: 129
+  - offset: 21560
+    value: 129
+  - offset: 21564
+    value: 129
+  - offset: 21568
+    value: 129
+  - offset: 21572
+    value: 129
+  - offset: 21576
+    value: 129
+  - offset: 21580
+    value: 129
+  - offset: 21584
+    value: 129
+  - offset: 21588
+    value: 129
+  - offset: 21592
+    value: 129
+  - offset: 21380
+    value: 1
+  "2":
+  - offset: 20480
+    value: 16793856
+  - offset: 20484
+    value: 16793856
+  - offset: 20488
+    value: 16793856
+  - offset: 20492
+    value: 16793856
+  - offset: 20496
+    value: 16793856
+  - offset: 20500
+    value: 16793856
+  - offset: 20504
+    value: 16793856
+  - offset: 20508
+    value: 16793856
+  - offset: 20512
+    value: 16793856
+  - offset: 20516
+    value: 16793856
+  - offset: 20520
+    value: 16793856
+  - offset: 20524
+    value: 16793856
+  - offset: 20528
+    value: 16793856
+  - offset: 20532
+    value: 16793856
+  - offset: 20536
+    value: 16793856
+  - offset: 20540
+    value: 16793856
+  - offset: 20544
+    value: 16793856
+  - offset: 20548
+    value: 16793856
+  - offset: 20552
+    value: 16793856
+  - offset: 20556
+    value: 16793856
+  - offset: 20560
+    value: 16793856
+  - offset: 20564
+    value: 16793856
+  - offset: 20568
+    value: 16793856
+  - offset: 20992
+    value: 4
+  - offset: 20996
+    value: 4
+  - offset: 21000
+    value: 4
+  - offset: 21004
+    value: 4
+  - offset: 21008
+    value: 6
+  - offset: 21012
+    value: 1
+  - offset: 21016
+    value: 2
+  - offset: 21020
+    value: 5
+  - offset: 21024
+    value: 1
+  - offset: 21028
+    value: 1
+  - offset: 21032
+    value: 5
+  - offset: 21036
+    value: 4
+  - offset: 21040
+    value: 3
+  - offset: 21044
+    value: 3
+  - offset: 21048
+    value: 3
+  - offset: 21052
+    value: 4
+  - offset: 21056
+    value: 3
+  - offset: 21060
+    value: 5
+  - offset: 21064
+    value: 2
+  - offset: 21068
+    value: 3
+  - offset: 21072
+    value: 4
+  - offset: 21076
+    value: 4
+  - offset: 21080
+    value: 2
+  - offset: 21084
+    value: 0
+  - offset: 21504
+    value: 129
+  - offset: 21508
+    value: 129
+  - offset: 21512
+    value: 129
+  - offset: 21516
+    value: 129
+  - offset: 21520
+    value: 129
+  - offset: 21524
+    value: 129
+  - offset: 21528
+    value: 129
+  - offset: 21532
+    value: 129
+  - offset: 21536
+    value: 129
+  - offset: 21540
+    value: 129
+  - offset: 21544
+    value: 129
+  - offset: 21548
+    value: 129
+  - offset: 21552
+    value: 129
+  - offset: 21556
+    value: 129
+  - offset: 21560
+    value: 129
+  - offset: 21564
+    value: 129
+  - offset: 21568
+    value: 129
+  - offset: 21572
+    value: 129
+  - offset: 21576
+    value: 129
+  - offset: 21580
+    value: 129
+  - offset: 21584
+    value: 129
+  - offset: 21588
+    value: 129
+  - offset: 21592
+    value: 129
+  - offset: 21380
+    value: 1
+  "3":
+  - offset: 20480
+    value: 16793856
+  - offset: 20484
+    value: 16793856
+  - offset: 20488
+    value: 16793856
+  - offset: 20492
+    value: 16793856
+  - offset: 20496
+    value: 16793856
+  - offset: 20500
+    value: 16793856
+  - offset: 20504
+    value: 16793856
+  - offset: 20508
+    value: 16793856
+  - offset: 20512
+    value: 16793856
+  - offset: 20516
+    value: 16793856
+  - offset: 20520
+    value: 16793856
+  - offset: 20524
+    value: 16793856
+  - offset: 20528
+    value: 16793856
+  - offset: 20532
+    value: 16793856
+  - offset: 20536
+    value: 16793856
+  - offset: 20540
+    value: 16793856
+  - offset: 20544
+    value: 16793856
+  - offset: 20548
+    value: 16793856
+  - offset: 20552
+    value: 16793856
+  - offset: 20556
+    value: 16793856
+  - offset: 20560
+    value: 16793856
+  - offset: 20564
+    value: 16793856
+  - offset: 20568
+    value: 16793856
+  - offset: 20992
+    value: 4
+  - offset: 20996
+    value: 4
+  - offset: 21000
+    value: 4
+  - offset: 21004
+    value: 4
+  - offset: 21008
+    value: 6
+  - offset: 21012
+    value: 1
+  - offset: 21016
+    value: 2
+  - offset: 21020
+    value: 5
+  - offset: 21024
+    value: 1
+  - offset: 21028
+    value: 1
+  - offset: 21032
+    value: 5
+  - offset: 21036
+    value: 4
+  - offset: 21040
+    value: 3
+  - offset: 21044
+    value: 3
+  - offset: 21048
+    value: 3
+  - offset: 21052
+    value: 4
+  - offset: 21056
+    value: 3
+  - offset: 21060
+    value: 5
+  - offset: 21064
+    value: 2
+  - offset: 21068
+    value: 4
+  - offset: 21072
+    value: 4
+  - offset: 21076
+    value: 4
+  - offset: 21080
+    value: 2
+  - offset: 21084
+    value: 0
+  - offset: 21504
+    value: 129
+  - offset: 21508
+    value: 129
+  - offset: 21512
+    value: 129
+  - offset: 21516
+    value: 129
+  - offset: 21520
+    value: 129
+  - offset: 21524
+    value: 129
+  - offset: 21528
+    value: 129
+  - offset: 21532
+    value: 129
+  - offset: 21536
+    value: 129
+  - offset: 21540
+    value: 129
+  - offset: 21544
+    value: 129
+  - offset: 21548
+    value: 129
+  - offset: 21552
+    value: 129
+  - offset: 21556
+    value: 129
+  - offset: 21560
+    value: 129
+  - offset: 21564
+    value: 129
+  - offset: 21568
+    value: 129
+  - offset: 21572
+    value: 129
+  - offset: 21576
+    value: 129
+  - offset: 21580
+    value: 129
+  - offset: 21584
+    value: 129
+  - offset: 21588
+    value: 129
+  - offset: 21592
+    value: 129
+  - offset: 21380
+    value: 1
+  "4":
+  - offset: 20480
+    value: 16793856
+  - offset: 20484
+    value: 16793856
+  - offset: 20488
+    value: 16793856
+  - offset: 20492
+    value: 16793856
+  - offset: 20496
+    value: 16793856
+  - offset: 20500
+    value: 16793856
+  - offset: 20504
+    value: 16793856
+  - offset: 20508
+    value: 16793856
+  - offset: 20512
+    value: 16793856
+  - offset: 20516
+    value: 16793856
+  - offset: 20520
+    value: 16793856
+  - offset: 20524
+    value: 16793856
+  - offset: 20528
+    value: 16793856
+  - offset: 20532
+    value: 16793856
+  - offset: 20536
+    value: 16793856
+  - offset: 20540
+    value: 16793856
+  - offset: 20544
+    value: 16793856
+  - offset: 20548
+    value: 16793856
+  - offset: 20552
+    value: 16793856
+  - offset: 20556
+    value: 16793856
+  - offset: 20560
+    value: 16793856
+  - offset: 20564
+    value: 16793856
+  - offset: 20568
+    value: 16793856
+  - offset: 20992
+    value: 3
+  - offset: 20996
+    value: 3
+  - offset: 21000
+    value: 3
+  - offset: 21004
+    value: 3
+  - offset: 21008
+    value: 5
+  - offset: 21012
+    value: 0
+  - offset: 21016
+    value: 1
+  - offset: 21020
+    value: 4
+  - offset: 21024
+    value: 0
+  - offset: 21028
+    value: 0
+  - offset: 21032
+    value: 4
+  - offset: 21036
+    value: 3
+  - offset: 21040
+    value: 3
+  - offset: 21044
+    value: 2
+  - offset: 21048
+    value: 2
+  - offset: 21052
+    value: 3
+  - offset: 21056
+    value: 3
+  - offset: 21060
+    value: 4
+  - offset: 21064
+    value: 2
+  - offset: 21068
+    value: 3
+  - offset: 21072
+    value: 3
+  - offset: 21076
+    value: 3
+  - offset: 21080
+    value: 2
+  - offset: 21084
+    value: 3
+  - offset: 21504
+    value: 129
+  - offset: 21508
+    value: 129
+  - offset: 21512
+    value: 129
+  - offset: 21516
+    value: 129
+  - offset: 21520
+    value: 129
+  - offset: 21524
+    value: 129
+  - offset: 21528
+    value: 129
+  - offset: 21532
+    value: 129
+  - offset: 21536
+    value: 129
+  - offset: 21540
+    value: 129
+  - offset: 21544
+    value: 129
+  - offset: 21548
+    value: 129
+  - offset: 21552
+    value: 129
+  - offset: 21556
+    value: 129
+  - offset: 21560
+    value: 129
+  - offset: 21564
+    value: 129
+  - offset: 21568
+    value: 129
+  - offset: 21572
+    value: 129
+  - offset: 21576
+    value: 129
+  - offset: 21580
+    value: 129
+  - offset: 21584
+    value: 129
+  - offset: 21588
+    value: 129
+  - offset: 21592
+    value: 129
+  - offset: 21380
+    value: 1

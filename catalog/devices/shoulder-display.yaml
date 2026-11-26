@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "id": "device.shoulder-display",
+  "componentId": "shoulder-display",
+  "depends": [],
+  "version": "0.0.1",
+  "name": "shoulder-display",
+  "physicalIdentity": "UNKNOWN",
+  "implementationStatus": "HOST_CONTRACT_ONLY",
+  "implementationSources": [
+    "components/shoulder-display/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/shoulder/ShoulderFactory.kt"
+  ],
+  "ports": [],
+  "unknowns": [
+    "Physical device identity, reset values, wiring and full state machine are not qualified."
+  ],
+  "nextValidation": "Trace selected original firmware consumers and retain refusal controls.",
+  "profiles": [
+    "unbound",
+    "dotlcd-serial1-experimental-v1"
+  ]
+}

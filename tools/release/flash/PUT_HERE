@@ -1,0 +1,33 @@
+# GFX100S 64 MiB QSPI NOR Flash Directory / 64 MiB QSPI NOR Flash 镜像目录
+
+Place the camera's 64 MiB QSPI NOR Flash image (`nor-flash.bin`, exact size 67,108,864 bytes / 64 MiB) in this folder.
+请将相机的 64 MiB QSPI NOR Flash 镜像文件（`nor-flash.bin`，精确大小 67,108,864 字节 / 64 MiB）放置在本目录中。
+
+## Option 1 — Official / Custom `.DAT` Firmware (Recommended for Public Releases)
+## 方式一：通过官方或自制 `.DAT` 固件包生成/更新（公开版推荐）
+
+- **GitLab / Full Release bundles** ship a single stock 2.13 64 MiB NOR template at `runtime/templates/factory-flash/nor-flash-2.13.bin` and automatically initialize `flash/nor-flash.bin` on first launch for 1-click startup (zero `GXUP0004.DAT` needed, no duplicate 64 MiB copy in the archive).
+  **GitLab / 完整发行版** 已内置单份 64 MiB 2.13 原厂出厂模板（`runtime/templates/factory-flash/nor-flash-2.13.bin`），首次启动自动初始化生成 `flash/nor-flash.bin` 实现一键开机（无需放置 `GXUP0004.DAT`，亦不在压缩包内重复打包两份 64 MiB 镜像）。
+- **Public / Clean bundles (`-PfujiBundleStockBins=false`)** omit proprietary firmware binaries. Flash your own official FUJIFILM `GXUP0004.DAT` (or custom `.DAT`) directly into `flash/nor-flash.bin`:
+  **公开脱敏发行版** 不含专有固件二进制。可通过以下任一方式将官方 `GXUP0004.DAT`（或自制 `.DAT`）烧录至 `flash/nor-flash.bin`：
+  - Offline CLI / 命令行离线烧录: `--flash-dat <path/to/GXUP0004.DAT>`
+  - Desktop UI header menu / 桌面端顶部栏: **Flash → Flash Firmware (.DAT)...** / **烧录 Flash → 烧录固件 (.DAT)...**
+  - Interactive console / 控制台: `/flash write <path/to/GXUP0004.DAT>`
+  - Or place a raw 64 MiB NOR image directly here as `flash/nor-flash.bin` / 或直接将原始 64 MiB NOR 镜像命名为 `nor-flash.bin` 放入此目录。
+
+## Option 2 — Optional Mask BootROM (`bootrom/boot-rom.bin`, experimental opt-in)
+## 方式二：可选原机掩膜 BootROM（`bootrom/boot-rom.bin`，实验性显式开启）
+
+- By default the emulator boots via verified Flash-Direct (`PC=0x0` reading `boot.bin` from `flash/nor-flash.bin[0x20000..0x3FFFF]`).
+- To use the full real-silicon BootROM (`PC=0xFFF00000`) -> Stage-1 IPL -> `flash/nor-flash.bin` path, place `bootrom/boot-rom.bin` (32 KiB) and set `bootRomBoot: true` (or launch with `--boot-rom`). If opted in but the file is absent, the emulator logs `WARN [FALLBACK][bootrom]` and boots via Flash-Direct.
+- 默认通过已验证的 Flash-Direct 直接从 `flash/nor-flash.bin` 启动；如需完整真机 BootROM（`PC=0xFFF00000`）→ Stage-1 IPL → `flash/nor-flash.bin` 冷启动，请放置 `bootrom/boot-rom.bin`（32 KiB）并设置 `bootRomBoot: true`（或使用 `--boot-rom`）。已开启但文件缺失时打印 `WARN [FALLBACK][bootrom]` 并回退至 Flash-Direct。
+
+## Privacy Warning / 隐私安全警告
+
+- **NEVER share or upload raw NOR Flash dumps extracted from your personal camera!** Region `[0x03500000..0x03D40000)` (`bank-14`) contains your camera's unique serial number, Wi-Fi/Bluetooth MAC addresses, and factory sensor calibration.
+- **切勿公开分享或上传从您个人实机导出的原始 NOR Flash 镜像！** `[0x03500000..0x03D40000)`（`bank-14`）区域包含相机唯一序列号、Wi-Fi/蓝牙 MAC 地址及出厂传感器校准数据。
+
+## Factory Reset / 恢复出厂设置
+
+- In-camera stock reset: **MENU → SET UP → USER SETTING → RESET → INITIALIZE** (erases user settings and returns to OOBE while preserving calibration).
+- Host 1-click restore: **Flash → Restore Stock 2.13 Factory Flash**, `/flash restore-factory`, or `--restore-factory-flash`.

@@ -1,0 +1,38 @@
+{
+  "profile": "interval-edge-routing-experimental-v1",
+  "clock": "functional-device-ticks-with-idle",
+  "routes": [
+    {
+      "channel": 0,
+      "irq": 57
+    },
+    {
+      "channel": 1,
+      "irq": 58
+    },
+    {
+      "channel": 2,
+      "irq": 59
+    },
+    {
+      "channel": 3,
+      "irq": 60
+    },
+    {
+      "channel": 4,
+      "irq": 61
+    },
+    {
+      "channel": 5,
+      "irq": 62
+    },
+    {
+      "channel": 6,
+      "irq": 63
+    },
+    {
+      "channel": 7,
+      "irq": 64
+    }
+  ]
+}

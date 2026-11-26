@@ -1,0 +1,10 @@
+# ==============================================================================
+# CMOS 取景样例 1：静态图片取景模式（JPEG / PNG — 发行版默认）
+#
+# 使用方法：复制到 configs/components/cmos/cmos.yaml 生效。
+# 说明：将任意 JPEG 或 PNG 图片放入 runtime/compoments/cmos/ 并在 sourceFile 中填写文件名。
+# ==============================================================================
+# 可选值："JPEG" 或 "PNG"
+sourceKind: "JPEG"
+sourceFile: "test-qr.jpg"
+loop: true

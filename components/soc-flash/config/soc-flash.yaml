@@ -1,0 +1,4 @@
+profile: dat-readonly-experimental-v1
+jedec: -1
+imagePort: flash.image
+interruptPort: ""

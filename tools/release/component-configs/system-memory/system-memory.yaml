@@ -1,0 +1,4 @@
+# Internal GFX100S SoC hardware definition — no user edits needed.
+profile: "flashload-request-buffer-experimental-v24"
+spanPolicy: "contiguous-compatible-v1"
+additionalRamProfile: "finite-rw-or-rwx-experimental-v2"

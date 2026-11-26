@@ -1,0 +1,8 @@
+---
+schema: 1
+profile: "vglib-mode-word-case4-samples-experimental-v3"
+readConfidence: "HYPOTHESIS"
+readSample: 0
+secondReadSample: 0
+additionalReadSamples: [0, 0]
+sourcePreserveMask: 4294966527

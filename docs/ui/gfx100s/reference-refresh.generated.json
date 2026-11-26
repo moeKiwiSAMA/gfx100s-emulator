@@ -1,0 +1,165 @@
+{
+  "schema": 1,
+  "id": "GFX-STYLE-ETERNASIM-REFRESH-002",
+  "evidenceClass": "SOURCE",
+  "observedAtUtc": "2026-11-10T06:54:55.991Z",
+  "urls": [
+    "https://www.fujifilm-x.com/global/products/cameras/gfx-eterna-55/simulator/",
+    "https://www.fujifilm-x.com/global/products/cameras/gfx-eterna-55/simulator/menu"
+  ],
+  "browserAttempt": {
+    "tool": "cua_repl",
+    "inventory": {
+      "apps": [],
+      "browsers": []
+    },
+    "entry": "createBrowserTab(iab, menu, visible=false)",
+    "result": "Browser is not available: iab",
+    "newVisualObtained": false,
+    "permissionConclusion": "Runtime browser unavailable; no new permission request or permission-setting change made"
+  },
+  "webTextAttempt": {
+    "tool": "web.run open",
+    "root": "HTML text shell returned",
+    "menu": "HTML text shell returned",
+    "newRenderedVisualObtained": false
+  },
+  "visualBasis": {
+    "record": "visual-reference.generated.json",
+    "id": "GFX-STYLE-ETERNASIM-001",
+    "existingScreenshotsReopened": [
+      "home",
+      "menu"
+    ],
+    "modelLayoutCopied": false,
+    "firmwarePixelsCopied": false
+  },
+  "palette": {
+    "schema": 1,
+    "evidenceClass": "SOURCE",
+    "method": "Exact sRGB samples from verified original menu screenshot; native Sharp helper via argument array, not JVM qualification",
+    "samples": [
+      {
+        "id": "header",
+        "x": 300,
+        "y": 25,
+        "rgb": [
+          255,
+          255,
+          255
+        ]
+      },
+      {
+        "id": "model-bar",
+        "x": 300,
+        "y": 77,
+        "rgb": [
+          64,
+          64,
+          64
+        ]
+      },
+      {
+        "id": "canvas",
+        "x": 100,
+        "y": 125,
+        "rgb": [
+          21,
+          21,
+          21
+        ]
+      },
+      {
+        "id": "body-flat",
+        "x": 294,
+        "y": 290,
+        "rgb": [
+          78,
+          78,
+          78
+        ]
+      },
+      {
+        "id": "body-edge",
+        "x": 580,
+        "y": 222,
+        "rgb": [
+          166,
+          166,
+          166
+        ]
+      },
+      {
+        "id": "screen",
+        "x": 520,
+        "y": 560,
+        "rgb": [
+          26,
+          26,
+          26
+        ]
+      },
+      {
+        "id": "selected-menu-row",
+        "x": 217,
+        "y": 442,
+        "rgb": [
+          207,
+          198,
+          193
+        ]
+      },
+      {
+        "id": "menu-rule",
+        "x": 328,
+        "y": 546,
+        "rgb": [
+          0,
+          0,
+          0
+        ]
+      }
+    ]
+  },
+  "styleContract": {
+    "header": {
+      "background": "#ffffff",
+      "heightPixels": 60,
+      "basis": "Verified reference crop white header y0..59"
+    },
+    "modelBar": {
+      "background": "#404040",
+      "heightPixels": 40,
+      "basis": "Verified reference crop y60..99"
+    },
+    "canvas": {
+      "background": "#151515",
+      "basis": "Actual sampled pixel x100,y125"
+    },
+    "body": {
+      "middleStop": "#4e4e4e",
+      "basis": "Actual body-flat sample x294,y290; original GFX100S shading is an interpretation"
+    },
+    "display": {
+      "background": "#000000",
+      "foreground": "#ffffff",
+      "basis": "High-contrast display in observed reference; no reference menu pixels copied"
+    },
+    "selectedNavigation": {
+      "background": "#cccccc",
+      "foreground": "#111111",
+      "basis": "Adaptation of observed light selected menu row; six-direction navigation itself is project-specific"
+    },
+    "font": {
+      "family": "Arial with System fallback",
+      "status": "Screenshot only establishes sans-serif appearance; actual website font-family is UNKNOWN"
+    },
+    "border": "Thin neutral dark borders; physical rounded buttons retain GFX100S locations",
+    "hoverAndPressed": "Unseen reference hover/pressed CSS remains UNKNOWN; low-opacity white hotspots are project adaptation"
+  },
+  "limitations": [
+    "The two original screenshots are cropped browser viewport observations; layout dimensions outside the crop are unknown.",
+    "GFX100S controls and physical geometry remain from its own 18-source registry.",
+    "A complete style identity cannot be asserted for unobserved responsive sizes, hover states or hidden pages."
+  ]
+}

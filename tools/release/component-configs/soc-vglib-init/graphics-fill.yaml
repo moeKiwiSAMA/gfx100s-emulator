@@ -1,0 +1,79 @@
+{
+  "profile": "graphics-fill-retained-experimental-v2",
+  "commandInitialWords": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "commandExecution": "axis-rect-morton-rgba-solid-alpha-v1",
+  "commandPairLimit": 64,
+  "commandIrq92Tick": 473865998,
+  "commandIrq92AutoDelayTicks": 1000,
+  "initialWords": [
+    0,
+    0,
+    0,
+    0
+  ],
+  "statusReads": [
+    67108864,
+    0
+  ],
+  "accessLimit": 16384,
+  "execution": {
+    "profile": "q0-register-shared-ram-fill-experimental-v2",
+    "submissionLimit": 513,
+    "surfaceBase": 109654016,
+    "surfaceBytes": 3145728,
+    "additionalSurfaces": [
+      {
+        "surfaceBase": 118382720,
+        "surfaceBytes": 3145728
+      },
+      {
+        "surfaceBase": 121528448,
+        "surfaceBytes": 3145728
+      },
+      {
+        "surfaceBase": 124674176,
+        "surfaceBytes": 3145600
+      }
+    ]
+  },
+  "copyInitialWords": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "copyExecution": {
+    "profile": "same-geometry-shared-ram-copy-experimental-v1",
+    "sourceBase": 109654016,
+    "destinationBase": 101974016,
+    "additionalDestinationBases": [
+      94294016
+    ],
+    "mode2Workspace": {
+      "base": 117334016,
+      "bytes": 10485760
+    },
+    "mode2TileProfile": "aligned-8x8-1024x768-v1",
+    "surfaceBytes": 3145728,
+    "submissionLimit": 513
+  },
+  "commandIrq92Followups": [
+    546648942,
+    556380053,
+    572406608
+  ]
+}

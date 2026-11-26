@@ -1,0 +1,3 @@
+# Internal GFX100S SoC hardware definition — no user edits needed.
+profile: "soc-jpeg-codec-experimental-v2"
+completionDelayTicks: 64

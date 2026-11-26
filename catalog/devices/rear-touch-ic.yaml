@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "id": "device.rear-touch-ic",
+  "componentId": "rear-touch-ic",
+  "depends": [],
+  "version": "0.0.1",
+  "name": "rear-touch-ic",
+  "physicalIdentity": "GFX100S Rear Capacitive Multi-Touch Controller IC (I2C2 0x55, GIC IRQ 153 / EXTINT #2, active-HIGH GPIO(7,2) reset, incrementing 0x12 alive status)",
+  "implementationStatus": "PARTIAL",
+  "implementationSources": [
+    "components/rear-touch-ic/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/reartouch/RearTouchFactory.kt",
+    "components/rear-touch-ic/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/reartouch/RearTouchDevice.kt"
+  ],
+  "ports": [],
+  "unknowns": [
+    "Wire protocol (0x10 2B header, 0x11 2x7B LE finger FIFO, 0x12 incrementing alive counter, 0x20/0x21 info blocks, 0x30/0x31 14B extended config, 0xF6 command register), active-HIGH GPIO(7,2) reset, and GIC IRQ 153 follow DAT section4 0x0124d81c..0x0124e188; raw capacitive mutual-capacitance matrix calibration registers remain modeled."
+  ],
+  "nextValidation": "Verify live GXUP0004.DAT rear touchscreen input and reset recovery via standalone rear-touch-ic on i2c-bus.bus2."
+}

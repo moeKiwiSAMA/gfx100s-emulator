@@ -1,0 +1,73 @@
+# ==============================================================================
+# 样例配置 3：严格硬件门控模式（strict）
+#
+# 使用场景：验证已完整建模的硬件路径，确保零未建模外设访问、零 discovery 补丁、零自定义固件。
+# 注意：
+#   - 禁止配置 discovery 块与 relaxedBootstrapRam；
+#   - 仅允许执行官方 SHA-256 校验通过的 GXUP0004.DAT；
+#   - 遇到任何未声明的 MMIO 或内存访问将立即中止并报告精确地址与 PC。
+# ==============================================================================
+schema: 1
+components: runtime/compoments
+componentConfigs: configs/components
+httpPort: 8787
+firmwareMetadata: configs/firmware/gfx100s-213-release.yaml
+firmwareFile: runtime/firmware/GXUP0004.DAT
+nativeLibrary: runtime/native/libunicorn.so.2
+# strict 模式必须使用有限指令预算（1..300000000）
+instructionBudget: 100000000
+transactionLimit: 65536
+executionMode: strict
+audio: false
+addressDictionary: configs/catalog.compiled.json
+clusterProfile: four-context-functional-experimental-v1
+clusterReset:
+  profile: secondary-reset-schedule-experimental-v1
+  releaseTicks:
+    - 0
+    - 32768
+    - 32768
+    - 32768
+mmuProfile: arm-short-descriptor-native-experimental-v1
+wordExclusive:
+  profile: arm-byte-halfword-word-exclusive-logical-experimental-v3
+  reservationGranule: 64
+cbarInput: 4294901760
+idleClock:
+  profile: next-deadline-functional-experimental-v1
+  maxAdvances: 65536
+  maxIdleTicks: 1000000000
+undefinedExceptionProfile: arm-vfp-disabled-undefined-experimental-v1
+prefetchAbortProfile: arm32-native-prefetch-entry-experimental-v1
+flashPartitionScope: dat-partition-octet-experimental-v3
+powerBlockScope: dat-checksummed-four-halfword-experimental-v1
+powerRegister2Bit8Profile: masked-bit8-retained-experimental-v1
+flashReadPairScope: dat-secondary-read-pair-experimental-v1
+flashWritableSetScope: dat-bkup-octet-secondary504-write-set-experimental-v2
+enabledDevices:
+  - soc-gpio
+  - soc-timer
+  - soc-dma
+  - soc-configuration
+  - soc-flash
+  - soc-gic
+  - soc-keyed-io
+  - soc-system-control
+  - soc-method4
+  - soc-spi
+  - soc-adc
+  - soc-i2c
+  - soc-selection
+  - soc-temperature
+  - soc-dram
+  - soc-serial-engine
+  - soc-sd-host
+  - soc-sdio
+  - soc-vglib-init
+  - soc-hdmi
+  - soc-panel
+  - soc-uart
+  - soc-isp-cmd
+  - soc-isp-setup
+  - soc-isp
+  - soc-jpeg

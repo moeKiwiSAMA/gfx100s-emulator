@@ -1,0 +1,13 @@
+{
+  "spaceId": "gfx100s-power-protocol-requests",
+  "requestId": "request.power-peer.selector0x03",
+  "selector": 3,
+  "wordBits": 16,
+  "confidence": "HYPOTHESIS",
+  "values": [
+    0, 0, 0, 0, 0, 0, 0,
+    502, 502, 502, 502, 502, 502, 502, 502,
+    502, 502, 502, 502, 502, 502, 502, 502,
+    502, 502, 502, 502, 502, 502, 502, 502
+  ]
+}

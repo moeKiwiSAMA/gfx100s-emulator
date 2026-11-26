@@ -1,0 +1,8 @@
+# Internal GFX100S SoC hardware definition — no user edits needed.
+profile: "finite-candidate-reads-experimental-v3"
+inputFile: "input.json"
+registerPort: "rtc.registers"
+powerButtonProfile: "gfx100s-2.13-power-switch-v1"
+repeatLastCandidateRead: true
+batteryPort: "battery"
+nvramFile: "submcu-nvram.json"

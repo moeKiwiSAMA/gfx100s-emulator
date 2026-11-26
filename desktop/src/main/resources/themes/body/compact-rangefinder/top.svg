@@ -1,0 +1,174 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 340" width="1000" height="340">
+  <title>Compact Rangefinder Top View</title>
+  <defs>
+    <radialGradient id="rf-crimson-shutter" cx="38%" cy="32%" r="68%">
+      <stop offset="0%" stop-color="#f25e48"/>
+      <stop offset="52%" stop-color="#c93221"/>
+      <stop offset="100%" stop-color="#7a180d"/>
+    </radialGradient>
+    <linearGradient id="rf-top-btn" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#363a42"/>
+      <stop offset="100%" stop-color="#1b1e23"/>
+    </linearGradient>
+    <pattern id="rf-top-chrome-tex" width="384" height="384" patternUnits="userSpaceOnUse" data-texture="shared/brushed-chrome.png"/>
+    <linearGradient id="rf-edge" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#514f50"/><stop offset="1.6%" stop-color="#f4f0e7"/>
+      <stop offset="4%" stop-color="#c4c0b8"/><stop offset="18%" stop-color="#e3ded3"/>
+      <stop offset="72%" stop-color="#afaea8"/><stop offset="93%" stop-color="#c5c6c1"/>
+      <stop offset="98%" stop-color="#868682"/><stop offset="99.5%" stop-color="#555655"/>
+      <stop offset="100%" stop-color="#969693"/>
+    </linearGradient>
+    <linearGradient id="rf-rim-light" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#454644"/><stop offset="12%" stop-color="#dedcd5"/>
+      <stop offset="24%" stop-color="#faf9f3"/><stop offset="52%" stop-color="#b8b7b1"/>
+      <stop offset="83%" stop-color="#666864"/><stop offset="100%" stop-color="#222421"/>
+    </linearGradient>
+    <g id="rf-plate-screw">
+      <circle r="4.3" fill="#5f605d"/><circle cy="0.5" r="3.5" fill="url(#rf-rim-light)"/>
+      <path d="M -2.2 0.7 L 1.9 -1.1 M -0.8 -2.2 L 0.9 2" fill="none" stroke="#51534f" stroke-width="1.15"/>
+    </g>
+    <g id="rf-lever-cap">
+      <rect x="-14" y="-9" width="28" height="20" rx="5" fill="#22231f" stroke="#121310" stroke-width="1.4"/>
+      <rect x="-13" y="-10" width="26" height="17" rx="5" fill="url(#rf-rim-light)" stroke="#7c7c71" stroke-width="0.8"/>
+      <path d="M -6 -6 V 3 M -2 -6 V 3 M 2 -6 V 3 M 6 -6 V 3" fill="none" stroke="#6c6b61" stroke-width="1.3"/>
+    </g>
+    <g id="rf-power-tab">
+      <path d="M 869 107 Q 877 111 890 107 L 897 105 Q 900 104 902 108 L 904 123 Q 904 127 900 128 L 889 128 Q 876 128 869 132 Z" fill="url(#rf-rim-light)" stroke="#4d4e45" stroke-width="1.1"/>
+      <path d="M 873 110 Q 885 113 896 108" fill="none" stroke="#eeeae0" stroke-width="1.4"/>
+      <path d="M 891 113 L 892 123 M 895 112 L 896 123 M 899 111 L 900 122" fill="none" stroke="#787972" stroke-width="1.3"/>
+      <path d="M 875 119 H 883" fill="none" stroke="#45463d" stroke-width="1.5"/>
+    </g>
+  </defs>
+
+  <rect width="1000" height="340" fill="#171918"/>
+
+  <!-- The concentric lens barrel projects ahead of the front plate. -->
+  <path d="M 346 51 V 29 Q 347 17 366 15 Q 432 4 508 15 Q 526 17 527 29 V 53 Z" fill="#2c2d2a" stroke="#080908" stroke-width="2"/>
+  <path d="M 349 28 Q 434 6 525 27 M 349 38 Q 435 18 525 37" fill="none" stroke="#85847b" stroke-width="2"/>
+  <path d="M 340 49 Q 437 28 535 49" fill="none" stroke="#111211" stroke-width="8"/>
+  <!-- Machined cap, its narrow polished shoulder and inset flash-shoe rails. -->
+  <rect x="44" y="48" width="912" height="252" rx="30" fill="url(#rf-rim-light)" stroke="#454640" stroke-width="2" data-effect="shadow" data-shadow-radius="12" data-shadow-offset-y="5" data-shadow-opacity="0.5"/>
+  <rect x="46" y="52" width="907" height="239" rx="29" fill="url(#rf-edge)" stroke="#ebebe2" stroke-width="1"/>
+  <rect x="47" y="53" width="905" height="237" rx="28" fill="url(#rf-top-chrome-tex)" opacity="0.31"/>
+  <path d="M 65 279 Q 75 288 86 288 H 914 Q 934 286 943 274" fill="none" stroke="#faf7ec" stroke-width="1.7" opacity="0.75"/>
+  <rect x="383" y="72" width="130" height="108" rx="8" fill="url(#rf-rim-light)" stroke="#63625d" stroke-width="1.7"/>
+  <rect x="389" y="76" width="118" height="101" rx="5" fill="#20211f"/>
+  <rect x="401" y="82" width="94" height="92" rx="3" fill="#353732" stroke="#78796e" stroke-width="1"/>
+  <path d="M 391 78 H 409 V 146 L 402 155 H 390 Z M 489 78 H 506 V 155 H 495 L 489 148 Z" fill="url(#rf-rim-light)" stroke="#a4a39a" stroke-width="1.1"/>
+  <path d="M 408 80 H 489 M 405 159 H 490" fill="none" stroke="#11120f" stroke-width="4"/>
+  <circle cx="448" cy="132" r="7" fill="#1c1d18" stroke="#606359" stroke-width="1.5"/>
+  <circle cx="448" cy="131" r="4.7" fill="#b2a176" stroke="#d0c3a3" stroke-width="1"/>
+  <circle cx="429" cy="111" r="3.2" fill="#b4a079"/><circle cx="465" cy="111" r="3.2" fill="#b4a079"/>
+  <circle cx="435" cy="100" r="3.2" fill="#b4a079"/><circle cx="458" cy="100" r="3.2" fill="#b4a079"/>
+  <text x="448" y="218" text-anchor="middle" fill="#292a25" font-size="12" font-weight="bold">RANGEFINDER</text>
+  <text x="448" y="238" text-anchor="middle" fill="#7e443d" font-size="11">RF-100</text>
+  <use href="#rf-plate-screw" x="74" y="84"/>
+  <use href="#rf-plate-screw" x="926" y="84"/>
+  <use href="#rf-plate-screw" x="75" y="264"/>
+  <use href="#rf-plate-screw" x="926" y="264"/>
+  <!-- Physically Rotating Knurled Silver Mode Dial -->
+  <g id="top-mode-dial" data-control-id="top-mode-dial" data-view-id="top">
+    <circle cx="186" cy="166" r="62" fill="#171a20" stroke="#707884" stroke-width="1.6" data-effect="inner-shadow" data-shadow-radius="6" data-shadow-offset-y="2" data-shadow-opacity="0.65"/>
+    <!-- The light stays in camera space while the engraved scale turns. -->
+    <image x="124" y="104" width="124" height="124" href="artwork/mode-dial.png"/>
+    <g id="rf-mode-dial-rotor">
+      <g transform="rotate(0 186 166)">
+        <line x1="186" y1="117.5" x2="186" y2="121.5" stroke="#c93221" stroke-width="1.3" stroke-linecap="round"/>
+        <text x="186" y="133.07" text-anchor="middle" fill="#181c22" font-size="10.2" font-weight="bold">P</text>
+      </g>
+      <g transform="rotate(36 186 166)">
+        <line x1="186" y1="117.5" x2="186" y2="121.5" stroke="#535d6b" stroke-width="1.3" stroke-linecap="round"/>
+        <text x="186" y="133.07" text-anchor="middle" fill="#181c22" font-size="10.2" font-weight="bold">S</text>
+      </g>
+      <g transform="rotate(72 186 166)">
+        <line x1="186" y1="117.5" x2="186" y2="121.5" stroke="#535d6b" stroke-width="1.3" stroke-linecap="round"/>
+        <text x="186" y="133.07" text-anchor="middle" fill="#181c22" font-size="10.2" font-weight="bold">A</text>
+      </g>
+      <g transform="rotate(108 186 166)">
+        <line x1="186" y1="117.5" x2="186" y2="121.5" stroke="#535d6b" stroke-width="1.3" stroke-linecap="round"/>
+        <text x="186" y="133.07" text-anchor="middle" fill="#c93221" font-size="10.2" font-weight="bold">M</text>
+      </g>
+      <g transform="rotate(144 186 166)">
+        <line x1="186" y1="117.5" x2="186" y2="121.5" stroke="#535d6b" stroke-width="1.3" stroke-linecap="round"/>
+        <text x="186" y="132.64" text-anchor="middle" fill="#38404b" font-size="8.98" font-weight="bold">C1</text>
+      </g>
+      <g transform="rotate(180 186 166)">
+        <line x1="186" y1="117.5" x2="186" y2="121.5" stroke="#535d6b" stroke-width="1.3" stroke-linecap="round"/>
+        <text x="186" y="132.64" text-anchor="middle" fill="#38404b" font-size="8.98" font-weight="bold">C2</text>
+      </g>
+      <g transform="rotate(216 186 166)">
+        <line x1="186" y1="117.5" x2="186" y2="121.5" stroke="#535d6b" stroke-width="1.3" stroke-linecap="round"/>
+        <text x="186" y="132.64" text-anchor="middle" fill="#38404b" font-size="8.98" font-weight="bold">C3</text>
+      </g>
+      <g transform="rotate(252 186 166)">
+        <line x1="186" y1="117.5" x2="186" y2="121.5" stroke="#535d6b" stroke-width="1.3" stroke-linecap="round"/>
+        <text x="186" y="132.64" text-anchor="middle" fill="#38404b" font-size="8.98" font-weight="bold">C4</text>
+      </g>
+      <g transform="rotate(288 186 166)">
+        <line x1="186" y1="117.5" x2="186" y2="121.5" stroke="#535d6b" stroke-width="1.3" stroke-linecap="round"/>
+        <text x="186" y="132.64" text-anchor="middle" fill="#38404b" font-size="8.98" font-weight="bold">C5</text>
+      </g>
+      <g transform="rotate(324 186 166)">
+        <line x1="186" y1="117.5" x2="186" y2="121.5" stroke="#535d6b" stroke-width="1.3" stroke-linecap="round"/>
+        <text x="186" y="132.64" text-anchor="middle" fill="#38404b" font-size="8.98" font-weight="bold">C6</text>
+      </g>
+    </g>
+    <polygon points="186,105 181,96 191,96" fill="#c93221"/>
+    <rect x="124" y="104" width="124" height="124" fill="none" stroke="none" data-hitbox="true"/>
+  </g>
+
+  <!-- Two detents under fixed engraved legends on the original RF-100 body. -->
+  <g id="top-movie-mode" data-control-id="top-movie-mode" data-view-id="top">
+    <text x="296" y="149" text-anchor="middle" fill="#633830" font-size="9" font-weight="bold">MOVIE</text>
+    <text x="340" y="149" text-anchor="middle" fill="#353631" font-size="9" font-weight="bold">STILL</text>
+    <rect x="280" y="155" width="76" height="26" rx="12" fill="url(#rf-rim-light)" stroke="#76776e" stroke-width="1"/>
+    <rect x="282" y="157" width="72" height="21" rx="10" fill="#22241e" stroke="#53564d" stroke-width="1.2"/>
+    <g id="rf-switch-still"><use href="#rf-lever-cap" x="339" y="167"/></g>
+    <g id="rf-switch-movie"><use href="#rf-lever-cap" x="297" y="167"/></g>
+    <rect x="280" y="155" width="76" height="26" fill="none" stroke="none" data-hitbox="true"/>
+  </g>
+
+  <g id="top-shoulder" data-control-id="top-shoulder" data-view-id="top">
+    <rect x="532" y="64" width="196" height="144" rx="11" fill="#15181c" stroke="#6c7582" stroke-width="2" data-effect="shadow" data-shadow-radius="6" data-shadow-offset-y="2" data-shadow-opacity="0.45"/>
+    <rect x="540" y="72" width="180" height="128" rx="5" fill="#050709" stroke="#2c333c" stroke-width="1.2"/>
+    <rect x="540" y="72" width="180" height="128" fill="none" stroke="none" data-hitbox="true"/>
+  </g>
+
+  <!-- The power collar and the shutter button share their centre; the finger tab operates the collar. -->
+  <g id="top-power" data-control-id="top-power" data-view-id="top">
+    <circle cx="833" cy="119" r="46" fill="#282821" stroke="#5c5a52" stroke-width="1.6" data-effect="shadow" data-shadow-radius="4" data-shadow-offset-y="2" data-shadow-opacity="0.45"/>
+    <circle cx="833" cy="119" r="43" fill="url(#rf-rim-light)" stroke="#eeeadd" stroke-width="1"/>
+    <circle cx="833" cy="119" r="35" fill="#3d3c37" stroke="#87867b" stroke-width="1.3"/>
+    <g id="rf-power-off"><use href="#rf-power-tab"/></g>
+    <g id="rf-power-on" transform="rotate(22 833 119)"><use href="#rf-power-tab"/></g>
+    <path d="M 906 119 H 910 M 900 146 L 904 148" fill="none" stroke="#4f4e45" stroke-width="1.4"/>
+    <text x="921" y="122" text-anchor="middle" fill="#383932" font-size="9.5" font-weight="bold">OFF</text>
+    <text x="914" y="155" text-anchor="middle" fill="#383932" font-size="9.5" font-weight="bold">ON</text>
+    <rect x="865" y="105" width="40" height="47" fill="none" stroke="none" data-hitbox="true"/>
+  </g>
+  <g id="top-drive" data-control-id="top-drive" data-view-id="top">
+    <rect x="636" y="218" width="84" height="50" rx="9" fill="url(#rf-top-btn)" stroke="#767f8c" stroke-width="1.5" data-effect="shadow" data-shadow-radius="4" data-shadow-offset-y="2" data-shadow-opacity="0.4"/>
+    <text x="678" y="247" text-anchor="middle" fill="#dde4ed" font-size="11" font-weight="bold">DRIVE</text>
+    <rect x="636" y="218" width="84" height="50" fill="none" stroke="none" data-hitbox="true"/>
+  </g>
+
+  <g id="top-shutter-full" data-control-id="top-shutter-full" data-view-id="top">
+    <circle cx="833" cy="119" r="32" fill="#272820" stroke="#afaca2" stroke-width="1.4"/>
+    <circle cx="833" cy="119" r="29" fill="url(#rf-crimson-shutter)" stroke="#e6afa0" stroke-width="1.2"/>
+    <circle cx="833" cy="119" r="9" fill="#77382d" stroke="#d6a498" stroke-width="1.1"/>
+    <circle cx="833" cy="119" r="5.8" fill="#3c211d" stroke="#99584c" stroke-width="1"/>
+    <rect x="801" y="87" width="64" height="64" fill="none" stroke="none" data-hitbox="true"/>
+  </g>
+  <g id="top-shutter-half" data-control-id="top-shutter-half" data-view-id="top">
+    <rect x="768" y="176" width="130" height="46" rx="9" fill="url(#rf-top-btn)" stroke="#c93221" stroke-width="1.4" data-effect="shadow" data-shadow-radius="4" data-shadow-offset-y="2" data-shadow-opacity="0.4"/>
+    <text x="833" y="203" text-anchor="middle" fill="#f5b3a7" font-size="10.5" font-weight="bold">HALF 路 AF (S1)</text>
+    <rect x="768" y="176" width="130" height="46" fill="none" stroke="none" data-hitbox="true"/>
+  </g>
+  <g id="front-command-dial" data-control-id="front-command-dial" data-view-id="top">
+    <rect x="768" y="232" width="130" height="42" rx="8" fill="#252930" stroke="#767f8c" stroke-width="1.4"/>
+    <rect x="773" y="236" width="120" height="33" rx="6" fill="url(#rf-rim-light)"/>
+    <path d="M 779 239 l -2 26 M 784 239 l -2 26 M 789 239 l -2 26 M 794 239 l -2 26 M 799 239 l -2 26 M 804 239 l -2 26 M 809 239 l -2 26 M 814 239 l -2 26 M 819 239 l -2 26 M 824 239 l -2 26 M 829 239 l -2 26 M 834 239 l -2 26 M 839 239 l -2 26 M 844 239 l -2 26 M 849 239 l -2 26 M 854 239 l -2 26 M 859 239 l -2 26 M 864 239 l -2 26 M 869 239 l -2 26 M 874 239 l -2 26 M 879 239 l -2 26 M 884 239 l -2 26 M 889 239 l -2 26" fill="none" stroke="#262624" stroke-width="1.8"/>
+    <path d="M 780.4 239 l -2 26 M 785.4 239 l -2 26 M 790.4 239 l -2 26 M 795.4 239 l -2 26 M 800.4 239 l -2 26 M 805.4 239 l -2 26 M 810.4 239 l -2 26 M 815.4 239 l -2 26 M 820.4 239 l -2 26 M 825.4 239 l -2 26 M 830.4 239 l -2 26 M 835.4 239 l -2 26 M 840.4 239 l -2 26 M 845.4 239 l -2 26 M 850.4 239 l -2 26 M 855.4 239 l -2 26 M 860.4 239 l -2 26 M 865.4 239 l -2 26 M 870.4 239 l -2 26 M 875.4 239 l -2 26 M 880.4 239 l -2 26 M 885.4 239 l -2 26 M 890.4 239 l -2 26" fill="none" stroke="#ece8dd" stroke-width="0.9"/>
+    <rect x="768" y="232" width="130" height="42" fill="none" stroke="none" data-hitbox="true"/>
+  </g>
+</svg>

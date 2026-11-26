@@ -1,0 +1,12 @@
+{
+  "profile": "checksum-registers-experimental-v1",
+  "chip_select": {
+    "port": 12,
+    "pin": 5,
+    "active_high": true,
+    "idle_high": true
+  },
+  "inputs": {},
+  "retained_registers": [],
+  "disable_writes": []
+}

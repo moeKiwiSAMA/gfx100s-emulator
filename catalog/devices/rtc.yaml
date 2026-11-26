@@ -1,0 +1,1362 @@
+{
+  "schema": 1,
+  "id": "device.rtc",
+  "componentId": "rtc",
+  "depends": [],
+  "version": "0.0.1",
+  "name": "rtc",
+  "physicalIdentity": "UNKNOWN",
+  "implementationStatus": "SOURCE_PROTOCOL_MODEL",
+  "implementationSources": [
+    "components/rtc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/rtc/RtcBank.kt",
+    "components/rtc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/rtc/RtcFactory.kt"
+  ],
+  "ports": [],
+  "unknowns": [
+    "Physical device identity, reset values, wiring and full state machine are not qualified."
+  ],
+  "nextValidation": "Keep physical identity/reset UNKNOWN; validate source-level profile contracts, transaction input lifecycle and bounded original observations.",
+  "profiles": [
+    "disabled",
+    "gfx100s-rtc-functional-experimental-v1",
+    "gfx100s-rtc-scripted-stage-read-experimental-v2"
+  ],
+  "logicalSpaces": [
+    {
+      "id": "rtc-power-register",
+      "portId": "rtc.registers",
+      "coordinateKind": "PROTOCOL_SELECTOR",
+      "selectorBits": 7,
+      "wordBits": 16,
+      "unit": "selector",
+      "byteOrder": "big",
+      "unknownPolicy": "refuse",
+      "registers": [
+        {
+          "id": "reg.rtc.stage-low",
+          "selector": 29,
+          "wordBits": 16,
+          "status": "SOURCE_PROTOCOL_MODEL",
+          "behaviorId": "kotlin:rtc.stage-low",
+          "name": "stage-low",
+          "namingBasis": "SOURCE model identifier only; physical chip/register function UNKNOWN",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN; selected experiment inputs are not physical reset measurements"
+          },
+          "masks": {
+            "writable": 65535,
+            "preserve": 0,
+            "unknown": 0,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "Known owner/profile rules; unknown selector/direction refuses, never generic MMIO fallback",
+          "sideEffects": {
+            "read": "v1 refuses; v2 may supply explicit finite HYP input only through protocol transaction",
+            "write": "Functional staged/load behavior in Kotlin; no physical side effect qualification",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "Existing instruction-tick functional model only; oscillator and physical timebase UNKNOWN",
+          "stateTransitions": "Kotlin owner implementation, not a YAML program",
+          "irq": "No route or automatic event implied",
+          "dma": "No channel or completion implied",
+          "connections": [
+            "rtc.registers",
+            "power-peer"
+          ],
+          "producerPcs": [],
+          "consumerPcs": [
+            18924156
+          ],
+          "evidence": [
+            "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json",
+            "components/rtc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/rtc/RtcBank.kt"
+          ],
+          "tests": [
+            "address-catalog/src/test/kotlin/com/github/nyabanban/fuji/emulator/catalog/LogicalCatalogTest.kt"
+          ],
+          "provenance": {
+            "selector": {
+              "confidence": "DAT",
+              "evidence": [
+                "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+              ],
+              "source": {
+                "commit": "f839dce6bb7359e6080453856f1593ed78768c3e",
+                "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Rtc29StopResearch.kt"
+              }
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+              ]
+            },
+            "name": {
+              "confidence": "SOURCE_CANDIDATE",
+              "evidence": [
+                "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+              ]
+            },
+            "initial": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+              ],
+              "source": {
+                "commit": "27704206113813f677e658b69155999d89795b3e",
+                "path": "components/rtc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/rtc/ScriptedRtcReadPort.kt",
+                "scope": "SOURCE/TEST functional model only; no original-firmware v2 or physical qualification"
+              }
+            },
+            "accessByProfile": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.rtc.stage-low.raw",
+              "bitOffset": 0,
+              "bitWidth": 16,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "Owning register/profile; no physical effects inferred",
+              "definition": "Raw staged-write half; v2 read input remains separate from stored half",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ]
+                }
+              },
+              "supportingEvidence": [
+                {
+                  "path": "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json",
+                  "observation": "Raw staged-write half; v2 read input remains separate from stored half"
+                }
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning, reset and units are not qualified."
+              ],
+              "nextValidation": "Compare bounded DAT consumers, declared model behavior and original protocol observations."
+            }
+          ],
+          "unknowns": [
+            "Physical identity/reset, readback/latch/persistence and actual electrical register function remain UNKNOWN."
+          ],
+          "nextValidation": "Run bounded original continuation with explicit v2 inputs; retain v1 strict refusal, missing/exhausted/cancelled input controls and UNKNOWN physical semantics.",
+          "accessByProfile": {
+            "disabled": {
+              "readable": false,
+              "writable": false,
+              "status": "DISABLED",
+              "provenance": {
+                "readable": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ],
+                  "source": {
+                    "commit": "27704206113813f677e658b69155999d89795b3e",
+                    "path": "components/rtc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/rtc/RtcRegisterContracts.kt"
+                  }
+                },
+                "writable": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ],
+                  "source": {
+                    "commit": "27704206113813f677e658b69155999d89795b3e",
+                    "path": "components/rtc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/rtc/RtcRegisterContracts.kt"
+                  }
+                }
+              }
+            },
+            "gfx100s-rtc-functional-experimental-v1": {
+              "readable": false,
+              "writable": true,
+              "status": "IMPLEMENTED_FUNCTIONAL_HYPOTHESIS",
+              "provenance": {
+                "readable": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ],
+                  "source": {
+                    "commit": "27704206113813f677e658b69155999d89795b3e",
+                    "path": "components/rtc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/rtc/RtcRegisterContracts.kt"
+                  }
+                },
+                "writable": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ],
+                  "source": {
+                    "commit": "27704206113813f677e658b69155999d89795b3e",
+                    "path": "components/rtc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/rtc/RtcRegisterContracts.kt"
+                  }
+                }
+              }
+            },
+            "gfx100s-rtc-scripted-stage-read-experimental-v2": {
+              "readable": true,
+              "writable": true,
+              "status": "EXPERIMENTAL_INPUT",
+              "provenance": {
+                "readable": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ],
+                  "source": {
+                    "commit": "27704206113813f677e658b69155999d89795b3e",
+                    "path": "components/rtc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/rtc/ScriptedRtcReadPort.kt"
+                  },
+                  "limitation": "Finite raw HYP inputs committed only by a complete valid checksum frame; not physical readback/reset or original-firmware evidence"
+                },
+                "writable": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ],
+                  "source": {
+                    "commit": "27704206113813f677e658b69155999d89795b3e",
+                    "path": "components/rtc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/rtc/RtcRegisterContracts.kt"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "id": "reg.rtc.stage-high",
+          "selector": 30,
+          "wordBits": 16,
+          "status": "SOURCE_PROTOCOL_MODEL",
+          "behaviorId": "kotlin:rtc.stage-high",
+          "name": "stage-high",
+          "namingBasis": "SOURCE model identifier only; physical chip/register function UNKNOWN",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN; selected experiment inputs are not physical reset measurements"
+          },
+          "masks": {
+            "writable": 65535,
+            "preserve": 0,
+            "unknown": 0,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "Known owner/profile rules; unknown selector/direction refuses, never generic MMIO fallback",
+          "sideEffects": {
+            "read": "v1 refuses; v2 may supply explicit finite HYP input only through protocol transaction",
+            "write": "Functional staged/load behavior in Kotlin; no physical side effect qualification",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "Existing instruction-tick functional model only; oscillator and physical timebase UNKNOWN",
+          "stateTransitions": "Kotlin owner implementation, not a YAML program",
+          "irq": "No route or automatic event implied",
+          "dma": "No channel or completion implied",
+          "connections": [
+            "rtc.registers",
+            "power-peer"
+          ],
+          "producerPcs": [],
+          "consumerPcs": [
+            18924188
+          ],
+          "evidence": [
+            "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json",
+            "components/rtc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/rtc/RtcBank.kt"
+          ],
+          "tests": [
+            "address-catalog/src/test/kotlin/com/github/nyabanban/fuji/emulator/catalog/LogicalCatalogTest.kt"
+          ],
+          "provenance": {
+            "selector": {
+              "confidence": "DAT",
+              "evidence": [
+                "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+              ],
+              "source": {
+                "commit": "f839dce6bb7359e6080453856f1593ed78768c3e",
+                "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Rtc29StopResearch.kt"
+              }
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+              ]
+            },
+            "name": {
+              "confidence": "SOURCE_CANDIDATE",
+              "evidence": [
+                "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+              ]
+            },
+            "initial": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+              ],
+              "source": {
+                "commit": "27704206113813f677e658b69155999d89795b3e",
+                "path": "components/rtc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/rtc/ScriptedRtcReadPort.kt",
+                "scope": "SOURCE/TEST functional model only; no original-firmware v2 or physical qualification"
+              }
+            },
+            "accessByProfile": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.rtc.stage-high.raw",
+              "bitOffset": 0,
+              "bitWidth": 16,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "Owning register/profile; no physical effects inferred",
+              "definition": "Raw staged-write half; v2 read input remains separate from stored half",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ]
+                }
+              },
+              "supportingEvidence": [
+                {
+                  "path": "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json",
+                  "observation": "Raw staged-write half; v2 read input remains separate from stored half"
+                }
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning, reset and units are not qualified."
+              ],
+              "nextValidation": "Compare bounded DAT consumers, declared model behavior and original protocol observations."
+            }
+          ],
+          "unknowns": [
+            "Physical identity/reset, readback/latch/persistence and actual electrical register function remain UNKNOWN."
+          ],
+          "nextValidation": "Run bounded original continuation with explicit v2 inputs; retain v1 strict refusal, missing/exhausted/cancelled input controls and UNKNOWN physical semantics.",
+          "accessByProfile": {
+            "disabled": {
+              "readable": false,
+              "writable": false,
+              "status": "DISABLED",
+              "provenance": {
+                "readable": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ],
+                  "source": {
+                    "commit": "27704206113813f677e658b69155999d89795b3e",
+                    "path": "components/rtc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/rtc/RtcRegisterContracts.kt"
+                  }
+                },
+                "writable": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ],
+                  "source": {
+                    "commit": "27704206113813f677e658b69155999d89795b3e",
+                    "path": "components/rtc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/rtc/RtcRegisterContracts.kt"
+                  }
+                }
+              }
+            },
+            "gfx100s-rtc-functional-experimental-v1": {
+              "readable": false,
+              "writable": true,
+              "status": "IMPLEMENTED_FUNCTIONAL_HYPOTHESIS",
+              "provenance": {
+                "readable": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ],
+                  "source": {
+                    "commit": "27704206113813f677e658b69155999d89795b3e",
+                    "path": "components/rtc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/rtc/RtcRegisterContracts.kt"
+                  }
+                },
+                "writable": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ],
+                  "source": {
+                    "commit": "27704206113813f677e658b69155999d89795b3e",
+                    "path": "components/rtc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/rtc/RtcRegisterContracts.kt"
+                  }
+                }
+              }
+            },
+            "gfx100s-rtc-scripted-stage-read-experimental-v2": {
+              "readable": true,
+              "writable": true,
+              "status": "EXPERIMENTAL_INPUT",
+              "provenance": {
+                "readable": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ],
+                  "source": {
+                    "commit": "27704206113813f677e658b69155999d89795b3e",
+                    "path": "components/rtc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/rtc/ScriptedRtcReadPort.kt"
+                  },
+                  "limitation": "Finite raw HYP inputs committed only by a complete valid checksum frame; not physical readback/reset or original-firmware evidence"
+                },
+                "writable": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ],
+                  "source": {
+                    "commit": "27704206113813f677e658b69155999d89795b3e",
+                    "path": "components/rtc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/rtc/RtcRegisterContracts.kt"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "id": "reg.rtc.counter-low",
+          "selector": 35,
+          "wordBits": 16,
+          "status": "SOURCE_PROTOCOL_MODEL",
+          "behaviorId": "kotlin:rtc.counter-low",
+          "name": "counter-low",
+          "namingBasis": "SOURCE model identifier only; physical chip/register function UNKNOWN",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN; selected experiment inputs are not physical reset measurements"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 65535,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "Known owner/profile rules; unknown selector/direction refuses, never generic MMIO fallback",
+          "sideEffects": {
+            "read": "Functional model snapshot at protocol header; no query reads",
+            "write": "refuse",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "Existing instruction-tick functional model only; oscillator and physical timebase UNKNOWN",
+          "stateTransitions": "Kotlin owner implementation, not a YAML program",
+          "irq": "No route or automatic event implied",
+          "dma": "No channel or completion implied",
+          "connections": [
+            "rtc.registers",
+            "power-peer"
+          ],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json",
+            "components/rtc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/rtc/RtcBank.kt"
+          ],
+          "tests": [
+            "address-catalog/src/test/kotlin/com/github/nyabanban/fuji/emulator/catalog/LogicalCatalogTest.kt"
+          ],
+          "provenance": {
+            "selector": {
+              "confidence": "DAT",
+              "evidence": [
+                "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+              ],
+              "source": {
+                "commit": "f839dce6bb7359e6080453856f1593ed78768c3e",
+                "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Rtc29StopResearch.kt"
+              }
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+              ]
+            },
+            "name": {
+              "confidence": "SOURCE_CANDIDATE",
+              "evidence": [
+                "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+              ]
+            },
+            "initial": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+              ],
+              "source": {
+                "commit": "27704206113813f677e658b69155999d89795b3e",
+                "path": "components/rtc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/rtc/RtcBank.kt",
+                "scope": "SOURCE/TEST functional model only; no original-firmware v2 or physical qualification"
+              }
+            },
+            "accessByProfile": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.rtc.counter-low.raw",
+              "bitOffset": 0,
+              "bitWidth": 16,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "Owning register/profile; no physical effects inferred",
+              "definition": "Raw half of the functional counter model; physical meaning/units unqualified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ]
+                }
+              },
+              "supportingEvidence": [
+                {
+                  "path": "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json",
+                  "observation": "Raw half of the functional counter model; physical meaning/units unqualified"
+                }
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning, reset and units are not qualified."
+              ],
+              "nextValidation": "Compare bounded DAT consumers, declared model behavior and original protocol observations."
+            }
+          ],
+          "unknowns": [
+            "Physical identity/reset, readback/latch/persistence and actual electrical register function remain UNKNOWN."
+          ],
+          "nextValidation": "Retain legacy refusals and compare known protocol reads without changing counter inputs.",
+          "accessByProfile": {
+            "disabled": {
+              "readable": false,
+              "writable": false,
+              "status": "DISABLED",
+              "provenance": {
+                "readable": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ],
+                  "source": {
+                    "commit": "27704206113813f677e658b69155999d89795b3e",
+                    "path": "components/rtc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/rtc/RtcRegisterContracts.kt"
+                  }
+                },
+                "writable": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ],
+                  "source": {
+                    "commit": "27704206113813f677e658b69155999d89795b3e",
+                    "path": "components/rtc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/rtc/RtcRegisterContracts.kt"
+                  }
+                }
+              }
+            },
+            "gfx100s-rtc-functional-experimental-v1": {
+              "readable": true,
+              "writable": false,
+              "status": "IMPLEMENTED_FUNCTIONAL_HYPOTHESIS",
+              "provenance": {
+                "readable": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ],
+                  "source": {
+                    "commit": "27704206113813f677e658b69155999d89795b3e",
+                    "path": "components/rtc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/rtc/RtcRegisterContracts.kt"
+                  }
+                },
+                "writable": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ],
+                  "source": {
+                    "commit": "27704206113813f677e658b69155999d89795b3e",
+                    "path": "components/rtc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/rtc/RtcRegisterContracts.kt"
+                  }
+                }
+              }
+            },
+            "gfx100s-rtc-scripted-stage-read-experimental-v2": {
+              "readable": true,
+              "writable": false,
+              "status": "IMPLEMENTED_FUNCTIONAL_HYPOTHESIS",
+              "provenance": {
+                "readable": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ],
+                  "source": {
+                    "commit": "27704206113813f677e658b69155999d89795b3e",
+                    "path": "components/rtc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/rtc/RtcRegisterContracts.kt"
+                  }
+                },
+                "writable": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ],
+                  "source": {
+                    "commit": "27704206113813f677e658b69155999d89795b3e",
+                    "path": "components/rtc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/rtc/RtcRegisterContracts.kt"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "id": "reg.rtc.counter-high",
+          "selector": 36,
+          "wordBits": 16,
+          "status": "SOURCE_PROTOCOL_MODEL",
+          "behaviorId": "kotlin:rtc.counter-high",
+          "name": "counter-high",
+          "namingBasis": "SOURCE model identifier only; physical chip/register function UNKNOWN",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN; selected experiment inputs are not physical reset measurements"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 65535,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "Known owner/profile rules; unknown selector/direction refuses, never generic MMIO fallback",
+          "sideEffects": {
+            "read": "Functional model snapshot at protocol header; no query reads",
+            "write": "refuse",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "Existing instruction-tick functional model only; oscillator and physical timebase UNKNOWN",
+          "stateTransitions": "Kotlin owner implementation, not a YAML program",
+          "irq": "No route or automatic event implied",
+          "dma": "No channel or completion implied",
+          "connections": [
+            "rtc.registers",
+            "power-peer"
+          ],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json",
+            "components/rtc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/rtc/RtcBank.kt"
+          ],
+          "tests": [
+            "address-catalog/src/test/kotlin/com/github/nyabanban/fuji/emulator/catalog/LogicalCatalogTest.kt"
+          ],
+          "provenance": {
+            "selector": {
+              "confidence": "DAT",
+              "evidence": [
+                "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+              ],
+              "source": {
+                "commit": "f839dce6bb7359e6080453856f1593ed78768c3e",
+                "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Rtc29StopResearch.kt"
+              }
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+              ]
+            },
+            "name": {
+              "confidence": "SOURCE_CANDIDATE",
+              "evidence": [
+                "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+              ]
+            },
+            "initial": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+              ],
+              "source": {
+                "commit": "27704206113813f677e658b69155999d89795b3e",
+                "path": "components/rtc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/rtc/RtcBank.kt",
+                "scope": "SOURCE/TEST functional model only; no original-firmware v2 or physical qualification"
+              }
+            },
+            "accessByProfile": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.rtc.counter-high.raw",
+              "bitOffset": 0,
+              "bitWidth": 16,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "Owning register/profile; no physical effects inferred",
+              "definition": "Raw half of the functional counter model; physical meaning/units unqualified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ]
+                }
+              },
+              "supportingEvidence": [
+                {
+                  "path": "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json",
+                  "observation": "Raw half of the functional counter model; physical meaning/units unqualified"
+                }
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning, reset and units are not qualified."
+              ],
+              "nextValidation": "Compare bounded DAT consumers, declared model behavior and original protocol observations."
+            }
+          ],
+          "unknowns": [
+            "Physical identity/reset, readback/latch/persistence and actual electrical register function remain UNKNOWN."
+          ],
+          "nextValidation": "Retain legacy refusals and compare known protocol reads without changing counter inputs.",
+          "accessByProfile": {
+            "disabled": {
+              "readable": false,
+              "writable": false,
+              "status": "DISABLED",
+              "provenance": {
+                "readable": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ],
+                  "source": {
+                    "commit": "27704206113813f677e658b69155999d89795b3e",
+                    "path": "components/rtc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/rtc/RtcRegisterContracts.kt"
+                  }
+                },
+                "writable": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ],
+                  "source": {
+                    "commit": "27704206113813f677e658b69155999d89795b3e",
+                    "path": "components/rtc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/rtc/RtcRegisterContracts.kt"
+                  }
+                }
+              }
+            },
+            "gfx100s-rtc-functional-experimental-v1": {
+              "readable": true,
+              "writable": false,
+              "status": "IMPLEMENTED_FUNCTIONAL_HYPOTHESIS",
+              "provenance": {
+                "readable": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ],
+                  "source": {
+                    "commit": "27704206113813f677e658b69155999d89795b3e",
+                    "path": "components/rtc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/rtc/RtcRegisterContracts.kt"
+                  }
+                },
+                "writable": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ],
+                  "source": {
+                    "commit": "27704206113813f677e658b69155999d89795b3e",
+                    "path": "components/rtc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/rtc/RtcRegisterContracts.kt"
+                  }
+                }
+              }
+            },
+            "gfx100s-rtc-scripted-stage-read-experimental-v2": {
+              "readable": true,
+              "writable": false,
+              "status": "IMPLEMENTED_FUNCTIONAL_HYPOTHESIS",
+              "provenance": {
+                "readable": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ],
+                  "source": {
+                    "commit": "27704206113813f677e658b69155999d89795b3e",
+                    "path": "components/rtc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/rtc/RtcRegisterContracts.kt"
+                  }
+                },
+                "writable": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ],
+                  "source": {
+                    "commit": "27704206113813f677e658b69155999d89795b3e",
+                    "path": "components/rtc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/rtc/RtcRegisterContracts.kt"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "id": "reg.rtc.control",
+          "selector": 39,
+          "wordBits": 16,
+          "status": "SOURCE_PROTOCOL_MODEL",
+          "behaviorId": "kotlin:rtc.control",
+          "name": "control",
+          "namingBasis": "SOURCE model identifier only; physical chip/register function UNKNOWN",
+          "initial": {
+            "value": null,
+            "source": "UNKNOWN; selected experiment inputs are not physical reset measurements"
+          },
+          "masks": {
+            "writable": 65535,
+            "preserve": 0,
+            "unknown": 0,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "Known owner/profile rules; unknown selector/direction refuses, never generic MMIO fallback",
+          "sideEffects": {
+            "read": "Functional model snapshot at protocol header; no query reads",
+            "write": "Functional staged/load behavior in Kotlin; no physical side effect qualification",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "Functional load bit9 after configured HYP delay; physical behavior UNKNOWN"
+          },
+          "timing": "Existing instruction-tick functional model only; oscillator and physical timebase UNKNOWN",
+          "stateTransitions": "Kotlin owner implementation, not a YAML program",
+          "irq": "No route or automatic event implied",
+          "dma": "No channel or completion implied",
+          "connections": [
+            "rtc.registers",
+            "power-peer"
+          ],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json",
+            "components/rtc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/rtc/RtcBank.kt"
+          ],
+          "tests": [
+            "address-catalog/src/test/kotlin/com/github/nyabanban/fuji/emulator/catalog/LogicalCatalogTest.kt"
+          ],
+          "provenance": {
+            "selector": {
+              "confidence": "DAT",
+              "evidence": [
+                "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+              ],
+              "source": {
+                "commit": "f839dce6bb7359e6080453856f1593ed78768c3e",
+                "path": "desktop/src/main/kotlin/com/github/nyabanban/fuji/emulator/desktop/research/Rtc29StopResearch.kt"
+              }
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+              ]
+            },
+            "name": {
+              "confidence": "SOURCE_CANDIDATE",
+              "evidence": [
+                "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+              ]
+            },
+            "initial": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+              ],
+              "source": {
+                "commit": "27704206113813f677e658b69155999d89795b3e",
+                "path": "components/rtc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/rtc/RtcBank.kt",
+                "scope": "SOURCE/TEST functional model only; no original-firmware v2 or physical qualification"
+              }
+            },
+            "accessByProfile": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.rtc.control.unknown-0",
+              "bitOffset": 0,
+              "bitWidth": 1,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "Owning register/profile; no physical effects inferred",
+              "definition": "Physical semantics unknown",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ]
+                }
+              },
+              "supportingEvidence": [
+                {
+                  "path": "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json",
+                  "observation": "Physical semantics unknown"
+                }
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning, reset and units are not qualified."
+              ],
+              "nextValidation": "Compare bounded DAT consumers, declared model behavior and original protocol observations."
+            },
+            {
+              "id": "reg.rtc.control.valid-input",
+              "bitOffset": 1,
+              "bitWidth": 1,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "Owning register/profile; no physical effects inferred",
+              "definition": "Functional checkWrite requires bit1 with load request",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ]
+                }
+              },
+              "supportingEvidence": [
+                {
+                  "path": "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json",
+                  "observation": "Functional checkWrite requires bit1 with load request"
+                }
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning, reset and units are not qualified."
+              ],
+              "nextValidation": "Compare bounded DAT consumers, declared model behavior and original protocol observations."
+            },
+            {
+              "id": "reg.rtc.control.unknown-2",
+              "bitOffset": 2,
+              "bitWidth": 7,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "Owning register/profile; no physical effects inferred",
+              "definition": "Physical semantics unknown",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ]
+                }
+              },
+              "supportingEvidence": [
+                {
+                  "path": "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json",
+                  "observation": "Physical semantics unknown"
+                }
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning, reset and units are not qualified."
+              ],
+              "nextValidation": "Compare bounded DAT consumers, declared model behavior and original protocol observations."
+            },
+            {
+              "id": "reg.rtc.control.load-request",
+              "bitOffset": 9,
+              "bitWidth": 1,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "Owning register/profile; no physical effects inferred",
+              "definition": "Functional staged-pair load request; configured completion delay is HYPOTHESIS",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ]
+                }
+              },
+              "supportingEvidence": [
+                {
+                  "path": "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json",
+                  "observation": "Functional staged-pair load request; configured completion delay is HYPOTHESIS"
+                }
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning, reset and units are not qualified."
+              ],
+              "nextValidation": "Compare bounded DAT consumers, declared model behavior and original protocol observations."
+            },
+            {
+              "id": "reg.rtc.control.unknown-10",
+              "bitOffset": 10,
+              "bitWidth": 6,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "Owning register/profile; no physical effects inferred",
+              "definition": "Physical semantics unknown",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ]
+                }
+              },
+              "supportingEvidence": [
+                {
+                  "path": "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json",
+                  "observation": "Physical semantics unknown"
+                }
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning, reset and units are not qualified."
+              ],
+              "nextValidation": "Compare bounded DAT consumers, declared model behavior and original protocol observations."
+            }
+          ],
+          "unknowns": [
+            "Physical identity/reset, readback/latch/persistence and actual electrical register function remain UNKNOWN."
+          ],
+          "nextValidation": "Retain legacy refusals and compare known protocol reads without changing counter inputs.",
+          "accessByProfile": {
+            "disabled": {
+              "readable": false,
+              "writable": false,
+              "status": "DISABLED",
+              "provenance": {
+                "readable": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ],
+                  "source": {
+                    "commit": "27704206113813f677e658b69155999d89795b3e",
+                    "path": "components/rtc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/rtc/RtcRegisterContracts.kt"
+                  }
+                },
+                "writable": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ],
+                  "source": {
+                    "commit": "27704206113813f677e658b69155999d89795b3e",
+                    "path": "components/rtc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/rtc/RtcRegisterContracts.kt"
+                  }
+                }
+              }
+            },
+            "gfx100s-rtc-functional-experimental-v1": {
+              "readable": true,
+              "writable": true,
+              "status": "IMPLEMENTED_FUNCTIONAL_HYPOTHESIS",
+              "provenance": {
+                "readable": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ],
+                  "source": {
+                    "commit": "27704206113813f677e658b69155999d89795b3e",
+                    "path": "components/rtc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/rtc/RtcRegisterContracts.kt"
+                  }
+                },
+                "writable": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ],
+                  "source": {
+                    "commit": "27704206113813f677e658b69155999d89795b3e",
+                    "path": "components/rtc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/rtc/RtcRegisterContracts.kt"
+                  }
+                }
+              }
+            },
+            "gfx100s-rtc-scripted-stage-read-experimental-v2": {
+              "readable": true,
+              "writable": true,
+              "status": "IMPLEMENTED_FUNCTIONAL_HYPOTHESIS",
+              "provenance": {
+                "readable": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ],
+                  "source": {
+                    "commit": "27704206113813f677e658b69155999d89795b3e",
+                    "path": "components/rtc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/rtc/RtcRegisterContracts.kt"
+                  }
+                },
+                "writable": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+                  ],
+                  "source": {
+                    "commit": "27704206113813f677e658b69155999d89795b3e",
+                    "path": "components/rtc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/rtc/RtcRegisterContracts.kt"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "provenance": {
+        "selector": {
+          "confidence": "DAT",
+          "evidence": [
+            "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+          ]
+        },
+        "width": {
+          "confidence": "SOURCE",
+          "evidence": [
+            "evidence/refactor/rtc29-stop-research-new-01/qualification-06.generated.json"
+          ]
+        },
+        "physicalAddress": {
+          "confidence": "UNKNOWN",
+          "evidence": []
+        }
+      },
+      "unknowns": [
+        "No CPU physical base is assigned to this protocol register space.",
+        "Physical reset, timing, readback and persistence are unqualified."
+      ],
+      "nextValidation": "Bind declared logical contracts to the actual selected RTC profile without reading hardware."
+    }
+  ]
+}

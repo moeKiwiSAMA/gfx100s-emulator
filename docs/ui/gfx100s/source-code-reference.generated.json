@@ -1,0 +1,203 @@
+{
+  "schema": 1,
+  "id": "GFX-STYLE-CODE-001",
+  "evidenceClass": "SOURCE",
+  "observedAtUtc": "2026-11-10T07:09:46.080Z",
+  "method": "Read and hash-match actual owner-downloaded HTML/CSS/JS/font/image files; inspect both actual PNG resources; no new browser render claimed",
+  "privateDirectory": "local/eterna-website-source-2026-11-10-01",
+  "files": [
+    {
+      "url": "https://www.fujifilm-x.com/wp-content/mu-plugins/fujifilm-simulator//app/build/fujifilm-simulator-app.css?ver=1781493935",
+      "finalUrl": "https://www.fujifilm-x.com/wp-content/mu-plugins/fujifilm-simulator//app/build/fujifilm-simulator-app.css?ver=1781493935",
+      "status": 200,
+      "contentType": "text/css",
+      "retrievedAtUtc": "2026-11-10T07:00:03.535Z",
+      "bytes": 74249,
+      "sha256": "50ba77aba49dc57e6e88f1cfed8cb0d8c82812741c24509e590bf7bf7a3907e8",
+      "path": "fujifilm-simulator-app.css"
+    },
+    {
+      "url": "https://www.fujifilm-x.com/global/products/cameras/gfx-eterna-55/simulator/menu",
+      "finalUrl": "https://www.fujifilm-x.com/global/products/cameras/gfx-eterna-55/simulator/menu",
+      "status": 200,
+      "contentType": "text/html; charset=UTF-8",
+      "retrievedAtUtc": "2026-11-10T07:00:03.561Z",
+      "bytes": 164871,
+      "sha256": "4b3310658cc13603690f2e2a16da02ccf58922990af1ed0538bebc41056633f3",
+      "path": "menu.html"
+    },
+    {
+      "url": "https://www.fujifilm-x.com/global/products/cameras/gfx-eterna-55/simulator/",
+      "finalUrl": "https://www.fujifilm-x.com/global/products/cameras/gfx-eterna-55/simulator/",
+      "status": 200,
+      "contentType": "text/html; charset=UTF-8",
+      "retrievedAtUtc": "2026-11-10T07:00:03.562Z",
+      "bytes": 164871,
+      "sha256": "4b3310658cc13603690f2e2a16da02ccf58922990af1ed0538bebc41056633f3",
+      "path": "home.html"
+    },
+    {
+      "url": "https://www.fujifilm-x.com/wp-content/mu-plugins/fujifilm-simulator//app/build/fujifilm-simulator-app.js?ver=1793252719",
+      "finalUrl": "https://www.fujifilm-x.com/wp-content/mu-plugins/fujifilm-simulator//app/build/fujifilm-simulator-app.js?ver=1793252719",
+      "status": 200,
+      "contentType": "application/javascript",
+      "retrievedAtUtc": "2026-11-10T07:00:03.779Z",
+      "bytes": 943947,
+      "sha256": "aa707aab680dd44b3281421a3d07efcea0728f865acd863877ba7301adc50c23",
+      "path": "fujifilm-simulator-app.js"
+    },
+    {
+      "url": "https://www.fujifilm-x.com/wp-content/mu-plugins/fujifilm-simulator//app/build/assets/fonts/gothic.otf",
+      "finalUrl": "https://www.fujifilm-x.com/wp-content/mu-plugins/fujifilm-simulator//app/build/assets/fonts/gothic.otf",
+      "status": 200,
+      "contentType": "application/octet-stream",
+      "retrievedAtUtc": "2026-11-10T07:01:27.530Z",
+      "bytes": 28936,
+      "sha256": "e6257fb65dd1363afb497edcb18c9b7c48a751e8be8598551aa21ea7aea1332f",
+      "path": "gothic.otf"
+    },
+    {
+      "url": "https://www.fujifilm-x.com/wp-content/mu-plugins/fujifilm-simulator//app/build/assets/images/camera-body-back.png",
+      "finalUrl": "https://www.fujifilm-x.com/wp-content/mu-plugins/fujifilm-simulator//app/build/assets/images/camera-body-back.png",
+      "status": 200,
+      "contentType": "image/png",
+      "retrievedAtUtc": "2026-11-10T07:01:27.550Z",
+      "bytes": 699236,
+      "sha256": "0265c26c421406a10e765f55f7722c3cf40aab609761f9f9f961c4cc61feef54",
+      "path": "camera-body-back.png"
+    },
+    {
+      "url": "https://www.fujifilm-x.com/wp-content/mu-plugins/fujifilm-simulator//app/build/assets/fonts/Yq6R-LCAWCX3-6Ky7FAFrOF6kg.woff2",
+      "finalUrl": "https://www.fujifilm-x.com/wp-content/mu-plugins/fujifilm-simulator//app/build/assets/fonts/Yq6R-LCAWCX3-6Ky7FAFrOF6kg.woff2",
+      "status": 200,
+      "contentType": "font/woff2",
+      "retrievedAtUtc": "2026-11-10T07:01:27.582Z",
+      "bytes": 44584,
+      "sha256": "43a079fd739dffa727de659b5bbf44596031aa7542c8a8afbc54a243aab96b47",
+      "path": "Yq6R-LCAWCX3-6Ky7FAFrOF6kg.woff2"
+    },
+    {
+      "url": "https://www.fujifilm-x.com/wp-content/mu-plugins/fujifilm-simulator//app/build/assets/images/camera-body.png",
+      "finalUrl": "https://www.fujifilm-x.com/wp-content/mu-plugins/fujifilm-simulator//app/build/assets/images/camera-body.png",
+      "status": 200,
+      "contentType": "image/png",
+      "retrievedAtUtc": "2026-11-10T07:01:27.773Z",
+      "bytes": 2115777,
+      "sha256": "482bab579697ba929af37f23c5cdf0de5cdf04b584ba638b3bfd7a153ed0b54f",
+      "path": "camera-body.png"
+    }
+  ],
+  "htmlObservation": "home/menu HTML bytes are identical; JS route/state supplies the simulator content",
+  "implementation": {
+    "body": "JavaScript creates img nodes loading camera-body.png/camera-body-back.png; body highlights are image shading, not CSS vector paths",
+    "buttons": "HTML elements with multi-ring CSS gradients, black borders and pressed states",
+    "menu": "Host simulator state and markup, never GFX100S firmware framebuffer"
+  },
+  "selectors": [
+    {
+      "selector": ".wp-block-fujifilm-simulator",
+      "facts": {
+        "background": "#161515",
+        "layout": "grid",
+        "columns": "1fr 280px",
+        "gapPixels": 30
+      },
+      "cssByteOffset": 72464
+    },
+    {
+      "selector": ".camera-body--front__frame-container",
+      "facts": {
+        "widthPixels": 1222,
+        "heightPixels": 900,
+        "screenWidthPixels": 422,
+        "screenHeightPixels": 287
+      },
+      "cssByteOffset": 22305
+    },
+    {
+      "selector": ".camera-body__container--aside-buttons__text-container",
+      "facts": {
+        "normalGradient": [
+          "#515151",
+          "#0b0b0b",
+          "#515151"
+        ],
+        "directionDegrees": 180,
+        "innerSizePercent": 87
+      },
+      "cssByteOffset": 3066
+    },
+    {
+      "selector": ".camera-body__container--aside-buttons a:active",
+      "facts": {
+        "pressedGradient": [
+          "#3c3c3c",
+          "#050505",
+          "#3c3c3c"
+        ]
+      },
+      "cssByteOffset": 2944
+    },
+    {
+      "selector": ".camera-body__container--aside-buttons__outer-ring",
+      "facts": {
+        "borderPixels": 2,
+        "borderColor": "#000000"
+      },
+      "cssByteOffset": 4567
+    },
+    {
+      "selector": ".camera-body__container--main-screen",
+      "facts": {
+        "borderPixels": 1,
+        "borderColor": "#000000",
+        "background": "#000000",
+        "radiusPixels": 4
+      },
+      "cssByteOffset": 5012
+    },
+    {
+      "selector": "body",
+      "facts": {
+        "fontFallback": [
+          "system-ui",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "Segoe UI",
+          "Roboto",
+          "Helvetica Neue",
+          "sans-serif"
+        ]
+      },
+      "cssByteOffset": 71228
+    }
+  ],
+  "fonts": {
+    "cssAliases": [
+      "Fujifilm Sans",
+      "Fjalla One",
+      "Noto Sans"
+    ],
+    "fujifilmSans": {
+      "url": "https://www.fujifilm-x.com/wp-content/mu-plugins/fujifilm-simulator//app/build/assets/fonts/gothic.otf",
+      "sfntFamily": "Trade Gothic LT Std",
+      "postscriptName": "TradeGothicLTStd",
+      "redistributionLicenseVerified": false,
+      "bundled": false
+    },
+    "numericFamily": "Fjalla One",
+    "runtimePolicy": "Installed Trade Gothic LT Std, otherwise Arial Narrow, Arial, then JavaFX default. No downloaded font is bundled or loaded; runtime observation is separate."
+  },
+  "interpretation": {
+    "originalVectors": true,
+    "thirdPartyRasterOrFontRedistributed": false,
+    "firmwarePixelsCopied": false,
+    "sourceColorPriority": "Exact CSS #161515 takes priority over JPEG screenshot sample #151515",
+    "hardReflection": "No radial glass glow or floor halo; source three-stop button gradients, narrow bright rim edges and original hard facets"
+  },
+  "limitations": [
+    "Downloaded source is SOURCE, not new rendered-UI evidence.",
+    "Different GFX100S geometry cannot be pixel-identical to ETERNA photography.",
+    "Font availability and platform fallback do not establish matching glyph metrics."
+  ]
+}

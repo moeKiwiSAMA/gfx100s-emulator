@@ -1,0 +1,28 @@
+# ==============================================================================
+# Camera Battery Pack (NP-W235)
+# File: configs/components/battery/battery.yaml
+#
+# Controls the initial charge state of the virtual NP-W235 battery pack.
+# The fuel gauge chip (max17048) automatically reports these readings to the
+# camera body.
+# ==============================================================================
+
+# Whether a battery pack is installed (true = installed, false = removed).
+present: true
+
+# Initial battery level percentage (0.0 to 100.0).
+chargePercent: 100.0
+
+# Initial pack voltage in millivolts (typical NP-W235 range: 6400 to 8400 mV).
+voltageMillivolts: 7400
+
+# --- Examples (uncomment and replace the values above) ------------------------
+# Low-battery warning test (15% charge):
+# present: true
+# chargePercent: 15.0
+# voltageMillivolts: 6750
+#
+# Freshly charged pack:
+# present: true
+# chargePercent: 100.0
+# voltageMillivolts: 8350

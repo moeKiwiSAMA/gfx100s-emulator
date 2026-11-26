@@ -1,0 +1,157 @@
+{
+  "schema": 1,
+  "profile": "gfx100s-sd-host-uhs-phy-experimental-v9",
+  "legacy": {
+    "schema": 1,
+    "profile": "gfx100s-sd-host-phy-word-retention-experimental-v5",
+    "initialRegisters": {
+      "0": {
+        "word80": 0,
+        "control623e": 0,
+        "mixed6078": 0,
+        "control403e": 0,
+        "word60ec": 0
+      },
+      "1": {
+        "word80": 0,
+        "control623e": 0,
+        "mixed6078": 0,
+        "control403e": 0,
+        "word60ec": 0
+      }
+    },
+    "clocks": {
+      "0:0": {
+        "initialWord": 0,
+        "bit1Samples": [0, 0, 0, 1]
+      },
+      "0:1": {
+        "initialWord": 0,
+        "bit1Samples": [0, 0, 0, 1, 1, 1]
+      },
+      "1:0": {
+        "initialWord": 0,
+        "bit1Samples": [0, 0, 0, 1]
+      },
+      "1:1": {
+        "initialWord": 0,
+        "bit1Samples": [0, 0, 0, 1, 1, 1]
+      }
+    },
+    "initWords": {
+      "0": {
+        "capability6244": 8,
+        "present4024": 131072,
+        "present6224": 131072,
+        "signal6238": 0,
+        "block4006": 0,
+        "host6228": 0,
+        "host4028": 0
+      },
+      "1": {
+        "capability6244": 8,
+        "present4024": 131072,
+        "present6224": 131072,
+        "signal6238": 0,
+        "block4006": 0,
+        "host6228": 0,
+        "host4028": 0
+      }
+    }
+  },
+  "cards": {
+    "0": {
+      "basis": "SYNTHETIC",
+      "capacityBytes": 4294967296,
+      "highCapacity": true,
+      "readOnly": false,
+      "rca": 1,
+      "cidHex": "fe54455354303031100102030401a1c5",
+      "ocrVoltageWindow": 16744448,
+      "supportsHighSpeed": true
+    },
+    "1": {
+      "basis": "SYNTHETIC",
+      "capacityBytes": 4294967296,
+      "highCapacity": true,
+      "readOnly": false,
+      "rca": 2,
+      "cidHex": "fe54455354303032100102030401a2cf",
+      "ocrVoltageWindow": 16744448,
+      "supportsHighSpeed": true
+    }
+  },
+  "commandTicks": 2,
+  "blockTicks": 3,
+  "resetTicks": 2,
+  "addressHighBits": {
+    "0": 0,
+    "1": 0
+  },
+  "vendorPhyWords": {
+    "0": {
+      "vendor41e0": 0,
+      "vendor41e4": 0,
+      "phy6060": 0,
+      "phy607c": 1,
+      "phy6094": 0
+    },
+    "1": {
+      "vendor41e0": 0,
+      "vendor41e4": 0,
+      "phy6060": 0,
+      "phy607c": 1,
+      "phy6094": 0
+    }
+  },
+  "uhsPhyWords": {
+    "0": {
+      "uhs4100": 0,
+      "uhs4108": 0,
+      "uhs410a": 0,
+      "uhs410c": 0,
+      "uhs410e": 0,
+      "uhs2_6280": 0,
+      "uhs2_62c0": 0,
+      "uhs2_62c2": 0,
+      "uhs4114": 0,
+      "uhs4124": 0,
+      "phy6020": 0,
+      "phy6024": 0,
+      "uhs2_6258": 0,
+      "uhs2_625c": 0,
+      "uhs2_6284": 0,
+      "uhs2_6288": 0,
+      "uhs2_628c": 0,
+      "uhs2_6290": 0,
+      "uhs2_629c": 0,
+      "uhs2_62c4": 0,
+      "uhs2_62c8": 0,
+      "uhs2_62cc": 0
+    },
+    "1": {
+      "uhs4100": 0,
+      "uhs4108": 0,
+      "uhs410a": 0,
+      "uhs410c": 0,
+      "uhs410e": 0,
+      "uhs2_6280": 0,
+      "uhs2_62c0": 0,
+      "uhs2_62c2": 0,
+      "uhs4114": 0,
+      "uhs4124": 0,
+      "phy6020": 0,
+      "phy6024": 0,
+      "uhs2_6258": 0,
+      "uhs2_625c": 0,
+      "uhs2_6284": 0,
+      "uhs2_6288": 0,
+      "uhs2_628c": 0,
+      "uhs2_6290": 0,
+      "uhs2_629c": 0,
+      "uhs2_62c4": 0,
+      "uhs2_62c8": 0,
+      "uhs2_62cc": 0
+    }
+  }
+}

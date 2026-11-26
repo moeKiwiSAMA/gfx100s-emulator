@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "id": "device.optical-filter",
+  "componentId": "optical-filter",
+  "depends": [],
+  "version": "0.0.1",
+  "name": "optical-filter",
+  "physicalIdentity": "Decoupled Front-of-Lens / Matte-Box Optical Filter Stack (ND2..ND1000 / Variable ND, 4/6/8-Point Star Cross-Screen, Black Mist Halation, Graduated ND, extensible via OpticalFilterElementProvider SPI)",
+  "implementationStatus": "PARTIAL",
+  "implementationSources": [
+    "components/optical-filter/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/filter/OpticalFilterFactory.kt",
+    "components/optical-filter/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/filter/OpticalFilterElements.kt"
+  ],
+  "ports": [],
+  "unknowns": [
+    "Physical glass spectral transmission curves and diffraction grating micro-profiles are analytical simulation models (SIM) rather than vendor spectrophotometric measurements."
+  ],
+  "nextValidation": "Verify live GFX100S AE exposure compensation (+3 EV on ND8), M-mode EV meter shift (-3.0 EV on ND8), and zero-cost bypass when all filters are OFF."
+}

@@ -1,0 +1,2961 @@
+{
+  "schema": 1,
+  "id": "gfx100s-213",
+  "version": "2.13",
+  "size": 50197040,
+  "sha256": "ea997915ac5accc79699392b47909bb29506f66ec8d571e5804dd1fb0408fd12",
+  "entry": "0x0",
+  "cpsr": "0xd3",
+  "loaderMemoryBytes": "0x20000",
+  "bootMode": "ram-loader-experiment; boot ROM not executed",
+  "memoryProfiles": {
+    "loader-low128-experimental-v1": [
+      {
+        "id": "loader",
+        "address": "0x0",
+        "size": "0x20000",
+        "permissions": 7
+      }
+    ],
+    "loader-workspace-experimental-v1": [
+      {
+        "id": "loader",
+        "address": "0x0",
+        "size": "0x20000",
+        "permissions": 7
+      },
+      {
+        "id": "metadata-workspace",
+        "address": "0xe20000",
+        "size": "0x1000",
+        "permissions": 3
+      }
+    ],
+    "loader-footer-experimental-v2": [
+      {
+        "id": "loader",
+        "address": "0x0",
+        "size": "0x20000",
+        "permissions": 7
+      },
+      {
+        "id": "metadata-workspace",
+        "address": "0xe20000",
+        "size": "0x1000",
+        "permissions": 3
+      },
+      {
+        "id": "footer",
+        "address": "0x2a69c000",
+        "size": "0x1000",
+        "permissions": 3
+      }
+    ],
+    "loader-kernel-experimental-v3": [
+      {
+        "id": "loader",
+        "address": "0x0",
+        "size": "0x20000",
+        "permissions": 7
+      },
+      {
+        "id": "kernel",
+        "address": "0x40000",
+        "size": "0x46000",
+        "permissions": 7
+      },
+      {
+        "id": "metadata-workspace",
+        "address": "0xe20000",
+        "size": "0x1000",
+        "permissions": 3
+      },
+      {
+        "id": "footer",
+        "address": "0x2a69c000",
+        "size": "0x1000",
+        "permissions": 3
+      }
+    ],
+    "loader-segments-experimental-v4": [
+      {
+        "id": "loader",
+        "address": "0x0",
+        "size": "0x20000",
+        "permissions": 7
+      },
+      {
+        "id": "kernel",
+        "address": "0x40000",
+        "size": "0x46000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-1",
+        "address": "0x1e0000",
+        "size": "0x67c000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-2",
+        "address": "0x8e0000",
+        "size": "0xa4000",
+        "permissions": 7
+      },
+      {
+        "id": "metadata-workspace",
+        "address": "0xe20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-4",
+        "address": "0xf20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-5",
+        "address": "0x1021000",
+        "size": "0x2bd2000",
+        "permissions": 7
+      },
+      {
+        "id": "staging",
+        "address": "0x2a69c000",
+        "size": "0x540000",
+        "permissions": 3
+      }
+    ],
+    "kernel-stacks-experimental-v5": [
+      {
+        "id": "loader",
+        "address": "0x0",
+        "size": "0x20000",
+        "permissions": 7
+      },
+      {
+        "id": "kernel",
+        "address": "0x40000",
+        "size": "0x46000",
+        "permissions": 7
+      },
+      {
+        "id": "stack-sys",
+        "address": "0x88000",
+        "size": "0x4000",
+        "permissions": 3
+      },
+      {
+        "id": "stack-irq",
+        "address": "0x8c000",
+        "size": "0x4000",
+        "permissions": 3
+      },
+      {
+        "id": "stack-abt",
+        "address": "0x90000",
+        "size": "0x4000",
+        "permissions": 3
+      },
+      {
+        "id": "stack-und",
+        "address": "0x94000",
+        "size": "0x4000",
+        "permissions": 3
+      },
+      {
+        "id": "stack-svc",
+        "address": "0x9c000",
+        "size": "0x4000",
+        "permissions": 3
+      },
+      {
+        "id": "segment-1",
+        "address": "0x1e0000",
+        "size": "0x67c000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-2",
+        "address": "0x8e0000",
+        "size": "0xa4000",
+        "permissions": 7
+      },
+      {
+        "id": "metadata-workspace",
+        "address": "0xe20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-4",
+        "address": "0xf20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-5",
+        "address": "0x1021000",
+        "size": "0x2bd2000",
+        "permissions": 7
+      },
+      {
+        "id": "staging",
+        "address": "0x2a69c000",
+        "size": "0x540000",
+        "permissions": 3
+      }
+    ],
+    "kernel-page-table-experimental-v6": [
+      {
+        "id": "loader",
+        "address": "0x0",
+        "size": "0x20000",
+        "permissions": 7
+      },
+      {
+        "id": "kernel",
+        "address": "0x40000",
+        "size": "0x46000",
+        "permissions": 7
+      },
+      {
+        "id": "stack-sys",
+        "address": "0x88000",
+        "size": "0x4000",
+        "permissions": 3
+      },
+      {
+        "id": "stack-irq",
+        "address": "0x8c000",
+        "size": "0x4000",
+        "permissions": 3
+      },
+      {
+        "id": "stack-abt",
+        "address": "0x90000",
+        "size": "0x4000",
+        "permissions": 3
+      },
+      {
+        "id": "stack-und",
+        "address": "0x94000",
+        "size": "0x4000",
+        "permissions": 3
+      },
+      {
+        "id": "stack-svc",
+        "address": "0x9c000",
+        "size": "0x4000",
+        "permissions": 3
+      },
+      {
+        "id": "kernel-l1-table",
+        "address": "0x120000",
+        "size": "0x4000",
+        "permissions": 3
+      },
+      {
+        "id": "segment-1",
+        "address": "0x1e0000",
+        "size": "0x67c000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-2",
+        "address": "0x8e0000",
+        "size": "0xa4000",
+        "permissions": 7
+      },
+      {
+        "id": "metadata-workspace",
+        "address": "0xe20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-4",
+        "address": "0xf20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-5",
+        "address": "0x1021000",
+        "size": "0x2bd2000",
+        "permissions": 7
+      },
+      {
+        "id": "staging",
+        "address": "0x2a69c000",
+        "size": "0x540000",
+        "permissions": 3
+      }
+    ],
+    "kernel-byte-pool-experimental-v7": [
+      {
+        "id": "loader",
+        "address": "0x0",
+        "size": "0x20000",
+        "permissions": 7
+      },
+      {
+        "id": "kernel",
+        "address": "0x40000",
+        "size": "0x46000",
+        "permissions": 7
+      },
+      {
+        "id": "stack-sys",
+        "address": "0x88000",
+        "size": "0x4000",
+        "permissions": 3
+      },
+      {
+        "id": "stack-irq",
+        "address": "0x8c000",
+        "size": "0x4000",
+        "permissions": 3
+      },
+      {
+        "id": "stack-abt",
+        "address": "0x90000",
+        "size": "0x4000",
+        "permissions": 3
+      },
+      {
+        "id": "stack-und",
+        "address": "0x94000",
+        "size": "0x4000",
+        "permissions": 3
+      },
+      {
+        "id": "stack-svc",
+        "address": "0x9c000",
+        "size": "0x4000",
+        "permissions": 3
+      },
+      {
+        "id": "kernel-l1-table",
+        "address": "0x120000",
+        "size": "0x4000",
+        "permissions": 3
+      },
+      {
+        "id": "kernel-byte-pool",
+        "address": "0x1c4000",
+        "size": "0x2000",
+        "permissions": 3
+      },
+      {
+        "id": "segment-1",
+        "address": "0x1e0000",
+        "size": "0x67c000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-2",
+        "address": "0x8e0000",
+        "size": "0xa4000",
+        "permissions": 7
+      },
+      {
+        "id": "metadata-workspace",
+        "address": "0xe20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-4",
+        "address": "0xf20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-5",
+        "address": "0x1021000",
+        "size": "0x2bd2000",
+        "permissions": 7
+      },
+      {
+        "id": "staging",
+        "address": "0x2a69c000",
+        "size": "0x540000",
+        "permissions": 3
+      }
+    ],
+    "kernel-trace-pools-experimental-v8": [
+      {
+        "id": "loader",
+        "address": "0x0",
+        "size": "0x20000",
+        "permissions": 7
+      },
+      {
+        "id": "kernel",
+        "address": "0x40000",
+        "size": "0x46000",
+        "permissions": 7
+      },
+      {
+        "id": "stack-sys",
+        "address": "0x88000",
+        "size": "0x10000",
+        "permissions": 3
+      },
+      {
+        "id": "stack-svc",
+        "address": "0x9c000",
+        "size": "0x4000",
+        "permissions": 3
+      },
+      {
+        "id": "kernel-l1-table",
+        "address": "0x120000",
+        "size": "0xa6000",
+        "permissions": 3
+      },
+      {
+        "id": "segment-1",
+        "address": "0x1e0000",
+        "size": "0x67c000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-2",
+        "address": "0x8e0000",
+        "size": "0xa4000",
+        "permissions": 7
+      },
+      {
+        "id": "metadata-workspace",
+        "address": "0xe20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-4",
+        "address": "0xf20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-5",
+        "address": "0x1021000",
+        "size": "0x2bd2000",
+        "permissions": 7
+      },
+      {
+        "id": "staging",
+        "address": "0x2a69c000",
+        "size": "0x540000",
+        "permissions": 3
+      }
+    ],
+    "kernel-l2-tables-experimental-v9": [
+      {
+        "id": "loader",
+        "address": "0x0",
+        "size": "0x20000",
+        "permissions": 7
+      },
+      {
+        "id": "kernel",
+        "address": "0x40000",
+        "size": "0x46000",
+        "permissions": 7
+      },
+      {
+        "id": "stack-sys",
+        "address": "0x88000",
+        "size": "0x10000",
+        "permissions": 3
+      },
+      {
+        "id": "stack-svc",
+        "address": "0x9c000",
+        "size": "0x12a000",
+        "permissions": 3
+      },
+      {
+        "id": "segment-1",
+        "address": "0x1e0000",
+        "size": "0x67c000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-2",
+        "address": "0x8e0000",
+        "size": "0xa4000",
+        "permissions": 7
+      },
+      {
+        "id": "metadata-workspace",
+        "address": "0xe20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-4",
+        "address": "0xf20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-5",
+        "address": "0x1021000",
+        "size": "0x2bd2000",
+        "permissions": 7
+      },
+      {
+        "id": "staging",
+        "address": "0x2a69c000",
+        "size": "0x540000",
+        "permissions": 3
+      }
+    ],
+    "kernel-flash-buffer-experimental-v10": [
+      {
+        "id": "loader",
+        "address": "0x0",
+        "size": "0x20000",
+        "permissions": 7
+      },
+      {
+        "id": "kernel",
+        "address": "0x40000",
+        "size": "0x46000",
+        "permissions": 7
+      },
+      {
+        "id": "stack-sys",
+        "address": "0x88000",
+        "size": "0x10000",
+        "permissions": 3
+      },
+      {
+        "id": "stack-svc",
+        "address": "0x9c000",
+        "size": "0x12a000",
+        "permissions": 3
+      },
+      {
+        "id": "segment-1",
+        "address": "0x1e0000",
+        "size": "0x67c000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-2",
+        "address": "0x8e0000",
+        "size": "0xa4000",
+        "permissions": 7
+      },
+      {
+        "id": "metadata-workspace",
+        "address": "0xe20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-4",
+        "address": "0xf20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-5",
+        "address": "0x1021000",
+        "size": "0x2bd2000",
+        "permissions": 7
+      },
+      {
+        "id": "flash-read-buffer",
+        "address": "0x4e08000",
+        "size": "0x800000",
+        "permissions": 3
+      },
+      {
+        "id": "staging",
+        "address": "0x2a69c000",
+        "size": "0x540000",
+        "permissions": 3
+      }
+    ],
+    "kernel-aux-buffer-experimental-v11": [
+      {
+        "id": "loader",
+        "address": "0x0",
+        "size": "0x20000",
+        "permissions": 7
+      },
+      {
+        "id": "kernel",
+        "address": "0x40000",
+        "size": "0x46000",
+        "permissions": 7
+      },
+      {
+        "id": "stack-sys",
+        "address": "0x88000",
+        "size": "0x10000",
+        "permissions": 3
+      },
+      {
+        "id": "stack-svc",
+        "address": "0x9c000",
+        "size": "0x12a000",
+        "permissions": 3
+      },
+      {
+        "id": "segment-1",
+        "address": "0x1e0000",
+        "size": "0x67c000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-2",
+        "address": "0x8e0000",
+        "size": "0xa4000",
+        "permissions": 7
+      },
+      {
+        "id": "metadata-workspace",
+        "address": "0xe20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-4",
+        "address": "0xf20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-5",
+        "address": "0x1021000",
+        "size": "0x2bd2000",
+        "permissions": 7
+      },
+      {
+        "id": "aux-work-buffer",
+        "address": "0x4e04000",
+        "size": "0x804000",
+        "permissions": 3
+      },
+      {
+        "id": "staging",
+        "address": "0x2a69c000",
+        "size": "0x540000",
+        "permissions": 3
+      }
+    ],
+    "kernel-auxiliary-task-buffer-experimental-v12": [
+      {
+        "id": "loader",
+        "address": "0x0",
+        "size": "0x20000",
+        "permissions": 7
+      },
+      {
+        "id": "kernel",
+        "address": "0x40000",
+        "size": "0x46000",
+        "permissions": 7
+      },
+      {
+        "id": "stack-sys",
+        "address": "0x88000",
+        "size": "0x10000",
+        "permissions": 3
+      },
+      {
+        "id": "stack-svc",
+        "address": "0x9c000",
+        "size": "0x12a000",
+        "permissions": 3
+      },
+      {
+        "id": "segment-1",
+        "address": "0x1e0000",
+        "size": "0x67c000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-2",
+        "address": "0x8e0000",
+        "size": "0xa4000",
+        "permissions": 7
+      },
+      {
+        "id": "metadata-workspace",
+        "address": "0xe20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-4",
+        "address": "0xf20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-5",
+        "address": "0x1021000",
+        "size": "0x2bd2000",
+        "permissions": 7
+      },
+      {
+        "id": "aux-work-buffer",
+        "address": "0x4e04000",
+        "size": "0x804000",
+        "permissions": 3
+      },
+      {
+        "id": "auxiliary-task-buffer",
+        "address": "0x589f000",
+        "size": "0x31000",
+        "permissions": 3
+      },
+      {
+        "id": "staging",
+        "address": "0x2a69c000",
+        "size": "0x540000",
+        "permissions": 3
+      }
+    ],
+    "kernel-auxiliary-task-pair-experimental-v13": [
+      {
+        "id": "loader",
+        "address": "0x0",
+        "size": "0x20000",
+        "permissions": 7
+      },
+      {
+        "id": "kernel",
+        "address": "0x40000",
+        "size": "0x46000",
+        "permissions": 7
+      },
+      {
+        "id": "stack-sys",
+        "address": "0x88000",
+        "size": "0x10000",
+        "permissions": 3
+      },
+      {
+        "id": "stack-svc",
+        "address": "0x9c000",
+        "size": "0x12a000",
+        "permissions": 3
+      },
+      {
+        "id": "segment-1",
+        "address": "0x1e0000",
+        "size": "0x67c000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-2",
+        "address": "0x8e0000",
+        "size": "0xa4000",
+        "permissions": 7
+      },
+      {
+        "id": "metadata-workspace",
+        "address": "0xe20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-4",
+        "address": "0xf20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-5",
+        "address": "0x1021000",
+        "size": "0x2bd2000",
+        "permissions": 7
+      },
+      {
+        "id": "aux-work-buffer",
+        "address": "0x4e04000",
+        "size": "0x804000",
+        "permissions": 3
+      },
+      {
+        "id": "auxiliary-task-buffer",
+        "address": "0x589f000",
+        "size": "0x62000",
+        "permissions": 3
+      },
+      {
+        "id": "staging",
+        "address": "0x2a69c000",
+        "size": "0x540000",
+        "permissions": 3
+      }
+    ],
+    "kernel-paired-flash-read-buffer-experimental-v14": [
+      {
+        "id": "loader",
+        "address": "0x0",
+        "size": "0x20000",
+        "permissions": 7
+      },
+      {
+        "id": "kernel",
+        "address": "0x40000",
+        "size": "0x46000",
+        "permissions": 7
+      },
+      {
+        "id": "stack-sys",
+        "address": "0x88000",
+        "size": "0x10000",
+        "permissions": 3
+      },
+      {
+        "id": "stack-svc",
+        "address": "0x9c000",
+        "size": "0x12a000",
+        "permissions": 3
+      },
+      {
+        "id": "segment-1",
+        "address": "0x1e0000",
+        "size": "0x67c000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-2",
+        "address": "0x8e0000",
+        "size": "0xa4000",
+        "permissions": 7
+      },
+      {
+        "id": "metadata-workspace",
+        "address": "0xe20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-4",
+        "address": "0xf20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-5",
+        "address": "0x1021000",
+        "size": "0x2bd2000",
+        "permissions": 7
+      },
+      {
+        "id": "aux-work-buffer",
+        "address": "0x4e04000",
+        "size": "0x804000",
+        "permissions": 3
+      },
+      {
+        "id": "auxiliary-task-buffer",
+        "address": "0x589f000",
+        "size": "0x62000",
+        "permissions": 3
+      },
+      {
+        "id": "paired-flash-read-buffer",
+        "address": "0x19082000",
+        "size": "0x20000",
+        "permissions": 3
+      },
+      {
+        "id": "staging",
+        "address": "0x2a69c000",
+        "size": "0x540000",
+        "permissions": 3
+      }
+    ],
+    "kernel-config-record-pages-experimental-v15": [
+      {
+        "id": "loader",
+        "address": "0x0",
+        "size": "0x20000",
+        "permissions": 7
+      },
+      {
+        "id": "kernel",
+        "address": "0x40000",
+        "size": "0x46000",
+        "permissions": 7
+      },
+      {
+        "id": "stack-sys",
+        "address": "0x88000",
+        "size": "0x10000",
+        "permissions": 3
+      },
+      {
+        "id": "stack-svc",
+        "address": "0x9c000",
+        "size": "0x12a000",
+        "permissions": 3
+      },
+      {
+        "id": "segment-1",
+        "address": "0x1e0000",
+        "size": "0x67c000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-2",
+        "address": "0x8e0000",
+        "size": "0xa4000",
+        "permissions": 7
+      },
+      {
+        "id": "metadata-workspace",
+        "address": "0xe20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-4",
+        "address": "0xf20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-5",
+        "address": "0x1021000",
+        "size": "0x2bd2000",
+        "permissions": 7
+      },
+      {
+        "id": "aux-work-buffer",
+        "address": "0x4e04000",
+        "size": "0x804000",
+        "permissions": 3
+      },
+      {
+        "id": "auxiliary-task-buffer",
+        "address": "0x589f000",
+        "size": "0x62000",
+        "permissions": 3
+      },
+      {
+        "id": "paired-flash-read-buffer",
+        "address": "0x19082000",
+        "size": "0x20000",
+        "permissions": 3
+      },
+      {
+        "id": "staging",
+        "address": "0x2a69c000",
+        "size": "0x540000",
+        "permissions": 3
+      },
+      {
+        "id": "config-record-pages",
+        "address": "0x4e00000",
+        "size": "0x3000",
+        "permissions": 3
+      }
+    ],
+    "kernel-runtime-flash-staging-experimental-v16": [
+      {
+        "id": "loader",
+        "address": "0x0",
+        "size": "0x20000",
+        "permissions": 7
+      },
+      {
+        "id": "kernel",
+        "address": "0x40000",
+        "size": "0x46000",
+        "permissions": 7
+      },
+      {
+        "id": "stack-sys",
+        "address": "0x88000",
+        "size": "0x10000",
+        "permissions": 3
+      },
+      {
+        "id": "stack-svc",
+        "address": "0x9c000",
+        "size": "0x12a000",
+        "permissions": 3
+      },
+      {
+        "id": "segment-1",
+        "address": "0x1e0000",
+        "size": "0x67c000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-2",
+        "address": "0x8e0000",
+        "size": "0xa4000",
+        "permissions": 7
+      },
+      {
+        "id": "metadata-workspace",
+        "address": "0xe20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-4",
+        "address": "0xf20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-5",
+        "address": "0x1021000",
+        "size": "0x2bd2000",
+        "permissions": 7
+      },
+      {
+        "id": "aux-work-buffer",
+        "address": "0x4e04000",
+        "size": "0x804000",
+        "permissions": 3
+      },
+      {
+        "id": "auxiliary-task-buffer",
+        "address": "0x589f000",
+        "size": "0x62000",
+        "permissions": 3
+      },
+      {
+        "id": "paired-flash-read-buffer",
+        "address": "0x19082000",
+        "size": "0x20000",
+        "permissions": 3
+      },
+      {
+        "id": "staging",
+        "address": "0x2a69c000",
+        "size": "0x540000",
+        "permissions": 3
+      },
+      {
+        "id": "config-record-pages",
+        "address": "0x4e00000",
+        "size": "0x3000",
+        "permissions": 3
+      },
+      {
+        "id": "runtime-flash-staging",
+        "address": "0x2b69c000",
+        "size": "0x540000",
+        "permissions": 3
+      }
+    ],
+    "post-lens-object-loading-experimental-v17": [
+      {
+        "id": "loader",
+        "address": "0x0",
+        "size": "0x20000",
+        "permissions": 7
+      },
+      {
+        "id": "kernel",
+        "address": "0x40000",
+        "size": "0x46000",
+        "permissions": 7
+      },
+      {
+        "id": "stack-sys",
+        "address": "0x88000",
+        "size": "0x10000",
+        "permissions": 3
+      },
+      {
+        "id": "stack-svc",
+        "address": "0x9c000",
+        "size": "0x12a000",
+        "permissions": 3
+      },
+      {
+        "id": "segment-1",
+        "address": "0x1e0000",
+        "size": "0x67c000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-2",
+        "address": "0x8e0000",
+        "size": "0xa4000",
+        "permissions": 7
+      },
+      {
+        "id": "post-lens-object",
+        "address": 11534336,
+        "size": 1703936,
+        "permissions": 3
+      },
+      {
+        "id": "metadata-workspace",
+        "address": "0xe20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-4",
+        "address": "0xf20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-5",
+        "address": "0x1021000",
+        "size": "0x2bd2000",
+        "permissions": 7
+      },
+      {
+        "id": "config-record-pages",
+        "address": "0x4e00000",
+        "size": "0x3000",
+        "permissions": 3
+      },
+      {
+        "id": "aux-work-buffer",
+        "address": "0x4e04000",
+        "size": "0x804000",
+        "permissions": 3
+      },
+      {
+        "id": "auxiliary-task-buffer",
+        "address": "0x589f000",
+        "size": "0x62000",
+        "permissions": 3
+      },
+      {
+        "id": "paired-flash-read-buffer",
+        "address": "0x19082000",
+        "size": "0x20000",
+        "permissions": 3
+      },
+      {
+        "id": "staging",
+        "address": "0x2a69c000",
+        "size": "0x540000",
+        "permissions": 3
+      },
+      {
+        "id": "runtime-flash-staging",
+        "address": "0x2b69c000",
+        "size": "0x540000",
+        "permissions": 3
+      }
+    ],
+    "calc-fixed-workspace-experimental-v18": [
+      {
+        "id": "loader",
+        "address": "0x0",
+        "size": "0x20000",
+        "permissions": 7
+      },
+      {
+        "id": "kernel",
+        "address": "0x40000",
+        "size": "0x46000",
+        "permissions": 7
+      },
+      {
+        "id": "stack-sys",
+        "address": "0x88000",
+        "size": "0x10000",
+        "permissions": 3
+      },
+      {
+        "id": "stack-svc",
+        "address": "0x9c000",
+        "size": "0x12a000",
+        "permissions": 3
+      },
+      {
+        "id": "segment-1",
+        "address": "0x1e0000",
+        "size": "0x67c000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-2",
+        "address": "0x8e0000",
+        "size": "0xa4000",
+        "permissions": 7
+      },
+      {
+        "id": "post-lens-object",
+        "address": 11534336,
+        "size": 1703936,
+        "permissions": 3
+      },
+      {
+        "id": "metadata-workspace",
+        "address": "0xe20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-4",
+        "address": "0xf20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-5",
+        "address": "0x1021000",
+        "size": "0x2bd2000",
+        "permissions": 7
+      },
+      {
+        "id": "config-record-pages",
+        "address": "0x4e00000",
+        "size": "0x3000",
+        "permissions": 3
+      },
+      {
+        "id": "aux-work-buffer",
+        "address": "0x4e04000",
+        "size": "0x804000",
+        "permissions": 3
+      },
+      {
+        "id": "auxiliary-task-buffer",
+        "address": "0x589f000",
+        "size": "0x62000",
+        "permissions": 3
+      },
+      {
+        "id": "paired-flash-read-buffer",
+        "address": "0x19082000",
+        "size": "0x20000",
+        "permissions": 3
+      },
+      {
+        "id": "staging",
+        "address": "0x2a69c000",
+        "size": "0x540000",
+        "permissions": 3
+      },
+      {
+        "id": "runtime-flash-staging",
+        "address": "0x2b69c000",
+        "size": "0x540000",
+        "permissions": 3
+      },
+      {
+        "id": "calc-fixed-workspace",
+        "address": "0x2c590000",
+        "size": "0xe000",
+        "permissions": 3
+      }
+    ],
+    "raw-segment2-tail-experimental-v19": [
+      {
+        "id": "loader",
+        "address": "0x0",
+        "size": "0x20000",
+        "permissions": 7
+      },
+      {
+        "id": "kernel",
+        "address": "0x40000",
+        "size": "0x46000",
+        "permissions": 7
+      },
+      {
+        "id": "stack-sys",
+        "address": "0x88000",
+        "size": "0x10000",
+        "permissions": 3
+      },
+      {
+        "id": "stack-svc",
+        "address": "0x9c000",
+        "size": "0x12a000",
+        "permissions": 3
+      },
+      {
+        "id": "segment-1",
+        "address": "0x1e0000",
+        "size": "0x67c000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-2",
+        "address": "0x8e0000",
+        "size": "0xa4000",
+        "permissions": 7
+      },
+      {
+        "id": "segment2-allocation-tail",
+        "address": "0x984000",
+        "size": "0x1c000",
+        "permissions": 3
+      },
+      {
+        "id": "post-lens-object",
+        "address": 11534336,
+        "size": 1703936,
+        "permissions": 3
+      },
+      {
+        "id": "metadata-workspace",
+        "address": "0xe20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-4",
+        "address": "0xf20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-5",
+        "address": "0x1021000",
+        "size": "0x2bd2000",
+        "permissions": 7
+      },
+      {
+        "id": "config-record-pages",
+        "address": "0x4e00000",
+        "size": "0x3000",
+        "permissions": 3
+      },
+      {
+        "id": "aux-work-buffer",
+        "address": "0x4e04000",
+        "size": "0x804000",
+        "permissions": 3
+      },
+      {
+        "id": "auxiliary-task-buffer",
+        "address": "0x589f000",
+        "size": "0x62000",
+        "permissions": 3
+      },
+      {
+        "id": "paired-flash-read-buffer",
+        "address": "0x19082000",
+        "size": "0x20000",
+        "permissions": 3
+      },
+      {
+        "id": "staging",
+        "address": "0x2a69c000",
+        "size": "0x540000",
+        "permissions": 3
+      },
+      {
+        "id": "runtime-flash-staging",
+        "address": "0x2b69c000",
+        "size": "0x540000",
+        "permissions": 3
+      },
+      {
+        "id": "calc-fixed-workspace",
+        "address": "0x2c590000",
+        "size": "0xe000",
+        "permissions": 3
+      }
+    ],
+    "fixed-table-row5-buffer-experimental-v20": [
+      {
+        "id": "loader",
+        "address": "0x0",
+        "size": "0x20000",
+        "permissions": 7
+      },
+      {
+        "id": "kernel",
+        "address": "0x40000",
+        "size": "0x46000",
+        "permissions": 7
+      },
+      {
+        "id": "stack-sys",
+        "address": "0x88000",
+        "size": "0x10000",
+        "permissions": 3
+      },
+      {
+        "id": "stack-svc",
+        "address": "0x9c000",
+        "size": "0x12a000",
+        "permissions": 3
+      },
+      {
+        "id": "segment-1",
+        "address": "0x1e0000",
+        "size": "0x67c000",
+        "permissions": 7
+      },
+      {
+        "id": "fixed-table-row5-buffer",
+        "address": "0x8a0000",
+        "size": "0x40000",
+        "permissions": 3
+      },
+      {
+        "id": "segment-2",
+        "address": "0x8e0000",
+        "size": "0xa4000",
+        "permissions": 7
+      },
+      {
+        "id": "segment2-allocation-tail",
+        "address": "0x984000",
+        "size": "0x1c000",
+        "permissions": 3
+      },
+      {
+        "id": "post-lens-object",
+        "address": 11534336,
+        "size": 1703936,
+        "permissions": 3
+      },
+      {
+        "id": "metadata-workspace",
+        "address": "0xe20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-4",
+        "address": "0xf20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-5",
+        "address": "0x1021000",
+        "size": "0x2bd2000",
+        "permissions": 7
+      },
+      {
+        "id": "config-record-pages",
+        "address": "0x4e00000",
+        "size": "0x3000",
+        "permissions": 3
+      },
+      {
+        "id": "aux-work-buffer",
+        "address": "0x4e04000",
+        "size": "0x804000",
+        "permissions": 3
+      },
+      {
+        "id": "auxiliary-task-buffer",
+        "address": "0x589f000",
+        "size": "0x62000",
+        "permissions": 3
+      },
+      {
+        "id": "paired-flash-read-buffer",
+        "address": "0x19082000",
+        "size": "0x20000",
+        "permissions": 3
+      },
+      {
+        "id": "staging",
+        "address": "0x2a69c000",
+        "size": "0x540000",
+        "permissions": 3
+      },
+      {
+        "id": "runtime-flash-staging",
+        "address": "0x2b69c000",
+        "size": "0x540000",
+        "permissions": 3
+      },
+      {
+        "id": "calc-fixed-workspace",
+        "address": "0x2c590000",
+        "size": "0xe000",
+        "permissions": 3
+      }
+    ],
+    "seven-row-table-buffer-experimental-v21": [
+      {
+        "id": "loader",
+        "address": "0x0",
+        "size": "0x20000",
+        "permissions": 7
+      },
+      {
+        "id": "kernel",
+        "address": "0x40000",
+        "size": "0x46000",
+        "permissions": 7
+      },
+      {
+        "id": "stack-sys",
+        "address": "0x88000",
+        "size": "0x10000",
+        "permissions": 3
+      },
+      {
+        "id": "stack-svc",
+        "address": "0x9c000",
+        "size": "0x12a000",
+        "permissions": 3
+      },
+      {
+        "id": "segment-1",
+        "address": "0x1e0000",
+        "size": "0x67c000",
+        "permissions": 7
+      },
+      {
+        "id": "fixed-table-row5-buffer",
+        "address": "0x8a0000",
+        "size": "0x40000",
+        "permissions": 3
+      },
+      {
+        "id": "segment-2",
+        "address": "0x8e0000",
+        "size": "0xa4000",
+        "permissions": 7
+      },
+      {
+        "id": "segment2-allocation-tail",
+        "address": "0x984000",
+        "size": "0x1c000",
+        "permissions": 3
+      },
+      {
+        "id": "seven-row-table-buffer",
+        "address": "0x9a0000",
+        "size": "0xe0000",
+        "permissions": 3
+      },
+      {
+        "id": "post-lens-object",
+        "address": 11534336,
+        "size": 1703936,
+        "permissions": 3
+      },
+      {
+        "id": "metadata-workspace",
+        "address": "0xe20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-4",
+        "address": "0xf20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-5",
+        "address": "0x1021000",
+        "size": "0x2bd2000",
+        "permissions": 7
+      },
+      {
+        "id": "config-record-pages",
+        "address": "0x4e00000",
+        "size": "0x3000",
+        "permissions": 3
+      },
+      {
+        "id": "aux-work-buffer",
+        "address": "0x4e04000",
+        "size": "0x804000",
+        "permissions": 3
+      },
+      {
+        "id": "auxiliary-task-buffer",
+        "address": "0x589f000",
+        "size": "0x62000",
+        "permissions": 3
+      },
+      {
+        "id": "paired-flash-read-buffer",
+        "address": "0x19082000",
+        "size": "0x20000",
+        "permissions": 3
+      },
+      {
+        "id": "staging",
+        "address": "0x2a69c000",
+        "size": "0x540000",
+        "permissions": 3
+      },
+      {
+        "id": "runtime-flash-staging",
+        "address": "0x2b69c000",
+        "size": "0x540000",
+        "permissions": 3
+      },
+      {
+        "id": "calc-fixed-workspace",
+        "address": "0x2c590000",
+        "size": "0xe000",
+        "permissions": 3
+      }
+    ],
+    "method4-elfloader-exec-experimental-v26": [
+      {
+        "id": "loader",
+        "address": "0x0",
+        "size": "0x20000",
+        "permissions": 7
+      },
+      {
+        "id": "kernel",
+        "address": "0x40000",
+        "size": "0x46000",
+        "permissions": 7
+      },
+      {
+        "id": "stack-sys",
+        "address": "0x88000",
+        "size": "0x10000",
+        "permissions": 3
+      },
+      {
+        "id": "stack-svc",
+        "address": "0x9c000",
+        "size": "0x12a000",
+        "permissions": 3
+      },
+      {
+        "id": "segment-1",
+        "address": "0x1e0000",
+        "size": "0x67c000",
+        "permissions": 7
+      },
+      {
+        "id": "fixed-table-row5-buffer",
+        "address": "0x8a0000",
+        "size": "0x40000",
+        "permissions": 3
+      },
+      {
+        "id": "segment-2",
+        "address": "0x8e0000",
+        "size": "0xa4000",
+        "permissions": 7
+      },
+      {
+        "id": "segment2-allocation-tail",
+        "address": "0x984000",
+        "size": "0x1c000",
+        "permissions": 3
+      },
+      {
+        "id": "seven-row-table-buffer",
+        "address": "0x9a0000",
+        "size": "0xe0000",
+        "permissions": 3
+      },
+      {
+        "id": "post-lens-object",
+        "address": 11534336,
+        "size": 1703936,
+        "permissions": 3
+      },
+      {
+        "id": "flashload-request-buffer",
+        "address": "0x00ca0000",
+        "size": "0x100000",
+        "permissions": 3
+      },
+      {
+        "id": "metadata-workspace",
+        "address": "0xe20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-4",
+        "address": "0xf20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-5",
+        "address": "0x1021000",
+        "size": "0x2bd2000",
+        "permissions": 7
+      },
+      {
+        "id": "method4-runtime-output",
+        "address": "0x03bf3000",
+        "size": "0x00a79000",
+        "permissions": 7
+      },
+      {
+        "id": "config-record-pages",
+        "address": "0x4e00000",
+        "size": "0x3000",
+        "permissions": 3
+      },
+      {
+        "id": "aux-work-buffer",
+        "address": "0x4e04000",
+        "size": "0x804000",
+        "permissions": 3
+      },
+      {
+        "id": "auxiliary-task-buffer",
+        "address": "0x589f000",
+        "size": "0x62000",
+        "permissions": 3
+      },
+      {
+        "id": "xlog-first-buffer",
+        "address": "0x7f13000",
+        "size": "0x100000",
+        "permissions": 3
+      },
+      {
+        "id": "xlog-second-buffer",
+        "address": "0x8013000",
+        "size": "0x100000",
+        "permissions": 3
+      },
+      {
+        "id": "paired-flash-read-buffer",
+        "address": "0x19082000",
+        "size": "0x20000",
+        "permissions": 3
+      },
+      {
+        "id": "xlog-third-buffer",
+        "address": "0x1a39c000",
+        "size": "0x100000",
+        "permissions": 3
+      },
+      {
+        "id": "xlog-fourth-buffer",
+        "address": "0x1a49c000",
+        "size": "0x100000",
+        "permissions": 3
+      },
+      {
+        "id": "staging",
+        "address": "0x2a69c000",
+        "size": "0x540000",
+        "permissions": 3
+      },
+      {
+        "id": "runtime-flash-staging",
+        "address": "0x2b69c000",
+        "size": "0x540000",
+        "permissions": 3
+      },
+      {
+        "id": "calc-fixed-workspace",
+        "address": "0x2c590000",
+        "size": "0xe000",
+        "permissions": 3
+      }
+    ],
+    "method4-runtime-output-experimental-v25": [
+      {
+        "id": "loader",
+        "address": "0x0",
+        "size": "0x20000",
+        "permissions": 7
+      },
+      {
+        "id": "kernel",
+        "address": "0x40000",
+        "size": "0x46000",
+        "permissions": 7
+      },
+      {
+        "id": "stack-sys",
+        "address": "0x88000",
+        "size": "0x10000",
+        "permissions": 3
+      },
+      {
+        "id": "stack-svc",
+        "address": "0x9c000",
+        "size": "0x12a000",
+        "permissions": 3
+      },
+      {
+        "id": "segment-1",
+        "address": "0x1e0000",
+        "size": "0x67c000",
+        "permissions": 7
+      },
+      {
+        "id": "fixed-table-row5-buffer",
+        "address": "0x8a0000",
+        "size": "0x40000",
+        "permissions": 3
+      },
+      {
+        "id": "segment-2",
+        "address": "0x8e0000",
+        "size": "0xa4000",
+        "permissions": 7
+      },
+      {
+        "id": "segment2-allocation-tail",
+        "address": "0x984000",
+        "size": "0x1c000",
+        "permissions": 3
+      },
+      {
+        "id": "seven-row-table-buffer",
+        "address": "0x9a0000",
+        "size": "0xe0000",
+        "permissions": 3
+      },
+      {
+        "id": "post-lens-object",
+        "address": 11534336,
+        "size": 1703936,
+        "permissions": 3
+      },
+      {
+        "id": "flashload-request-buffer",
+        "address": "0x00ca0000",
+        "size": "0x100000",
+        "permissions": 3
+      },
+      {
+        "id": "metadata-workspace",
+        "address": "0xe20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-4",
+        "address": "0xf20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-5",
+        "address": "0x1021000",
+        "size": "0x2bd2000",
+        "permissions": 7
+      },
+      {
+        "id": "method4-runtime-output",
+        "address": "0x03bf3000",
+        "size": "0x00a79000",
+        "permissions": 3
+      },
+      {
+        "id": "config-record-pages",
+        "address": "0x4e00000",
+        "size": "0x3000",
+        "permissions": 3
+      },
+      {
+        "id": "aux-work-buffer",
+        "address": "0x4e04000",
+        "size": "0x804000",
+        "permissions": 3
+      },
+      {
+        "id": "auxiliary-task-buffer",
+        "address": "0x589f000",
+        "size": "0x62000",
+        "permissions": 3
+      },
+      {
+        "id": "xlog-first-buffer",
+        "address": "0x7f13000",
+        "size": "0x100000",
+        "permissions": 3
+      },
+      {
+        "id": "xlog-second-buffer",
+        "address": "0x8013000",
+        "size": "0x100000",
+        "permissions": 3
+      },
+      {
+        "id": "paired-flash-read-buffer",
+        "address": "0x19082000",
+        "size": "0x20000",
+        "permissions": 3
+      },
+      {
+        "id": "xlog-third-buffer",
+        "address": "0x1a39c000",
+        "size": "0x100000",
+        "permissions": 3
+      },
+      {
+        "id": "xlog-fourth-buffer",
+        "address": "0x1a49c000",
+        "size": "0x100000",
+        "permissions": 3
+      },
+      {
+        "id": "staging",
+        "address": "0x2a69c000",
+        "size": "0x540000",
+        "permissions": 3
+      },
+      {
+        "id": "runtime-flash-staging",
+        "address": "0x2b69c000",
+        "size": "0x540000",
+        "permissions": 3
+      },
+      {
+        "id": "calc-fixed-workspace",
+        "address": "0x2c590000",
+        "size": "0xe000",
+        "permissions": 3
+      }
+    ],
+    "flashload-request-buffer-experimental-v24": [
+      {
+        "id": "loader",
+        "address": "0x0",
+        "size": "0x20000",
+        "permissions": 7
+      },
+      {
+        "id": "kernel",
+        "address": "0x40000",
+        "size": "0x46000",
+        "permissions": 7
+      },
+      {
+        "id": "stack-sys",
+        "address": "0x88000",
+        "size": "0x10000",
+        "permissions": 3
+      },
+      {
+        "id": "stack-svc",
+        "address": "0x9c000",
+        "size": "0x12a000",
+        "permissions": 3
+      },
+      {
+        "id": "segment-1",
+        "address": "0x1e0000",
+        "size": "0x67c000",
+        "permissions": 7
+      },
+      {
+        "id": "fixed-table-row5-buffer",
+        "address": "0x8a0000",
+        "size": "0x40000",
+        "permissions": 3
+      },
+      {
+        "id": "segment-2",
+        "address": "0x8e0000",
+        "size": "0xa4000",
+        "permissions": 7
+      },
+      {
+        "id": "segment2-allocation-tail",
+        "address": "0x984000",
+        "size": "0x1c000",
+        "permissions": 3
+      },
+      {
+        "id": "seven-row-table-buffer",
+        "address": "0x9a0000",
+        "size": "0xe0000",
+        "permissions": 3
+      },
+      {
+        "id": "post-lens-object",
+        "address": 11534336,
+        "size": 1703936,
+        "permissions": 3
+      },
+      {
+        "id": "flashload-request-buffer",
+        "address": "0x00ca0000",
+        "size": "0x100000",
+        "permissions": 3
+      },
+      {
+        "id": "metadata-workspace",
+        "address": "0xe20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-4",
+        "address": "0xf20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-5",
+        "address": "0x1021000",
+        "size": "0x2bd2000",
+        "permissions": 7
+      },
+      {
+        "id": "config-record-pages",
+        "address": "0x4e00000",
+        "size": "0x3000",
+        "permissions": 3
+      },
+      {
+        "id": "aux-work-buffer",
+        "address": "0x4e04000",
+        "size": "0x804000",
+        "permissions": 3
+      },
+      {
+        "id": "auxiliary-task-buffer",
+        "address": "0x589f000",
+        "size": "0x62000",
+        "permissions": 3
+      },
+      {
+        "id": "xlog-first-buffer",
+        "address": "0x7f13000",
+        "size": "0x100000",
+        "permissions": 3
+      },
+      {
+        "id": "xlog-second-buffer",
+        "address": "0x8013000",
+        "size": "0x100000",
+        "permissions": 3
+      },
+      {
+        "id": "paired-flash-read-buffer",
+        "address": "0x19082000",
+        "size": "0x20000",
+        "permissions": 3
+      },
+      {
+        "id": "xlog-third-buffer",
+        "address": "0x1a39c000",
+        "size": "0x100000",
+        "permissions": 3
+      },
+      {
+        "id": "xlog-fourth-buffer",
+        "address": "0x1a49c000",
+        "size": "0x100000",
+        "permissions": 3
+      },
+      {
+        "id": "staging",
+        "address": "0x2a69c000",
+        "size": "0x540000",
+        "permissions": 3
+      },
+      {
+        "id": "runtime-flash-staging",
+        "address": "0x2b69c000",
+        "size": "0x540000",
+        "permissions": 3
+      },
+      {
+        "id": "calc-fixed-workspace",
+        "address": "0x2c590000",
+        "size": "0xe000",
+        "permissions": 3
+      }
+    ],
+    "linux-contiguous-256m-experimental-v1": [
+      {
+        "id": "loader",
+        "address": "0x0",
+        "size": "0x20000",
+        "permissions": 7
+      },
+      {
+        "id": "kernel",
+        "address": "0x40000",
+        "size": "0x46000",
+        "permissions": 7
+      },
+      {
+        "id": "stack-sys",
+        "address": "0x88000",
+        "size": "0x10000",
+        "permissions": 3
+      },
+      {
+        "id": "stack-svc",
+        "address": "0x9c000",
+        "size": "0x12a000",
+        "permissions": 3
+      },
+      {
+        "id": "segment-1",
+        "address": "0x1e0000",
+        "size": "0x67c000",
+        "permissions": 7
+      },
+      {
+        "id": "fixed-table-row5-buffer",
+        "address": "0x8a0000",
+        "size": "0x40000",
+        "permissions": 3
+      },
+      {
+        "id": "segment-2",
+        "address": "0x8e0000",
+        "size": "0xa4000",
+        "permissions": 7
+      },
+      {
+        "id": "segment2-allocation-tail",
+        "address": "0x984000",
+        "size": "0x1c000",
+        "permissions": 3
+      },
+      {
+        "id": "seven-row-table-buffer",
+        "address": "0x9a0000",
+        "size": "0xe0000",
+        "permissions": 3
+      },
+      {
+        "id": "post-lens-object",
+        "address": 11534336,
+        "size": 1703936,
+        "permissions": 3
+      },
+      {
+        "id": "flashload-request-buffer",
+        "address": "0x00ca0000",
+        "size": "0x100000",
+        "permissions": 3
+      },
+      {
+        "id": "metadata-workspace",
+        "address": "0xe20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-4",
+        "address": "0xf20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-5",
+        "address": "0x1021000",
+        "size": "0x2bd2000",
+        "permissions": 7
+      },
+      {
+        "id": "config-record-pages",
+        "address": "0x4e00000",
+        "size": "0x3000",
+        "permissions": 3
+      },
+      {
+        "id": "aux-work-buffer",
+        "address": "0x4e04000",
+        "size": "0x804000",
+        "permissions": 3
+      },
+      {
+        "id": "auxiliary-task-buffer",
+        "address": "0x589f000",
+        "size": "0x62000",
+        "permissions": 3
+      },
+      {
+        "id": "xlog-first-buffer",
+        "address": "0x7f13000",
+        "size": "0x100000",
+        "permissions": 3
+      },
+      {
+        "id": "xlog-second-buffer",
+        "address": "0x8013000",
+        "size": "0x100000",
+        "permissions": 3
+      },
+      {
+        "id": "linux-contiguous-ddr",
+        "address": "0x10000000",
+        "size": "0x10000000",
+        "permissions": 7
+      },
+      {
+        "id": "staging",
+        "address": "0x2a69c000",
+        "size": "0x540000",
+        "permissions": 3
+      },
+      {
+        "id": "runtime-flash-staging",
+        "address": "0x2b69c000",
+        "size": "0x540000",
+        "permissions": 3
+      },
+      {
+        "id": "calc-fixed-workspace",
+        "address": "0x2c590000",
+        "size": "0xe000",
+        "permissions": 3
+      }
+    ],
+    "xlog-all-buffers-experimental-v23": [
+      {
+        "id": "loader",
+        "address": "0x0",
+        "size": "0x20000",
+        "permissions": 7
+      },
+      {
+        "id": "kernel",
+        "address": "0x40000",
+        "size": "0x46000",
+        "permissions": 7
+      },
+      {
+        "id": "stack-sys",
+        "address": "0x88000",
+        "size": "0x10000",
+        "permissions": 3
+      },
+      {
+        "id": "stack-svc",
+        "address": "0x9c000",
+        "size": "0x12a000",
+        "permissions": 3
+      },
+      {
+        "id": "segment-1",
+        "address": "0x1e0000",
+        "size": "0x67c000",
+        "permissions": 7
+      },
+      {
+        "id": "fixed-table-row5-buffer",
+        "address": "0x8a0000",
+        "size": "0x40000",
+        "permissions": 3
+      },
+      {
+        "id": "segment-2",
+        "address": "0x8e0000",
+        "size": "0xa4000",
+        "permissions": 7
+      },
+      {
+        "id": "segment2-allocation-tail",
+        "address": "0x984000",
+        "size": "0x1c000",
+        "permissions": 3
+      },
+      {
+        "id": "seven-row-table-buffer",
+        "address": "0x9a0000",
+        "size": "0xe0000",
+        "permissions": 3
+      },
+      {
+        "id": "post-lens-object",
+        "address": 11534336,
+        "size": 1703936,
+        "permissions": 3
+      },
+      {
+        "id": "metadata-workspace",
+        "address": "0xe20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-4",
+        "address": "0xf20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-5",
+        "address": "0x1021000",
+        "size": "0x2bd2000",
+        "permissions": 7
+      },
+      {
+        "id": "config-record-pages",
+        "address": "0x4e00000",
+        "size": "0x3000",
+        "permissions": 3
+      },
+      {
+        "id": "aux-work-buffer",
+        "address": "0x4e04000",
+        "size": "0x804000",
+        "permissions": 3
+      },
+      {
+        "id": "auxiliary-task-buffer",
+        "address": "0x589f000",
+        "size": "0x62000",
+        "permissions": 3
+      },
+      {
+        "id": "xlog-first-buffer",
+        "address": "0x7f13000",
+        "size": "0x100000",
+        "permissions": 3
+      },
+      {
+        "id": "xlog-second-buffer",
+        "address": "0x8013000",
+        "size": "0x100000",
+        "permissions": 3
+      },
+      {
+        "id": "paired-flash-read-buffer",
+        "address": "0x19082000",
+        "size": "0x20000",
+        "permissions": 3
+      },
+      {
+        "id": "xlog-third-buffer",
+        "address": "0x1a39c000",
+        "size": "0x100000",
+        "permissions": 3
+      },
+      {
+        "id": "xlog-fourth-buffer",
+        "address": "0x1a49c000",
+        "size": "0x100000",
+        "permissions": 3
+      },
+      {
+        "id": "staging",
+        "address": "0x2a69c000",
+        "size": "0x540000",
+        "permissions": 3
+      },
+      {
+        "id": "runtime-flash-staging",
+        "address": "0x2b69c000",
+        "size": "0x540000",
+        "permissions": 3
+      },
+      {
+        "id": "calc-fixed-workspace",
+        "address": "0x2c590000",
+        "size": "0xe000",
+        "permissions": 3
+      }
+    ],
+    "xlog-first-buffer-experimental-v22": [
+      {
+        "id": "loader",
+        "address": "0x0",
+        "size": "0x20000",
+        "permissions": 7
+      },
+      {
+        "id": "kernel",
+        "address": "0x40000",
+        "size": "0x46000",
+        "permissions": 7
+      },
+      {
+        "id": "stack-sys",
+        "address": "0x88000",
+        "size": "0x10000",
+        "permissions": 3
+      },
+      {
+        "id": "stack-svc",
+        "address": "0x9c000",
+        "size": "0x12a000",
+        "permissions": 3
+      },
+      {
+        "id": "segment-1",
+        "address": "0x1e0000",
+        "size": "0x67c000",
+        "permissions": 7
+      },
+      {
+        "id": "fixed-table-row5-buffer",
+        "address": "0x8a0000",
+        "size": "0x40000",
+        "permissions": 3
+      },
+      {
+        "id": "segment-2",
+        "address": "0x8e0000",
+        "size": "0xa4000",
+        "permissions": 7
+      },
+      {
+        "id": "segment2-allocation-tail",
+        "address": "0x984000",
+        "size": "0x1c000",
+        "permissions": 3
+      },
+      {
+        "id": "seven-row-table-buffer",
+        "address": "0x9a0000",
+        "size": "0xe0000",
+        "permissions": 3
+      },
+      {
+        "id": "post-lens-object",
+        "address": 11534336,
+        "size": 1703936,
+        "permissions": 3
+      },
+      {
+        "id": "metadata-workspace",
+        "address": "0xe20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-4",
+        "address": "0xf20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-5",
+        "address": "0x1021000",
+        "size": "0x2bd2000",
+        "permissions": 7
+      },
+      {
+        "id": "config-record-pages",
+        "address": "0x4e00000",
+        "size": "0x3000",
+        "permissions": 3
+      },
+      {
+        "id": "aux-work-buffer",
+        "address": "0x4e04000",
+        "size": "0x804000",
+        "permissions": 3
+      },
+      {
+        "id": "auxiliary-task-buffer",
+        "address": "0x589f000",
+        "size": "0x62000",
+        "permissions": 3
+      },
+      {
+        "id": "xlog-first-buffer",
+        "address": "0x7f13000",
+        "size": "0x100000",
+        "permissions": 3
+      },
+      {
+        "id": "paired-flash-read-buffer",
+        "address": "0x19082000",
+        "size": "0x20000",
+        "permissions": 3
+      },
+      {
+        "id": "staging",
+        "address": "0x2a69c000",
+        "size": "0x540000",
+        "permissions": 3
+      },
+      {
+        "id": "runtime-flash-staging",
+        "address": "0x2b69c000",
+        "size": "0x540000",
+        "permissions": 3
+      },
+      {
+        "id": "calc-fixed-workspace",
+        "address": "0x2c590000",
+        "size": "0xe000",
+        "permissions": 3
+      }
+    ]
+  },
+  "sections": [
+    {
+      "name": "boot",
+      "address": "0x0",
+      "size": 131072,
+      "offset": 131700,
+      "encoding": "raw",
+      "sha256": "fe63011bcf8f43c9f716098ea66e4331e18a74b995e22a24dd3214e89f2d474e"
+    },
+    {
+      "name": "kernel",
+      "address": "0x40000",
+      "size": 112224,
+      "offset": 393844,
+      "encoding": "raw",
+      "sha256": "584d41523762a1565f49b8852543dc81ec49dbbedc9078f3d3ce1e447fe36219"
+    },
+    {
+      "name": "section4",
+      "address": "0x1021000",
+      "size": 8389100,
+      "offset": 2490996,
+      "encoding": "method4",
+      "sha256": "eb5372dfda41009b969ccf148f031b3976230a6a9d249d0ea3d0588e6feab157"
+    },
+    {
+      "name": "section5",
+      "address": "0x1f28000",
+      "size": 10248192,
+      "offset": 6423156,
+      "encoding": "method4",
+      "sha256": "cf6c76fde4415ba452b7f5ad350f0b8f30ac39e888b5889e1289bd9d4078b9f2"
+    }
+  ],
+  "evidence": [
+    "FW-001",
+    "FW-002",
+    "FW-007",
+    "FW-008",
+    "FW-009",
+    "FW-010",
+    "FW-011",
+    "FW-012",
+    "FW-013",
+    "FW-014",
+    "EX-001",
+    "EX-002",
+    "EX-003",
+    "EX-006",
+    "EX-008",
+    "EX-013",
+    "MD-001",
+    "MD-002",
+    "MD-004",
+    "MD-006",
+    "MD-007",
+    "MD-008",
+    "MD-009",
+    "HYP-001",
+    "HYP-002",
+    "HYP-004",
+    "HYP-005",
+    "HYP-006",
+    "HYP-007",
+    "HYP-008",
+    "HYP-009",
+    "HYP-010",
+    "HYP-011",
+    "HYP-012",
+    "HYP-013",
+    "HYP-014",
+    "HYP-015",
+    "HYP-016",
+    "FW-015",
+    "EX-023",
+    "EX-024",
+    "MD-015",
+    "HYP-017",
+    "HYP-018",
+    "HYP-019",
+    "FW-017",
+    "EX-028",
+    "EX-029",
+    "EX-030",
+    "MD-017",
+    "HYP-022",
+    "HYP-023",
+    "FW-018",
+    "EX-031",
+    "EX-032",
+    "EX-033",
+    "EX-034",
+    "MD-018",
+    "HYP-024",
+    "FW-019",
+    "EX-035",
+    "EX-036",
+    "EX-037",
+    "EX-038",
+    "MD-019",
+    "MD-020",
+    "HYP-025",
+    "HYP-026",
+    "FW-020",
+    "EX-039",
+    "EX-040",
+    "EX-041",
+    "EX-042",
+    "EX-043",
+    "MD-021",
+    "MD-022",
+    "HYP-027",
+    "HYP-028"
+  ],
+  "defaultMemoryProfile": "kernel-paired-flash-read-buffer-experimental-v14",
+  "body": "gfx100s",
+  "mappings": [
+    {
+      "id": "map.flash-aperture-logical",
+      "sourceSpace": "cpu-physical",
+      "sourceBase": 4026531840,
+      "sourceEndExclusive": 4160749568,
+      "targetSpace": "flash-logical",
+      "targetBase": 0,
+      "kind": "linear",
+      "permissions": "read-only aperture; explicit image extents enforced independently",
+      "confidence": "DAT_TEST"
+    },
+    {
+      "id": "map.flash-aperture-coordinate",
+      "sourceSpace": "flash-aperture",
+      "sourceBase": 4026531840,
+      "sourceEndExclusive": 4160749568,
+      "targetSpace": "flash-logical",
+      "targetBase": 0,
+      "kind": "linear",
+      "confidence": "DAT_TEST"
+    },
+    {
+      "id": "map.dat-container",
+      "sourceSpace": "flash-logical",
+      "sourceBase": 0,
+      "sourceEndExclusive": 49283104,
+      "targetSpace": "dat-file",
+      "targetBase": 628,
+      "kind": "container-inversion",
+      "confidence": "DAT",
+      "note": "DAT type6 header u32 at file offset0x24C supplies prefix length49283104; offset0x274 then byte inversion. Remaining DAT packaging is not Flash continuation.",
+      "evidence": [
+        "evidence/tooling/sd-init-preflight-2026-11-11-01/local/sd-init-original-02/cap8both-ff/original.generated.json",
+        "components/flash-image/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/flashimage/FlashImageFactory.kt"
+      ]
+    },
+    {
+      "id": "map.guest-virtual",
+      "sourceSpace": "guest-virtual",
+      "sourceBase": null,
+      "sourceEndExclusive": null,
+      "targetSpace": "cpu-physical",
+      "targetBase": null,
+      "kind": "dynamic-page-tables",
+      "confidence": "UNKNOWN",
+      "note": "Query needs owner snapshot; no identity translation assumed."
+    },
+    {
+      "id": "map.section.boot",
+      "sourceSpace": "dat-file",
+      "sourceBase": 131700,
+      "sourceEndExclusive": 262772,
+      "targetSpace": "ram-backing",
+      "targetBase": 0,
+      "kind": "invert-bytes",
+      "decodedSize": 131072,
+      "sha256": "fe63011bcf8f43c9f716098ea66e4331e18a74b995e22a24dd3214e89f2d474e",
+      "confidence": "DAT",
+      "note": "Explicit decoded section mapping."
+    },
+    {
+      "id": "map.section.kernel",
+      "sourceSpace": "dat-file",
+      "sourceBase": 393844,
+      "sourceEndExclusive": 506068,
+      "targetSpace": "ram-backing",
+      "targetBase": 262144,
+      "kind": "invert-bytes",
+      "decodedSize": 112224,
+      "sha256": "584d41523762a1565f49b8852543dc81ec49dbbedc9078f3d3ce1e447fe36219",
+      "confidence": "DAT",
+      "note": "Explicit decoded section mapping."
+    },
+    {
+      "id": "map.section.section4",
+      "sourceSpace": "dat-file",
+      "sourceBase": 2490996,
+      "sourceEndExclusive": 2491016,
+      "targetSpace": "ram-backing",
+      "targetBase": 16912384,
+      "kind": "method4",
+      "decodedSize": 8389100,
+      "sha256": "eb5372dfda41009b969ccf148f031b3976230a6a9d249d0ea3d0588e6feab157",
+      "confidence": "DAT",
+      "note": "Extent shown is header only, compressed stream length must be read from validated DAT header."
+    },
+    {
+      "id": "map.section.section5",
+      "sourceSpace": "dat-file",
+      "sourceBase": 6423156,
+      "sourceEndExclusive": 6423176,
+      "targetSpace": "ram-backing",
+      "targetBase": 32669696,
+      "kind": "method4",
+      "decodedSize": 10248192,
+      "sha256": "cf6c76fde4415ba452b7f5ad350f0b8f30ac39e888b5889e1289bd9d4078b9f2",
+      "confidence": "DAT",
+      "note": "Extent shown is header only, compressed stream length must be read from validated DAT header."
+    }
+  ],
+  "legacyCatalogs": {
+    "soc": {
+      "schema": 1,
+      "id": "xp4",
+      "architecture": "arm32",
+      "blocks": [
+        {
+          "id": "gpio",
+          "base": 4294184960,
+          "size": 1024,
+          "kind": "gpio"
+        },
+        {
+          "id": "interval-timer",
+          "base": 4294165248,
+          "size": 80,
+          "kind": "timer"
+        },
+        {
+          "id": "dma",
+          "base": 4294836224,
+          "size": 65536,
+          "kind": "dma"
+        }
+      ]
+    },
+    "body": {
+      "$schema": "https://fujimod.com/schemas/body.schema.json",
+      "schema": 1,
+      "id": "gfx100s",
+      "soc_id": "xp4",
+      "control_bus_chips": [],
+      "connections": [],
+      "parts": [],
+      "wiring": []
+    },
+    "firmware": {
+      "$schema": "https://fujimod.com/schemas/firmware.schema.json",
+      "schema": 1,
+      "id": "gfx100s-213",
+      "body_id": "gfx100s",
+      "version": "2.13",
+      "update": {
+        "size": 50197040,
+        "sha256": "ea997915ac5accc79699392b47909bb29506f66ec8d571e5804dd1fb0408fd12"
+      },
+      "boot_rom": {
+        "address": 4293918720,
+        "content": {
+          "size": 32768,
+          "sha256": "2a8b69986dd3fad0b73808c44e0834fa95c7b4e4f84e6c8664d4b0a82f7b24a4"
+        }
+      },
+      "installation": {
+        "flash_offset": 628,
+        "entry_labels": {
+          "0x100": "GFX100S RAM loader reset entry",
+          "0x57950": "kernel entry declared by the update header",
+          "0x12c9a80": "section4 entry declared by the decoded header",
+          "0x21a8d98": "section5 entry declared by the decoded header"
+        },
+        "loader_validation": null,
+        "image_sections": [
+          {
+            "name": "boot",
+            "address": 0,
+            "size": 131072,
+            "sha256": "fe63011bcf8f43c9f716098ea66e4331e18a74b995e22a24dd3214e89f2d474e",
+            "native_flash_offset": 131072
+          },
+          {
+            "name": "kernel",
+            "address": 262144,
+            "size": 112224,
+            "sha256": "584d41523762a1565f49b8852543dc81ec49dbbedc9078f3d3ce1e447fe36219",
+            "native_flash_offset": 393216
+          },
+          {
+            "name": "section4",
+            "address": 16912384,
+            "size": 8389100,
+            "sha256": "eb5372dfda41009b969ccf148f031b3976230a6a9d249d0ea3d0588e6feab157",
+            "native_flash_offset": 2490368
+          },
+          {
+            "name": "section5",
+            "address": 32669696,
+            "size": 10248192,
+            "sha256": "cf6c76fde4415ba452b7f5ad350f0b8f30ac39e888b5889e1289bd9d4078b9f2",
+            "native_flash_offset": 6422528
+          }
+        ]
+      },
+      "generated_facts": {
+        "remote": null,
+        "cfgdata_location": {
+          "kind": "pointer",
+          "address": 25967856
+        },
+        "additional_ui_modes": {
+          "play": 4,
+          "setup_play": 6
+        },
+        "menu_cursor": 28343940,
+        "menu_keys": {
+          "menu": "EXE_M",
+          "back": "DISP_B",
+          "up": "UP",
+          "down": "DOWN"
+        },
+        "uncached_alias": 0,
+        "identity_checks": [
+          {
+            "address": 19518168,
+            "size": 36,
+            "sha256": "fd4cb46daf766b1ad67d16bc74fae342c928c0fd6a5acec5bae9118f6f037ed1"
+          },
+          {
+            "address": 37056528,
+            "size": 180,
+            "sha256": "31c1701425c61d6fdd01165ca253f19a63f4791e079c3291d7240c09fb1e14fd"
+          }
+        ],
+        "observation": null
+      }
+    }
+  },
+  "imageDomains": [
+    {
+      "id": "flash.dat-prefix",
+      "space": "flash-logical",
+      "base": 0,
+      "endExclusive": 49283104,
+      "backing": "DAT bytes at offset0x274, bitwise inverted",
+      "permissions": "read-only",
+      "writable": [],
+      "activation": "verified DAT image",
+      "provenance": {
+        "address": "DAT",
+        "content": "DAT",
+        "permission": "IMPLEMENTATION_SOURCE"
+      },
+      "evidence": [
+        "evidence/tooling/sd-init-preflight-2026-11-11-01/local/sd-init-original-02/cap8both-ff/original.generated.json"
+      ]
+    },
+    {
+      "id": "flash.optional-tail",
+      "space": "flash-logical",
+      "base": 49283104,
+      "endExclusive": 49287168,
+      "backing": "explicit selected zero or FF finite tail",
+      "permissions": "read-only",
+      "writable": [],
+      "activation": "selected tail profile only; strict has no backing",
+      "provenance": {
+        "address": "HYPOTHESIS",
+        "content": "HYPOTHESIS",
+        "permission": "HYPOTHESIS"
+      },
+      "evidence": [
+        "evidence/tooling/sd-init-preflight-2026-11-11-01/local/sd-init-original-02/cap8both-ff/original.generated.json"
+      ]
+    },
+    {
+      "id": "flash.supplemental-350",
+      "space": "flash-logical",
+      "base": 55574528,
+      "endExclusive": 64225280,
+      "backing": "explicit immutable input and optional independent COW file",
+      "permissions": "read-only",
+      "writable": [],
+      "activation": "selected experimental image/profile only; listing never creates backing",
+      "provenance": {
+        "address": "DAT_DERIVED_EXPERIMENT",
+        "content": "HYPOTHESIS",
+        "permission": "HYPOTHESIS"
+      },
+      "evidence": [
+        "evidence/tooling/sd-init-preflight-2026-11-11-01/local/sd-init-original-02/cap8both-ff/compoments/flash-image/regions.json",
+        "evidence/tooling/sd-init-preflight-2026-11-11-01/local/sd-init-original-02/cap8both-ff/compoments/flash-image/mutable.json"
+      ]
+    },
+    {
+      "id": "flash.domain490-497",
+      "space": "flash-logical",
+      "base": 64225280,
+      "endExclusive": 65273856,
+      "backing": "explicit immutable input and optional independent COW file",
+      "permissions": "read; separately selected program/erase transaction",
+      "writable": [
+        {
+          "base": 64749568,
+          "endExclusive": 65273856
+        }
+      ],
+      "activation": "selected experimental image/profile only; listing never creates backing",
+      "provenance": {
+        "address": "DAT_DERIVED_EXPERIMENT",
+        "content": "HYPOTHESIS",
+        "permission": "HYPOTHESIS"
+      },
+      "evidence": [
+        "evidence/tooling/sd-init-preflight-2026-11-11-01/local/sd-init-original-02/cap8both-ff/compoments/flash-image/regions.json",
+        "evidence/tooling/sd-init-preflight-2026-11-11-01/local/sd-init-original-02/cap8both-ff/compoments/flash-image/mutable.json"
+      ]
+    },
+    {
+      "id": "flash.domain504-505",
+      "space": "flash-logical",
+      "base": 66060288,
+      "endExclusive": 66322432,
+      "backing": "explicit immutable input and optional independent COW file",
+      "permissions": "read; separately selected program/erase transaction",
+      "writable": [
+        {
+          "base": 66060288,
+          "endExclusive": 66322432
+        }
+      ],
+      "activation": "selected experimental image/profile only; listing never creates backing",
+      "provenance": {
+        "address": "DAT_DERIVED_EXPERIMENT",
+        "content": "HYPOTHESIS",
+        "permission": "HYPOTHESIS"
+      },
+      "evidence": [
+        "evidence/tooling/sd-init-preflight-2026-11-11-01/local/sd-init-original-02/cap8both-ff/compoments/flash-image/regions.json",
+        "evidence/tooling/sd-init-preflight-2026-11-11-01/local/sd-init-original-02/cap8both-ff/compoments/flash-image/mutable.json"
+      ]
+    },
+    {
+      "id": "flash.domain506-507",
+      "space": "flash-logical",
+      "base": 66322432,
+      "endExclusive": 66584576,
+      "backing": "explicit immutable input and optional independent COW file",
+      "permissions": "read-only",
+      "writable": [],
+      "activation": "selected experimental image/profile only; listing never creates backing",
+      "provenance": {
+        "address": "DAT_DERIVED_EXPERIMENT",
+        "content": "HYPOTHESIS",
+        "permission": "HYPOTHESIS"
+      },
+      "evidence": [
+        "evidence/tooling/sd-init-preflight-2026-11-11-01/local/sd-init-original-02/cap8both-ff/compoments/flash-image/regions.json",
+        "evidence/tooling/sd-init-preflight-2026-11-11-01/local/sd-init-original-02/cap8both-ff/compoments/flash-image/mutable.json"
+      ]
+    }
+  ]
+}

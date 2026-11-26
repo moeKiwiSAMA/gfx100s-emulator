@@ -1,0 +1,103 @@
+# ==============================================================================
+# 样例配置 1：日常无限游玩模式（relaxed — 发行版默认模式）
+#
+# 使用方法：将本文件复制覆盖为 configs/emulator.yaml（跨平台通用，自动加载内置 Dynarmic JIT 引擎）。
+# 特点：
+#   - instructionBudget: unlimited（持续运行直至关闭窗口）；
+#   - 未建模的外设寄存器自动保值放行，不中断相机流程；
+#   - 每次重启自动续写 Flash COW 分区并自动初始化双槽位 SD 卡目录。
+# ==============================================================================
+schema: 1
+components: runtime/compoments
+componentConfigs: configs/components
+httpPort: 8787
+firmwareMetadata: configs/firmware/gfx100s-213-release.yaml
+norFlashFile: flash/nor-flash.bin
+factoryFlashFile: runtime/templates/factory-flash/nor-flash-2.13.bin
+bootRomFile: bootrom/boot-rom.bin
+cpuEngine: dynarmic
+smpHostThreads: true
+instructionBudget: unlimited
+transactionLimit: 65536
+executionMode: relaxed
+relaxedBootstrapRam: gfx100s-full-boot-ddr-v1
+audio: true
+realTimePacer:
+  enabled: true
+  targetRatio: 1.0
+  ticksPerRealSecond: 54000000
+telemetry:
+  enabled: false
+  endpoint: https://fuji-ingest.kiwi.cat
+  ingestToken: fuji-ingest-dev-token
+  uploadLogOnExit: true
+addressDictionary: configs/catalog.compiled.json
+clusterProfile: four-context-functional-experimental-v1
+clusterReset:
+  profile: secondary-reset-schedule-experimental-v1
+  releaseTicks:
+    - 0
+    - 32768
+    - 32768
+    - 32768
+mmuProfile: arm-short-descriptor-native-experimental-v1
+wordExclusive:
+  profile: arm-byte-halfword-word-exclusive-logical-experimental-v3
+  reservationGranule: 64
+cbarInput: 4294901760
+idleClock:
+  profile: next-deadline-functional-experimental-v1
+  maxAdvances: 65536
+  maxIdleTicks: 1000000000
+undefinedExceptionProfile: arm-vfp-disabled-undefined-experimental-v1
+prefetchAbortProfile: arm32-native-prefetch-entry-experimental-v1
+flashPartitionScope: dat-partition-octet-experimental-v3
+powerBlockScope: dat-checksummed-four-halfword-experimental-v1
+powerRegister2Bit8Profile: masked-bit8-retained-experimental-v1
+flashReadPairScope: dat-secondary-read-pair-experimental-v1
+flashWritableSetScope: dat-bkup-octet-secondary504-write-set-experimental-v2
+discovery:
+  profile: gfx100s-sd-finite-lens-completion-a300-diagnostic-v1
+  logCapacity: 4096
+  diskBudgetBytes: 268435456
+  imageScalerF000: fff7f000-irq133-completion-v1
+  imageScalerE000: fff7e000-irq132-completion-v1
+  playDspFa00: fa000000-ready-idle-v1
+  ispAutoSync: isp-tg-auto-sync-v1
+  imageFace7c000: face-detect-irq123-v1
+  inputs:
+    gfx100s.sd.slot0.phy.candidate:
+      strategy: retained-bytes
+      file: configs/discovery/slot0-phy.seed.bin
+      sha256: 41c3901f093c7786f252f0a02279a7e750952c3479b7d48144c5239b9a846259
+    gfx100s.sd.slot1.phy.candidate:
+      strategy: retained-bytes
+      file: configs/discovery/slot1-phy.seed.bin
+      sha256: 41c3901f093c7786f252f0a02279a7e750952c3479b7d48144c5239b9a846259
+enabledDevices:
+  - soc-gpio
+  - soc-timer
+  - soc-dma
+  - soc-configuration
+  - soc-flash
+  - soc-gic
+  - soc-keyed-io
+  - soc-system-control
+  - soc-method4
+  - soc-spi
+  - soc-adc
+  - soc-i2c
+  - soc-selection
+  - soc-temperature
+  - soc-dram
+  - soc-serial-engine
+  - soc-sd-host
+  - soc-sdio
+  - soc-vglib-init
+  - soc-hdmi
+  - soc-panel
+  - soc-uart
+  - soc-isp-cmd
+  - soc-isp-setup
+  - soc-isp
+  - soc-jpeg

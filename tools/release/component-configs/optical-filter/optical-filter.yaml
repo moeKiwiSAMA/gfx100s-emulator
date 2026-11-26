@@ -1,0 +1,88 @@
+# ==============================================================================
+# Optical Filter Stack (configs/components/optical-filter/optical-filter.yaml)
+#
+# Decoupled front-of-lens / matte-box optical filter rack. Filters act in the
+# physical linear radiance domain before CMOS photon noise and ADC quantization,
+# working across all lens modes and driving real in-camera AE & EV metering.
+# Disabled or OFF filters have zero runtime overhead.
+#
+# Ready-to-use examples (uncomment any combination or use `slots` to stack freely):
+#   1) Top-tier MRC Nano UV vs Cheap Uncoated Trash UV comparison:
+#      uvPreset: "PRO_MRC"       # 99.6% transmittance, zero ghosting/softness
+#      uvPreset: "CHEAP_POOR"    # 89.5% transmittance, veiling glare, green-magenta ghosting, MTF blur
+#
+#   2) Ordered multi-slot matte-box rack (stack ND8 + ND64 = 9 EV, or UV + Star + Mist):
+#      slots: '[{"type":"uv","enabled":true,"preset":"CHEAP_POOR"},{"type":"nd","enabled":true,"preset":"ND8","stops":3.0},{"type":"nd","enabled":true,"preset":"ND64","stops":6.0}]'
+#
+#   3) True optical 5-point star bokeh (best with scene://star-bokeh, wide open, near focus):
+#      bokehMask: "STAR_5"
+#      bokehMaskAngleDeg: 0.0
+#
+#   4) Cinema Black Mist 1/4 + 6-point diffraction star highlights:
+#      starEnabled: true
+#      starPoints: 6
+#      starStrength: 0.75
+#      mistEnabled: true
+#      mistPreset: "1/4"
+# ==============================================================================
+
+# Master matte-box Swing-Away bypass switch (false swings the entire rack out of the optical path).
+enabled: true
+
+# Optional ordered multi-slot rack JSON array (supports multiple filters of the same type, e.g. ND8 + ND64).
+# Leave empty ("") to use the convenient flat filter settings below.
+slots: ""
+
+# Optional extra directory to scan for external third-party filter plugin JARs (ServiceLoader<OpticalFilterElementProvider>).
+# By default, <run-dir>/filters/*.jar and <component-dir>/filters/*.jar are scanned automatically.
+filtersDir: ""
+
+# --- Front UV Protective Filter (Good MRC Nano vs Ordinary vs Cheap Trash UV) ---
+# Preset: OFF, PRO_MRC (99.6%), STANDARD (96.5%), CHEAP_POOR (89.5% glare/ghosting/softness), or CUSTOM
+uvPreset: "OFF"
+uvTransmittance: 1.0
+uvVeilingGlare: 0.0
+uvGhostIntensity: 0.0
+uvSoftness: 0.0
+uvTintR: 1.0
+uvTintG: 1.0
+uvTintB: 1.0
+
+# --- Neutral Density (ND) ---
+# Preset: OFF, ND2..ND1000 (1..10 EV), or VARIABLE
+ndPreset: "OFF"
+# Continuous attenuation in EV stops (0.0..10.0, transmittance = 2^(-ndStops)).
+ndStops: 0.0
+
+# --- Aperture Pupil Bokeh Mask (true geometrical-optics out-of-focus PSF cutout) ---
+# Shape: OFF (circular/blades), STAR_5 (5-point star), HEART, HEXAGON, or RING (mirror lens donut)
+bokehMask: "OFF"
+# Cutout rotation angle in degrees (-180.0..180.0; 0.0 points the top star vertex straight up).
+bokehMaskAngleDeg: 0.0
+
+# --- Star / Cross-Screen Diffraction Filter ---
+starEnabled: false
+# Number of diffraction spikes: 4, 6, or 8
+starPoints: 6
+# Spike intensity (0.0..2.0)
+starStrength: 0.75
+# Spike rotation angle in degrees (0.0..180.0)
+starAngleDeg: 15.0
+
+# --- Black Mist Cinema Diffusion ---
+mistEnabled: false
+# Strength preset: OFF, 1/8, 1/4, 1/2, 1, or CUSTOM
+mistPreset: "OFF"
+# Continuous halation strength (0.0..1.0)
+mistStrength: 0.0
+
+# --- Graduated ND (Soft-Edge Sky Attenuation) ---
+gndEnabled: false
+# Upper-frame attenuation in EV stops (0.0..5.0)
+gndStops: 0.0
+# Normalized horizon line (0.0 = top, 0.5 = center, 1.0 = bottom)
+gndHorizon: 0.50
+# Softness width of the transition band (0.02..1.0)
+gndFeather: 0.25
+# Horizon tilt angle in degrees (-180.0..180.0)
+gndAngleDeg: 0.0

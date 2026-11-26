@@ -1,0 +1,4 @@
+# Internal GFX100S SoC hardware definition — no user edits needed.
+profile: "gfx100s-dram-snapshot-functional-experimental-v3"
+inputFile: "input.yaml"
+repeatableCommandModes: true

@@ -1,0 +1,3 @@
+# Internal GFX100S SoC hardware definition — no user edits needed.
+profile: "byte-i2c-functional-experimental-v1"
+inputFile: "input.json"

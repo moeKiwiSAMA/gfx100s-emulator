@@ -1,0 +1,9 @@
+# Internal GFX100S SoC hardware definition — no user edits needed.
+profile: "isp-cmd-retained-experimental-v1"
+c000InitialFill: 165
+initialFill: 0
+c000StopProfile: "stop-bit0-set-after-poll-repeatable-v1"
+clearC204Start: true
+channelIrqsEnabled: true
+replyProfile: "committed-81-stateful-v1"
+interleaved820001: ""

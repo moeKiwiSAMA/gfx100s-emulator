@@ -1,0 +1,1927 @@
+{
+  "schema": 1,
+  "id": "device.soc-hdmi",
+  "componentId": "soc-hdmi",
+  "depends": [],
+  "version": "0.0.1",
+  "name": "soc-hdmi",
+  "physicalIdentity": "UNKNOWN",
+  "implementationStatus": "PARTIAL",
+  "profiles": [
+    "disabled",
+    "hdmi-init-retained-experimental-v1"
+  ],
+  "implementationSources": [
+    "components/soc-hdmi/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactory.kt"
+  ],
+  "ports": [
+    {
+      "id": "definition.soc-hdmi.main",
+      "size": 2704,
+      "kind": "MMIO",
+      "byteOrder": "little",
+      "backing": {
+        "source": "Explicit hdmi-init-retained-experimental-v1 HYPOTHESIS input (initialFill, optional pairs & linkReads)",
+        "permissions": "Aligned 32-bit RW/RO/WO across 15 evidenced runs; 11 intermediate gaps refuse"
+      },
+      "registers": [
+        {
+          "id": "reg.soc-hdmi.main.o4",
+          "offset": 4,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-hdmi",
+          "name": "o4",
+          "namingBasis": "DAT init word offset 0x04",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit initialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "evidence/refactor/hdmi-b020/README.md",
+            "components/soc-hdmi/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactory.kt"
+          ],
+          "tests": [
+            "components/soc-hdmi/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-hdmi/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-hdmi.main.o4.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "HDMI init/status word at offset 0x4",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/hdmi-b020/README.md"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state."
+              ],
+              "nextValidation": "Compare guest accesses with hardware."
+            }
+          ],
+          "unknowns": [
+            "Physical owner, reset value, hotplug/ready, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Observe HDMI init and link/status transactions on hardware."
+        },
+        {
+          "id": "reg.soc-hdmi.main.link-status",
+          "offset": 8,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-hdmi",
+          "name": "link-status",
+          "namingBasis": "Sequential HYPOTHESIS linkReads stream at 0xFFF7B008",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit initialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "Refuse",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "evidence/refactor/hdmi-b020/README.md",
+            "components/soc-hdmi/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactory.kt"
+          ],
+          "tests": [
+            "components/soc-hdmi/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-hdmi/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-hdmi.main.link-status.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "HDMI init/status word at offset 0x8",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/hdmi-b020/README.md"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state."
+              ],
+              "nextValidation": "Compare guest accesses with hardware."
+            }
+          ],
+          "unknowns": [
+            "Physical owner, reset value, hotplug/ready, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Observe HDMI init and link/status transactions on hardware."
+        },
+        {
+          "id": "reg.soc-hdmi.main.o18",
+          "offset": 24,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-hdmi",
+          "name": "o18",
+          "namingBasis": "DAT init word offset 0x18",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit initialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "evidence/refactor/hdmi-b020/README.md",
+            "components/soc-hdmi/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactory.kt"
+          ],
+          "tests": [
+            "components/soc-hdmi/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-hdmi/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-hdmi.main.o18.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "HDMI init/status word at offset 0x18",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/hdmi-b020/README.md"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state."
+              ],
+              "nextValidation": "Compare guest accesses with hardware."
+            }
+          ],
+          "unknowns": [
+            "Physical owner, reset value, hotplug/ready, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Observe HDMI init and link/status transactions on hardware."
+        },
+        {
+          "id": "reg.soc-hdmi.main.hdmi-b020",
+          "offset": 32,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-hdmi",
+          "name": "hdmi-b020",
+          "namingBasis": "Firmware software task and offset 0x20",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit initialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            "0x01280350"
+          ],
+          "consumerPcs": [
+            "0x01280348"
+          ],
+          "evidence": [
+            "evidence/refactor/hdmi-b020/README.md",
+            "components/soc-hdmi/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactory.kt"
+          ],
+          "tests": [
+            "components/soc-hdmi/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "SIM",
+              "evidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-hdmi/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-hdmi.main.hdmi-b020.argument-bit0",
+              "bitOffset": 0,
+              "bitWidth": 1,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "UNKNOWN",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "0128034C inserts the low bit of r1.",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/hdmi-b020/README.md"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit function."
+              ],
+              "nextValidation": "Compare observed guest write with retained input."
+            },
+            {
+              "id": "reg.soc-hdmi.main.hdmi-b020.remaining-bits",
+              "bitOffset": 1,
+              "bitWidth": 31,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "UNKNOWN",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "01280350 writes back the high 31 bits read by 01280348.",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/hdmi-b020/README.md"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit functions."
+              ],
+              "nextValidation": "Inspect other accessors before interpreting individual bits."
+            }
+          ],
+          "unknowns": [
+            "Physical owner, reset value, hotplug/ready, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Observe HDMI init and link/status transactions on hardware."
+        },
+        {
+          "id": "reg.soc-hdmi.main.o24",
+          "offset": 36,
+          "size": 4,
+          "count": 3,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-hdmi",
+          "name": "o24",
+          "namingBasis": "DAT init write-only run 0x24..0x2C",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit initialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Refuse",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "evidence/refactor/hdmi-b020/README.md",
+            "components/soc-hdmi/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactory.kt"
+          ],
+          "tests": [
+            "components/soc-hdmi/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-hdmi/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-hdmi.main.o24.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "HDMI init/status word at offset 0x24",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/hdmi-b020/README.md"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state."
+              ],
+              "nextValidation": "Compare guest accesses with hardware."
+            }
+          ],
+          "unknowns": [
+            "Physical owner, reset value, hotplug/ready, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Observe HDMI init and link/status transactions on hardware."
+        },
+        {
+          "id": "reg.soc-hdmi.main.status-pair",
+          "offset": 144,
+          "size": 4,
+          "count": 2,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-hdmi",
+          "name": "status-pair",
+          "namingBasis": "4-phase HYPOTHESIS read-read-echo-echo status pairs at 0xFFF7B090..94",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit initialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "evidence/refactor/hdmi-b020/README.md",
+            "components/soc-hdmi/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactory.kt"
+          ],
+          "tests": [
+            "components/soc-hdmi/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-hdmi/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-hdmi.main.status-pair.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "HDMI init/status word at offset 0x90",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/hdmi-b020/README.md"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state."
+              ],
+              "nextValidation": "Compare guest accesses with hardware."
+            }
+          ],
+          "unknowns": [
+            "Physical owner, reset value, hotplug/ready, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Observe HDMI init and link/status transactions on hardware."
+        },
+        {
+          "id": "reg.soc-hdmi.main.o98",
+          "offset": 152,
+          "size": 4,
+          "count": 2,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-hdmi",
+          "name": "o98",
+          "namingBasis": "DAT init read-write run 0x98..0x9C",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit initialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "evidence/refactor/hdmi-b020/README.md",
+            "components/soc-hdmi/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactory.kt"
+          ],
+          "tests": [
+            "components/soc-hdmi/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-hdmi/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-hdmi.main.o98.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "HDMI init/status word at offset 0x98",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/hdmi-b020/README.md"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state."
+              ],
+              "nextValidation": "Compare guest accesses with hardware."
+            }
+          ],
+          "unknowns": [
+            "Physical owner, reset value, hotplug/ready, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Observe HDMI init and link/status transactions on hardware."
+        },
+        {
+          "id": "reg.soc-hdmi.main.o120",
+          "offset": 288,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-hdmi",
+          "name": "o120",
+          "namingBasis": "DAT init write-only offset 0x120",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit initialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Refuse",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "evidence/refactor/hdmi-b020/README.md",
+            "components/soc-hdmi/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactory.kt"
+          ],
+          "tests": [
+            "components/soc-hdmi/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-hdmi/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-hdmi.main.o120.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "HDMI init/status word at offset 0x120",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/hdmi-b020/README.md"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state."
+              ],
+              "nextValidation": "Compare guest accesses with hardware."
+            }
+          ],
+          "unknowns": [
+            "Physical owner, reset value, hotplug/ready, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Observe HDMI init and link/status transactions on hardware."
+        },
+        {
+          "id": "reg.soc-hdmi.main.o124",
+          "offset": 292,
+          "size": 4,
+          "count": 4,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-hdmi",
+          "name": "o124",
+          "namingBasis": "DAT init read-write run 0x124..0x130",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit initialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "evidence/refactor/hdmi-b020/README.md",
+            "components/soc-hdmi/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactory.kt"
+          ],
+          "tests": [
+            "components/soc-hdmi/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-hdmi/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-hdmi.main.o124.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "HDMI init/status word at offset 0x124",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/hdmi-b020/README.md"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state."
+              ],
+              "nextValidation": "Compare guest accesses with hardware."
+            }
+          ],
+          "unknowns": [
+            "Physical owner, reset value, hotplug/ready, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Observe HDMI init and link/status transactions on hardware."
+        },
+        {
+          "id": "reg.soc-hdmi.main.o150",
+          "offset": 336,
+          "size": 4,
+          "count": 28,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-hdmi",
+          "name": "o150",
+          "namingBasis": "DAT init read-write run 0x150..0x1BC",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit initialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "evidence/refactor/hdmi-b020/README.md",
+            "components/soc-hdmi/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactory.kt"
+          ],
+          "tests": [
+            "components/soc-hdmi/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-hdmi/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-hdmi.main.o150.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "HDMI init/status word at offset 0x150",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/hdmi-b020/README.md"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state."
+              ],
+              "nextValidation": "Compare guest accesses with hardware."
+            }
+          ],
+          "unknowns": [
+            "Physical owner, reset value, hotplug/ready, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Observe HDMI init and link/status transactions on hardware."
+        },
+        {
+          "id": "reg.soc-hdmi.main.o1e0",
+          "offset": 480,
+          "size": 4,
+          "count": 7,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-hdmi",
+          "name": "o1e0",
+          "namingBasis": "DAT init write-only run 0x1E0..0x1F8",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit initialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Refuse",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "evidence/refactor/hdmi-b020/README.md",
+            "components/soc-hdmi/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactory.kt"
+          ],
+          "tests": [
+            "components/soc-hdmi/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-hdmi/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-hdmi.main.o1e0.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "HDMI init/status word at offset 0x1e0",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/hdmi-b020/README.md"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state."
+              ],
+              "nextValidation": "Compare guest accesses with hardware."
+            }
+          ],
+          "unknowns": [
+            "Physical owner, reset value, hotplug/ready, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Observe HDMI init and link/status transactions on hardware."
+        },
+        {
+          "id": "reg.soc-hdmi.main.o220",
+          "offset": 544,
+          "size": 4,
+          "count": 15,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-hdmi",
+          "name": "o220",
+          "namingBasis": "DAT init write-only run 0x220..0x258",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit initialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Refuse",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "evidence/refactor/hdmi-b020/README.md",
+            "components/soc-hdmi/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactory.kt"
+          ],
+          "tests": [
+            "components/soc-hdmi/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-hdmi/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-hdmi.main.o220.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "HDMI init/status word at offset 0x220",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/hdmi-b020/README.md"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state."
+              ],
+              "nextValidation": "Compare guest accesses with hardware."
+            }
+          ],
+          "unknowns": [
+            "Physical owner, reset value, hotplug/ready, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Observe HDMI init and link/status transactions on hardware."
+        },
+        {
+          "id": "reg.soc-hdmi.main.o280",
+          "offset": 640,
+          "size": 4,
+          "count": 32,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-hdmi",
+          "name": "o280",
+          "namingBasis": "DAT init write-only run 0x280..0x2FC",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit initialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Refuse",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "evidence/refactor/hdmi-b020/README.md",
+            "components/soc-hdmi/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactory.kt"
+          ],
+          "tests": [
+            "components/soc-hdmi/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-hdmi/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-hdmi.main.o280.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "HDMI init/status word at offset 0x280",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/hdmi-b020/README.md"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state."
+              ],
+              "nextValidation": "Compare guest accesses with hardware."
+            }
+          ],
+          "unknowns": [
+            "Physical owner, reset value, hotplug/ready, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Observe HDMI init and link/status transactions on hardware."
+        },
+        {
+          "id": "reg.soc-hdmi.main.o320",
+          "offset": 800,
+          "size": 4,
+          "count": 55,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-hdmi",
+          "name": "o320",
+          "namingBasis": "DAT init write-only run 0x320..0x3F8",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit initialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Refuse",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "evidence/refactor/hdmi-b020/README.md",
+            "components/soc-hdmi/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactory.kt"
+          ],
+          "tests": [
+            "components/soc-hdmi/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-hdmi/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-hdmi.main.o320.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "HDMI init/status word at offset 0x320",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/hdmi-b020/README.md"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state."
+              ],
+              "nextValidation": "Compare guest accesses with hardware."
+            }
+          ],
+          "unknowns": [
+            "Physical owner, reset value, hotplug/ready, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Observe HDMI init and link/status transactions on hardware."
+        },
+        {
+          "id": "reg.soc-hdmi.main.oa8c",
+          "offset": 2700,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-hdmi",
+          "name": "oa8c",
+          "namingBasis": "DAT init write-only offset 0xA8C",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit initialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Refuse",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "evidence/refactor/hdmi-b020/README.md",
+            "components/soc-hdmi/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactory.kt"
+          ],
+          "tests": [
+            "components/soc-hdmi/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-hdmi/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-hdmi.main.oa8c.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "HDMI init/status word at offset 0xa8c",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "evidence/refactor/hdmi-b020/README.md"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "evidence/refactor/hdmi-b020/README.md"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state."
+              ],
+              "nextValidation": "Compare guest accesses with hardware."
+            }
+          ],
+          "unknowns": [
+            "Physical owner, reset value, hotplug/ready, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Observe HDMI init and link/status transactions on hardware."
+        }
+      ],
+      "unknownCoverage": "All 11 leading/intermediate gaps outside the 15 evidenced wordRuns are UNKNOWN and refused by the known device.",
+      "implementationSources": [
+        "components/soc-hdmi/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/hdmi/HdmiFactory.kt"
+      ]
+    }
+  ],
+  "unknowns": [
+    "Physical HDMI device identity, reset values, hotplug/ready, and timing are not qualified."
+  ],
+  "nextValidation": "Compare HDMI init words, linkReads, and status pairs against real hardware."
+}

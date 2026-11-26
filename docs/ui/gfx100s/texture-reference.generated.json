@@ -1,0 +1,156 @@
+{
+  "schema": 3,
+  "id": "GFX-TEXTURE-SCATTERED-RELIEF-002",
+  "evidenceClass": "SOURCE+SIM+TEST+HYPOTHESIS",
+  "source": "source-code-reference.generated.json",
+  "sourceOriginals": [
+    {
+      "file": "camera-body.png",
+      "sha256": "482bab579697ba929af37f23c5cdf0de5cdf04b584ba638b3bfd7a153ed0b54f"
+    },
+    {
+      "file": "camera-body-back.png",
+      "sha256": "0265c26c421406a10e765f55f7722c3cf40aab609761f9f9f961c4cc61feef54"
+    }
+  ],
+  "observations": [
+    "Official original PNG paint has continuous fine sand with adjoining light/dark microfacets and narrow hard bevel light; not a uniform independent pixel-noise overlay.",
+    "GFX100S original geometry/material regions are distinct from ETERNA style source.",
+    "Paint/rubber/metal/glass require distinct treatment; broad body/grip shades stay constant."
+  ],
+  "implementation": {
+    "sourcePixelsCopied": false,
+    "releaseIncludesThirdPartyImagesOrFonts": false,
+    "generatorGrammar": "continuous-grain-v1 (fixed local SVG/JVM extension grammar)",
+    "algorithmRevision": "scattered-compact-relief-2",
+    "domain": [
+      1200,
+      800
+    ],
+    "seed": 1778994289,
+    "periodicTile": false,
+    "paint": {
+      "base": "#2f2f2f",
+      "gray": 47,
+      "spacing": 1.7,
+      "scatteredWeight": 0.94,
+      "continuousFieldWeight": 0.06,
+      "fieldFrequency": [
+        0.43,
+        0.47
+      ],
+      "positiveAlphaGain": 0.09,
+      "negativeAlphaGain": 0.22
+    },
+    "rubber": {
+      "base": "#1c1c1c",
+      "gray": 28,
+      "spacing": 2.85,
+      "scatteredWeight": 0.84,
+      "continuousFieldWeight": 0.16,
+      "fieldFrequency": [
+        0.23,
+        0.27
+      ],
+      "positiveAlphaGain": 0.09,
+      "negativeAlphaGain": 0.21
+    },
+    "relief": {
+      "featureJitter": 0.45,
+      "ellipticAxisRange": [
+        -0.2,
+        0.2
+      ],
+      "crossTermRange": [
+        -0.28,
+        0.28
+      ],
+      "supportQuadraticLimit": 0.6,
+      "profile": "max(0,1-q/.60)^3",
+      "amplitudeBase": 0.72,
+      "amplitudeRange": 0.22,
+      "interpretation": "Original unmeasured parameter choices guided by source appearance, not recovered Fujifilm shader/BRDF/physical grain dimensions."
+    },
+    "lighting": {
+      "heightHalo": 1,
+      "centralDifferenceAxes": 2,
+      "lightDirection": [
+        -0.72,
+        -0.66
+      ],
+      "localTiltFieldPeriod": 37,
+      "localTiltGain": 0.16,
+      "alphaUpperBound": 80,
+      "broadLight": "Stable body/grip SVG base; larger brightness transitions confined to geometric bevel/return/occlusion artwork."
+    },
+    "allocation": {
+      "cachedOutputPixelPayloadBytes": 7680000,
+      "transientFloatHaloElements": 964004,
+      "transientFloatHaloBytes": 3856016,
+      "outputIntArrayBytesPerGeneration": 3840000,
+      "generationRawPrimitiveBytes": 7696016,
+      "scope": "Two cached material image pixel payloads; per-call halo/output buffers shown separately. Excludes JVM object headers/JavaFX/GPU/copy/GC/JIT overhead; no measured total peak or performance benchmark."
+    },
+    "generation": "One bounded full-view material build, two-entry material cache; no per-frame generation and no official image/file I/O.",
+    "security": "Existing exact-size, seed/kind, namespace/entity/external-resource, local-paint and allocation constraints retained."
+  },
+  "verification": {
+    "junit": 39,
+    "textureCases": 10,
+    "failed": 0,
+    "skipped": 0,
+    "preflightLog": "local/shell-migration/studio-material-direction-preflight-04.txt",
+    "run": "local/studio-material-direction-smoke-02",
+    "hostGates": 40,
+    "actualTopLevelPngsViewed": 23,
+    "scope": "Targeted UI preflight on HEAD64d11a7 dirty tree, not formal collector acceptance"
+  },
+  "comparison": {
+    "path": "visual-review/paint-comparison-two-step-fresh03-new-official.png",
+    "order": [
+      "fresh03 actual",
+      "current actual",
+      "official crop"
+    ],
+    "actualRegion": {
+      "x": 436,
+      "y": 611,
+      "width": 48,
+      "height": 18
+    },
+    "officialRegion": {
+      "x": 1255,
+      "y": 230,
+      "width": 96,
+      "height": 36
+    },
+    "method": "First resize official crop96x36 to48x18 and encode an intermediate PNG buffer; then independently enlarge every48x18 patch10xnearest. Different camera geometry and illumination; equal displayed pixel grid is not equal physical scale or a roughness measurement."
+  },
+  "corrections": [
+    "Earlier Sharp chains called resize twice on one pipeline; only final size took effect, so historical claimed half-size intermediate was not actually applied. Prior comparison files kept unchanged and no longer treated as equal-display-resampling evidence.",
+    "Earlier official crop y238 included a mechanical edge; current pure-plane crop y230 was individually viewed.",
+    "First new covariance test forgot nonzero means; failed39/38-pass preflight preserved, then corrected centered covariance at same thresholds."
+  ],
+  "remainingDifferences": [
+    "Generated paint remains less directionally varied and darker than official crop; no measured BRDF/photometric matching.",
+    "The corrected source crop supports visual sand-grain comparison only; different projection/lighting cannot establish true material response."
+  ],
+  "history": [
+    {
+      "run": "local/studio-columns-hard-edge-smoke-03",
+      "scope": "Previous37JUnit/40hostgates/23PNG retained, independent pixel-height mix too uniform."
+    },
+    {
+      "candidate": "local/studio-material-direction-01/candidate-generator",
+      "scope": "Continuous value-grid candidate rejected visually for grid-oriented streaks, even though centered covariance later passed."
+    },
+    {
+      "candidate": "local/studio-material-direction-01/candidate02-scattered",
+      "scope": "39JUnit/40hostgates in smoke01, selected scattered morphology but paint still too weak."
+    },
+    {
+      "candidate": "local/studio-material-direction-01/candidate03-paint-calibration",
+      "scope": "Current selected47/.090/.220 paint; actual generator two-step comparison reviewed byroot."
+    }
+  ]
+}

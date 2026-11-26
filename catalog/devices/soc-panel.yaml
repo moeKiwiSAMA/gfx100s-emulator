@@ -1,0 +1,1204 @@
+{
+  "schema": 1,
+  "id": "device.soc-panel",
+  "componentId": "soc-panel",
+  "depends": [],
+  "version": "0.0.1",
+  "name": "soc-panel",
+  "physicalIdentity": "UNKNOWN",
+  "implementationStatus": "PARTIAL",
+  "profiles": [
+    "disabled",
+    "panel-init-once-v1",
+    "panel-init-twice-v1",
+    "panel-init-repeatable-v1",
+    "panel-init-repeatable-a8000-experimental-v2"
+  ],
+  "implementationSources": [
+    "components/soc-panel/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/panel/PanelFactory.kt",
+    "components/soc-panel/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/panel/ToneLutA8000Device.kt"
+  ],
+  "ports": [
+    {
+      "id": "definition.soc-panel.main",
+      "size": 24,
+      "kind": "MMIO",
+      "byteOrder": "little",
+      "backing": {
+        "source": "Explicit panel-init-once-v1 / panel-init-twice-v1 HYPOTHESIS state machine",
+        "permissions": "Aligned READ4/WRITE4 per register"
+      },
+      "registers": [
+        {
+          "id": "reg.soc-panel.main.o0",
+          "offset": 0,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-panel",
+          "name": "o0",
+          "namingBasis": "Offset-based software identifier in INV-PANEL-CONFIG-FFFAB000; physical name UNKNOWN",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS command/poll sequence; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "Bounded by selected panel-init sequence",
+          "sideEffects": {
+            "read": "component behaviorId (bit0 poll 0 then 1 HYPOTHESIS)",
+            "write": "component behaviorId (zero command at step 6)",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "HYPOTHESIS: after one zero command, bit0 samples 0 then 1",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [
+            "0x01276988"
+          ],
+          "evidence": [
+            "catalog/inventory.yaml",
+            "components/soc-panel/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/panel/PanelFactory.kt"
+          ],
+          "tests": [
+            "components/soc-panel/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/panel/PanelFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "catalog/inventory.yaml"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "catalog/inventory.yaml"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-panel/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/panel/PanelFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-panel.main.o0.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Panel setup command/poll word in INV-PANEL-CONFIG-FFFAB000",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "catalog/inventory.yaml"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "catalog/inventory.yaml"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and completion latency."
+              ],
+              "nextValidation": "Compare command and poll against hardware capture."
+            }
+          ],
+          "unknowns": [
+            "Physical identity, reset, and completion latency remain UNKNOWN."
+          ],
+          "nextValidation": "Observe command and poll on hardware."
+        },
+        {
+          "id": "reg.soc-panel.main.o4",
+          "offset": 4,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-panel",
+          "name": "o4",
+          "namingBasis": "Offset-based software identifier in INV-PANEL-CONFIG-FFFAB000; physical name UNKNOWN",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS initial zero control / released control carry-over; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "Bounded by selected panel-init sequence",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId (updates control mask at step 1, releases MASK at step 10)",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [
+            "0x01276988"
+          ],
+          "evidence": [
+            "catalog/inventory.yaml",
+            "components/soc-panel/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/panel/PanelFactory.kt"
+          ],
+          "tests": [
+            "components/soc-panel/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/panel/PanelFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "catalog/inventory.yaml"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "catalog/inventory.yaml"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-panel/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/panel/PanelFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-panel.main.o4.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Panel control/release word in INV-PANEL-CONFIG-FFFAB000",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "catalog/inventory.yaml"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "catalog/inventory.yaml"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state."
+              ],
+              "nextValidation": "Compare control word readbacks with hardware."
+            }
+          ],
+          "unknowns": [
+            "Physical identity, reset, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Observe setup and release sequence on hardware."
+        },
+        {
+          "id": "reg.soc-panel.main.o8",
+          "offset": 8,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-panel",
+          "name": "o8",
+          "namingBasis": "Offset-based software identifier in INV-PANEL-CONFIG-FFFAB000; physical name UNKNOWN",
+          "initial": {
+            "value": null,
+            "source": "Write-only step 2; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "Bounded by selected panel-init sequence",
+          "sideEffects": {
+            "read": "Refuse",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "catalog/inventory.yaml",
+            "components/soc-panel/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/panel/PanelFactory.kt"
+          ],
+          "tests": [
+            "components/soc-panel/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/panel/PanelFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "catalog/inventory.yaml"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "catalog/inventory.yaml"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-panel/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/panel/PanelFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-panel.main.o8.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Panel setup word at offset 0x08 in INV-PANEL-CONFIG-FFFAB000",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "catalog/inventory.yaml"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "catalog/inventory.yaml"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings."
+              ],
+              "nextValidation": "Observe setup sequence."
+            }
+          ],
+          "unknowns": [
+            "Physical identity and reset remain UNKNOWN."
+          ],
+          "nextValidation": "Observe setup sequence."
+        },
+        {
+          "id": "reg.soc-panel.main.oc",
+          "offset": 12,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-panel",
+          "name": "oc",
+          "namingBasis": "Offset-based software identifier in INV-PANEL-CONFIG-FFFAB000; physical name UNKNOWN",
+          "initial": {
+            "value": null,
+            "source": "Write-only step 3; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "Bounded by selected panel-init sequence",
+          "sideEffects": {
+            "read": "Refuse",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "catalog/inventory.yaml",
+            "components/soc-panel/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/panel/PanelFactory.kt"
+          ],
+          "tests": [
+            "components/soc-panel/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/panel/PanelFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "catalog/inventory.yaml"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "catalog/inventory.yaml"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-panel/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/panel/PanelFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-panel.main.oc.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Panel setup word at offset 0x0C in INV-PANEL-CONFIG-FFFAB000",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "catalog/inventory.yaml"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "catalog/inventory.yaml"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings."
+              ],
+              "nextValidation": "Observe setup sequence."
+            }
+          ],
+          "unknowns": [
+            "Physical identity and reset remain UNKNOWN."
+          ],
+          "nextValidation": "Observe setup sequence."
+        },
+        {
+          "id": "reg.soc-panel.main.o10",
+          "offset": 16,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-panel",
+          "name": "o10",
+          "namingBasis": "Offset-based software identifier in INV-PANEL-CONFIG-FFFAB000; physical name UNKNOWN",
+          "initial": {
+            "value": null,
+            "source": "Write-only step 4 (<= 0xFFFFFF); physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "Bounded by selected panel-init sequence",
+          "sideEffects": {
+            "read": "Refuse",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "catalog/inventory.yaml",
+            "components/soc-panel/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/panel/PanelFactory.kt"
+          ],
+          "tests": [
+            "components/soc-panel/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/panel/PanelFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "catalog/inventory.yaml"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "catalog/inventory.yaml"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-panel/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/panel/PanelFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-panel.main.o10.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Panel setup word at offset 0x10 in INV-PANEL-CONFIG-FFFAB000",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "catalog/inventory.yaml"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "catalog/inventory.yaml"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings."
+              ],
+              "nextValidation": "Observe setup sequence."
+            }
+          ],
+          "unknowns": [
+            "Physical identity and reset remain UNKNOWN."
+          ],
+          "nextValidation": "Observe setup sequence."
+        },
+        {
+          "id": "reg.soc-panel.main.o14",
+          "offset": 20,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-panel",
+          "name": "o14",
+          "namingBasis": "Offset-based software identifier in INV-PANEL-CONFIG-FFFAB000; physical name UNKNOWN",
+          "initial": {
+            "value": null,
+            "source": "Write-only step 5 (<= 0xFFFF); physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "Bounded by selected panel-init sequence",
+          "sideEffects": {
+            "read": "Refuse",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "catalog/inventory.yaml",
+            "components/soc-panel/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/panel/PanelFactory.kt"
+          ],
+          "tests": [
+            "components/soc-panel/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/panel/PanelFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "catalog/inventory.yaml"
+              ]
+            },
+            "width": {
+              "confidence": "SOURCE",
+              "evidence": [
+                "catalog/inventory.yaml"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-panel/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/panel/PanelFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-panel.main.o14.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Panel setup word at offset 0x14 in INV-PANEL-CONFIG-FFFAB000",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "SOURCE",
+                  "evidence": [
+                    "catalog/inventory.yaml"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "catalog/inventory.yaml"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings."
+              ],
+              "nextValidation": "Observe setup sequence."
+            }
+          ],
+          "unknowns": [
+            "Physical identity and reset remain UNKNOWN."
+          ],
+          "nextValidation": "Observe setup sequence."
+        }
+      ],
+      "unknownCoverage": "All gaps not listed by registers are UNKNOWN and refused by the known device.",
+      "implementationSources": [
+        "components/soc-panel/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/panel/PanelFactory.kt"
+      ]
+    },
+    {
+      "id": "definition.soc-panel.tone-lut-a8000",
+      "size": 72,
+      "kind": "MMIO",
+      "byteOrder": "little",
+      "backing": {
+        "source": "Opt-in Tone/Packing LUT DMA register bank at 0xFFFA8000..0xFFFA8047 (logical IRQ 115 -> GIC IRQ 144)",
+        "permissions": "Aligned 32-bit RW across offsets 0x00..0x44"
+      },
+      "registers": [
+        {
+          "id": "reg.soc-panel.tone-lut-a8000.reset",
+          "offset": 0,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-panel",
+          "name": "reset",
+          "namingBasis": "0xFFFA8000 reset/ready word (bit0 clears to reset and self-sets to 1)",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS functional reset; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "bit0 self-sets to 1 after reset"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            "0x011fc724"
+          ],
+          "consumerPcs": [
+            "0x011fc718",
+            "0x011fc734"
+          ],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin"
+          ],
+          "tests": [
+            "components/soc-panel/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/panel/PanelFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-panel/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/panel/ToneLutA8000Device.kt"
+              ]
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-panel/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/panel/ToneLutA8000Device.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-panel.tone-lut-a8000.reset.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Reset/ready register polled at 0x011FC730..0x011FC73C",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": [
+                    "components/soc-panel/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/panel/ToneLutA8000Device.kt"
+                  ]
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical reset value and timing remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest accesses against hardware captures."
+            }
+          ],
+          "unknowns": [
+            "Physical reset value, timing, and full hardware side effects remain UNKNOWN."
+          ],
+          "nextValidation": "Validate against real hardware register captures."
+        },
+        {
+          "id": "reg.soc-panel.tone-lut-a8000.start",
+          "offset": 4,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-panel",
+          "name": "start",
+          "namingBasis": "0xFFFA8004 start/busy word (bit0 self-clears to 0; triggers GIC IRQ 144 / logical IRQ 115 in job mode)",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS functional reset; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "bit0 self-clears to 0 immediately"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "GIC IRQ 144 (logical IRQ 115) pulse on job start",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            "0x011fc7e4",
+            "0x011fcc38"
+          ],
+          "consumerPcs": [
+            "0x011fc7f4"
+          ],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin"
+          ],
+          "tests": [
+            "components/soc-panel/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/panel/PanelFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-panel/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/panel/ToneLutA8000Device.kt"
+              ]
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-panel/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/panel/ToneLutA8000Device.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-panel.tone-lut-a8000.start.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "LUT upload / DMA job trigger register polled at 0x011FC7F0..0x011FC7FC",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": [
+                    "components/soc-panel/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/panel/ToneLutA8000Device.kt"
+                  ]
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical reset value and timing remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest accesses against hardware captures."
+            }
+          ],
+          "unknowns": [
+            "Physical reset value, timing, and full hardware side effects remain UNKNOWN."
+          ],
+          "nextValidation": "Validate against real hardware register captures."
+        },
+        {
+          "id": "reg.soc-panel.tone-lut-a8000.config",
+          "offset": 8,
+          "size": 4,
+          "count": 16,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-panel",
+          "name": "config",
+          "namingBasis": "0xFFFA8008..0xFFFA8044 LUT/DMA configuration words (16 x u32)",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS functional reset; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            "0x011fc7b4",
+            "0x011fc7c4",
+            "0x011fc7d4",
+            "0x011fc958"
+          ],
+          "consumerPcs": [
+            "0x011fcb40"
+          ],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin"
+          ],
+          "tests": [
+            "components/soc-panel/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/panel/PanelFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-panel/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/panel/ToneLutA8000Device.kt"
+              ]
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-panel/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/panel/ToneLutA8000Device.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-panel.tone-lut-a8000.config.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Tone/packing LUT and DMA job configuration words (+0x08 bit0 selects job mode)",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": [
+                    "components/soc-panel/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/panel/ToneLutA8000Device.kt"
+                  ]
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical reset value and timing remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest accesses against hardware captures."
+            }
+          ],
+          "unknowns": [
+            "Physical reset value, timing, and full hardware side effects remain UNKNOWN."
+          ],
+          "nextValidation": "Validate against real hardware register captures."
+        }
+      ],
+      "unknownCoverage": "No address outside [0, 0x48) is admitted.",
+      "implementationSources": [
+        "components/soc-panel/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/panel/ToneLutA8000Device.kt",
+        "components/soc-panel/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/panel/PanelFactory.kt"
+      ]
+    }
+  ],
+  "unknowns": [
+    "Physical device identity, reset values, wiring, and completion latency are not qualified."
+  ],
+  "nextValidation": "Compare selected panel-init sequence against original hardware."
+}

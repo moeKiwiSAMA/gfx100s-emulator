@@ -1,0 +1,165 @@
+package com.github.nyabanban.fuji.emulator.runtime
+
+import com.github.nyabanban.fuji.emulator.api.*
+import java.net.URLClassLoader
+import java.nio.file.Files
+import java.nio.file.Path
+import java.security.MessageDigest
+import java.util.ServiceLoader
+
+class RevisionConflict : IllegalArgumentException("configuration revision changed")
+data class LoadedComponent(
+    val descriptor: ComponentDescriptor, val component: HardwareComponent, val configFile: Path,
+    val jarSha256: String, val loader: URLClassLoader,
+    var config: Map<String, Any>, var revision: Long = 0,
+)
+class ComponentHost(val owner: OwnerLoop, val root: Path, private val catalog: com.github.nyabanban.fuji.emulator.catalog.AddressCatalog? = null) : ControlClient, AutoCloseable {
+    val ports = PortRegistry(owner)
+    val events = DirectEvents(owner)
+    var tick: Long = 0
+        private set
+    private val loaded = linkedMapOf<String, LoadedComponent>()
+    fun advanceTick(value: Long) { owner.requireOwner(); require(value >= tick); tick = value }
+    fun load() {
+        owner.requireOwner(); check(loaded.isEmpty())
+        Files.createDirectories(root)
+        try {
+            Files.list(root).use { files -> files.filter { it.fileName.toString().endsWith(".jar") }.sorted().forEach { jar ->
+                val loader = object : URLClassLoader(arrayOf(jar.toUri().toURL()), null) {
+                    override fun loadClass(name: String, resolve: Boolean): Class<*> {
+                        if (name.startsWith("com.github.nyabanban.fuji.emulator.api.")) {
+                            return ComponentFactory::class.java.classLoader.loadClass(name)
+                        }
+                        return super.loadClass(name, resolve)
+                    }
+                }
+                var component: HardwareComponent? = null
+                var componentId: String? = null
+                try {
+                    val factories = ServiceLoader.load(ComponentFactory::class.java, loader).toList()
+                    require(factories.size == 1) { "each JAR must supply exactly one component factory" }
+                    val factory = factories.single(); val d = factory.descriptor; componentId = d.id
+                    catalog?.let { dictionary ->
+                        java.util.jar.JarFile(jar.toFile()).use { archive ->
+                            val entry = requireNotNull(archive.getJarEntry("META-INF/fuji/catalog.json")) { "Component dictionary descriptor missing: " + d.id }
+                            require(entry.size in 1..4194304) { "Invalid component descriptor size" }
+                            val actual = archive.getInputStream(entry).use { Formats.json.readTree(it) }
+                            val contract = dictionary.componentDescriptor(d.id)
+                            val expected = Formats.json.readTree(Formats.jsonBytes(contract))
+                            contract["profiles"]?.let { raw ->
+                                val profiles = raw as? List<*> ?: error("Component profiles must be a list: " + d.id)
+                                val setting = d.settings.singleOrNull { it.key == "profile" }
+                                require(setting != null && setting.kind == ValueKind.TEXT && !setting.live &&
+                                    profiles.size == profiles.distinct().size && setting.choices.size == profiles.size &&
+                                    setting.choices.toSet() == profiles.toSet()) { "Component profile contract differs: " + d.id }
+                            }
+                            require(actual == expected) { "Component port contract differs: " + d.id }
+                        }
+                    }
+                    require(d.abi == COMPONENT_ABI && d.id.matches(Regex("[a-z][a-z0-9-]{0,63}"))) { "component ABI or id invalid" }
+                    require(d.id !in loaded && d.settings.map { it.key }.distinct().size == d.settings.size) { "duplicate component or setting" }
+                    val directory = containedPath(root, d.id)
+                    Files.createDirectories(directory)
+                    val configFile = containedPath(directory, "${d.id}.yaml")
+                    val supplied = if (Files.exists(configFile)) Formats.read(configFile) else emptyMap()
+                    val config = validate(d, supplied, false)
+                    val context = object : ComponentContext {
+                        override val directory = directory
+                        override val ports = this@ComponentHost.ports
+                        override val events = this@ComponentHost.events
+                        override val clock = EmulationClock { tick }
+                        override fun dataPath(relative: String) = containedPath(directory, relative)
+                        override fun readData(relative: String): Map<String, Any?> { owner.requireOwner(); return Formats.readData(dataPath(relative)) }
+                    }
+                    component = factory.create(context, config)
+                    require(component.id == d.id) { "component id differs from factory" }
+                    if (!Files.exists(configFile)) Formats.atomicYaml(configFile, config)
+                    loaded[d.id] = LoadedComponent(d, component, configFile, sha256(jar), loader, config)
+                } catch (error: Throwable) {
+                    runCatching { component?.close() }; componentId?.let { ports.removeOwner(it) }; loader.close(); throw error
+                }
+            } }
+            loaded.values.forEach { it.component.start() }
+        } catch (error: Throwable) { close(); throw error }
+    }
+    private fun validate(d: ComponentDescriptor, changes: Map<String, Any>, live: Boolean): Map<String, Any> {
+        require(changes.keys.all { key -> d.settings.any { it.key == key } }) { "unknown setting" }
+        val output = if (live) linkedMapOf() else d.settings.associate { it.key to it.validate(it.default) }.toMutableMap()
+        changes.forEach { (key, value) ->
+            val setting = d.settings.single { it.key == key }
+            require(!live || setting.live) { "$key requires restart" }
+            output[key] = setting.validate(value)
+        }
+        return output.toMap()
+    }
+    /** Pure startup metadata: does not connect, sample or consume a register endpoint. */
+    fun logicalPortBindings(): List<com.github.nyabanban.fuji.emulator.catalog.LogicalPortBinding> {
+        owner.requireOwner()
+        return catalog?.logicalSpaces.orEmpty().mapNotNull { space ->
+            val item=loaded[space.componentId] ?: return@mapNotNull null
+            val profile=item.config["profile"] as? String ?: error("Logical endpoint profile missing: " + space.componentId)
+            val port=ports.find(space.portId,PowerRegisterPort::class.java)
+            if(profile=="disabled") {
+                require(port==null) {"Disabled logical endpoint exported a port: " + space.portId}
+                return@mapNotNull null
+            }
+            val described=port as? DescribedPowerRegisterPort ?: error("Logical endpoint contract missing: " + space.portId)
+            val contracts=described.registerContracts().map { r ->
+                com.github.nyabanban.fuji.emulator.catalog.LogicalRegisterContract(r.registerId,r.selector,r.wordBits,r.readable,r.writable)
+            }
+            com.github.nyabanban.fuji.emulator.catalog.LogicalPortBinding(space.componentId,space.portId,profile,contracts)
+        }
+    }
+    /** Pure experiment contracts; no endpoint connect/read or sample consumption. */
+    fun candidateInputBindings(): List<ProtocolCandidateInputBinding> {
+        owner.requireOwner()
+        return loaded.values.mapNotNull { item ->
+            val portId=item.descriptor.id+".candidate-inputs"
+            val port=ports.find(portId,DescribedProtocolCandidateInputs::class.java)
+            candidateInputBinding(item.descriptor.id,item.config["profile"] as? String,port)
+        }
+    }
+    fun logicalComponentProfiles(): Map<String,String> {
+        owner.requireOwner()
+        val ids=catalog?.logicalSpaces.orEmpty().map {it.componentId}.toSet()
+        return loaded.values.filter {it.descriptor.id in ids}.associate {item ->
+            item.descriptor.id to (item.config["profile"] as? String ?: error("Logical component profile missing"))
+        }
+    }
+    fun components(): List<LoadedComponent> { owner.requireOwner(); return loaded.values.toList() }
+    private fun view(item: LoadedComponent) = mapOf(
+        "id" to item.descriptor.id, "version" to item.descriptor.version, "abi" to item.descriptor.abi,
+        "revision" to item.revision, "settings" to item.descriptor.settings, "config" to item.config,
+        "state" to item.component.state(), "jarSha256" to item.jarSha256,
+    )
+    override fun snapshot() = owner.submit<Map<String, Any?>> { mapOf("tick" to tick, "components" to loaded.values.map(::view)) }
+    override fun patch(id: String, revision: Long, changes: Map<String, Any>) = owner.submit<Map<String, Any?>> {
+        val item = loaded[id] ?: throw IllegalArgumentException("unknown component")
+        if (revision != item.revision) throw RevisionConflict()
+        val validated = validate(item.descriptor, changes, true)
+        val old = item.config
+        item.component.validateSettings(old + validated)
+        Formats.atomicYaml(item.configFile, old + validated)
+        try { item.component.applySettings(validated) }
+        catch (error: Throwable) {
+            runCatching { Formats.atomicYaml(item.configFile, old); item.component.applySettings(old) }
+                .onFailure { rollback -> error.addSuppressed(rollback) }
+            throw error
+        }
+        item.config = old + validated; item.revision++
+        events.publish(ComponentEvent(id, "configuration", tick, mapOf("revision" to item.revision, "keys" to validated.keys.toList())))
+        view(item)
+    }
+    override fun close() {
+        owner.requireOwner()
+        loaded.values.toList().asReversed().forEach {
+            runCatching { it.component.close() }; ports.removeOwner(it.descriptor.id); runCatching { it.loader.close() }
+        }
+        loaded.clear()
+    }
+}
+fun sha256(path: Path): String = Files.newInputStream(path).use { stream ->
+    val digest = MessageDigest.getInstance("SHA-256"); val buffer = ByteArray(65536)
+    while (true) { val n = stream.read(buffer); if (n < 0) break; digest.update(buffer, 0, n) }
+    digest.digest().joinToString("") { "%02x".format(it) }
+}

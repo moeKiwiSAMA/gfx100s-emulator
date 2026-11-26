@@ -1,0 +1,2259 @@
+{
+  "schema": 1,
+  "id": "device.soc-adc",
+  "componentId": "soc-adc",
+  "depends": [],
+  "version": "0.0.1",
+  "name": "soc-adc",
+  "physicalIdentity": "UNKNOWN",
+  "implementationStatus": "PARTIAL",
+  "implementationSources": [
+    "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+  ],
+  "ports": [
+    {
+      "id": "definition.soc-adc.main",
+      "size": 72,
+      "kind": "MMIO",
+      "byteOrder": "little",
+      "backing": {
+        "source": "component-owned state",
+        "permissions": "per register; stateful checks remain"
+      },
+      "registers": [
+        {
+          "id": "reg.soc-adc.main.o0",
+          "offset": 0,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-adc",
+          "name": "o0",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-adc.main.o0.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-adc.main.o4",
+          "offset": 4,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-adc",
+          "name": "o4",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-adc.main.o4.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-adc.main.o8",
+          "offset": 8,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-adc",
+          "name": "o8",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-adc.main.o8.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-adc.main.oc",
+          "offset": 12,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-adc",
+          "name": "oc",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-adc.main.oc.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-adc.main.o10",
+          "offset": 16,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-adc",
+          "name": "o10",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-adc.main.o10.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-adc.main.o14",
+          "offset": 20,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-adc",
+          "name": "o14",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-adc.main.o14.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-adc.main.o18",
+          "offset": 24,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-adc",
+          "name": "o18",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-adc.main.o18.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-adc.main.o1c",
+          "offset": 28,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-adc",
+          "name": "o1c",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [
+            {
+              "profile": "gfx100s-2.13-menu-adc-v1",
+              "buttonKey": "menu",
+              "channel": 3,
+              "confidence": "SOURCE",
+              "applicability": {
+                "body": "GFX100S",
+                "firmware": "2.13"
+              },
+              "evidence": [
+                "evidence/refactor/exploration-reuse-329-332/menu-upstream-330.md",
+                "evidence/refactor/power-switch-source-333-335/menu-saved-bytes-333.md",
+                "evidence/refactor/menu-source-338-340/menu-shared-channel-338.md",
+                "evidence/refactor/menu-transition-393-396/menu-result-analysis-396.md"
+              ],
+              "unknowns": [
+                "Pressed sample must be an explicit HYP input; physical voltage/sampling instant and original MENU event remain unverified.",
+                "Three direct predicates distinguish 2800 from conflicting 1800; indirect consumers are not exhaustively excluded."
+              ]
+            }
+          ],
+          "producerPcs": [],
+          "consumerPcs": [
+            "0x0005B1B8",
+            "0x011F5D48",
+            "0x0123CAF4"
+          ],
+          "evidence": [
+            "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt",
+            "evidence/refactor/menu-transition-393-396/menu-result-analysis-396.md"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            },
+            "observation": {
+              "confidence": "SIM",
+              "evidence": [
+                "evidence/refactor/menu-transition-393-396/menu-result-analysis-396.md"
+              ],
+              "scope": "P395/c688e4d8a: one host MENU press was sampled as channel3=2800, read by the original guest and consumed into both software caches and EXE_M current1/counter1 below threshold2. No debounced MENU event or main frame; selected samples and timing remain HYPOTHESIS, physical voltage/reset UNKNOWN."
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-adc.main.o1c.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-adc.main.o20",
+          "offset": 32,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-adc",
+          "name": "o20",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-adc.main.o20.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-adc.main.o24",
+          "offset": 36,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-adc",
+          "name": "o24",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-adc.main.o24.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-adc.main.o28",
+          "offset": 40,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-adc",
+          "name": "o28",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-adc.main.o28.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-adc.main.o2c",
+          "offset": 44,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-adc",
+          "name": "o2c",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-adc.main.o2c.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-adc.main.o30",
+          "offset": 48,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-adc",
+          "name": "o30",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-adc.main.o30.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-adc.main.o34",
+          "offset": 52,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-adc",
+          "name": "o34",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [
+            {
+              "profile": "gfx100s-2.13-direction-input-v1",
+              "channel": 9,
+              "buttonKeys": [
+                "up",
+                "right",
+                "down",
+                "left"
+              ],
+              "confidence": "SOURCE",
+              "directions": [
+                {
+                  "key": "up",
+                  "mask": 1,
+                  "rawCode": 72,
+                  "logicalCode": 58,
+                  "lowerKey": 14010,
+                  "upperKey": 14008,
+                  "minimum": 1930,
+                  "maximum": 2219
+                },
+                {
+                  "key": "upRight",
+                  "mask": 3,
+                  "rawCode": 76,
+                  "logicalCode": 59,
+                  "lowerKey": 14018,
+                  "upperKey": 14016,
+                  "minimum": 100,
+                  "maximum": 1230
+                },
+                {
+                  "key": "right",
+                  "mask": 2,
+                  "rawCode": 74,
+                  "logicalCode": 60,
+                  "lowerKey": 14002,
+                  "upperKey": 14000,
+                  "minimum": 1448,
+                  "maximum": 1688
+                },
+                {
+                  "key": "downRight",
+                  "mask": 6,
+                  "rawCode": 77,
+                  "logicalCode": 61,
+                  "lowerKey": 14006,
+                  "upperKey": 14004,
+                  "minimum": 1231,
+                  "maximum": 1447
+                },
+                {
+                  "key": "down",
+                  "mask": 4,
+                  "rawCode": 73,
+                  "logicalCode": 62,
+                  "lowerKey": 13990,
+                  "upperKey": 13988,
+                  "minimum": 2606,
+                  "maximum": 3041
+                },
+                {
+                  "key": "downLeft",
+                  "mask": 12,
+                  "rawCode": 79,
+                  "logicalCode": 63,
+                  "lowerKey": 13998,
+                  "upperKey": 13996,
+                  "minimum": 2220,
+                  "maximum": 2605
+                },
+                {
+                  "key": "left",
+                  "mask": 8,
+                  "rawCode": 75,
+                  "logicalCode": 64,
+                  "lowerKey": 13994,
+                  "upperKey": 13992,
+                  "minimum": 3042,
+                  "maximum": 3719
+                },
+                {
+                  "key": "upLeft",
+                  "mask": 9,
+                  "rawCode": 78,
+                  "logicalCode": 65,
+                  "lowerKey": 14014,
+                  "upperKey": 14012,
+                  "minimum": 1689,
+                  "maximum": 1929
+                }
+              ],
+              "boundsSource": {
+                "path": "evidence/refactor/fixed-checkpoint-qualified-301/frozen-input/compoments/flash-image/hardware-config.img",
+                "offset": 13988,
+                "bytes": 32,
+                "configurationBasePointer": "0x018C3CF0",
+                "sampleConfidence": "HYPOTHESIS"
+              },
+              "evidence": [
+                "evidence/refactor/direction-input-482-485/direction-parameters-482-report.md",
+                "evidence/refactor/direction-input-482-485/direction-transport-483-report.md"
+              ],
+              "unknowns": [
+                "Bounds are existing configuration SOURCE, not measured voltages or current threshold RAM. Selected samples and neutral value remain explicit HYPOTHESIS.",
+                "Normal ADC latching, two stable firmware scans and GPIO gate determine delivery; no PUSH, guest cache injection or menu navigation claim."
+              ]
+            }
+          ],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt",
+            "evidence/refactor/direction-input-482-485/direction-parameters-482-report.md",
+            "evidence/refactor/direction-input-482-485/direction-transport-483-report.md"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-adc.main.o34.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-adc.main.o38",
+          "offset": 56,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-adc",
+          "name": "o38",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-adc.main.o38.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-adc.main.o3c",
+          "offset": 60,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-adc",
+          "name": "o3c",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-adc.main.o3c.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-adc.main.o40",
+          "offset": 64,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-adc",
+          "name": "o40",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-adc.main.o40.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        },
+        {
+          "id": "reg.soc-adc.main.o44",
+          "offset": 68,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-adc",
+          "name": "o44",
+          "namingBasis": "Implementation identifier; not physical device identification",
+          "initial": {
+            "value": null,
+            "source": "component-selected explicit input or documented functional model; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId; instruction-tick model is HYPOTHESIS",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+          ],
+          "tests": [],
+          "provenance": {
+            "address": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            },
+            "width": {
+              "confidence": "IMPLEMENTATION_SOURCE",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-adc.main.o44.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Semantics not identified",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical electrical meaning and reset unknown."
+              ],
+              "nextValidation": "Compare DAT producers/consumers and controlled original runs."
+            }
+          ],
+          "unknowns": [
+            "Physical semantics remain incomplete."
+          ],
+          "nextValidation": "Original firmware access and failure controls."
+        }
+      ],
+      "unknownCoverage": "All gaps not listed by registers are UNKNOWN and refused by the known device.",
+      "implementationSources": [
+        "components/soc-adc/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/adc/AdcFactory.kt"
+      ]
+    }
+  ],
+  "unknowns": [
+    "Physical device identity, reset values, wiring and full state machine are not qualified."
+  ],
+  "nextValidation": "Trace selected original firmware consumers and retain refusal controls."
+}

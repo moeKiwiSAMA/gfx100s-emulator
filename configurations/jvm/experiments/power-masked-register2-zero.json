@@ -1,0 +1,1 @@
+{"profile":"masked-retained-registers-experimental-v2","chip_select":{"port":12,"pin":5,"active_high":true,"idle_high":true},"inputs":{"0":32768,"16":8,"17":0,"18":0,"31":0,"32":0,"33":0,"34":0,"2":0},"retained_registers":[17,18],"disable_writes":[],"write_masks":{"2":4}}

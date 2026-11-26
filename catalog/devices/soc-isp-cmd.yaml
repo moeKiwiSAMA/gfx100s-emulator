@@ -1,0 +1,3501 @@
+{
+  "schema": 1,
+  "id": "device.soc-isp-cmd",
+  "componentId": "soc-isp-cmd",
+  "depends": [],
+  "version": "0.0.1",
+  "name": "soc-isp-cmd",
+  "physicalIdentity": "UNKNOWN",
+  "implementationStatus": "PARTIAL",
+  "profiles": [
+    "disabled",
+    "isp-cmd-retained-experimental-v1"
+  ],
+  "implementationSources": [
+    "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt",
+    "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/ProgrammedCommandReply.kt",
+    "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/Imx461SpiShadow.kt",
+    "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/UltrasonicPiezoController.kt"
+  ],
+  "ports": [
+    {
+      "id": "definition.soc-isp-cmd.c000-words",
+      "size": 516,
+      "kind": "MMIO",
+      "byteOrder": "little",
+      "backing": {
+        "source": "component-owned state (retained u32 + optional C000StopReply HYPOTHESIS)",
+        "permissions": "20 evidenced aligned 32-bit runs; 19 intermediate gaps refuse"
+      },
+      "registers": [
+        {
+          "id": "reg.soc-isp-cmd.c000-words.o0",
+          "offset": 0,
+          "size": 4,
+          "count": 10,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-isp-cmd",
+          "name": "c000-o0",
+          "namingBasis": "Section4 0xFFF6C000+0x0 (10 words); optional C000StopReply bit0 poll at +0x0",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit c000InitialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            "0x011b2930",
+            "0x011b34f4"
+          ],
+          "consumerPcs": [
+            "0x011b2924",
+            "0x011b3504"
+          ],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin",
+            "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+          ],
+          "tests": [
+            "components/soc-isp-cmd/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-isp-cmd.c000-words.o0.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "ISP command block word(s) starting at offset 0x0",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest register transitions against hardware capture."
+            }
+          ],
+          "unknowns": [
+            "Physical identity, reset value, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Compare hardware register captures with component behavior."
+        },
+        {
+          "id": "reg.soc-isp-cmd.c000-words.o28",
+          "offset": 40,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-isp-cmd",
+          "name": "c000-o28",
+          "namingBasis": "Section4 0xFFF6C000+0x28 (1 words); optional C000StopReply bit0 poll at +0x0",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit c000InitialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "Refuse",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin",
+            "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+          ],
+          "tests": [
+            "components/soc-isp-cmd/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-isp-cmd.c000-words.o28.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "ISP command block word(s) starting at offset 0x28",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest register transitions against hardware capture."
+            }
+          ],
+          "unknowns": [
+            "Physical identity, reset value, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Compare hardware register captures with component behavior."
+        },
+        {
+          "id": "reg.soc-isp-cmd.c000-words.o2c",
+          "offset": 44,
+          "size": 4,
+          "count": 2,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-isp-cmd",
+          "name": "c000-o2c",
+          "namingBasis": "Section4 0xFFF6C000+0x2c (2 words); optional C000StopReply bit0 poll at +0x0",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit c000InitialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin",
+            "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+          ],
+          "tests": [
+            "components/soc-isp-cmd/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-isp-cmd.c000-words.o2c.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "ISP command block word(s) starting at offset 0x2c",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest register transitions against hardware capture."
+            }
+          ],
+          "unknowns": [
+            "Physical identity, reset value, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Compare hardware register captures with component behavior."
+        },
+        {
+          "id": "reg.soc-isp-cmd.c000-words.o34",
+          "offset": 52,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-isp-cmd",
+          "name": "c000-o34",
+          "namingBasis": "Section4 0xFFF6C000+0x34 (1 words); optional C000StopReply bit0 poll at +0x0",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit c000InitialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "Refuse",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin",
+            "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+          ],
+          "tests": [
+            "components/soc-isp-cmd/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-isp-cmd.c000-words.o34.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "ISP command block word(s) starting at offset 0x34",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest register transitions against hardware capture."
+            }
+          ],
+          "unknowns": [
+            "Physical identity, reset value, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Compare hardware register captures with component behavior."
+        },
+        {
+          "id": "reg.soc-isp-cmd.c000-words.o38",
+          "offset": 56,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-isp-cmd",
+          "name": "c000-o38",
+          "namingBasis": "Section4 0xFFF6C000+0x38 (1 words); optional C000StopReply bit0 poll at +0x0",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit c000InitialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin",
+            "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+          ],
+          "tests": [
+            "components/soc-isp-cmd/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-isp-cmd.c000-words.o38.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "ISP command block word(s) starting at offset 0x38",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest register transitions against hardware capture."
+            }
+          ],
+          "unknowns": [
+            "Physical identity, reset value, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Compare hardware register captures with component behavior."
+        },
+        {
+          "id": "reg.soc-isp-cmd.c000-words.o3c",
+          "offset": 60,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-isp-cmd",
+          "name": "c000-o3c",
+          "namingBasis": "Section4 0xFFF6C000+0x3c (1 words); optional C000StopReply bit0 poll at +0x0",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit c000InitialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "Refuse",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin",
+            "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+          ],
+          "tests": [
+            "components/soc-isp-cmd/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-isp-cmd.c000-words.o3c.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "ISP command block word(s) starting at offset 0x3c",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest register transitions against hardware capture."
+            }
+          ],
+          "unknowns": [
+            "Physical identity, reset value, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Compare hardware register captures with component behavior."
+        },
+        {
+          "id": "reg.soc-isp-cmd.c000-words.o40",
+          "offset": 64,
+          "size": 4,
+          "count": 10,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-isp-cmd",
+          "name": "c000-o40",
+          "namingBasis": "Section4 0xFFF6C000+0x40 (10 words); optional C000StopReply bit0 poll at +0x0",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit c000InitialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin",
+            "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+          ],
+          "tests": [
+            "components/soc-isp-cmd/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-isp-cmd.c000-words.o40.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "ISP command block word(s) starting at offset 0x40",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest register transitions against hardware capture."
+            }
+          ],
+          "unknowns": [
+            "Physical identity, reset value, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Compare hardware register captures with component behavior."
+        },
+        {
+          "id": "reg.soc-isp-cmd.c000-words.o68",
+          "offset": 104,
+          "size": 4,
+          "count": 3,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-isp-cmd",
+          "name": "c000-o68",
+          "namingBasis": "Section4 0xFFF6C000+0x68 (3 words); optional C000StopReply bit0 poll at +0x0",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit c000InitialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "Refuse",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin",
+            "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+          ],
+          "tests": [
+            "components/soc-isp-cmd/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-isp-cmd.c000-words.o68.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "ISP command block word(s) starting at offset 0x68",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest register transitions against hardware capture."
+            }
+          ],
+          "unknowns": [
+            "Physical identity, reset value, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Compare hardware register captures with component behavior."
+        },
+        {
+          "id": "reg.soc-isp-cmd.c000-words.o78",
+          "offset": 116,
+          "size": 4,
+          "count": 7,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-isp-cmd",
+          "name": "c000-o78",
+          "namingBasis": "Section4 0xFFF6C000+0x74..0x8c (7 words, incl. 0x011b47f8 write at +0x74); optional C000StopReply bit0 poll at +0x0",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit c000InitialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin",
+            "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+          ],
+          "tests": [
+            "components/soc-isp-cmd/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-isp-cmd.c000-words.o78.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "ISP command block word(s) starting at offset 0x78",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest register transitions against hardware capture."
+            }
+          ],
+          "unknowns": [
+            "Physical identity, reset value, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Compare hardware register captures with component behavior."
+        },
+        {
+          "id": "reg.soc-isp-cmd.c000-words.o90",
+          "offset": 144,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-isp-cmd",
+          "name": "c000-o90",
+          "namingBasis": "Section4 0xFFF6C000+0x90 (1 word, RW via 0x011b5780); optional C000StopReply bit0 poll at +0x0",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit c000InitialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "Refuse",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin",
+            "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+          ],
+          "tests": [
+            "components/soc-isp-cmd/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-isp-cmd.c000-words.o90.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "ISP command block word(s) starting at offset 0x90",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest register transitions against hardware capture."
+            }
+          ],
+          "unknowns": [
+            "Physical identity, reset value, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Compare hardware register captures with component behavior."
+        },
+        {
+          "id": "reg.soc-isp-cmd.c000-words.oc0",
+          "offset": 192,
+          "size": 4,
+          "count": 10,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-isp-cmd",
+          "name": "c000-oc0",
+          "namingBasis": "Section4 0xFFF6C000+0xc0 (10 words); optional C000StopReply bit0 poll at +0x0",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit c000InitialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin",
+            "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+          ],
+          "tests": [
+            "components/soc-isp-cmd/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-isp-cmd.c000-words.oc0.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "ISP command block word(s) starting at offset 0xc0",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest register transitions against hardware capture."
+            }
+          ],
+          "unknowns": [
+            "Physical identity, reset value, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Compare hardware register captures with component behavior."
+        },
+        {
+          "id": "reg.soc-isp-cmd.c000-words.oe8",
+          "offset": 232,
+          "size": 4,
+          "count": 4,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-isp-cmd",
+          "name": "c000-oe8",
+          "namingBasis": "Section4 0xFFF6C000+0xe8 (4 words); optional C000StopReply bit0 poll at +0x0",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit c000InitialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "Refuse",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin",
+            "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+          ],
+          "tests": [
+            "components/soc-isp-cmd/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-isp-cmd.c000-words.oe8.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "ISP command block word(s) starting at offset 0xe8",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest register transitions against hardware capture."
+            }
+          ],
+          "unknowns": [
+            "Physical identity, reset value, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Compare hardware register captures with component behavior."
+        },
+        {
+          "id": "reg.soc-isp-cmd.c000-words.of8",
+          "offset": 248,
+          "size": 4,
+          "count": 6,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-isp-cmd",
+          "name": "c000-of8",
+          "namingBasis": "Section4 0xFFF6C000+0xf8 (6 words); optional C000StopReply bit0 poll at +0x0",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit c000InitialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin",
+            "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+          ],
+          "tests": [
+            "components/soc-isp-cmd/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-isp-cmd.c000-words.of8.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "ISP command block word(s) starting at offset 0xf8",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest register transitions against hardware capture."
+            }
+          ],
+          "unknowns": [
+            "Physical identity, reset value, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Compare hardware register captures with component behavior."
+        },
+        {
+          "id": "reg.soc-isp-cmd.c000-words.o110",
+          "offset": 272,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-isp-cmd",
+          "name": "c000-o110",
+          "namingBasis": "Section4 0xFFF6C000+0x110 (1 words); optional C000StopReply bit0 poll at +0x0",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit c000InitialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "Refuse",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin",
+            "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+          ],
+          "tests": [
+            "components/soc-isp-cmd/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-isp-cmd.c000-words.o110.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "ISP command block word(s) starting at offset 0x110",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest register transitions against hardware capture."
+            }
+          ],
+          "unknowns": [
+            "Physical identity, reset value, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Compare hardware register captures with component behavior."
+        },
+        {
+          "id": "reg.soc-isp-cmd.c000-words.o114",
+          "offset": 276,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-isp-cmd",
+          "name": "c000-o114",
+          "namingBasis": "Section4 0xFFF6C000+0x114 (1 words); optional C000StopReply bit0 poll at +0x0",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit c000InitialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin",
+            "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+          ],
+          "tests": [
+            "components/soc-isp-cmd/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-isp-cmd.c000-words.o114.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "ISP command block word(s) starting at offset 0x114",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest register transitions against hardware capture."
+            }
+          ],
+          "unknowns": [
+            "Physical identity, reset value, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Compare hardware register captures with component behavior."
+        },
+        {
+          "id": "reg.soc-isp-cmd.c000-words.o140",
+          "offset": 320,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-isp-cmd",
+          "name": "c000-o140",
+          "namingBasis": "Section4 0xFFF6C000+0x140 (1 words); optional C000StopReply bit0 poll at +0x0",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit c000InitialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin",
+            "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+          ],
+          "tests": [
+            "components/soc-isp-cmd/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-isp-cmd.c000-words.o140.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "ISP command block word(s) starting at offset 0x140",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest register transitions against hardware capture."
+            }
+          ],
+          "unknowns": [
+            "Physical identity, reset value, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Compare hardware register captures with component behavior."
+        },
+        {
+          "id": "reg.soc-isp-cmd.c000-words.o144",
+          "offset": 324,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-isp-cmd",
+          "name": "c000-o144",
+          "namingBasis": "Section4 0xFFF6C000+0x144 (1 words); optional C000StopReply bit0 poll at +0x0",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit c000InitialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "Refuse",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin",
+            "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+          ],
+          "tests": [
+            "components/soc-isp-cmd/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-isp-cmd.c000-words.o144.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "ISP command block word(s) starting at offset 0x144",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest register transitions against hardware capture."
+            }
+          ],
+          "unknowns": [
+            "Physical identity, reset value, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Compare hardware register captures with component behavior."
+        },
+        {
+          "id": "reg.soc-isp-cmd.c000-words.o180",
+          "offset": 384,
+          "size": 4,
+          "count": 13,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-isp-cmd",
+          "name": "c000-o180",
+          "namingBasis": "Section4 0xFFF6C000+0x180 (13 words); optional C000StopReply bit0 poll at +0x0",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit c000InitialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin",
+            "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+          ],
+          "tests": [
+            "components/soc-isp-cmd/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-isp-cmd.c000-words.o180.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "ISP command block word(s) starting at offset 0x180",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest register transitions against hardware capture."
+            }
+          ],
+          "unknowns": [
+            "Physical identity, reset value, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Compare hardware register captures with component behavior."
+        },
+        {
+          "id": "reg.soc-isp-cmd.c000-words.o1c0",
+          "offset": 448,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-isp-cmd",
+          "name": "c000-o1c0",
+          "namingBasis": "Section4 0xFFF6C000+0x1c0 (1 RO word via 0x011b6180)",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit c000InitialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "Refuse",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [
+            "0x011b6180"
+          ],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin",
+            "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+          ],
+          "tests": [
+            "components/soc-isp-cmd/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-isp-cmd.c000-words.o1c0.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "ISP command block status word at offset 0x1c0",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest register transitions against hardware capture."
+            }
+          ],
+          "unknowns": [
+            "Physical identity, reset value, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Compare hardware register captures with component behavior."
+        },
+        {
+          "id": "reg.soc-isp-cmd.c000-words.o1c8",
+          "offset": 452,
+          "size": 4,
+          "count": 6,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-isp-cmd",
+          "name": "c000-o1c8",
+          "namingBasis": "Section4 0xFFF6C000+0x1c4..0x1d8 (6 words, CCDTG still-exposure trigger + timing words)",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit c000InitialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            "0x011b621c",
+            "0x011b628c",
+            "0x011b62ec",
+            "0x011b6344",
+            "0x011b639c"
+          ],
+          "consumerPcs": [],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin",
+            "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+          ],
+          "tests": [
+            "components/soc-isp-cmd/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-isp-cmd.c000-words.o1c8.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "ISP command block word(s) starting at offset 0x1c8",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest register transitions against hardware capture."
+            }
+          ],
+          "unknowns": [
+            "Physical identity, reset value, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Compare hardware register captures with component behavior."
+        },
+        {
+          "id": "reg.soc-isp-cmd.c000-words.o200",
+          "offset": 512,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-isp-cmd",
+          "name": "c000-o200",
+          "namingBasis": "Section4 0xFFF6C000+0x200 (1 words); optional C000StopReply bit0 poll at +0x0",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit c000InitialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin",
+            "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+          ],
+          "tests": [
+            "components/soc-isp-cmd/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-isp-cmd.c000-words.o200.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "ISP command block word(s) starting at offset 0x200",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest register transitions against hardware capture."
+            }
+          ],
+          "unknowns": [
+            "Physical identity, reset value, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Compare hardware register captures with component behavior."
+        }
+      ],
+      "unknownCoverage": "All 18 intermediate gaps outside the 19 evidenced wordRuns are UNKNOWN and refused by the known device.",
+      "implementationSources": [
+        "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+      ]
+    },
+    {
+      "id": "definition.soc-isp-cmd.c204-control",
+      "size": 8,
+      "kind": "MMIO",
+      "byteOrder": "little",
+      "backing": {
+        "source": "component-owned state (START/MODE + optional clearC204Start & ProgrammedCommandReply HYPOTHESIS)",
+        "permissions": "Aligned 32-bit RW at +0x0 (START) and +0x4 (MODE)"
+      },
+      "registers": [
+        {
+          "id": "reg.soc-isp-cmd.c204-control.start",
+          "offset": 0,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-isp-cmd",
+          "name": "start",
+          "namingBasis": "Section4 011B6460/011B6488 START control/status at 0xFFF6C204",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit initialFill; bit0 self-clear after read when clearC204Start enabled"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId (optional start-bit0-clear-after-read-v1)",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "Triggers DmaMemory read of 0x028F2000/0x028F2940 when committed-81-read-once-v1 active",
+          "connections": [],
+          "producerPcs": [
+            "0x011b6460"
+          ],
+          "consumerPcs": [
+            "0x011b6488"
+          ],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin",
+            "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt",
+            "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/ProgrammedCommandReply.kt"
+          ],
+          "tests": [
+            "components/soc-isp-cmd/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-isp-cmd.c204-control.start.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Raw 32-bit word for start",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest register transitions against hardware capture."
+            }
+          ],
+          "unknowns": [
+            "Physical identity, reset value, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Compare hardware register captures with component behavior."
+        },
+        {
+          "id": "reg.soc-isp-cmd.c204-control.mode",
+          "offset": 4,
+          "size": 4,
+          "count": 1,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-isp-cmd",
+          "name": "mode",
+          "namingBasis": "Section4 011B64FC/011B6544 MODE register at 0xFFF6C208",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit initialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            "0x011b64fc"
+          ],
+          "consumerPcs": [
+            "0x011b6544"
+          ],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin",
+            "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt",
+            "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/ProgrammedCommandReply.kt"
+          ],
+          "tests": [
+            "components/soc-isp-cmd/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-isp-cmd.c204-control.mode.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Raw 32-bit word for mode",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest register transitions against hardware capture."
+            }
+          ],
+          "unknowns": [
+            "Physical identity, reset value, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Compare hardware register captures with component behavior."
+        }
+      ],
+      "unknownCoverage": "No address outside these 2 aligned words is admitted.",
+      "implementationSources": [
+        "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt",
+        "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/ProgrammedCommandReply.kt"
+      ]
+    },
+    {
+      "id": "definition.soc-isp-cmd.c20c-config",
+      "size": 20,
+      "kind": "MMIO",
+      "byteOrder": "little",
+      "backing": {
+        "source": "component-owned state (5 retained burst config words observed by ProgrammedCommandReply HYPOTHESIS)",
+        "permissions": "Aligned 32-bit RW across offsets 0x00..0x10"
+      },
+      "registers": [
+        {
+          "id": "reg.soc-isp-cmd.c20c-config.words",
+          "offset": 0,
+          "size": 4,
+          "count": 5,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-isp-cmd",
+          "name": "burst-config",
+          "namingBasis": "Section4 011B3978 burst writer loads C21C, C20C, C210, C214, C218",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit initialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "C210 supplies guest RAM command buffer pointer (0x028F2000 / 0x028F2940) for DmaMemory read",
+          "connections": [],
+          "producerPcs": [
+            "0x011b397c",
+            "0x011b3990",
+            "0x011b39a0",
+            "0x011b39b4",
+            "0x011b39c4"
+          ],
+          "consumerPcs": [],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin",
+            "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt",
+            "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/ProgrammedCommandReply.kt"
+          ],
+          "tests": [
+            "components/soc-isp-cmd/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-isp-cmd.c20c-config.words.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Raw 32-bit word for burst-config",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest register transitions against hardware capture."
+            }
+          ],
+          "unknowns": [
+            "Physical identity, reset value, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Compare hardware register captures with component behavior."
+        }
+      ],
+      "unknownCoverage": "No address outside these 5 aligned words is admitted.",
+      "implementationSources": [
+        "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt",
+        "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/ProgrammedCommandReply.kt"
+      ]
+    },
+    {
+      "id": "definition.soc-isp-cmd.reply",
+      "size": 32,
+      "kind": "MMIO",
+      "byteOrder": "little",
+      "backing": {
+        "source": "component-owned reply queue (0xFFF6C240..0xFFF6C224 descending 8-word readback via DmaMemory HYPOTHESIS)",
+        "permissions": "Aligned 32-bit RO across offsets 0x00..0x1c; writes refuse"
+      },
+      "registers": [
+        {
+          "id": "reg.soc-isp-cmd.reply.words",
+          "offset": 0,
+          "size": 4,
+          "count": 8,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-isp-cmd",
+          "name": "reply-words",
+          "namingBasis": "Section5 023937C0 / Section4 011B65B8..011B669C 8-word reply FIFO",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS reply queue driven by DmaMemory guest command buffer"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "Refuse",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "Verifies guest 0x82 command header at 0x028F2000 and serves learned 0x81 reply byte via DmaMemory",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [
+            "0x011b669c",
+            "0x011b65b8"
+          ],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section5.bin",
+            "firmware-data/gfx100s/2.13/decoded/section4.bin",
+            "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt",
+            "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/ProgrammedCommandReply.kt"
+          ],
+          "tests": [
+            "components/soc-isp-cmd/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section5.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section5.bin"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/ProgrammedCommandReply.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-isp-cmd.reply.words.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Raw 32-bit word for reply-words",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section5.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section5.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest register transitions against hardware capture."
+            }
+          ],
+          "unknowns": [
+            "Physical identity, reset value, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Compare hardware register captures with component behavior."
+        }
+      ],
+      "unknownCoverage": "No address outside these 8 aligned words is admitted.",
+      "implementationSources": [
+        "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt",
+        "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/ProgrammedCommandReply.kt"
+      ]
+    },
+    {
+      "id": "definition.soc-isp-cmd.config-bank-28",
+      "size": 28,
+      "kind": "MMIO",
+      "byteOrder": "little",
+      "backing": {
+        "source": "component-owned state (retained 28-byte image config bank HYPOTHESIS)",
+        "permissions": "Aligned 32-bit RW across 7 words"
+      },
+      "registers": [
+        {
+          "id": "reg.soc-isp-cmd.config-bank-28.words",
+          "offset": 0,
+          "size": 4,
+          "count": 7,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-isp-cmd",
+          "name": "config-bank-28",
+          "namingBasis": "Section4 011B66BC paired 28-byte image configuration bank",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit initialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "no additional route implied",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [],
+          "consumerPcs": [],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin",
+            "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+          ],
+          "tests": [
+            "components/soc-isp-cmd/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-isp-cmd.config-bank-28.words.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Raw 32-bit word for config-bank-28",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest register transitions against hardware capture."
+            }
+          ],
+          "unknowns": [
+            "Physical identity, reset value, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Compare hardware register captures with component behavior."
+        }
+      ],
+      "unknownCoverage": "No address outside these 7 aligned words is admitted.",
+      "implementationSources": [
+        "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+      ]
+    },
+    {
+      "id": "definition.soc-isp-cmd.config-bank-44",
+      "size": 44,
+      "kind": "MMIO",
+      "byteOrder": "little",
+      "backing": {
+        "source": "component-owned state (SPX4 Ultrasonic Piezo Sensor Cleaning controller 0xFFF6C400..0xFFF6C42B + GIC IRQ 104)",
+        "permissions": "Aligned 32-bit RW across 11 words (+0x00 stop/idle bit0, +0x04 start bit0, +0x0c..+0x20 sweep config, +0x24 W1C IRQ status, +0x28 IRQ mask)"
+      },
+      "registers": [
+        {
+          "id": "reg.soc-isp-cmd.config-bank-44.words",
+          "offset": 0,
+          "size": 4,
+          "count": 11,
+          "stride": 4,
+          "alignment": 4,
+          "readWidths": [
+            4
+          ],
+          "writeWidths": [
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-isp-cmd",
+          "name": "config-bank-44",
+          "namingBasis": "Section4 011B779C..011B7C3C & Section5 024DFDEC SPX4 Ultrasonic Piezo Sensor Cleaning controller (0xFFF6C400..0xFFF6C42B, GIC IRQ 104)",
+          "initial": {
+            "value": null,
+            "source": "HYPOTHESIS explicit initialFill; physical reset UNKNOWN"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "UNKNOWN",
+            "readClear": "UNKNOWN",
+            "selfClear": "UNKNOWN"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "GIC line 104 (edge ultrasonic piezo completion IRQ)",
+          "dma": "no additional channel implied",
+          "connections": [],
+          "producerPcs": [
+            "0x011b779c",
+            "0x011b77f4",
+            "0x011b7b6c",
+            "0x011b7bc4"
+          ],
+          "consumerPcs": [
+            "0x011b77d0"
+          ],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin",
+            "firmware-data/gfx100s/2.13/decoded/section5.bin",
+            "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt",
+            "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/UltrasonicPiezoController.kt"
+          ],
+          "tests": [
+            "components/soc-isp-cmd/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "UNKNOWN",
+              "evidence": []
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "HYPOTHESIS",
+              "evidence": [
+                "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-isp-cmd.config-bank-44.words.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Raw 32-bit word for config-bank-44",
+              "initial": {
+                "value": null,
+                "source": "UNKNOWN"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "UNKNOWN",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Physical bit meanings and reset state remain UNKNOWN."
+              ],
+              "nextValidation": "Compare guest register transitions against hardware capture."
+            }
+          ],
+          "unknowns": [
+            "Physical identity, reset value, and timing remain UNKNOWN."
+          ],
+          "nextValidation": "Compare hardware register captures with component behavior."
+        }
+      ],
+      "unknownCoverage": "No address outside these 11 aligned words is admitted.",
+      "implementationSources": [
+        "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/IspCmdFactory.kt",
+        "components/soc-isp-cmd/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/ispcmd/UltrasonicPiezoController.kt"
+      ]
+    }
+  ],
+  "unknowns": [
+    "Physical ISP command engine identity, reset values, and completion timing remain UNKNOWN."
+  ],
+  "nextValidation": "Compare guest command/reply transactions against hardware captures."
+}

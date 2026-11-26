@@ -1,0 +1,57 @@
+# Maintained and generated text is UTF-8/LF; check working tree as well as index.
+* text=auto eol=lf
+*.sh text eol=lf
+*.kt text eol=lf
+*.kts text eol=lf
+*.java text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.MD text eol=lf
+
+# Published originals retain exact bytes. Added files still undergo LF checks;
+# text-policy.json binds historical exceptions to the baseline Git blob.
+evidence/runs/** -text whitespace=-blank-at-eol,-blank-at-eof,-space-before-tab,cr-at-eol
+evidence/tooling/** -text whitespace=-blank-at-eol,-blank-at-eof,-space-before-tab,cr-at-eol
+docs/history/evidence/references/** -text
+evidence/refactor/** -text
+# Full diagnostic streams are archival payloads; avoid multi-GiB textual diffs.
+evidence/**/diagnostics/discovery-*.json -text -diff
+firmware-data/gfx100s/2.13/hardware/** -text
+docs/audits/*.generated.json -text
+docs/ui/gfx100s/*.generated.json -text
+
+# Binary firmware, media, native artifacts and compressed raw streams.
+*.DAT -text -diff
+*.dat -text -diff
+synthetic.update -text -diff
+*.bin -text -diff
+*.rom -text -diff
+*.img -text -diff
+*.dump -text -diff
+*.RAF -text -diff
+*.raf -text -diff
+*.JPG -text -diff
+*.jpg -text -diff
+*.jpeg -text -diff
+*.png -text -diff
+*.gif -text -diff
+*.webp -text -diff
+*.ico -text -diff
+*.pdf -text -diff
+*.jar -text -diff
+*.class -text -diff
+*.dll -text -diff
+*.so -text -diff
+*.dylib -text -diff
+*.zip -text -diff
+*.tar -text -diff
+*.gz -text -diff
+*.xz -text -diff
+*.7z -text -diff
+*.mp4 -text -diff
+*.h264 -text -diff
+*.ttf -text -diff
+*.woff -text -diff
+*.woff2 -text -diff

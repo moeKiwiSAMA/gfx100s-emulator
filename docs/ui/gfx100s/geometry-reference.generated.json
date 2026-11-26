@@ -1,0 +1,167 @@
+{
+  "schema": 1,
+  "id": "GFX-FOCUS-GEOMETRY-001",
+  "evidenceClass": "SOURCE",
+  "model": "GFX100S / FF200003",
+  "manual": {
+    "source": "GFX-SRC-PDF-EN",
+    "sha256": "4cc0dde000ad9ee42aae650ca32e8fb82e202e67c6f3f47526a84e89a77a776a",
+    "printedPage": 77,
+    "pdfPageOneBased": 101,
+    "wholePageRenderedAndViewed": true
+  },
+  "additionalReferences": [
+    {
+      "file": "focus.html",
+      "url": "https://fujifilm-dsc.com/en-int/manual/gfx100s/taking_photo/autofocus/",
+      "httpStatus": 200,
+      "bytes": 48975,
+      "sha256": "0848d719a834ad0bbc1df05501274af73583a1710c52832af3335bdeaa05982c",
+      "retrievedAtUtc": "2026-11-10T07:31:22.951Z",
+      "model": "GFX100S",
+      "kind": "SOURCE"
+    },
+    {
+      "file": "focus-selector.png",
+      "url": "https://fujifilm-dsc.com/en-int/manual/gfx100s/images/ill_bd_up_af-csm_gfx100s.png",
+      "httpStatus": 200,
+      "bytes": 33540,
+      "sha256": "9c3d3e05ca58d564c7d9270761b4160bcb80357e56acd2d743f2dc49734359b6",
+      "retrievedAtUtc": "2026-11-10T07:31:23.008Z",
+      "model": "GFX100S",
+      "kind": "SOURCE"
+    },
+    {
+      "url": "https://fujifilm-dsc.com/en-int/manual/gfx100s/images/ill_bd_sd-slot-open_gfx100s.png",
+      "status": 200,
+      "time": "2026-11-10T08:18:47.508Z",
+      "bytes": 29154,
+      "sha256": "0b22fd8ce6ddcdd71d9de210a329859938c9e3a2322e6fc09c1000dec1cd6c5f",
+      "file": "ill_bd_sd-slot-open_gfx100s.png",
+      "kind": "SOURCE",
+      "model": "GFX100S"
+    },
+    {
+      "url": "https://fujifilm-dsc.com/en-int/manual/gfx100s/images/ill_bd_sd-insert01_gfx100s.png",
+      "status": 200,
+      "time": "2026-11-10T08:18:47.571Z",
+      "bytes": 34955,
+      "sha256": "26a1897e123083326014636102d738ac97024f296c906058810ea73005e35c73",
+      "file": "ill_bd_sd-insert01_gfx100s.png",
+      "kind": "SOURCE",
+      "model": "GFX100S"
+    }
+  ],
+  "privateDerivativeImageIdentities": [
+    {
+      "file": "design-body.jpg",
+      "bytes": 57899,
+      "sha256": "9c642bca59e84e949618ea022b76625a241888fd71b85eb7df1eeae157b77bbf",
+      "sourceId": "GFX-SRC-PHOTO-FRONT"
+    },
+    {
+      "file": "brochure-page8-image0.png",
+      "bytes": 208505,
+      "sha256": "5a2d723fcf416854e03fd391b56c6b15b65562b6dcb568a44ffd6f3feec4fe8d",
+      "sourceId": "GFX-SRC-BROCHURE"
+    },
+    {
+      "file": "brochure-page8-image2.png",
+      "bytes": 356997,
+      "sha256": "312e57c00907a36b6894305b781fcd9cb760a4cc4928d2110cbf55b6530a3063",
+      "sourceId": "GFX-SRC-BROCHURE"
+    },
+    {
+      "file": "brochure-page8-image5.png",
+      "bytes": 213014,
+      "sha256": "f7126f993f455b5159590e750836d87a708ddcc0ce124d70e963dfa14a5542f4",
+      "sourceId": "GFX-SRC-BROCHURE"
+    },
+    {
+      "file": "parts-1.png",
+      "bytes": 155063,
+      "sha256": "6c6602e2491f888e23ffdce4e9ea4391156eef92cfcd267f5fbcdefdc4fd077f",
+      "sourceId": "GFX-SRC-DRAW-FRONT"
+    },
+    {
+      "file": "parts-2.png",
+      "bytes": 164078,
+      "sha256": "e0970caea348104386a08ad0bd9f092007851a4949a0e0b6d794c40185f8a8c8",
+      "sourceId": "GFX-SRC-DRAW-REAR"
+    }
+  ],
+  "observations": [
+    {
+      "part": "rear-focus-selector",
+      "fact": "In rear-facing inset, labels lie to the left of selector: S upper-left, C left-middle, M lower-left. Illustrated selection index points toward upper-left S; finger ear lies opposite at lower-right.",
+      "correction": "Previous upper-arc S/C/M drawing was incorrect.",
+      "electricalStatus": "UNKNOWN; source position labels do not establish button matrix or firmware consumption"
+    },
+    {
+      "part": "top-diopter",
+      "fact": "Wheel abuts the left side wall of protruding EVF housing; photo brochure PDF8/printed13–14 image0 and image5 cross-check.",
+      "correction": "Moved wheel 26 viewBox units right, overlapping side housing by8; hotspot now433..467 encloses visible435..463. Drawing values are design interpretation, not measured millimetres."
+    },
+    {
+      "part": "left-covers",
+      "fact": "Official Parts names Connector cover1/2; first parts inset separates upper MIC/headphone and lower USB/HDMI/sync connector groups.",
+      "design": "Two independent recess frames separated by12 canonical units; two existing cover control IDs retained. Opened flap perspective is original interpretation, not measured hinge motion."
+    },
+    {
+      "part": "right-sd",
+      "fact": "Official Parts and insertion illustrations distinguish card long thin edge, slot guide and detachable door; two slots2/1 remain individually labelled.",
+      "design": "Each visible card edge4x94 and guide21x116 canonical units, independent hitbox38x126; cover narrowed without changing body geometry. Not measured millimetres."
+    }
+  ],
+  "surfaceFramework": [
+    {
+      "surface": "front",
+      "fact": "Official front photo separates upper dark painted shoulder from broad lower textured skin. Grip is a curved volume; its brightness roll-off is not an inserted silver material strip.",
+      "design": "New base silhouette/paint roof faces, narrow independent bevels, dark lower skin and grip shading, bottom base lip."
+    },
+    {
+      "surface": "rear",
+      "fact": "Brochure rear close-up shows narrow painted shoulder above a textured right thumb area, with curved bulge around Q and focus stick.",
+      "design": "Separate shoulder bevel, right-side continuous skin plane and rounded thumb curve; base lip behind LCD."
+    },
+    {
+      "surface": "top",
+      "fact": "EVF roof folded planes and rear housing projection differ from its adjacent diopter wheel; hot shoe is its own metal part.",
+      "design": "Roof/front bevel/right shadow plane separate; wheel touches housing."
+    },
+    {
+      "surface": "sides/bottom",
+      "fact": "Case edges, covers and base plate have separate mechanical boundaries; illumination alone is not evidence of a material seam.",
+      "design": "Narrow perimeter bevels and dark return planes; no periodic tile borders."
+    }
+  ],
+  "texture": {
+    "generator": "continuous-grain-v1",
+    "domain": [
+      1200,
+      800
+    ],
+    "periodicTileWithinView": false,
+    "sourcePixelsCopied": false,
+    "sharedPaintKinds": [
+      "paint",
+      "rubber"
+    ],
+    "runtime": "Bounded jittered compact elliptical microrelief plus double-axis central differences from a full-field Float halo; two independent paint/rubber presets, no per-frame generation",
+    "svgScope": "Explicit native JVM extension in data-generator. General SVG readers render geometry but do not synthesize this material."
+  },
+  "unknowns": [
+    "No measured CAD or physical BRDF",
+    "Different camera ETERNA style source is not a GFX100S material measurement",
+    "No electrical focus selector address/code/consumer",
+    "No firmware frames/menu"
+  ],
+  "validation": {
+    "run": "local/studio-material-direction-smoke-02",
+    "junit": 39,
+    "hostGates": 40,
+    "actualPngsViewed": 23,
+    "frontRotation": "90 degrees actual canvas + native hit",
+    "scope": "targeted host UI only; geometry retained from previous revision"
+  }
+}

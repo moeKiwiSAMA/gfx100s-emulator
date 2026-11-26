@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "id": "device.mma8452q",
+  "componentId": "mma8452q",
+  "depends": [],
+  "version": "0.0.1",
+  "name": "mma8452q",
+  "physicalIdentity": "NXP / Freescale MMA8452Q / MMA8652FC Dual 3-Axis 12-Bit Digital I2C Accelerometers (I2C1 0x1C body, I2C2 0x1D tilting LCD, WHO_AM_I 0x2A)",
+  "implementationStatus": "PARTIAL",
+  "implementationSources": [
+    "components/mma8452q/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/mma8452q/Mma8452qFactory.kt",
+    "components/mma8452q/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/mma8452q/Mma8452qChip.kt"
+  ],
+  "ports": [],
+  "unknowns": [
+    "Full 0x00..0x31 register map, 12-bit left-justified OUT_X/Y/Z encoding, ±2g/±4g/±8g scale, OFF_X/Y/Z trim, and GFX100S bank14 mounting matrix follow NXP MMA8452Q Rev 8.1 datasheet and DAT section4 0x01216c40..0x0121a090; physical MEMS noise/interrupt pins remain modeled."
+  ],
+  "nextValidation": "Verify live GXUP0004.DAT levelsens landscape/portrait/pitch orientation via standalone mma8452q on i2c-bus.bus1/bus2."
+}

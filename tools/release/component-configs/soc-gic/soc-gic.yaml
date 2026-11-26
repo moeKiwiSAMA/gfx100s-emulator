@@ -1,0 +1,2 @@
+# Internal GFX100S SoC hardware definition — no user edits needed.
+coreProfile: "four-context-functional-experimental-v1"

@@ -1,0 +1,207 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 660" width="1000" height="660">
+  <title>Compact Rangefinder Rear View</title>
+  <defs>
+    <linearGradient id="rf-leather" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#242528"/>
+      <stop offset="100%" stop-color="#141517"/>
+    </linearGradient>
+    <radialGradient id="rf-evf-glass" cx="36%" cy="32%" r="68%">
+      <stop offset="0%" stop-color="#2f6b64" stop-opacity="0.65"/>
+      <stop offset="48%" stop-color="#14232d" stop-opacity="0.92"/>
+      <stop offset="100%" stop-color="#050709"/>
+    </radialGradient>
+    <linearGradient id="rf-silver-dial" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#eef1f5"/>
+      <stop offset="45%" stop-color="#b4bcc6"/>
+      <stop offset="100%" stop-color="#7c8590"/>
+    </linearGradient>
+    <pattern id="rf-brushed" width="384" height="384" patternUnits="userSpaceOnUse" data-texture="shared/brushed-chrome.png"/>
+    <pattern id="rf-rubber" width="208" height="208" patternUnits="userSpaceOnUse" data-texture="shared/leatherette.png"/>
+    <clipPath id="rf-rear-top-clip">
+      <path d="M 42 74 Q 42 42 74 42 H 926 Q 958 42 958 74 V 164 H 42 Z"/>
+    </clipPath>
+    <clipPath id="rf-rear-bot-clip">
+      <path d="M 42 164 H 958 V 598 Q 958 630 926 630 H 74 Q 42 630 42 598 Z"/>
+    </clipPath>
+    <linearGradient id="rf-edge" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#514f50"/><stop offset="1.6%" stop-color="#f4f0e7"/>
+      <stop offset="4%" stop-color="#c4c0b8"/><stop offset="18%" stop-color="#e3ded3"/>
+      <stop offset="72%" stop-color="#afaea8"/><stop offset="93%" stop-color="#c5c6c1"/>
+      <stop offset="98%" stop-color="#868682"/><stop offset="99.5%" stop-color="#555655"/>
+      <stop offset="100%" stop-color="#969693"/>
+    </linearGradient>
+    <linearGradient id="rf-rim-light" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#454644"/><stop offset="12%" stop-color="#dedcd5"/>
+      <stop offset="24%" stop-color="#faf9f3"/><stop offset="52%" stop-color="#b8b7b1"/>
+      <stop offset="83%" stop-color="#666864"/><stop offset="100%" stop-color="#222421"/>
+    </linearGradient>
+    <radialGradient id="rf-keycap" cx="38%" cy="22%" r="80%">
+      <stop offset="0%" stop-color="#474744"/><stop offset="55%" stop-color="#343431"/>
+      <stop offset="81%" stop-color="#282826"/><stop offset="96%" stop-color="#151615"/>
+      <stop offset="100%" stop-color="#44433f"/>
+    </radialGradient>
+    <g id="rf-plate-screw">
+      <circle r="4.3" fill="#5f605d"/><circle cy="0.5" r="3.5" fill="url(#rf-rim-light)"/>
+      <path d="M -2.2 0.7 L 1.9 -1.1 M -0.8 -2.2 L 0.9 2" fill="none" stroke="#51534f" stroke-width="1.15"/>
+    </g>
+  </defs>
+
+  <rect width="1000" height="660" fill="#171918"/>
+
+  <!-- Classic strap eyelets -->
+  <circle cx="32" cy="144" r="14" fill="#c4cbd3" stroke="#636b75" stroke-width="2"/>
+  <circle cx="32" cy="144" r="6" fill="#171918"/>
+  <circle cx="968" cy="144" r="14" fill="#c4cbd3" stroke="#636b75" stroke-width="2"/>
+  <circle cx="968" cy="144" r="6" fill="#171918"/>
+
+  <!-- Outer body drop shadow container -->
+  <rect x="42" y="42" width="916" height="588" rx="32" ry="32" fill="#141517" stroke="#5c636e" stroke-width="2" data-effect="shadow" data-shadow-radius="14" data-shadow-offset-y="6" data-shadow-opacity="0.55"/>
+
+  <!-- Brushed satin-silver rangefinder top cap -->
+  <path d="M 42 74 Q 42 42 74 42 H 926 Q 958 42 958 74 V 164 H 42 Z" fill="url(#rf-edge)" stroke="#ffffff" stroke-width="1.2"/>
+  <rect x="42" y="42" width="916" height="122" fill="url(#rf-brushed)" clip-path="url(#rf-rear-top-clip)" opacity="0.27"/>
+  <path d="M 44 71 Q 47 43 78 43 H 918 Q 948 43 954 64" fill="none" stroke="#f7f5ef" stroke-width="2.3"/>
+
+  <!-- Vulcanite black leatherette lower deck -->
+  <path d="M 42 164 H 958 V 598 Q 958 630 926 630 H 74 Q 42 630 42 598 Z" fill="url(#rf-leather)"/>
+  <rect x="42" y="164" width="916" height="466" fill="url(#rf-rubber)" clip-path="url(#rf-rear-bot-clip)" opacity="0.92"/>
+  <!-- Crisp machined parting seam -->
+  <line x1="42" y1="164" x2="958" y2="164" stroke="#0d0e10" stroke-width="2.4"/>
+  <line x1="44" y1="166" x2="956" y2="166" stroke="#d8dfe6" stroke-width="0.8" opacity="0.45"/>
+
+  <path d="M 43 579 Q 44 605 65 605 H 935 Q 950 604 957 588 V 601 Q 955 629 928 630 H 74 Q 43 628 42 600 Z"
+        fill="url(#rf-rim-light)" stroke="#44443e" stroke-width="1.2"/>
+  <path d="M 45 169 V 584 Q 49 606 64 607 M 953 170 V 578" fill="none" stroke="#c9c4b7" stroke-width="1.2" opacity="0.54"/>
+  <path d="M 49 170 V 583 M 948 171 V 584" fill="none" stroke="#0a0b0a" stroke-width="4" opacity="0.5"/>
+  <use href="#rf-plate-screw" x="62" y="87"/>
+  <use href="#rf-plate-screw" x="936" y="86"/>
+  <use href="#rf-plate-screw" x="94" y="617"/>
+  <use href="#rf-plate-screw" x="908" y="617"/>
+  <!-- Engraved rangefinder typography on silver cap -->
+  <text x="556" y="102" text-anchor="middle" fill="#23272d" font-size="16" font-weight="bold">RANGEFINDER</text>
+  <text x="556" y="122" text-anchor="middle" fill="#8f291c" font-size="11.5" font-weight="bold">RF-100</text>
+
+  <path d="M 72 132 V 73 Q 72 48 97 48 H 224 Q 246 49 246 75 V 145 Q 245 163 227 170 H 99 Q 73 168 72 146 Z"
+        fill="url(#rf-rim-light)" stroke="#4f504a" stroke-width="1.2"/>
+  <!-- Corner Rangefinder EVF Eyepiece -->
+  <g id="rear-evf" data-control-id="rear-evf" data-view-id="rear">
+    <rect x="78" y="52" width="164" height="112" rx="16" fill="#17191c" stroke="#545b66" stroke-width="2" data-effect="shadow" data-shadow-radius="6" data-shadow-offset-y="2" data-shadow-opacity="0.45"/>
+    <rect x="92" y="64" width="136" height="88" rx="6" fill="url(#rf-evf-glass)" stroke="#2e3d42" stroke-width="1.4"/>
+    <line x1="104" y1="74" x2="156" y2="74" stroke="#7be0cf" stroke-width="1.6" opacity="0.3" stroke-linecap="round"/>
+    <rect x="92" y="64" width="136" height="88" fill="none" stroke="none" data-hitbox="true"/>
+  </g>
+
+  <!-- Eye sensor & View Mode -->
+  <g id="rear-eye-sensor" data-control-id="rear-eye-sensor" data-view-id="rear">
+    <rect x="244" y="82" width="48" height="48" rx="10" fill="#16181c" stroke="#626a75" stroke-width="1.5"/>
+    <circle cx="268" cy="106" r="10" fill="#090c12" stroke="#53789c" stroke-width="1.2"/>
+    <circle cx="265" cy="103" r="3" fill="#70a7db" opacity="0.6"/>
+    <rect x="244" y="82" width="48" height="48" fill="none" stroke="none" data-hitbox="true"/>
+  </g>
+  <g id="rear-view-mode" data-control-id="rear-view-mode" data-view-id="rear">
+    <ellipse cx="342" cy="107" rx="33" ry="22" fill="#181916" stroke="#77776f" stroke-width="1.1"/>
+    <ellipse cx="342" cy="104.6" rx="29" ry="19" fill="url(#rf-keycap)" stroke="#20211e" stroke-width="1.5"/>
+    <text x="342" y="110" text-anchor="middle" fill="#eef2f6" font-size="11" font-weight="bold">VIEW</text>
+    <rect x="308" y="84" width="68" height="44" fill="none" stroke="none" data-hitbox="true"/>
+  </g>
+
+  <!-- Knurled silver thumb command dial -->
+  <g id="rear-command-dial" data-control-id="rear-command-dial" data-view-id="rear">
+    <rect x="736" y="74" width="160" height="62" rx="11" fill="#1c2026" stroke="#6c7582" stroke-width="1.5"/>
+    <rect x="742" y="80" width="148" height="50" rx="8" fill="url(#rf-silver-dial)" stroke="#ffffff" stroke-width="1.2" data-effect="shadow" data-shadow-radius="4" data-shadow-offset-y="2" data-shadow-opacity="0.4"/>
+    <path d="M 752 85 l -2 40 M 757 85 l -2 40 M 762 85 l -2 40 M 767 85 l -2 40 M 772 85 l -2 40 M 777 85 l -2 40 M 782 85 l -2 40 M 787 85 l -2 40 M 792 85 l -2 40 M 797 85 l -2 40 M 802 85 l -2 40 M 807 85 l -2 40 M 812 85 l -2 40 M 817 85 l -2 40 M 822 85 l -2 40 M 827 85 l -2 40 M 832 85 l -2 40 M 837 85 l -2 40 M 842 85 l -2 40 M 847 85 l -2 40 M 852 85 l -2 40 M 857 85 l -2 40 M 862 85 l -2 40 M 867 85 l -2 40 M 872 85 l -2 40 M 877 85 l -2 40 M 882 85 l -2 40" fill="none" stroke="#262624" stroke-width="1.8"/>
+    <path d="M 753.4 85 l -2 40 M 758.4 85 l -2 40 M 763.4 85 l -2 40 M 768.4 85 l -2 40 M 773.4 85 l -2 40 M 778.4 85 l -2 40 M 783.4 85 l -2 40 M 788.4 85 l -2 40 M 793.4 85 l -2 40 M 798.4 85 l -2 40 M 803.4 85 l -2 40 M 808.4 85 l -2 40 M 813.4 85 l -2 40 M 818.4 85 l -2 40 M 823.4 85 l -2 40 M 828.4 85 l -2 40 M 833.4 85 l -2 40 M 838.4 85 l -2 40 M 843.4 85 l -2 40 M 848.4 85 l -2 40 M 853.4 85 l -2 40 M 858.4 85 l -2 40 M 863.4 85 l -2 40 M 868.4 85 l -2 40 M 873.4 85 l -2 40 M 878.4 85 l -2 40 M 883.4 85 l -2 40" fill="none" stroke="#ece8dd" stroke-width="0.9"/>
+    <rect x="740" y="78" width="152" height="54" fill="none" stroke="none" data-hitbox="true"/>
+  </g>
+
+  <!-- A hinged panel sits proud of the leather, with the LCD viewport inside it. -->
+  <rect x="71" y="175" width="602" height="433" rx="17" fill="#121311" stroke="#64625b" stroke-width="1.6"/>
+  <rect x="76" y="177" width="59" height="5.5" rx="2.5" fill="url(#rf-rim-light)"/>
+  <rect x="610" y="177" width="53" height="5.5" rx="2.5" fill="url(#rf-rim-light)"/>
+  <!-- Recessed 3.2-inch LCD -->
+  <g id="rear-lcd" data-control-id="rear-lcd" data-view-id="rear">
+    <rect x="78" y="182" width="588" height="428" rx="12" fill="#0d0e11" stroke="#535a66" stroke-width="2" data-effect="shadow" data-shadow-radius="8" data-shadow-offset-y="3" data-shadow-opacity="0.5"/>
+    <rect x="92" y="196" width="560" height="400" rx="6" fill="#040507" stroke="#242930" stroke-width="1.2"/>
+    <rect x="92" y="196" width="560" height="400" fill="none" stroke="none" data-hitbox="true"/>
+  </g>
+
+  <!-- Top tactile utility row: Play, Delete, AF-ON -->
+  <g id="rear-play" data-control-id="rear-play" data-view-id="rear">
+    <ellipse cx="730" cy="223" rx="31" ry="26" fill="#181916" stroke="#77776f" stroke-width="1.1"/>
+    <ellipse cx="730" cy="220.6" rx="27" ry="23" fill="url(#rf-keycap)" stroke="#20211e" stroke-width="1.5"/>
+    <polygon points="724,214 724,230 740,222" fill="#eef2f6"/>
+    <rect x="698" y="196" width="64" height="52" fill="none" stroke="none" data-hitbox="true"/>
+  </g>
+  <g id="rear-delete" data-control-id="rear-delete" data-view-id="rear">
+    <ellipse cx="812" cy="223" rx="31" ry="26" fill="#181916" stroke="#77776f" stroke-width="1.1"/>
+    <ellipse cx="812" cy="220.6" rx="27" ry="23" fill="url(#rf-keycap)" stroke="#20211e" stroke-width="1.5"/>
+    <path d="M 806 217 H 819 L 818 228 H 807 Z M 804 215 H 821 M 809 212 H 816 M 810 219 V 225 M 814 219 V 225" fill="none" stroke="#e6e6dd" stroke-width="1.7"/>
+    <rect x="780" y="196" width="64" height="52" fill="none" stroke="none" data-hitbox="true"/>
+  </g>
+  <g id="rear-af-on" data-control-id="rear-af-on" data-view-id="rear">
+    <ellipse cx="892" cy="223" rx="31" ry="26" fill="#181916" stroke="#77776f" stroke-width="1.1"/>
+    <ellipse cx="892" cy="220.6" rx="27" ry="23" fill="url(#rf-keycap)" stroke="#20211e" stroke-width="1.5"/>
+    <text x="892" y="226" text-anchor="middle" fill="#e6ebf0" font-size="10.5" font-weight="bold">AF-ON</text>
+    <rect x="860" y="196" width="64" height="52" fill="none" stroke="none" data-hitbox="true"/>
+  </g>
+
+  <!-- Classic Circular D-Pad & Center MENU/OK -->
+  <circle cx="812" cy="360" r="96" fill="#121417" stroke="#3c424c" stroke-width="1.6"/>
+  <circle cx="812" cy="360" r="88" fill="url(#rf-keycap)" stroke="#2d302d" stroke-width="2"/>
+  <circle cx="812" cy="360" r="70" fill="#232421" stroke="#50504b" stroke-width="1.1"/>
+  <g id="rear-up" data-control-id="rear-up" data-view-id="rear">
+    <path d="M 770 295 Q 810 270 853 295 L 835 322 Q 812 310 789 322 Z" fill="url(#rf-keycap)" stroke="#4e504b" stroke-width="1"/>
+    <polygon points="812,290 804,304 820,304" fill="#e2e8f0"/>
+    <rect x="780" y="274" width="64" height="48" fill="none" stroke="none" data-hitbox="true"/>
+  </g>
+  <g id="rear-down" data-control-id="rear-down" data-view-id="rear">
+    <path d="M 770 425 Q 811 449 853 425 L 835 398 Q 812 410 789 398 Z" fill="url(#rf-keycap)" stroke="#4e504b" stroke-width="1"/>
+    <polygon points="812,426 804,412 820,412" fill="#e2e8f0"/>
+    <rect x="780" y="394" width="64" height="48" fill="none" stroke="none" data-hitbox="true"/>
+  </g>
+  <g id="rear-left" data-control-id="rear-left" data-view-id="rear">
+    <path d="M 746 317 Q 720 359 746 402 L 773 382 Q 759 360 773 338 Z" fill="url(#rf-keycap)" stroke="#4e504b" stroke-width="1"/>
+    <polygon points="732,360 746,352 746,368" fill="#e2e8f0"/>
+    <rect x="712" y="334" width="56" height="52" fill="none" stroke="none" data-hitbox="true"/>
+  </g>
+  <g id="rear-right" data-control-id="rear-right" data-view-id="rear">
+    <path d="M 878 317 Q 904 359 878 402 L 851 382 Q 865 360 851 338 Z" fill="url(#rf-keycap)" stroke="#4e504b" stroke-width="1"/>
+    <polygon points="892,360 878,352 878,368" fill="#e2e8f0"/>
+    <rect x="856" y="334" width="56" height="52" fill="none" stroke="none" data-hitbox="true"/>
+  </g>
+  <g id="rear-menu" data-control-id="rear-menu" data-view-id="rear">
+    <ellipse cx="812" cy="361" rx="31" ry="26" fill="#181916" stroke="#77776f" stroke-width="1.1"/>
+    <ellipse cx="812" cy="358.6" rx="27" ry="23" fill="url(#rf-keycap)" stroke="#20211e" stroke-width="1.5"/>
+    <text x="812" y="364" text-anchor="middle" fill="#f5e6cc" font-size="11.5" font-weight="bold">OK</text>
+    <rect x="780" y="334" width="64" height="52" fill="none" stroke="none" data-hitbox="true"/>
+  </g>
+
+  <!-- BACK & Q -->
+  <g id="rear-back" data-control-id="rear-back" data-view-id="rear">
+    <ellipse cx="759" cy="501" rx="46" ry="26" fill="#181916" stroke="#77776f" stroke-width="1.1"/>
+    <ellipse cx="759" cy="498.6" rx="42" ry="23" fill="url(#rf-keycap)" stroke="#20211e" stroke-width="1.5"/>
+    <text x="759" y="505" text-anchor="middle" fill="#e6ebf0" font-size="11.5" font-weight="bold">DISP/BACK</text>
+    <rect x="712" y="474" width="94" height="52" fill="none" stroke="none" data-hitbox="true"/>
+  </g>
+  <g id="rear-q" data-control-id="rear-q" data-view-id="rear">
+    <ellipse cx="869" cy="501" rx="46" ry="26" fill="#181916" stroke="#77776f" stroke-width="1.1"/>
+    <ellipse cx="869" cy="498.6" rx="42" ry="23" fill="url(#rf-keycap)" stroke="#20211e" stroke-width="1.5"/>
+    <text x="869" y="505" text-anchor="middle" fill="#f0c987" font-size="13" font-weight="bold">Q</text>
+    <rect x="822" y="474" width="94" height="52" fill="none" stroke="none" data-hitbox="true"/>
+  </g>
+
+  <!-- Focus Selector Lever -->
+  <g id="rear-focus-selector" data-control-id="rear-focus-selector" data-view-id="rear">
+    <rect x="712" y="544" width="204" height="48" rx="20" fill="#22231f" stroke="#65655b" stroke-width="1.3"/>
+    <text x="755" y="565" text-anchor="middle" fill="#e4e3d9" font-size="11" font-weight="bold">AF-S</text>
+    <text x="814" y="559" text-anchor="middle" fill="#e4e3d9" font-size="11" font-weight="bold">AF-C</text>
+    <text x="873" y="565" text-anchor="middle" fill="#e4e3d9" font-size="11" font-weight="bold">MF</text>
+    <path d="M 787 567 L 792 570 M 814 562 V 566 M 841 567 L 836 570" fill="none" stroke="#b4b4a7" stroke-width="1.5"/>
+    <g id="rf-focus-lever">
+      <path d="M 806 583 L 810 566 Q 814 563 818 566 L 822 583 Q 814 592 806 583 Z" fill="url(#rf-rim-light)" stroke="#171815" stroke-width="1"/>
+      <line x1="814" y1="566" x2="814" y2="573" stroke="#963e30" stroke-width="2"/>
+    </g>
+    <circle cx="814" cy="581" r="5" fill="url(#rf-keycap)" stroke="#818074" stroke-width="1"/>
+    <rect x="712" y="544" width="204" height="48" fill="none" stroke="none" data-hitbox="true"/>
+  </g>
+</svg>

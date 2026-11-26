@@ -1,0 +1,35 @@
+# ==============================================================================
+# Camera Body Buttons, Shutter & Still/Movie Switch
+# File: configs/components/buttons/buttons.yaml
+#
+# Sets the initial state of physical camera controls on power-up.
+# Momentary buttons should stay false at startup; use movieMode to choose
+# whether the camera boots into Still photography or Movie recording mode.
+# ==============================================================================
+
+# Menu navigation & confirmation buttons (keep false at startup).
+menu: false
+back: false
+up: false
+down: false
+left: false
+right: false
+
+# Two-stage shutter release (shutterHalf = half-press AF, shutterFull = shoot).
+shutterHalf: false
+shutterFull: false
+
+# Playback button.
+play: false
+
+# Top-plate STILL / MOVIE lever:
+#   false = STILL photography mode (default)
+#   true  = MOVIE video recording mode
+movieMode: false
+
+# Main power switch (true = powered on).
+power: true
+
+# --- Examples (uncomment to customize) ----------------------------------------
+# Boot directly into Movie recording mode (see also configs/examples/buttons-movie-mode.yaml):
+# movieMode: true

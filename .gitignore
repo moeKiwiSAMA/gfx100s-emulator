@@ -1,0 +1,47 @@
+.venv/
+__pycache__/
+.ruff_cache/
+*.pyc
+*.DAT
+*.dat
+*.bin
+*.rom
+*.dll
+*.pyd
+*.whl
+build/
+local/
+.env
+.env.*
+.gradle/
+.kotlin/
+logs/
+dumps/
+compoments/
+*.img
+*.so
+*.dylib
+.tools/
+*.mv.db
+*.trace.db
+# Immutable development audits retain local path diagnostics; publish only sanitized later runs.
+evidence/runs/2026-11-10-jvm-01/
+evidence/runs/2026-11-10-jvm-02/
+
+# Owner authorized DAT/decoded images/private dumps/SD images on 2026-11-10, reaffirmed 2026-11-11.
+# Binary/local ignore patterns above are staging safeguards, not a data prohibition.
+# Add other manifest-approved data by exact path with git add -f; see firmware-data/README.md.
+!/firmware-data/gfx100s/2.13/GXUP0004.DAT
+!/firmware-data/gfx100s/2.13/decoded/boot.bin
+!/firmware-data/gfx100s/2.13/decoded/kernel.bin
+!/firmware-data/gfx100s/2.13/decoded/section4.bin
+!/firmware-data/gfx100s/2.13/decoded/section5.bin
+!/tools/release/discovery/slot0-phy.seed.bin
+!/tools/release/discovery/slot1-phy.seed.bin
+
+# Closed-run host image lease artifacts are not experiment data.
+*.img.lock
+
+# Closed diagnostic traces are archived once as .json.gz; restore only under local/.
+# Existing tracked originals remain until their consumers have been audited.
+evidence/**/diagnostics/discovery-*.json

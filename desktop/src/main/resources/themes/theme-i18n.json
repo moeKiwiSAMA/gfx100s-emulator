@@ -1,0 +1,177 @@
+{
+  "schema": 2,
+  "externalSuffix": {
+    "en": "%s (External)",
+    "zh_CN": "%s（外部）",
+    "ja_JP": "%s（外部）",
+    "de_DE": "%s (Extern)",
+    "fr_FR": "%s (Externe)",
+    "es_ES": "%s (Externo)"
+  },
+  "body": {
+    "origin": {
+      "names": {
+        "en": "GFX100S Original (6-Face)",
+        "zh_CN": "GFX100S 原厂经典（六面机身）",
+        "ja_JP": "GFX100S オリジナル（6面ボディ）",
+        "de_DE": "GFX100S Original (6-Seiten-Gehäuse)",
+        "fr_FR": "GFX100S Original (Boîtier 6 faces)",
+        "es_ES": "GFX100S Original (Cuerpo de 6 caras)"
+      },
+      "descriptions": {
+        "en": "Original 6-face GFX100S camera studio (rear, top, front, left ports, right storage, bottom battery).",
+        "zh_CN": "经典原厂六面 GFX100S 相机工作台（背面、顶板、正面、左侧接口、右侧存储仓、底板电池仓）。",
+        "ja_JP": "純正6面GFX100Sカメラスタジオ（背面・上面・正面・左端子・右スロット・底面バッテリー）。",
+        "de_DE": "Originales 6-Seiten-GFX100S-Kamerastudio (Rückseite, Oberseite, Front, Anschlüsse links, Kartenfach rechts, Boden/Akku).",
+        "fr_FR": "Studio GFX100S original à 6 faces (arrière, dessus, avant, ports gauche, logement SD droit, dessous/batterie).",
+        "es_ES": "Estudio GFX100S original de 6 caras (trasera, superior, frontal, puertos izquierdos, ranura SD derecha y base/batería)."
+      }
+    },
+    "hasselblad-x2d2": {
+      "names": {
+        "en": "Hasselblad X2D II 100C",
+        "zh_CN": "哈苏 X2D II 100C",
+        "ja_JP": "ハッセルブラッド X2D II 100C",
+        "de_DE": "Hasselblad X2D II 100C",
+        "fr_FR": "Hasselblad X2D II 100C",
+        "es_ES": "Hasselblad X2D II 100C"
+      },
+      "descriptions": {
+        "en": "Nordic medium-format flagship body with machined dark-anodized chassis, sculpted grip, orange shutter release, and 3-panel layout.",
+        "zh_CN": "北欧中画幅旗舰机身：CNC 阳极氧化深灰机身、人体工学手柄、标志性橙色快门与三面板布局。",
+        "ja_JP": "北欧ミドルフォーマットフラッグシップ：CNCアルマイトボディ、象徴的なオレンジシャッター、3パネル構成。",
+        "de_DE": "Nordisches Mittelformat-Flaggschiff mit gefrästem eloxiertem Gehäuse, orangefarbenem Auslöser und 3-Panel-Layout.",
+        "fr_FR": "Boîtier moyen format nordique en aluminium anodisé usiné CNC, déclencheur orange emblématique et agencement 3 panneaux.",
+        "es_ES": "Cuerpo insignia de formato medio nórdico en aluminio anodizado CNC, disparador naranja y diseño de 3 paneles."
+      }
+    },
+    "hasselblad-907x": {
+      "names": {
+        "en": "Hasselblad 907X & CFV 100C",
+        "zh_CN": "哈苏 907X & CFV 100C",
+        "ja_JP": "ハッセルブラッド 907X & CFV 100C",
+        "de_DE": "Hasselblad 907X & CFV 100C",
+        "fr_FR": "Hasselblad 907X & CFV 100C",
+        "es_ES": "Hasselblad 907X & CFV 100C"
+      },
+      "descriptions": {
+        "en": "Modular medium-format digital back with satin chrome trim, grained black leatherette, minimalist waist-level rear deck, and classic 3-panel layout.",
+        "zh_CN": "经典模块化中画幅数码后背：拉丝镀铬边框、荔枝纹黑蒙皮、极简腰平取景背面与三面板布局。",
+        "ja_JP": "モジュラー中判デジタルバック：サテンクローム枠、シボ革外装、ミニマルな背面デッキの3パネル構成。",
+        "de_DE": "Modulares Mittelformat-Digitalrückteil mit satiniertem Chromrahmen, genarbtem Lederbezug und minimalistischem 3-Panel-Layout.",
+        "fr_FR": "Dos numérique moyen format modulaire à bordure chrome satiné, cuir grainé noir et agencement minimaliste à 3 panneaux.",
+        "es_ES": "Respaldo digital modular de formato medio con marco cromado satinado, piel granulada negra y diseño minimalista de 3 paneles."
+      }
+    },
+    "compact-rangefinder": {
+      "names": {
+        "en": "Compact Rangefinder",
+        "zh_CN": "极简旁轴机身",
+        "ja_JP": "コンパクト・レンジファインダー",
+        "de_DE": "Kompakte Messsucherkamera",
+        "fr_FR": "Télémétrique Compact",
+        "es_ES": "Telemétrica Compacta"
+      },
+      "descriptions": {
+        "en": "Streamlined 2-panel rangefinder body with corner viewfinder, machined knurled dials, and clean tactile rear deck.",
+        "zh_CN": "精简双面板旁轴机身：左上角取景器、精密滚花机械转盘与清爽触控背面布局。",
+        "ja_JP": "スリムな2パネル・レンジファインダー：コーナーファインダー、ローレット加工ダイヤル、簡潔な背面操作部。",
+        "de_DE": "Schlankes 2-Panel-Messsuchergehäuse mit Ecksucher, gerändelten Einstellrädern und aufgeräumter Rückseite.",
+        "fr_FR": "Boîtier télémétrique épuré à 2 panneaux avec viseur d'angle, molettes moletées usinées et dos tactile sobre.",
+        "es_ES": "Cuerpo telemétrico estilizado de 2 paneles con visor en esquina, diales moleteados y panel trasero limpio."
+      }
+    }
+  },
+  "ui": {
+    "origin": {
+      "names": {
+        "en": "Original Dark Studio",
+        "zh_CN": "经典曜石暗房",
+        "ja_JP": "オリジナル・ダークスタジオ",
+        "de_DE": "Original Dunkelstudio",
+        "fr_FR": "Studio Sombre Original",
+        "es_ES": "Estudio Oscuro Original"
+      },
+      "descriptions": {
+        "en": "Classic matte obsidian darkroom palette (#161515) with achromatic neutral controls.",
+        "zh_CN": "经典哑光曜石黑暗房配色（#161515），中性消色差工业控件风格。",
+        "ja_JP": "定番のマットオブシディアン暗室パレット（#161515）と無彩色ニュートラルコントロール。",
+        "de_DE": "Klassische matte Obsidian-Dunkelkammerpalette (#161515) mit neutralen, achromatischen Bedienelementen.",
+        "fr_FR": "Palette chambre noire obsidienne mate classique (#161515) avec commandes neutres achromatiques.",
+        "es_ES": "Paleta clásica de cuarto oscuro obsidiana mate (#161515) con controles neutros acromáticos."
+      }
+    },
+    "nordic-minimal": {
+      "names": {
+        "en": "Nordic Minimal",
+        "zh_CN": "北欧极简深岩",
+        "ja_JP": "ノルディック・ミニマル",
+        "de_DE": "Nordisch Minimal",
+        "fr_FR": "Minimaliste Nordique",
+        "es_ES": "Minimalista Nórdico"
+      },
+      "descriptions": {
+        "en": "Scandinavian deep slate surfaces with metallic orange (#E85D1A) active highlights.",
+        "zh_CN": "斯堪的纳维亚深岩灰界面搭配金属橙（#E85D1A）高亮激活态。",
+        "ja_JP": "北欧ディープスレート基調のパネルにメタリックオレンジ（#E85D1A）のアクセント。",
+        "de_DE": "Skandinavische tiefe Schieferflächen mit metallisch-orangenen (#E85D1A) Akzenten.",
+        "fr_FR": "Surfaces ardoise scandinave profonde rehaussées d'accents orange métallique (#E85D1A).",
+        "es_ES": "Superficies pizarra escandinava profunda con acentos activos en naranja metálico (#E85D1A)."
+      }
+    },
+    "daylight-studio": {
+      "names": {
+        "en": "Daylight Studio",
+        "zh_CN": "日光亮色影棚",
+        "ja_JP": "デイライト・スタジオ",
+        "de_DE": "Tageslicht-Studio",
+        "fr_FR": "Studio Lumière du Jour",
+        "es_ES": "Estudio Luz de Día"
+      },
+      "descriptions": {
+        "en": "Clean bright studio surface (#F3F4F6 / #FFFFFF) with crisp charcoal ink typography.",
+        "zh_CN": "通透明亮的日光影棚配色（#F3F4F6 / #FFFFFF）与高对比度炭黑排版。",
+        "ja_JP": "明るく清潔なスタジオ背景（#F3F4F6 / #FFFFFF）とくっきりとしたチャコール文字。",
+        "de_DE": "Helle, klare Studiooberfläche (#F3F4F6 / #FFFFFF) mit kontrastreicher Anthrazit-Typografie.",
+        "fr_FR": "Surface studio lumineuse et épurée (#F3F4F6 / #FFFFFF) avec typographie encre anthracite nette.",
+        "es_ES": "Superficie de estudio luminosa y limpia (#F3F4F6 / #FFFFFF) con tipografía carbón de alto contraste."
+      }
+    },
+    "vintage-brass": {
+      "names": {
+        "en": "Vintage Brass",
+        "zh_CN": "复古黄铜工艺",
+        "ja_JP": "ヴィンテージ・ブラス",
+        "de_DE": "Vintage-Messing",
+        "fr_FR": "Laiton Vintage",
+        "es_ES": "Latón Vintage"
+      },
+      "descriptions": {
+        "en": "Warm charcoal leatherette palette accented with antique brushed brass (#D4A259).",
+        "zh_CN": "暖调深炭黑蒙皮质感搭配古董拉丝黄铜（#D4A259）点缀。",
+        "ja_JP": "温かみのあるチャコールレザー調にアンティークブラス（#D4A259）のアクセント。",
+        "de_DE": "Warme Anthrazit-Lederoptik mit gebürsteten Antikmessing-Akzenten (#D4A259).",
+        "fr_FR": "Palette cuir anthracite chaleureuse soulignée de laiton brossé antique (#D4A259).",
+        "es_ES": "Paleta cálida en piel carbón acentuada con latón cepillado antiguo (#D4A259)."
+      }
+    },
+    "olive-field": {
+      "names": {
+        "en": "Olive Field",
+        "zh_CN": "军绿野战仪器",
+        "ja_JP": "オリーブ・フィールド",
+        "de_DE": "Oliv-Feldinstrument",
+        "fr_FR": "Olive Terrain",
+        "es_ES": "Oliva de Campo"
+      },
+      "descriptions": {
+        "en": "Matte field-instrument olive palette with warm sand-gold (#C9B37E) readouts.",
+        "zh_CN": "哑光野战仪器橄榄绿配色搭配暖沙金（#C9B37E）刻度读数。",
+        "ja_JP": "マットなフィールド計測器オリーブ基調にサンドゴールド（#C9B37E）の表示。",
+        "de_DE": "Matte Feldinstrument-Olivpalette mit warmen Sandgold-Anzeigen (#C9B37E).",
+        "fr_FR": "Palette olive mate d'instrument de terrain avec affichages or sable chaud (#C9B37E).",
+        "es_ES": "Paleta oliva mate de instrumento de campo con lecturas en dorado arena cálido (#C9B37E)."
+      }
+    }
+  }
+}

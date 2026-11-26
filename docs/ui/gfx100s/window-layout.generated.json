@@ -1,0 +1,138 @@
+{
+  "schema": 1,
+  "id": "GFX-STUDIO-LAYOUT-THREE-COLUMNS-CW90-001",
+  "basis": "User latest three columns/front90 requirement; source geometry retained separately from host display layout.",
+  "canonicalSvg": [
+    1200,
+    800
+  ],
+  "hostLayout": [
+    1560,
+    1110
+  ],
+  "leftColumn": [
+    "ports-left",
+    "front",
+    "storage-right"
+  ],
+  "middleColumn": [
+    "top",
+    "rear",
+    "battery-bottom"
+  ],
+  "rightColumn": "configuration-main-entry",
+  "configurationMinimum": {
+    "width": 340,
+    "height": 270
+  },
+  "stageStyle": {
+    "faces": "UNDECORATED",
+    "border": 1,
+    "dragBar": 16,
+    "configuration": "DECORATED"
+  },
+  "front": {
+    "rotationDegrees": 90,
+    "mode": "clockwise canvas rotation",
+    "sourceCrop": {
+      "x": 120,
+      "y": 164,
+      "width": 972,
+      "height": 576
+    },
+    "actualTransformedBounds": {
+      "rotationDegrees": 90,
+      "x": 0,
+      "y": 0,
+      "width": 576,
+      "height": 972
+    },
+    "allArtworkAndHotspotsShareCanvas": true,
+    "dragBarRemainsHorizontal": true
+  },
+  "actualRun": "local/studio-material-direction-smoke-02",
+  "actualWorkspace": {
+    "x": 0,
+    "y": 0,
+    "width": 1280,
+    "height": 752
+  },
+  "actualScreen": {
+    "scope": "primary-screen-JavaFX-logical-coordinates",
+    "dpi": 0,
+    "outputScaleX": 2,
+    "outputScaleY": 2,
+    "mixedDpiRuntimeQualified": false
+  },
+  "actualFaceBounds": {
+    "rear": {
+      "x": 327.72972972972974,
+      "y": 216.7927927927928,
+      "width": 487.78378378378375,
+      "height": 331.9639639639639,
+      "visible": true,
+      "clientWidth": 488,
+      "clientHeight": 332
+    },
+    "top": {
+      "x": 327.72972972972974,
+      "y": 6.774774774774775,
+      "width": 487.78378378378375,
+      "height": 203.24324324324323,
+      "visible": true,
+      "clientWidth": 488,
+      "clientHeight": 203.5
+    },
+    "front": {
+      "x": 117.71171171171171,
+      "y": 196.46846846846844,
+      "width": 203.24324324324323,
+      "height": 359.06306306306305,
+      "visible": true,
+      "clientWidth": 203.5,
+      "clientHeight": 359.5
+    },
+    "ports-left": {
+      "x": 117.71171171171171,
+      "y": 6.774774774774775,
+      "width": 203.24324324324323,
+      "height": 182.9189189189189,
+      "visible": true,
+      "clientWidth": 203.5,
+      "clientHeight": 183
+    },
+    "storage-right": {
+      "x": 117.71171171171171,
+      "y": 562.3063063063063,
+      "width": 203.24324324324323,
+      "height": 182.9189189189189,
+      "visible": true,
+      "clientWidth": 203.5,
+      "clientHeight": 183
+    },
+    "battery-bottom": {
+      "x": 327.72972972972974,
+      "y": 555.5315315315315,
+      "width": 487.78378378378375,
+      "height": 189.6936936936937,
+      "visible": true,
+      "clientWidth": 488,
+      "clientHeight": 190
+    }
+  },
+  "actualConfigurationBounds": {
+    "x": 822.5,
+    "y": 7,
+    "width": 340,
+    "height": 738.5,
+    "visible": true,
+    "clientWidth": 327,
+    "clientHeight": 703
+  },
+  "captureMethod": "actual-shown-scene-snapshots-at-observed-native-client-positions; excludes OS desktop and decoration pixels",
+  "limits": [
+    "No measured CAD/BRDF/physical roughness or exact proprietary typeface equivalence.",
+    "Only primary Windows logical screen was exercised; DPI reported0 while outputScale2, no physical DPI claim.",
+    "No Linux/macOS/mixed-DPI/multimonitor qualification."
+  ]
+}

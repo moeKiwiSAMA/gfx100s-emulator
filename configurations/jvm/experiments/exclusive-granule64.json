@@ -1,0 +1,4 @@
+{
+  "profile": "arm-word-exclusive-logical-experimental-v1",
+  "reservationGranule": 64
+}

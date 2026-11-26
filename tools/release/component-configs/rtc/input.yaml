@@ -1,0 +1,13 @@
+---
+schema: 2
+profile: "gfx100s-rtc-scripted-stage-read-experimental-v2"
+ticksPerSecond: 54000000
+initialSeconds: 662774400
+initialControl: 2
+counterRunning: true
+loadDelayTicks: 10
+stageReadInputs:
+  "29":
+  - 0
+  "30":
+  - 0

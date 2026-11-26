@@ -1,0 +1,93 @@
+# ==============================================================================
+# 样例配置 2：外设探索与有限预算研究模式（discovery）
+#
+# 使用场景：逆向分析未知 MMIO 寄存器、记录固件访问边界（frontier）或进行确定性实验。
+# 与 relaxed 模式的关键差异：
+#   1. executionMode: discovery（拒绝 relaxedBootstrapRam 与自定义宽松补丁）；
+#   2. instructionBudget 必须为有限正整数（最大 300000000）；
+#   3. 遇到未登记的外设或候选窗口越界会精确停在 frontier 并输出诊断记录。
+# ==============================================================================
+schema: 1
+components: runtime/compoments
+componentConfigs: configs/components
+httpPort: 8787
+firmwareMetadata: configs/firmware/gfx100s-213-release.yaml
+firmwareFile: runtime/firmware/GXUP0004.DAT
+nativeLibrary: runtime/native/libunicorn.so.2
+# discovery 模式要求显式有限指令预算（1..300000000）
+instructionBudget: 200000000
+transactionLimit: 65536
+executionMode: discovery
+audio: false
+telemetry:
+  enabled: false
+addressDictionary: configs/catalog.compiled.json
+clusterProfile: four-context-functional-experimental-v1
+clusterReset:
+  profile: secondary-reset-schedule-experimental-v1
+  releaseTicks:
+    - 0
+    - 32768
+    - 32768
+    - 32768
+mmuProfile: arm-short-descriptor-native-experimental-v1
+wordExclusive:
+  profile: arm-byte-halfword-word-exclusive-logical-experimental-v3
+  reservationGranule: 64
+cbarInput: 4294901760
+idleClock:
+  profile: next-deadline-functional-experimental-v1
+  maxAdvances: 65536
+  maxIdleTicks: 1000000000
+undefinedExceptionProfile: arm-vfp-disabled-undefined-experimental-v1
+prefetchAbortProfile: arm32-native-prefetch-entry-experimental-v1
+flashPartitionScope: dat-partition-octet-experimental-v3
+powerBlockScope: dat-checksummed-four-halfword-experimental-v1
+powerRegister2Bit8Profile: masked-bit8-retained-experimental-v1
+flashReadPairScope: dat-secondary-read-pair-experimental-v1
+flashWritableSetScope: dat-bkup-octet-secondary504-write-set-experimental-v2
+discovery:
+  profile: gfx100s-sd-finite-lens-completion-a300-diagnostic-v1
+  logCapacity: 4096
+  diskBudgetBytes: 268435456
+  imageScalerF000: fff7f000-irq133-completion-v1
+  imageScalerE000: fff7e000-irq132-completion-v1
+  playDspFa00: fa000000-ready-idle-v1
+  ispAutoSync: isp-tg-auto-sync-v1
+  imageFace7c000: face-status-ready-v1
+  inputs:
+    gfx100s.sd.slot0.phy.candidate:
+      strategy: retained-bytes
+      file: configs/discovery/slot0-phy.seed.bin
+      sha256: 41c3901f093c7786f252f0a02279a7e750952c3479b7d48144c5239b9a846259
+    gfx100s.sd.slot1.phy.candidate:
+      strategy: retained-bytes
+      file: configs/discovery/slot1-phy.seed.bin
+      sha256: 41c3901f093c7786f252f0a02279a7e750952c3479b7d48144c5239b9a846259
+enabledDevices:
+  - soc-gpio
+  - soc-timer
+  - soc-dma
+  - soc-configuration
+  - soc-flash
+  - soc-gic
+  - soc-keyed-io
+  - soc-system-control
+  - soc-method4
+  - soc-spi
+  - soc-adc
+  - soc-i2c
+  - soc-selection
+  - soc-temperature
+  - soc-dram
+  - soc-serial-engine
+  - soc-sd-host
+  - soc-sdio
+  - soc-vglib-init
+  - soc-hdmi
+  - soc-panel
+  - soc-uart
+  - soc-isp-cmd
+  - soc-isp-setup
+  - soc-isp
+  - soc-jpeg

@@ -1,0 +1,15 @@
+# ==============================================================================
+# CMOS 取景样例 2：FFmpeg 管道实时取景模式（本机摄像头 / 本地视频 / RTSP 网络流）
+#
+# 使用方法：
+#   1. 确保系统 PATH 中已安装 ffmpeg；
+#   2. 将本文件复制为 configs/components/cmos/cmos.yaml，按需修改 sourceFile：
+#      - 本机默认摄像头      ："webcam:default"（Linux V4L2 / Windows DirectShow / macOS AVFoundation）
+#      - 指定 Linux 摄像头   ："webcam:/dev/video0"
+#      - 本地 MP4/MKV 视频   ："sample.mp4"（位于 runtime/compoments/cmos/）或 "file:///path/to/video.mp4"
+#      - RTSP / RTMP / HTTP  ："rtsp://127.0.0.1:8554/live"
+#   若 ffmpeg 未安装或流暂时断开，将自动回退到内置测试图并后台尝试重连，绝不卡死模拟器。
+# ==============================================================================
+sourceKind: "ffmpeg-pipe"
+sourceFile: "webcam:default"
+loop: true

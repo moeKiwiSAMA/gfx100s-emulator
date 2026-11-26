@@ -1,0 +1,4 @@
+# Internal GFX100S SoC hardware definition — no user edits needed.
+baseProfile: "configuration-base-parameters-experimental-v1"
+baseInputFile: "base-parameters.json"
+profile: "configuration-pair-reconfiguration-experimental-v2"

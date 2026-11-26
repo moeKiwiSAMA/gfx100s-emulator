@@ -1,0 +1,300 @@
+name: Build & Package (Linux + Windows x86_64)
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dfile.encoding=UTF-8"
+  FFMPEG_VERSION: "8.1.3"
+  FFMPEG_SHA256: "7138d28c96d9d3e3af4ee3d8cad72741f8ffb40da90c1112235dea3ecd3178a3"
+
+jobs:
+  build-and-package:
+    name: Build, Verify & Package (Ubuntu x86_64 + Win64 Cross)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Linux & MinGW-w64 native build dependencies
+        run: |
+          sudo apt-get update
+          DEBIAN_FRONTEND=noninteractive sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            binutils \
+            cmake \
+            ninja-build \
+            mingw-w64 \
+            libboost-dev \
+            libvulkan-dev \
+            libvulkan1 \
+            mesa-vulkan-drivers \
+            libjpeg-turbo8-dev \
+            libturbojpeg0-dev \
+            libasound2-dev \
+            nasm \
+            yasm \
+            pkg-config \
+            python3 \
+            curl \
+            unzip \
+            zip \
+            xz-utils \
+            xvfb
+
+      - name: Set up Adoptium Temurin JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: gradle
+
+      - name: Cache Dynarmic JIT source & Linux/Win64 builds
+        uses: actions/cache@v4
+        with:
+          path: |
+            .tools/dynarmic-v1/source
+            .tools/dynarmic-v1/build-linux
+            .tools/dynarmic-v1/build-win64
+          key: dynarmic-v1-${{ runner.os }}-${{ hashFiles('tools/native/dynarmic-bridge/**') }}
+          restore-keys: |
+            dynarmic-v1-${{ runner.os }}-
+
+      - name: Cache LGPL FFmpeg 8.1.3 source & Linux/Win64 decoders
+        uses: actions/cache@v4
+        with:
+          path: |
+            .tools/playback-ffmpeg/cache
+            .tools/playback-ffmpeg/build-linux
+            .tools/playback-ffmpeg/build-win64
+          key: playback-ffmpeg-v1-${{ runner.os }}-${{ hashFiles('tools/native/playback-ffmpeg/build.sh') }}
+          restore-keys: |
+            playback-ffmpeg-v1-${{ runner.os }}-
+
+      - name: Cache Adoptium Win64 OpenJDK 25 JMODs for cross-jlink
+        uses: actions/cache@v4
+        with:
+          path: .tools/jdk-25-win64
+          key: win64-jdk25-jmods-v1-${{ runner.os }}-${{ hashFiles('tools/release/jpackage/fetch-win64-jdk.sh') }}
+          restore-keys: |
+            win64-jdk25-jmods-v1-${{ runner.os }}-
+
+      - name: Build Dynarmic ARMv7-A JIT (Linux .so + Windows x86_64 .dll)
+        run: |
+          set -euo pipefail
+          DYN_SHA="$(sha256sum \
+            tools/native/dynarmic-bridge/fuji_dynarmic.h \
+            tools/native/dynarmic-bridge/fuji_mmu_tlb.hpp \
+            tools/native/dynarmic-bridge/fuji_dynarmic.cpp \
+            tools/native/dynarmic-bridge/CMakeLists.txt \
+            tools/native/dynarmic-bridge/build_dynarmic.sh \
+            tools/native/dynarmic-bridge/test_dynarmic_bridge.cpp \
+            tools/native/dynarmic-bridge/mingw64-dynarmic-toolchain.cmake \
+            | sha256sum | awk '{print $1}')"
+
+          if [ -f ".tools/dynarmic-v1/build-linux/libfuji_dynarmic.so" ] && \
+             [ -f ".tools/dynarmic-v1/build-linux/bridge.sha256" ] && \
+             [ "$(cat .tools/dynarmic-v1/build-linux/bridge.sha256)" = "$DYN_SHA" ]; then
+            echo "Reusing cached Linux Dynarmic JIT library (SHA matched)."
+            .tools/dynarmic-v1/build-linux/test_dynarmic_bridge
+          else
+            rm -rf .tools/dynarmic-v1/build-linux
+            bash tools/native/dynarmic-bridge/build_dynarmic.sh linux
+            printf '%s\n' "$DYN_SHA" > .tools/dynarmic-v1/build-linux/bridge.sha256
+          fi
+
+          if [ -f ".tools/dynarmic-v1/build-win64/fuji_dynarmic.dll" ] && \
+             [ -f ".tools/dynarmic-v1/build-win64/bridge.sha256" ] && \
+             [ "$(cat .tools/dynarmic-v1/build-win64/bridge.sha256)" = "$DYN_SHA" ]; then
+            echo "Reusing cached Windows x86_64 Dynarmic JIT DLL (SHA matched)."
+          else
+            rm -rf .tools/dynarmic-v1/build-win64
+            bash tools/native/dynarmic-bridge/build_dynarmic.sh win64
+            printf '%s\n' "$DYN_SHA" > .tools/dynarmic-v1/build-win64/bridge.sha256
+          fi
+
+      - name: Build native C/C++ bridges (Linux .so + Windows x86_64 .dll)
+        run: |
+          set -euo pipefail
+          bash tools/native/audio-bridge/build_audio.sh all
+          bash tools/native/render-bridge/build_render.sh all
+          bash tools/native/vulkan-optics/build_vulkan_optics.sh all
+          bash tools/native/isp-simd/build_isp_simd.sh all
+          bash tools/native/codec-bridge/build_codec.sh all
+          bash tools/native/gamepad-bridge/build_gamepad.sh all
+
+      - name: Build LGPL-2.1 FFmpeg 8.1.3 playback decoders (Linux + Windows x86_64)
+        run: |
+          set -euo pipefail
+          FFMPEG_CACHE_DIR=".tools/playback-ffmpeg/cache"
+          FFMPEG_ARCHIVE="${FFMPEG_CACHE_DIR}/ffmpeg-${FFMPEG_VERSION}.tar.xz"
+          mkdir -p "${FFMPEG_CACHE_DIR}"
+          if [ ! -f "${FFMPEG_ARCHIVE}" ]; then
+            curl -fL --retry 3 "https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.xz" -o "${FFMPEG_ARCHIVE}.tmp"
+            mv "${FFMPEG_ARCHIVE}.tmp" "${FFMPEG_ARCHIVE}"
+          fi
+          echo "${FFMPEG_SHA256}  ${FFMPEG_ARCHIVE}" | sha256sum --check --status
+
+          FFMPEG_SCRIPT_SHA="$(sha256sum tools/native/playback-ffmpeg/build.sh | awk '{print $1}')"
+          if [ -f ".tools/playback-ffmpeg/build-linux/runtime/media/ffmpeg" ] && \
+             [ -f ".tools/playback-ffmpeg/build-linux/runtime/media/licenses/COPYING.LGPLv2.1" ] && \
+             [ -f ".tools/playback-ffmpeg/build-linux/bridge.sha256" ] && \
+             [ "$(cat .tools/playback-ffmpeg/build-linux/bridge.sha256)" = "$FFMPEG_SCRIPT_SHA" ]; then
+            chmod +x .tools/playback-ffmpeg/build-linux/runtime/media/ffmpeg
+            echo "Reusing cached Linux playback FFmpeg."
+          else
+            FUJI_FFMPEG_TARBALL="${PWD}/${FFMPEG_ARCHIVE}" bash tools/native/playback-ffmpeg/build.sh linux
+          fi
+
+          if [ -f ".tools/playback-ffmpeg/build-win64/runtime/media/ffmpeg.exe" ] && \
+             [ -f ".tools/playback-ffmpeg/build-win64/runtime/media/licenses/COPYING.LGPLv2.1" ] && \
+             [ -f ".tools/playback-ffmpeg/build-win64/bridge.sha256" ] && \
+             [ "$(cat .tools/playback-ffmpeg/build-win64/bridge.sha256)" = "$FFMPEG_SCRIPT_SHA" ]; then
+            echo "Reusing cached Windows x86_64 playback FFmpeg."
+          else
+            FUJI_FFMPEG_TARBALL="${PWD}/${FFMPEG_ARCHIVE}" bash tools/native/playback-ffmpeg/build.sh win64
+          fi
+
+      - name: Export verified native library paths
+        run: |
+          set -euo pipefail
+          for req in \
+            .tools/dynarmic-v1/build-linux/libfuji_dynarmic.so \
+            .tools/dynarmic-v1/build-win64/fuji_dynarmic.dll \
+            .tools/audio-bridge/build-linux/libfuji_audio.so \
+            .tools/audio-bridge/build-win64/fuji_audio.dll \
+            .tools/render-bridge/build-linux/libfuji_render.so \
+            .tools/render-bridge/build-win64/fuji_render.dll \
+            .tools/vulkan-optics/build-linux/libfuji_vulkan_optics.so \
+            .tools/vulkan-optics/build-win64/fuji_vulkan_optics.dll \
+            .tools/isp-simd/build-linux/libfuji_isp_simd.so \
+            .tools/isp-simd/build-win64/fuji_isp_simd.dll \
+            .tools/codec-bridge/build-linux/libfuji_codec.so \
+            .tools/codec-bridge/build-win64/fuji_codec.dll \
+            .tools/gamepad-bridge/build-linux/libfuji_gamepad.so \
+            .tools/gamepad-bridge/build-win64/fuji_gamepad.dll \
+            .tools/playback-ffmpeg/build-linux/runtime/media/ffmpeg \
+            .tools/playback-ffmpeg/build-win64/runtime/media/ffmpeg.exe \
+            .tools/playback-ffmpeg/cache/ffmpeg-${FFMPEG_VERSION}.tar.xz; do
+            test -s "$req" || { echo "ERROR: Missing or empty native artifact: $req" >&2; exit 1; }
+          done
+
+          cat <<EOF >> "$GITHUB_ENV"
+          FUJI_DYNARMIC_LIBRARY=${GITHUB_WORKSPACE}/.tools/dynarmic-v1/build-linux/libfuji_dynarmic.so
+          FUJI_WIN64_DYNARMIC_DLL=${GITHUB_WORKSPACE}/.tools/dynarmic-v1/build-win64/fuji_dynarmic.dll
+          FUJI_AUDIO_LIBRARY=${GITHUB_WORKSPACE}/.tools/audio-bridge/build-linux/libfuji_audio.so
+          FUJI_WIN64_AUDIO_DLL=${GITHUB_WORKSPACE}/.tools/audio-bridge/build-win64/fuji_audio.dll
+          FUJI_RENDER_LIBRARY=${GITHUB_WORKSPACE}/.tools/render-bridge/build-linux/libfuji_render.so
+          FUJI_WIN64_RENDER_DLL=${GITHUB_WORKSPACE}/.tools/render-bridge/build-win64/fuji_render.dll
+          FUJI_REQUIRE_RENDER_NATIVE=1
+          FUJI_VULKAN_OPTICS_LIBRARY=${GITHUB_WORKSPACE}/.tools/vulkan-optics/build-linux/libfuji_vulkan_optics.so
+          FUJI_WIN64_VULKAN_OPTICS_DLL=${GITHUB_WORKSPACE}/.tools/vulkan-optics/build-win64/fuji_vulkan_optics.dll
+          FUJI_ISP_SIMD_LIBRARY=${GITHUB_WORKSPACE}/.tools/isp-simd/build-linux/libfuji_isp_simd.so
+          FUJI_WIN64_ISP_SIMD_DLL=${GITHUB_WORKSPACE}/.tools/isp-simd/build-win64/fuji_isp_simd.dll
+          FUJI_REQUIRE_ISP_SIMD=1
+          FUJI_CODEC_LIBRARY=${GITHUB_WORKSPACE}/.tools/codec-bridge/build-linux/libfuji_codec.so
+          FUJI_WIN64_CODEC_DLL=${GITHUB_WORKSPACE}/.tools/codec-bridge/build-win64/fuji_codec.dll
+          FUJI_GAMEPAD_LIBRARY=${GITHUB_WORKSPACE}/.tools/gamepad-bridge/build-linux/libfuji_gamepad.so
+          FUJI_WIN64_GAMEPAD_DLL=${GITHUB_WORKSPACE}/.tools/gamepad-bridge/build-win64/fuji_gamepad.dll
+          FUJI_FFMPEG_TARBALL=${GITHUB_WORKSPACE}/.tools/playback-ffmpeg/cache/ffmpeg-${FFMPEG_VERSION}.tar.xz
+          EOF
+
+      - name: Run firmware-free catalog, runtime, component & native parity tests
+        run: |
+          xvfb-run -a ./gradlew --no-daemon --build-cache \
+            -PfujiBundleStockBins=false \
+            :address-catalog:verifyCatalog \
+            :address-catalog:test \
+            :component-api:test \
+            :cpu-dynarmic:test \
+            :runtime:quickGateRuntimeTest \
+            :components:sdcard-reader:test \
+            :components:soc-sd-host:test \
+            :components:soc-jpeg:test \
+            :components:soc-isp:test \
+            :components:optical-filter:test \
+            :components:cmos:test \
+            :components:lens:test \
+            :components:soc-vglib-init:test --tests "com.github.nyabanban.fuji.emulator.components.vglib.NativeRenderBridgeParityTest" \
+            :desktop:test \
+              --tests "com.github.nyabanban.fuji.emulator.desktop.audio.NativeAudioBridgeTest" \
+              --tests "com.github.nyabanban.fuji.emulator.desktop.input.GamepadPollerTest" \
+              --tests "com.github.nyabanban.fuji.emulator.desktop.HostAudioPlaybackTest" \
+              --tests "com.github.nyabanban.fuji.emulator.desktop.HostAudioDuplexAndLoopbackTest" \
+              --tests "com.github.nyabanban.fuji.emulator.desktop.ReleaseLaunchConfigTest"
+
+      - name: Fetch Adoptium Windows x86_64 OpenJDK 25 JMODs for cross-jlink
+        run: |
+          sh tools/release/jpackage/fetch-win64-jdk.sh "${GITHUB_WORKSPACE}/.tools/jdk-25-win64"
+          test -f "${GITHUB_WORKSPACE}/.tools/jdk-25-win64/jmods/java.base.jmod"
+          echo "FUJI_WIN64_JDK_HOME=${GITHUB_WORKSPACE}/.tools/jdk-25-win64" >> "$GITHUB_ENV"
+
+      - name: Stage, verify & package Linux + Windows x86_64 one-click distributions
+        run: |
+          set -euo pipefail
+          SHORT_SHA="${GITHUB_SHA::7}"
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            RELEASE_VER="${GITHUB_REF_NAME#v}"
+          else
+            RELEASE_VER="0.3.0-${SHORT_SHA}"
+          fi
+
+          ./gradlew --no-daemon --build-cache \
+            -PreleaseVersion="${RELEASE_VER}" \
+            -PfujiBundleStockBins=false \
+            -PfujiRequireWindowsJlink=true \
+            :buildWindowsNativeLauncher \
+            :verifyReleaseLinux \
+            :packageReleaseLinux \
+            :packageReleaseLinuxAppImageTar \
+            :verifyReleaseWindows \
+            :packageReleaseWindows
+
+          if [ ! -f "build/distributions/ffmpeg-${FFMPEG_VERSION}.tar.xz" ]; then
+            cp ".tools/playback-ffmpeg/cache/ffmpeg-${FFMPEG_VERSION}.tar.xz" "build/distributions/ffmpeg-${FFMPEG_VERSION}.tar.xz"
+          fi
+          echo "${FFMPEG_SHA256}  build/distributions/ffmpeg-${FFMPEG_VERSION}.tar.xz" | sha256sum --check --status
+          ls -lh build/distributions/
+
+      - name: Upload Linux x86_64 player-ready distribution artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: gfx100s-emulator-linux-x86_64
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            build/distributions/fuji-emulator-gfx100s-*-linux-x86_64.tar.gz
+            build/distributions/fuji-emulator-gfx100s-*-linux-x86_64-appimage.tar.gz
+
+      - name: Upload Windows x86_64 player-ready portable distribution artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gfx100s-emulator-windows-x86_64
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            build/distributions/fuji-emulator-gfx100s-*-windows-x86_64.zip
+
+      - name: Upload FFmpeg 8.1.3 LGPL-2.1 companion source archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffmpeg-8.1.3-lgpl-source
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            build/distributions/ffmpeg-8.1.3.tar.xz

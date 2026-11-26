@@ -1,0 +1,4 @@
+# Internal GFX100S SoC hardware definition — no user edits needed.
+profile: "interval-edge-routing-experimental-v1"
+inputFile: "timer.json"
+irqSink: "soc-gic.lines"

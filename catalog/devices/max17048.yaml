@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "id": "device.max17048",
+  "componentId": "max17048",
+  "depends": [],
+  "version": "0.0.1",
+  "name": "max17048",
+  "physicalIdentity": "Maxim Integrated (ADI) MAX17048 / MAX17049 ModelGauge Li-Ion Battery Fuel Gauge (I2C1 0x36, 0x3E=0x4A57 model unlock)",
+  "implementationStatus": "PARTIAL",
+  "implementationSources": [
+    "components/max17048/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/max17048/Max17048Factory.kt",
+    "components/max17048/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/max17048/Max17048Device.kt"
+  ],
+  "ports": [],
+  "unknowns": [
+    "16-bit big-endian VCELL/SOC/VERSION/CONFIG/HIBRT/OCV/STATUS registers and 0x3E=0x4A57 custom ModelGauge RAM (0x40..0x9F) follow MAX17048/49 datasheet and DAT section4 0x01215780..0x01215E94; internal electrochemical discharge kinetics remain modeled from BatteryPort."
+  ],
+  "nextValidation": "Verify live GXUP0004.DAT I2C1 0x36 fuel-gauge telemetry and battery percentage tracking."
+}

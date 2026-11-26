@@ -1,0 +1,143 @@
+#version 450
+/*
+ * FUJIFILM GFX100S Emulator - Vulkan 1.1 Compute Optical Warp Shader (GLSL 450)
+ * Pass 1: 5-axis IBIS shift & roll, Brown-Conrady distortion (k1/k2/p1/p2),
+ * zoom scaling, lateral R/B chromatic aberration with bilinear resampling,
+ * cos^p + mechanical vignetting, and warped depth passthrough.
+ */
+
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+
+layout(constant_id = 0) const uint SPEC_BORDER_MODE = 0xFFFFFFFFu; /* 0=BLACK, 1=CLAMP, 0xFFFFFFFF=UBO */
+layout(constant_id = 1) const uint SPEC_HAS_CA      = 1u;          /* 0=skip R/B CA, 1=full lateral CA */
+layout(constant_id = 2) const uint SPEC_HAS_VIG     = 1u;          /* 0=skip vignetting, 1=cos^p+mech */
+
+layout(std430, set = 0, binding = 0) readonly buffer InputBuf {
+    vec4 pixels[]; /* (r, g, b, depthMeters) */
+} inBuf;
+
+layout(std430, set = 0, binding = 1) writeonly buffer OutputBuf {
+    vec4 pixels[]; /* (r, g, b, depthMeters) */
+} outBuf;
+
+layout(std140, set = 0, binding = 2) uniform OpticsUniform {
+    uvec4 dims;       /* srcW, srcH, dstW, dstH */
+    vec4  distort;    /* k1, k2, p1, p2 */
+    vec4  caVig;      /* caRedScale, caBlueScale, cos4Power, mechVig */
+    vec4  lens;       /* focalMm, sensorWidthMm, focusDistM, fNumber */
+    vec4  ibis0;      /* invZoom, ibisShiftX, ibisShiftY, ibisCosRoll */
+    vec4  ibis1;      /* ibisSinRoll, maxBokehPx, bladeRoundness, catsEye */
+    vec4  bokehExtra; /* onionRing, rimHighlight, planarDepthM, imageCircleMm */
+    uvec4 mode;       /* pupilShape, bladeCount, borderClamp, flags */
+} u;
+
+vec4 fetchPixel(int x, int y, int w, int h, uint clampBorder) {
+    if (clampBorder != 0u) {
+        x = clamp(x, 0, w - 1);
+        y = clamp(y, 0, h - 1);
+        return inBuf.pixels[uint(y) * uint(w) + uint(x)];
+    }
+    if (x < 0 || x >= w || y < 0 || y >= h) {
+        return vec4(0.0);
+    }
+    return inBuf.pixels[uint(y) * uint(w) + uint(x)];
+}
+
+vec4 sampleBilinear(float sx, float sy, int w, int h, uint clampBorder) {
+    float fx = floor(sx);
+    float fy = floor(sy);
+    int x0 = int(fx);
+    int y0 = int(fy);
+    float tx = sx - fx;
+    float ty = sy - fy;
+    vec4 p00 = fetchPixel(x0,     y0,     w, h, clampBorder);
+    vec4 p10 = fetchPixel(x0 + 1, y0,     w, h, clampBorder);
+    vec4 p01 = fetchPixel(x0,     y0 + 1, w, h, clampBorder);
+    vec4 p11 = fetchPixel(x0 + 1, y0 + 1, w, h, clampBorder);
+    return mix(mix(p00, p10, tx), mix(p01, p11, tx), ty);
+}
+
+void main() {
+    uint x = gl_GlobalInvocationID.x;
+    uint y = gl_GlobalInvocationID.y;
+    uint srcW = u.dims.x;
+    uint srcH = u.dims.y;
+    uint dstW = u.dims.z;
+    uint dstH = u.dims.w;
+    if (x >= dstW || y >= dstH) return;
+
+    float dstCx = float(dstW - 1u) * 0.5;
+    float dstCy = float(dstH - 1u) * 0.5;
+    float srcCx = float(srcW - 1u) * 0.5;
+    float srcCy = float(srcH - 1u) * 0.5;
+    float dstHalfDiag = max(sqrt(dstCx * dstCx + dstCy * dstCy), 1.0);
+    float invHalfDiag = 1.0 / dstHalfDiag;
+
+    float sxScale = (dstCx > 0.0) ? (srcCx / dstCx) : 1.0;
+    float syScale = (dstCy > 0.0) ? (srcCy / dstCy) : 1.0;
+    float aspectScale = (dstW == srcW && dstH == srcH) ? 1.0 : min(sxScale, syScale);
+    float normToSrcPx = aspectScale * dstHalfDiag;
+
+    float dxShift = (float(x) - dstCx) - u.ibis0.y;
+    float dyShift = (float(y) - dstCy) - u.ibis0.z;
+    float cosRoll = u.ibis0.w;
+    float sinRoll = u.ibis1.x;
+    float px = dxShift * cosRoll + dyShift * sinRoll;
+    float py = -dxShift * sinRoll + dyShift * cosRoll;
+
+    float nx = px * invHalfDiag;
+    float ny = py * invHalfDiag;
+    float r2 = nx * nx + ny * ny;
+    float radialFactor = 1.0 + u.distort.x * r2 + u.distort.y * r2 * r2;
+    if (radialFactor <= 0.1) {
+        outBuf.pixels[y * dstW + x] = vec4(0.0);
+        return;
+    }
+
+    float invRadial = 1.0 / radialFactor;
+    float tangX = 2.0 * u.distort.z * nx * ny + u.distort.w * (r2 + 2.0 * nx * nx);
+    float tangY = u.distort.z * (r2 + 2.0 * ny * ny) + 2.0 * u.distort.w * nx * ny;
+    float ux = nx * invRadial - tangX;
+    float uy = ny * invRadial - tangY;
+
+    uint effBorderClamp = (SPEC_BORDER_MODE != 0xFFFFFFFFu) ? SPEC_BORDER_MODE : u.mode.z;
+    float zx = ux * u.ibis0.x;
+    float zy = uy * u.ibis0.x;
+    float sxG = srcCx + zx * normToSrcPx;
+    float syG = srcCy + zy * normToSrcPx;
+
+    vec4 sampG = sampleBilinear(sxG, syG, int(srcW), int(srcH), effBorderClamp);
+    float rVal = sampG.r;
+    float gVal = sampG.g;
+    float bVal = sampG.b;
+    if (SPEC_HAS_CA != 0u) {
+        float sxR = srcCx + (zx / max(u.caVig.x, 1e-4)) * normToSrcPx;
+        float syR = srcCy + (zy / max(u.caVig.x, 1e-4)) * normToSrcPx;
+        float sxB = srcCx + (zx / max(u.caVig.y, 1e-4)) * normToSrcPx;
+        float syB = srcCy + (zy / max(u.caVig.y, 1e-4)) * normToSrcPx;
+        rVal = sampleBilinear(sxR, syR, int(srcW), int(srcH), effBorderClamp).r;
+        bVal = sampleBilinear(sxB, syB, int(srcW), int(srcH), effBorderClamp).b;
+    }
+
+    /* Natural cos^p + mechanical vignetting (constant-folded out when SPEC_HAS_VIG == 0) */
+    float vig = 1.0;
+    if (SPEC_HAS_VIG != 0u) {
+        float rNorm2 = clamp((px * px + py * py) * invHalfDiag * invHalfDiag, 0.0, 4.0);
+        float mmPerPx = u.lens.y / max(float(dstW), 1.0);
+        float rMm = sqrt(px * px + py * py) * mmPerPx;
+        float tanTheta = rMm / max(u.lens.x, 1e-3);
+        float cosTheta = 1.0 / sqrt(1.0 + tanTheta * tanTheta);
+        float vigCos = (u.caVig.z > 0.0) ? pow(cosTheta, u.caVig.z) : 1.0;
+        float vigMech = max(0.0, 1.0 - u.caVig.w * rNorm2);
+        float radius = 0.5 * u.bokehExtra.w;
+        float circle = radius > 0.0 ? 1.0 - smoothstep(0.88 * radius, radius, rMm) : 1.0;
+        vig = vigCos * vigMech * circle;
+    }
+
+    /* Nearest depth sample at green ray */
+    int dxi = int(floor(sxG + 0.5));
+    int dyi = int(floor(syG + 0.5));
+    float depth = fetchPixel(dxi, dyi, int(srcW), int(srcH), effBorderClamp).a;
+
+    outBuf.pixels[y * dstW + x] = vec4(rVal * vig, gVal * vig, bVal * vig, depth);
+}

@@ -1,0 +1,4 @@
+{
+  "profile": "spi-additional-ports-experimental-v1",
+  "controllers": [{"index": 0, "peerPort": ""}]
+}

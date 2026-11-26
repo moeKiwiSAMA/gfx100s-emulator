@@ -1,0 +1,22 @@
+# ==============================================================================
+# SD Card Example 2: Dual Sparse Copy-on-Write Images (qcow2)
+#
+# Copy to configs/components/sdcard-reader/sdcard-reader.yaml to activate.
+# Automatically creates sparse 4 GiB QCOW2 virtual cards that consume only a
+# few KiB on disk. Optionally set slot1BackingFile / slot2BackingFile to a
+# read-only master image to keep all camera writes in a disposable overlay.
+# ==============================================================================
+slot1Inserted: true
+slot1Backend: "qcow2"
+slot1Image: "sd-card-slot-1.qcow2"
+slot1ReadOnly: false
+slot1CapacityBytes: 4294967296
+# Optional read-only master image under runtime/compoments/sdcard-reader/ (empty = blank card).
+slot1BackingFile: ""
+
+slot2Inserted: true
+slot2Backend: "qcow2"
+slot2Image: "sd-card-slot-2.qcow2"
+slot2ReadOnly: false
+slot2CapacityBytes: 4294967296
+slot2BackingFile: ""

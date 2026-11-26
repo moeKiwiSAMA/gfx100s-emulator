@@ -1,0 +1,9 @@
+{
+  "releaseTicks": [
+    0,
+    65536,
+    65536,
+    65536
+  ],
+  "profile": "secondary-reset-schedule-experimental-v1"
+}

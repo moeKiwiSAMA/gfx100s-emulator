@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "id": "device.tmd2772",
+  "componentId": "tmd2772",
+  "depends": [],
+  "version": "0.0.1",
+  "name": "tmd2772",
+  "physicalIdentity": "ams / TAOS TMD27723 Digital Proximity and Ambient Light Optical Sensor (I2C1 0x39, ID 0x12=0x39, GPIO(0,8) active-LOW INT)",
+  "implementationStatus": "PARTIAL",
+  "implementationSources": [
+    "components/tmd2772/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/tmd2772/Tmd2772Factory.kt",
+    "components/tmd2772/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/tmd2772/Tmd2772Device.kt"
+  ],
+  "ports": [],
+  "unknowns": [
+    "Register file (0x00..0x1F), command framing (0x80/0xA0/0xE5/0xE6/0xE7), ID 0x39, hysteresis thresholds, and active-LOW open-drain INT on GPIO(0,8) follow AMS TMD2772 datasheet and DAT section4 0x01212ed8..0x012139ec; ambient photodiode radiance curve remains modeled."
+  ],
+  "nextValidation": "Verify live GXUP0004.DAT EVF eye-sensor near/far transitions via standalone tmd2772 on i2c-bus.bus1."
+}

@@ -1,0 +1,180 @@
+{
+  "schema": 1,
+  "profile": "finite-rw-or-rwx-experimental-v2",
+  "baseProfile": "flashload-request-buffer-experimental-v24",
+  "sourceProfile": "q0-register-shared-ram-fill-experimental-v2",
+  "sourceCommit": "4fac8d61e12d27287115c6a9b051e516661f0060",
+  "catalogSha256": "cc78aee39186cf03615806afea39f16868c982a13ace96126341b4838b63c93c",
+  "baseRegions": [
+    {
+      "id": "loader",
+      "address": 0,
+      "size": 131072,
+      "permissions": 7
+    },
+    {
+      "id": "kernel",
+      "address": 262144,
+      "size": 286720,
+      "permissions": 7
+    },
+    {
+      "id": "stack-sys",
+      "address": 557056,
+      "size": 65536,
+      "permissions": 3
+    },
+    {
+      "id": "stack-svc",
+      "address": 638976,
+      "size": 1220608,
+      "permissions": 3
+    },
+    {
+      "id": "segment-1",
+      "address": 1966080,
+      "size": 6799360,
+      "permissions": 7
+    },
+    {
+      "id": "fixed-table-row5-buffer",
+      "address": 9043968,
+      "size": 262144,
+      "permissions": 3
+    },
+    {
+      "id": "segment-2",
+      "address": 9306112,
+      "size": 671744,
+      "permissions": 7
+    },
+    {
+      "id": "segment2-allocation-tail",
+      "address": 9977856,
+      "size": 114688,
+      "permissions": 3
+    },
+    {
+      "id": "seven-row-table-buffer",
+      "address": 10092544,
+      "size": 917504,
+      "permissions": 3
+    },
+    {
+      "id": "post-lens-object",
+      "address": 11534336,
+      "size": 1703936,
+      "permissions": 3
+    },
+    {
+      "id": "flashload-request-buffer",
+      "address": 13238272,
+      "size": 1048576,
+      "permissions": 3
+    },
+    {
+      "id": "metadata-workspace",
+      "address": 14811136,
+      "size": 385024,
+      "permissions": 7
+    },
+    {
+      "id": "segment-4",
+      "address": 15859712,
+      "size": 385024,
+      "permissions": 7
+    },
+    {
+      "id": "segment-5",
+      "address": 16912384,
+      "size": 45948928,
+      "permissions": 7
+    },
+    {
+      "id": "config-record-pages",
+      "address": 81788928,
+      "size": 12288,
+      "permissions": 3
+    },
+    {
+      "id": "aux-work-buffer",
+      "address": 81805312,
+      "size": 8404992,
+      "permissions": 3
+    },
+    {
+      "id": "auxiliary-task-buffer",
+      "address": 92925952,
+      "size": 401408,
+      "permissions": 3
+    },
+    {
+      "id": "xlog-first-buffer",
+      "address": 133246976,
+      "size": 1048576,
+      "permissions": 3
+    },
+    {
+      "id": "xlog-second-buffer",
+      "address": 134295552,
+      "size": 1048576,
+      "permissions": 3
+    },
+    {
+      "id": "paired-flash-read-buffer",
+      "address": 419962880,
+      "size": 131072,
+      "permissions": 3
+    },
+    {
+      "id": "xlog-third-buffer",
+      "address": 439992320,
+      "size": 1048576,
+      "permissions": 3
+    },
+    {
+      "id": "xlog-fourth-buffer",
+      "address": 441040896,
+      "size": 1048576,
+      "permissions": 3
+    },
+    {
+      "id": "staging",
+      "address": 711573504,
+      "size": 5505024,
+      "permissions": 3
+    },
+    {
+      "id": "runtime-flash-staging",
+      "address": 728350720,
+      "size": 5505024,
+      "permissions": 3
+    },
+    {
+      "id": "calc-fixed-workspace",
+      "address": 744030208,
+      "size": 57344,
+      "permissions": 3
+    }
+  ],
+  "additionalRegions": [
+    {
+      "id": "method4-runtime-output",
+      "address": 62861312,
+      "size": 10981376,
+      "permissions": 7
+    },
+    {
+      "id": "guest-zero-buffer-0569e000",
+      "address": 90824704,
+      "size": 1048576,
+      "permissions": 3
+    },
+    {
+      "id": "graphics-fill-surface-06893000",
+      "address": 109654016,
+      "size": 3145728,
+      "permissions": 3
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+# Unified 64 MiB QSPI NOR Flash image (pre-flashed stock GFX100S 2.13 + synthetic factory calibration).
+imageProfile: "raw-nor-image-v1"
+imageFile: "nor-flash.bin"
+writable: true

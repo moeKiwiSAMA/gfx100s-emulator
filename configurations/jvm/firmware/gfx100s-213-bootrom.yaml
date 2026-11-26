@@ -1,0 +1,1179 @@
+{
+  "schema": 1,
+  "id": "gfx100s-213",
+  "version": "2.13",
+  "size": 50197040,
+  "sha256": "ea997915ac5accc79699392b47909bb29506f66ec8d571e5804dd1fb0408fd12",
+  "entry": "0xfff00000",
+  "cpsr": "0xd3",
+  "loaderMemoryBytes": "0x20000",
+  "bootMode": "boot-rom-experiment",
+  "bootRom": {
+    "address": "0xfff00000",
+    "size": "0x8000",
+    "sha256": "2a8b69986dd3fad0b73808c44e0834fa95c7b4e4f84e6c8664d4b0a82f7b24a4"
+  },
+  "memoryProfiles": {
+    "boot-rom-cold-start-experimental-v1": [
+      {
+        "id": "loader",
+        "address": "0x0",
+        "size": "0x20000",
+        "permissions": 7
+      },
+      {
+        "id": "boot-rom",
+        "address": "0xfff00000",
+        "size": "0x8000",
+        "permissions": 5
+      },
+      {
+        "id": "boot-rom-stage1-sram",
+        "address": "0xfff10000",
+        "size": "0x2000",
+        "permissions": 7
+      },
+      {
+        "id": "boot-rom-sram",
+        "address": "0xfff2e000",
+        "size": "0x2000",
+        "permissions": 3
+      }
+    ],
+    "boot-rom-cold-start-segments-experimental-v2": [
+      {
+        "id": "loader",
+        "address": "0x0",
+        "size": "0x20000",
+        "permissions": 7
+      },
+      {
+        "id": "kernel",
+        "address": "0x40000",
+        "size": "0x46000",
+        "permissions": 7
+      },
+      {
+        "id": "stack-sys",
+        "address": "0x88000",
+        "size": "0x4000",
+        "permissions": 3
+      },
+      {
+        "id": "stack-irq",
+        "address": "0x8c000",
+        "size": "0x4000",
+        "permissions": 3
+      },
+      {
+        "id": "stack-abt",
+        "address": "0x90000",
+        "size": "0x4000",
+        "permissions": 3
+      },
+      {
+        "id": "stack-und",
+        "address": "0x94000",
+        "size": "0x4000",
+        "permissions": 3
+      },
+      {
+        "id": "stack-svc",
+        "address": "0x9c000",
+        "size": "0x4000",
+        "permissions": 3
+      },
+      {
+        "id": "segment-1",
+        "address": "0x1e0000",
+        "size": "0x67c000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-2",
+        "address": "0x8e0000",
+        "size": "0xa4000",
+        "permissions": 7
+      },
+      {
+        "id": "metadata-workspace",
+        "address": "0xe20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-4",
+        "address": "0xf20000",
+        "size": "0x5e000",
+        "permissions": 7
+      },
+      {
+        "id": "segment-5",
+        "address": "0x1021000",
+        "size": "0x2bd2000",
+        "permissions": 7
+      },
+      {
+        "id": "staging",
+        "address": "0x2a69c000",
+        "size": "0x540000",
+        "permissions": 3
+      },
+      {
+        "id": "boot-rom",
+        "address": "0xfff00000",
+        "size": "0x8000",
+        "permissions": 5
+      },
+      {
+        "id": "boot-rom-stage1-sram",
+        "address": "0xfff10000",
+        "size": "0x2000",
+        "permissions": 7
+      },
+      {
+        "id": "boot-rom-sram",
+        "address": "0xfff2e000",
+        "size": "0x2000",
+        "permissions": 3
+      }
+    ]
+  },
+  "sections": [
+    {
+      "name": "boot",
+      "address": "0x0",
+      "size": 131072,
+      "offset": 131700,
+      "encoding": "raw",
+      "sha256": "fe63011bcf8f43c9f716098ea66e4331e18a74b995e22a24dd3214e89f2d474e"
+    },
+    {
+      "name": "kernel",
+      "address": "0x40000",
+      "size": 112224,
+      "offset": 393844,
+      "encoding": "raw",
+      "sha256": "584d41523762a1565f49b8852543dc81ec49dbbedc9078f3d3ce1e447fe36219"
+    },
+    {
+      "name": "section4",
+      "address": "0x1021000",
+      "size": 8389100,
+      "offset": 2490996,
+      "encoding": "method4",
+      "sha256": "eb5372dfda41009b969ccf148f031b3976230a6a9d249d0ea3d0588e6feab157"
+    },
+    {
+      "name": "section5",
+      "address": "0x1f28000",
+      "size": 10248192,
+      "offset": 6423156,
+      "encoding": "method4",
+      "sha256": "cf6c76fde4415ba452b7f5ad350f0b8f30ac39e888b5889e1289bd9d4078b9f2"
+    }
+  ],
+  "devices": [
+    {
+      "id": "soc-gpio",
+      "address": "0xfff41000",
+      "size": "0x400",
+      "port": "soc-gpio"
+    },
+    {
+      "id": "soc-timer",
+      "address": "0xfff3c300",
+      "size": "0x50",
+      "port": "soc-timer"
+    },
+    {
+      "id": "soc-dma",
+      "address": "0xfffe0000",
+      "size": "0x10000",
+      "port": "soc-dma.registers"
+    },
+    {
+      "id": "soc-dma",
+      "address": "0xfff4a500",
+      "size": "0x20",
+      "port": "soc-dma.mux"
+    },
+    {
+      "id": "soc-dma",
+      "address": "0xfff4a800",
+      "size": "0x80",
+      "port": "soc-dma.requests"
+    },
+    {
+      "id": "soc-flash",
+      "address": "0xfffd8000",
+      "size": "0x1000",
+      "port": "soc-flash.registers"
+    },
+    {
+      "id": "soc-flash",
+      "address": "0xf0000000",
+      "size": "0x8000000",
+      "port": "soc-flash.aperture"
+    },
+    {
+      "id": "soc-gic",
+      "address": "0xffff1000",
+      "size": "0x1000",
+      "port": "soc-gic.distributor"
+    },
+    {
+      "id": "soc-gic",
+      "address": "0xffff2000",
+      "size": "0x1000",
+      "port": "soc-gic.interface"
+    },
+    {
+      "id": "soc-keyed-io",
+      "address": "0xfff42000",
+      "size": "0xa0",
+      "port": "soc-keyed-io"
+    },
+    {
+      "id": "soc-system-control",
+      "address": "0xff70f000",
+      "size": "0x40",
+      "port": "soc-system-control.a"
+    },
+    {
+      "id": "soc-system-control",
+      "address": "0xfff48300",
+      "size": "0x38",
+      "port": "soc-system-control.b"
+    },
+    {
+      "id": "soc-system-control",
+      "address": "0xfff48608",
+      "size": "0x4",
+      "port": "soc-system-control.b-extra"
+    },
+    {
+      "id": "soc-method4",
+      "address": "0xfff79000",
+      "size": "0x6c",
+      "port": "soc-method4"
+    },
+    {
+      "id": "soc-system-control",
+      "address": "0xfff4a400",
+      "size": "0x4",
+      "port": "soc-system-control.boolean"
+    },
+    {
+      "id": "soc-system-control",
+      "address": "0xfff48700",
+      "size": "0x4",
+      "port": "soc-system-control.serial-clock"
+    },
+    {
+      "id": "soc-spi",
+      "address": "0xfff33000",
+      "size": "0x28",
+      "port": "soc-spi.spi1"
+    },
+    {
+      "id": "soc-adc",
+      "address": "0xfff40000",
+      "size": "0x48",
+      "port": "soc-adc"
+    },
+    {
+      "id": "soc-i2c",
+      "address": "0xfff3d000",
+      "size": "0x20",
+      "port": "soc-i2c.controller0"
+    },
+    {
+      "id": "soc-i2c",
+      "address": "0xfff3e000",
+      "size": "0x20",
+      "port": "soc-i2c.controller1"
+    },
+    {
+      "id": "soc-i2c",
+      "address": "0xfff3f000",
+      "size": "0x20",
+      "port": "soc-i2c.controller2",
+      "optional": true
+    },
+    {
+      "id": "soc-system-control",
+      "address": "0xfff48004",
+      "size": "0x4",
+      "port": "soc-system-control.read-word-fff48004",
+      "optional": true
+    },
+    {
+      "id": "soc-temperature",
+      "address": "0xfff4700c",
+      "size": "0x4",
+      "port": "soc-temperature.common-control",
+      "optional": true
+    },
+    {
+      "id": "soc-temperature",
+      "address": "0xfff47028",
+      "size": "0x4",
+      "port": "soc-temperature.common-gate",
+      "optional": true
+    },
+    {
+      "id": "soc-temperature",
+      "address": "0xfff47810",
+      "size": "0x44",
+      "port": "soc-temperature.converter",
+      "optional": true
+    },
+    {
+      "id": "soc-dram",
+      "address": "0xff500000",
+      "size": "0x10000",
+      "port": "soc-dram.controller-0",
+      "optional": true
+    },
+    {
+      "id": "soc-dram",
+      "address": "0xff600000",
+      "size": "0x10000",
+      "port": "soc-dram.phy-0",
+      "optional": true
+    },
+    {
+      "id": "soc-dram",
+      "address": "0xff510000",
+      "size": "0x10000",
+      "port": "soc-dram.controller-1",
+      "optional": true
+    },
+    {
+      "id": "soc-dram",
+      "address": "0xff610000",
+      "size": "0x10000",
+      "port": "soc-dram.phy-1",
+      "optional": true
+    },
+    {
+      "id": "soc-dram",
+      "address": "0xff520000",
+      "size": "0x10000",
+      "port": "soc-dram.controller-2",
+      "optional": true
+    },
+    {
+      "id": "soc-dram",
+      "address": "0xff620000",
+      "size": "0x10000",
+      "port": "soc-dram.phy-2",
+      "optional": true
+    },
+    {
+      "id": "soc-dram",
+      "address": "0xff530000",
+      "size": "0x10000",
+      "port": "soc-dram.controller-3",
+      "optional": true
+    },
+    {
+      "id": "soc-dram",
+      "address": "0xff630000",
+      "size": "0x10000",
+      "port": "soc-dram.phy-3",
+      "optional": true
+    },
+    {
+      "id": "soc-dram",
+      "address": "0xfff49c00",
+      "size": "0x4",
+      "port": "soc-dram.snapshot-ack-0",
+      "optional": true
+    },
+    {
+      "id": "soc-dram",
+      "address": "0xfff49c10",
+      "size": "0x4",
+      "port": "soc-dram.snapshot-ack-1",
+      "optional": true
+    },
+    {
+      "id": "soc-dram",
+      "address": "0xfff49c20",
+      "size": "0x4",
+      "port": "soc-dram.snapshot-ack-2",
+      "optional": true
+    },
+    {
+      "id": "soc-dram",
+      "address": "0xfff49c30",
+      "size": "0x4",
+      "port": "soc-dram.snapshot-ack-3",
+      "optional": true
+    },
+    {
+      "id": "soc-serial-engine",
+      "address": "0xfff300a0",
+      "size": "0x4",
+      "port": "soc-serial-engine.shared-0",
+      "optional": true
+    },
+    {
+      "id": "soc-serial-engine",
+      "address": "0xfff310a0",
+      "size": "0x4",
+      "port": "soc-serial-engine.shared-1",
+      "optional": true
+    },
+    {
+      "id": "soc-serial-engine",
+      "address": "0xfff3000c",
+      "size": "0x4",
+      "port": "soc-serial-engine.status-0",
+      "optional": true
+    },
+    {
+      "id": "soc-serial-engine",
+      "address": "0xfff3002c",
+      "size": "0x4",
+      "port": "soc-serial-engine.status-1",
+      "optional": true
+    },
+    {
+      "id": "soc-serial-engine",
+      "address": "0xfff3004c",
+      "size": "0x4",
+      "port": "soc-serial-engine.status-2",
+      "optional": true
+    },
+    {
+      "id": "soc-serial-engine",
+      "address": "0xfff3006c",
+      "size": "0x4",
+      "port": "soc-serial-engine.status-3",
+      "optional": true
+    },
+    {
+      "id": "soc-serial-engine",
+      "address": "0xfff3008c",
+      "size": "0x4",
+      "port": "soc-serial-engine.status-4",
+      "optional": true
+    },
+    {
+      "id": "soc-serial-engine",
+      "address": "0xfff3100c",
+      "size": "0x4",
+      "port": "soc-serial-engine.status-5",
+      "optional": true
+    },
+    {
+      "id": "soc-serial-engine",
+      "address": "0xfff3102c",
+      "size": "0x4",
+      "port": "soc-serial-engine.status-6",
+      "optional": true
+    },
+    {
+      "id": "soc-serial-engine",
+      "address": "0xfff3104c",
+      "size": "0x4",
+      "port": "soc-serial-engine.status-7",
+      "optional": true
+    },
+    {
+      "id": "soc-serial-engine",
+      "address": "0xfff30000",
+      "size": "0x4",
+      "port": "soc-serial-engine.control-0",
+      "optional": true
+    },
+    {
+      "id": "soc-serial-engine",
+      "address": "0xfff30004",
+      "size": "0x4",
+      "port": "soc-serial-engine.data-0",
+      "optional": true
+    },
+    {
+      "id": "soc-serial-engine",
+      "address": "0xfff30020",
+      "size": "0x4",
+      "port": "soc-serial-engine.control-1",
+      "optional": true
+    },
+    {
+      "id": "soc-serial-engine",
+      "address": "0xfff30024",
+      "size": "0x4",
+      "port": "soc-serial-engine.data-1",
+      "optional": true
+    },
+    {
+      "id": "soc-serial-engine",
+      "address": "0xfff30040",
+      "size": "0x4",
+      "port": "soc-serial-engine.control-2",
+      "optional": true
+    },
+    {
+      "id": "soc-serial-engine",
+      "address": "0xfff30044",
+      "size": "0x4",
+      "port": "soc-serial-engine.data-2",
+      "optional": true
+    },
+    {
+      "id": "soc-serial-engine",
+      "address": "0xfff30060",
+      "size": "0x4",
+      "port": "soc-serial-engine.control-3",
+      "optional": true
+    },
+    {
+      "id": "soc-serial-engine",
+      "address": "0xfff30064",
+      "size": "0x4",
+      "port": "soc-serial-engine.data-3",
+      "optional": true
+    },
+    {
+      "id": "soc-serial-engine",
+      "address": "0xfff30080",
+      "size": "0x4",
+      "port": "soc-serial-engine.control-4",
+      "optional": true
+    },
+    {
+      "id": "soc-serial-engine",
+      "address": "0xfff30084",
+      "size": "0x4",
+      "port": "soc-serial-engine.data-4",
+      "optional": true
+    },
+    {
+      "id": "soc-serial-engine",
+      "address": "0xfff31000",
+      "size": "0x4",
+      "port": "soc-serial-engine.control-5",
+      "optional": true
+    },
+    {
+      "id": "soc-serial-engine",
+      "address": "0xfff31004",
+      "size": "0x4",
+      "port": "soc-serial-engine.data-5",
+      "optional": true
+    },
+    {
+      "id": "soc-serial-engine",
+      "address": "0xfff31020",
+      "size": "0x4",
+      "port": "soc-serial-engine.control-6",
+      "optional": true
+    },
+    {
+      "id": "soc-serial-engine",
+      "address": "0xfff31024",
+      "size": "0x4",
+      "port": "soc-serial-engine.data-6",
+      "optional": true
+    },
+    {
+      "id": "soc-serial-engine",
+      "address": "0xfff31040",
+      "size": "0x4",
+      "port": "soc-serial-engine.control-7",
+      "optional": true
+    },
+    {
+      "id": "soc-serial-engine",
+      "address": "0xfff31044",
+      "size": "0x4",
+      "port": "soc-serial-engine.data-7",
+      "optional": true
+    },
+    {
+      "id": "soc-sd-host",
+      "address": "0xfffc6080",
+      "size": "0x4",
+      "port": "soc-sd-host.word80-0",
+      "optional": true
+    },
+    {
+      "id": "soc-sd-host",
+      "address": "0xfffca080",
+      "size": "0x4",
+      "port": "soc-sd-host.word80-1",
+      "optional": true
+    },
+    {
+      "id": "soc-sd-host",
+      "address": "0xfffc623e",
+      "size": "0x2",
+      "port": "soc-sd-host.control623e-0",
+      "optional": true
+    },
+    {
+      "id": "soc-sd-host",
+      "address": "0xfffc6078",
+      "size": "0x4",
+      "port": "soc-sd-host.mixed6078-0",
+      "optional": true
+    },
+    {
+      "id": "soc-sd-host",
+      "address": "0xfffc403e",
+      "size": "0x2",
+      "port": "soc-sd-host.control403e-0",
+      "optional": true
+    },
+    {
+      "id": "soc-sd-host",
+      "address": "0xfffc60ec",
+      "size": "0x4",
+      "port": "soc-sd-host.word60ec-0",
+      "optional": true
+    },
+    {
+      "id": "soc-sd-host",
+      "address": "0xfffca23e",
+      "size": "0x2",
+      "port": "soc-sd-host.control623e-1",
+      "optional": true
+    },
+    {
+      "id": "soc-sd-host",
+      "address": "0xfffca078",
+      "size": "0x4",
+      "port": "soc-sd-host.mixed6078-1",
+      "optional": true
+    },
+    {
+      "id": "soc-sd-host",
+      "address": "0xfffc803e",
+      "size": "0x2",
+      "port": "soc-sd-host.control403e-1",
+      "optional": true
+    },
+    {
+      "id": "soc-sd-host",
+      "address": "0xfffca0ec",
+      "size": "0x4",
+      "port": "soc-sd-host.word60ec-1",
+      "optional": true
+    },
+    {
+      "id": "soc-sd-host",
+      "address": "0xfffc402c",
+      "size": "0x2",
+      "port": "soc-sd-host.clock-0-0",
+      "optional": true
+    },
+    {
+      "id": "soc-sd-host",
+      "address": "0xfffc622c",
+      "size": "0x2",
+      "port": "soc-sd-host.clock-0-1",
+      "optional": true
+    },
+    {
+      "id": "soc-sd-host",
+      "address": "0xfffc802c",
+      "size": "0x2",
+      "port": "soc-sd-host.clock-1-0",
+      "optional": true
+    },
+    {
+      "id": "soc-sd-host",
+      "address": "0xfffca22c",
+      "size": "0x2",
+      "port": "soc-sd-host.clock-1-1",
+      "optional": true
+    },
+    {
+      "id": "soc-sd-host",
+      "address": "0xfffc6244",
+      "size": "0x4",
+      "port": "soc-sd-host.capability6244-0",
+      "optional": true
+    },
+    {
+      "id": "soc-sd-host",
+      "address": "0xfffc4024",
+      "size": "0x4",
+      "port": "soc-sd-host.present4024-0",
+      "optional": true
+    },
+    {
+      "id": "soc-sd-host",
+      "address": "0xfffc6224",
+      "size": "0x4",
+      "port": "soc-sd-host.present6224-0",
+      "optional": true
+    },
+    {
+      "id": "soc-sd-host",
+      "address": "0xfffc6238",
+      "size": "0x2",
+      "port": "soc-sd-host.signal6238-0",
+      "optional": true
+    },
+    {
+      "id": "soc-sd-host",
+      "address": "0xfffc4006",
+      "size": "0x2",
+      "port": "soc-sd-host.block4006-0",
+      "optional": true
+    },
+    {
+      "id": "soc-sd-host",
+      "address": "0xfffc6228",
+      "size": "0x2",
+      "port": "soc-sd-host.host6228-0",
+      "optional": true
+    },
+    {
+      "id": "soc-sd-host",
+      "address": "0xfffc4028",
+      "size": "0x2",
+      "port": "soc-sd-host.host4028-0",
+      "optional": true
+    },
+    {
+      "id": "soc-sd-host",
+      "address": "0xfffca244",
+      "size": "0x4",
+      "port": "soc-sd-host.capability6244-1",
+      "optional": true
+    },
+    {
+      "id": "soc-sd-host",
+      "address": "0xfffc8024",
+      "size": "0x4",
+      "port": "soc-sd-host.present4024-1",
+      "optional": true
+    },
+    {
+      "id": "soc-sd-host",
+      "address": "0xfffca224",
+      "size": "0x4",
+      "port": "soc-sd-host.present6224-1",
+      "optional": true
+    },
+    {
+      "id": "soc-sd-host",
+      "address": "0xfffca238",
+      "size": "0x2",
+      "port": "soc-sd-host.signal6238-1",
+      "optional": true
+    },
+    {
+      "id": "soc-sd-host",
+      "address": "0xfffc8006",
+      "size": "0x2",
+      "port": "soc-sd-host.block4006-1",
+      "optional": true
+    },
+    {
+      "id": "soc-sd-host",
+      "address": "0xfffca228",
+      "size": "0x2",
+      "port": "soc-sd-host.host6228-1",
+      "optional": true
+    },
+    {
+      "id": "soc-sd-host",
+      "address": "0xfffc8028",
+      "size": "0x2",
+      "port": "soc-sd-host.host4028-1",
+      "optional": true
+    },
+    {
+      "id": "soc-selection",
+      "address": "0xfff48600",
+      "size": "0x4",
+      "port": "soc-selection.selection",
+      "optional": true
+    },
+    {
+      "id": "soc-selection",
+      "address": "0xfff4860c",
+      "size": "0x4",
+      "port": "soc-selection.special52",
+      "optional": true
+    },
+    {
+      "id": "soc-selection",
+      "address": "0xfff48604",
+      "size": "0x4",
+      "port": "soc-selection.special53",
+      "optional": true
+    },
+    {
+      "id": "soc-spi",
+      "address": "0xfff32000",
+      "size": "0x28",
+      "port": "soc-spi.spi0",
+      "optional": true
+    },
+    {
+      "id": "soc-spi",
+      "address": "0xfff34000",
+      "size": "0x28",
+      "port": "soc-spi.spi2",
+      "optional": true
+    },
+    {
+      "id": "soc-spi",
+      "address": "0xfff35000",
+      "size": "0x28",
+      "port": "soc-spi.spi3",
+      "optional": true
+    },
+    {
+      "id": "soc-spi",
+      "address": "0xfff36000",
+      "size": "0x28",
+      "port": "soc-spi.spi4",
+      "optional": true
+    },
+    {
+      "id": "soc-spi",
+      "address": "0xfff37000",
+      "size": "0x28",
+      "port": "soc-spi.spi5",
+      "optional": true
+    },
+    {
+      "id": "soc-spi",
+      "address": "0xfff38000",
+      "size": "0x28",
+      "port": "soc-spi.spi6",
+      "optional": true
+    },
+    {
+      "id": "soc-configuration",
+      "address": "0xff701000",
+      "size": "0x84",
+      "port": "soc-configuration.group0"
+    },
+    {
+      "id": "soc-configuration",
+      "address": "0xff701200",
+      "size": "0x84",
+      "port": "soc-configuration.group1"
+    },
+    {
+      "id": "soc-configuration",
+      "address": "0xff701400",
+      "size": "0x84",
+      "port": "soc-configuration.group2"
+    },
+    {
+      "id": "soc-configuration",
+      "address": "0xff701600",
+      "size": "0x84",
+      "port": "soc-configuration.group3"
+    },
+    {
+      "id": "soc-configuration",
+      "address": "0xff701800",
+      "size": "0x84",
+      "port": "soc-configuration.group4"
+    },
+    {
+      "id": "soc-configuration",
+      "address": "0xff701a00",
+      "size": "0x84",
+      "port": "soc-configuration.group5"
+    },
+    {
+      "id": "soc-configuration",
+      "address": "0xff701c00",
+      "size": "0x84",
+      "port": "soc-configuration.group6"
+    },
+    {
+      "id": "soc-configuration",
+      "address": "0xff702000",
+      "size": "0x84",
+      "port": "soc-configuration.group7"
+    },
+    {
+      "id": "soc-configuration",
+      "address": "0xff702200",
+      "size": "0x84",
+      "port": "soc-configuration.group8"
+    },
+    {
+      "id": "soc-configuration",
+      "address": "0xff703000",
+      "size": "0x84",
+      "port": "soc-configuration.group9"
+    },
+    {
+      "id": "soc-configuration",
+      "address": "0xff704000",
+      "size": "0x84",
+      "port": "soc-configuration.group10"
+    },
+    {
+      "id": "soc-configuration",
+      "address": "0xff707000",
+      "size": "0x84",
+      "port": "soc-configuration.group11"
+    },
+    {
+      "id": "soc-configuration",
+      "address": "0xff708000",
+      "size": "0x84",
+      "port": "soc-configuration.group12"
+    },
+    {
+      "id": "soc-configuration",
+      "address": "0xff70c000",
+      "size": "0x84",
+      "port": "soc-configuration.group13"
+    },
+    {
+      "id": "soc-configuration",
+      "address": "0xff70a000",
+      "size": "0x84",
+      "port": "soc-configuration.group14"
+    },
+    {
+      "id": "soc-configuration",
+      "address": "0xff70b000",
+      "size": "0x84",
+      "port": "soc-configuration.group15"
+    },
+    {
+      "id": "soc-configuration",
+      "address": "0xff706000",
+      "size": "0x84",
+      "port": "soc-configuration.group16"
+    },
+    {
+      "id": "soc-configuration",
+      "address": "0xff709000",
+      "size": "0x84",
+      "port": "soc-configuration.group17"
+    },
+    {
+      "id": "soc-configuration",
+      "address": "0xff705000",
+      "size": "0x84",
+      "port": "soc-configuration.group18"
+    },
+    {
+      "id": "soc-configuration",
+      "address": "0xfffae000",
+      "size": "0x84",
+      "port": "soc-configuration.group19"
+    },
+    {
+      "id": "soc-configuration",
+      "address": "0xff7010f0",
+      "size": "0x4",
+      "port": "soc-configuration.base-status0",
+      "optional": true
+    },
+    {
+      "id": "soc-configuration",
+      "address": "0xff7020f0",
+      "size": "0x4",
+      "port": "soc-configuration.base-status1",
+      "optional": true
+    },
+    {
+      "id": "soc-configuration",
+      "address": "0xff7030f0",
+      "size": "0x4",
+      "port": "soc-configuration.base-status2",
+      "optional": true
+    },
+    {
+      "id": "soc-configuration",
+      "address": "0xff7040f0",
+      "size": "0x4",
+      "port": "soc-configuration.base-status3",
+      "optional": true
+    },
+    {
+      "id": "soc-configuration",
+      "address": "0xff7070f0",
+      "size": "0x4",
+      "port": "soc-configuration.base-status4",
+      "optional": true
+    },
+    {
+      "id": "soc-configuration",
+      "address": "0xff7080f0",
+      "size": "0x4",
+      "port": "soc-configuration.base-status5",
+      "optional": true
+    },
+    {
+      "id": "soc-configuration",
+      "address": "0xff70c0f0",
+      "size": "0x4",
+      "port": "soc-configuration.base-status6",
+      "optional": true
+    },
+    {
+      "id": "soc-configuration",
+      "address": "0xff70a0f0",
+      "size": "0x4",
+      "port": "soc-configuration.base-status7",
+      "optional": true
+    },
+    {
+      "id": "soc-configuration",
+      "address": "0xff70b0f0",
+      "size": "0x4",
+      "port": "soc-configuration.base-status8",
+      "optional": true
+    },
+    {
+      "id": "soc-configuration",
+      "address": "0xff7060f0",
+      "size": "0x4",
+      "port": "soc-configuration.base-status9",
+      "optional": true
+    },
+    {
+      "id": "soc-configuration",
+      "address": "0xff7090f0",
+      "size": "0x4",
+      "port": "soc-configuration.base-status10",
+      "optional": true
+    },
+    {
+      "id": "soc-configuration",
+      "address": "0xff7050f0",
+      "size": "0x4",
+      "port": "soc-configuration.base-status11",
+      "optional": true
+    },
+    {
+      "id": "soc-configuration",
+      "address": "0xfffae0f0",
+      "size": "0x4",
+      "port": "soc-configuration.base-status12",
+      "optional": true
+    },
+    {
+      "id": "soc-vglib-init",
+      "address": "0xfffd0000",
+      "size": "0x18c4",
+      "port": "soc-vglib-init.registers",
+      "optional": true
+    },
+    {
+      "id": "soc-vglib-init",
+      "address": "0xfff49700",
+      "size": "0x4",
+      "port": "soc-vglib-init.mode-word",
+      "optional": true
+    },
+    {
+      "id": "soc-vglib-init",
+      "address": "0xfffa9000",
+      "size": "0x604",
+      "port": "soc-vglib-init.lcdc-snapshot",
+      "optional": true
+    },
+    {
+      "id": "soc-system-control",
+      "address": "0xfff4a000",
+      "size": "0x4",
+      "port": "soc-system-control.boot-strap",
+      "optional": true
+    }
+  ],
+  "evidence": [
+    "FW-001",
+    "FW-002",
+    "FW-007",
+    "FW-008",
+    "FW-009",
+    "FW-010",
+    "FW-011",
+    "FW-012",
+    "FW-013",
+    "FW-014",
+    "EX-001",
+    "EX-002",
+    "EX-003",
+    "EX-006",
+    "EX-008",
+    "EX-013",
+    "MD-001",
+    "MD-002",
+    "MD-004",
+    "MD-006",
+    "MD-007",
+    "MD-008",
+    "MD-009",
+    "HYP-001",
+    "HYP-002",
+    "HYP-004",
+    "HYP-005",
+    "HYP-006",
+    "HYP-007",
+    "HYP-008",
+    "HYP-009",
+    "HYP-010",
+    "HYP-011",
+    "HYP-012",
+    "HYP-013",
+    "HYP-014",
+    "HYP-015",
+    "HYP-016",
+    "FW-015",
+    "EX-023",
+    "EX-024",
+    "MD-015",
+    "HYP-017",
+    "HYP-018",
+    "HYP-019",
+    "FW-017",
+    "EX-028",
+    "EX-029",
+    "EX-030",
+    "MD-017",
+    "HYP-022",
+    "HYP-023",
+    "FW-018",
+    "EX-031",
+    "EX-032",
+    "EX-033",
+    "EX-034",
+    "MD-018",
+    "HYP-024",
+    "FW-019",
+    "EX-035",
+    "EX-036",
+    "EX-037",
+    "EX-038",
+    "MD-019",
+    "MD-020",
+    "HYP-025",
+    "HYP-026",
+    "FW-020",
+    "EX-039",
+    "EX-040",
+    "EX-041",
+    "EX-042",
+    "EX-043",
+    "MD-021",
+    "MD-022",
+    "HYP-027",
+    "HYP-028",
+    "FILE:GFX100S_DUMP.zip:files/boot-rom.bin",
+    "HYPOTHESIS:boot-rom-cold-start"
+  ]
+}

@@ -1,0 +1,19 @@
+# ==============================================================================
+# 按键与拨杆样例：开机默认视频模式（MOVIE 档）
+#
+# 使用方法：复制到 configs/components/buttons/buttons.yaml 生效。
+# 说明：
+#   - 发行版默认采用 STILL 静态拍照模式（movieMode: false）；
+#   - 如希望每次冷启动直接进入录像模式（MOVIE 档），请将 movieMode 设为 true。
+# ==============================================================================
+menu: false
+back: false
+up: false
+down: false
+left: false
+right: false
+shutterHalf: false
+shutterFull: false
+play: false
+movieMode: true
+power: true

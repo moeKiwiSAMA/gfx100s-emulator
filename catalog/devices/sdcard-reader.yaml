@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "id": "device.sdcard-reader",
+  "componentId": "sdcard-reader",
+  "depends": [],
+  "version": "0.0.1",
+  "name": "sdcard-reader",
+  "physicalIdentity": "UNKNOWN",
+  "implementationStatus": "HOST_CONTRACT_ONLY",
+  "implementationSources": [
+    "components/sdcard-reader/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/sdcard/SdcardFactory.kt"
+  ],
+  "ports": [],
+  "unknowns": [
+    "Physical device identity, reset values, wiring and full state machine are not qualified."
+  ],
+  "nextValidation": "Trace selected original firmware consumers and retain refusal controls."
+}

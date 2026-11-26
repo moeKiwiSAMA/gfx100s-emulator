@@ -1,0 +1,31 @@
+{
+  "profile": "byte-i2c-functional-experimental-v1",
+  "controllers": [
+    {
+      "index": 0,
+      "irq": null,
+      "interruptPort": "",
+      "busPort": "",
+      "byte_ticks": 8,
+      "reset": {
+        "ccr": 0,
+        "adr": 0,
+        "csr": 0,
+        "fsr": 0
+      }
+    },
+    {
+      "index": 1,
+      "irq": null,
+      "interruptPort": "",
+      "busPort": "",
+      "byte_ticks": 8,
+      "reset": {
+        "ccr": 0,
+        "adr": 0,
+        "csr": 0,
+        "fsr": 0
+      }
+    }
+  ]
+}

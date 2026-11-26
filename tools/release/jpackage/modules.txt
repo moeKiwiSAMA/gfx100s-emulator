@@ -1,0 +1,21 @@
+# Verified minimal JDK 25 module set for FUJIFILM GFX100S Emulator (jlink + jpackage).
+# Derived empirically via `jdeps --ignore-missing-deps --multi-release 25 --print-module-deps`
+# against desktop + JavaFX 25 (base/graphics/controls/swing) + all 25 component JARs,
+# plus TLS/crypto (jdk.crypto.ec) and zipfs/logging/prefs/scripting/xml runtime providers.
+java.base
+java.compiler
+java.desktop
+java.logging
+java.management
+java.naming
+java.net.http
+java.prefs
+java.scripting
+java.sql
+java.xml
+jdk.crypto.ec
+jdk.httpserver
+jdk.jfr
+jdk.unsupported
+jdk.unsupported.desktop
+jdk.zipfs

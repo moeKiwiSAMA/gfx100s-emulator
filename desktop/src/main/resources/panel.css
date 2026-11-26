@@ -1,0 +1,1171 @@
+/* GFX-STYLE-CODE-001: Fujifilm GFX ETERNA 55 Simulator inspired studio palette (#161515 matte obsidian, 3-stop #515151/#0b0b0b/#515151 tactile buttons, pure achromatic neutral typography). */
+.root {
+    -fuji-backdrop: #161515;
+    -fuji-bg-base: #161515;
+    -fuji-bg-surface: #1b1a1a;
+    -fuji-bg-card: #1f1e1e;
+    -fuji-bg-elevated: #282727;
+    -fuji-bg-input: #0d0d0d;
+    -fuji-bg-header-top: #1e1d1d;
+    -fuji-bg-header-bot: #141313;
+    -fuji-border: #323131;
+    -fuji-border-strong: #464545;
+    -fuji-text-primary: #ececec;
+    -fuji-text-secondary: #cfcfcf;
+    -fuji-text-muted: #9b9b9b;
+    -fuji-accent: #c8c8c8;
+    -fuji-accent-hover: #dcdcdc;
+    -fuji-accent-fg: #141414;
+    -fuji-ok: #6fd38a;
+    -fuji-warn: #f59e0b;
+    -fuji-danger: #f08070;
+    -fuji-badge-bg: #212020;
+    -fuji-selection-bg: #3a3a3a;
+    -fuji-source-3d-bg: #1a2920;
+    -fuji-source-3d-border: #355a42;
+    -fuji-source-3d-fg: #9ee5b0;
+    -fuji-source-2d-bg: #19222d;
+    -fuji-source-2d-border: #344a63;
+    -fuji-source-2d-fg: #a5c6eb;
+    -fuji-ring-active-border: #d97706;
+    -fuji-ring-active-fg: #fbbf24;
+    -fx-accent: -fuji-accent;
+    -fx-focus-color: #b8b8b8;
+    -fx-faint-focus-color: rgba(255, 255, 255, 0.08);
+    -fx-selection-bar: -fuji-selection-bg;
+    -fx-selection-bar-non-focused: #2c2c2c;
+    -fx-default-button: #4a4a4a;
+    -fx-mark-color: #efefef;
+    -fx-text-base-color: -fuji-text-primary;
+    -fx-text-background-color: -fuji-text-primary;
+    -fx-base: -fuji-bg-surface;
+    -fx-control-inner-background: -fuji-bg-input;
+}
+.root .text { -fx-font-smoothing-type: gray; }
+
+/* Studio shell & slim Fujifilm ETERNA-inspired console header */
+.studio-shell {
+    -fx-background-color: #161515;
+    -fx-font-family: "Arial Narrow";
+    -fx-font-size: 12px;
+}
+.studio-console-header {
+    -fx-background-color: linear-gradient(to bottom, #1e1d1d 0%, #141313 100%);
+    -fx-border-color: transparent transparent #2c2b2b transparent;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 7 10 7 12;
+}
+.studio-brand-mark {
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+.studio-brand-sep {
+    -fx-background-color: #3d3c3c;
+    -fx-min-width: 1;
+    -fx-pref-width: 1;
+    -fx-max-width: 1;
+    -fx-min-height: 12;
+    -fx-pref-height: 12;
+    -fx-max-height: 12;
+}
+.studio-brand-model {
+    -fx-text-fill: #d2d2d2;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+.studio-brand-badge {
+    -fx-background-color: #212020;
+    -fx-border-color: #3a3939;
+    -fx-border-width: 1;
+    -fx-border-radius: 2;
+    -fx-background-radius: 2;
+    -fx-padding: 1 5 1 5;
+    -fx-text-fill: #a4a4a4;
+    -fx-font-size: 9.5px;
+    -fx-font-weight: bold;
+}
+.studio-header-btn {
+    -fx-background-color: linear-gradient(to bottom, #484848 0%, #141414 52%, #343434 100%);
+    -fx-border-color: #000000;
+    -fx-border-width: 1.2;
+    -fx-background-radius: 3;
+    -fx-border-radius: 3;
+    -fx-text-fill: #f2f2f2;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 3 8 3 8;
+    -fx-cursor: hand;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+.studio-header-btn:hover {
+    -fx-background-color: linear-gradient(to bottom, #5a5a5a 0%, #1d1d1d 52%, #444444 100%);
+    -fx-border-color: #6a6a6a;
+}
+.studio-header-btn:pressed {
+    -fx-background-color: linear-gradient(to bottom, #343434 0%, #050505 52%, #2c2c2c 100%);
+}
+.studio-header-btn:disabled {
+    -fx-opacity: 0.45;
+}
+.studio-header-btn-secondary {
+    -fx-background-color: #201f1f;
+    -fx-border-color: #3a3939;
+    -fx-border-width: 1;
+    -fx-background-radius: 3;
+    -fx-border-radius: 3;
+    -fx-text-fill: #cccccc;
+    -fx-font-size: 11px;
+    -fx-padding: 3 7 3 7;
+    -fx-cursor: hand;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+.studio-header-btn-secondary:hover {
+    -fx-background-color: #2c2b2b;
+    -fx-border-color: #5a5959;
+    -fx-text-fill: #ffffff;
+}
+.studio-header-btn-secondary:pressed {
+    -fx-background-color: #141313;
+}
+
+/* Face window bezel framing */
+.studio-face-frame {
+    -fx-background-color: #161515;
+    -fx-border-color: #2c2b2b;
+    -fx-border-width: 1;
+}
+.studio-face-frame-focused {
+    -fx-border-color: #4f4e4e;
+}
+.studio-face-bar {
+    -fx-background-color: linear-gradient(to bottom, #1e1d1d 0%, #171616 100%);
+    -fx-border-color: transparent transparent #262525 transparent;
+    -fx-border-width: 0 0 1 0;
+    -fx-min-height: 18;
+    -fx-pref-height: 18;
+    -fx-max-height: 18;
+}
+.studio-face-handle {
+    -fx-text-fill: #8f8f8f;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-padding: 1 6 1 6;
+}
+.studio-face-close {
+    -fx-background-color: transparent;
+    -fx-text-fill: #848484;
+    -fx-font-size: 11px;
+    -fx-padding: 0 6 0 6;
+    -fx-border-width: 0;
+    -fx-background-radius: 0;
+    -fx-cursor: hand;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+.studio-face-close:hover {
+    -fx-background-color: #2f2e2e;
+    -fx-text-fill: #ffffff;
+}
+.studio-face-close:pressed {
+    -fx-background-color: #121111;
+    -fx-text-fill: #cccccc;
+}
+
+/* Camera body canvas & ETERNA tactile hotspots */
+.camera-studio { -fx-background-color: #161515; }
+.studio-hotspot, .studio-hotspot:selected {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-border-width: 1.4;
+    -fx-border-radius: 30;
+    -fx-background-radius: 30;
+    -fx-padding: 0;
+    -fx-cursor: hand;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+.studio-hotspot:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.065);
+    -fx-border-color: rgba(255, 255, 255, 0.68);
+}
+.studio-hotspot:pressed {
+    -fx-background-color: rgba(0, 0, 0, 0.34);
+    -fx-border-color: #6a6a6a;
+}
+.studio-hotspot:selected {
+    -fx-background-color: rgba(255, 255, 255, 0.09);
+    -fx-border-color: rgba(255, 255, 255, 0.92);
+}
+.studio-hotspot:focused {
+    -fx-border-color: rgba(255, 255, 255, 0.85);
+}
+/* The artwork supplies the shape and the selected detent for physical switches and covers. */
+.studio-focus-segment {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-border-width: 0 0 2 0;
+    -fx-border-insets: 0 4 3 4;
+    -fx-padding: 0;
+}
+.studio-focus-segment:selected {
+    -fx-border-color: #f3b766;
+}
+.studio-focus-segment:focus-visible {
+    -fx-background-color: rgba(255, 255, 255, 0.13);
+}
+.studio-hotspot.studio-mechanical-control {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+.studio-hotspot.studio-mechanical-control:focus-visible {
+    -fx-border-color: rgba(255, 255, 255, 0.85);
+    -fx-border-style: dashed;
+    -fx-border-radius: 4;
+}
+.studio-hotspot.studio-display-hotspot,
+.studio-hotspot.studio-display-hotspot:hover,
+.studio-hotspot.studio-display-hotspot:pressed,
+.studio-hotspot.studio-display-hotspot:selected,
+.studio-hotspot.studio-display-hotspot:focused,
+.studio-hotspot.studio-display-hotspot:focus-visible {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+
+/* Display standby frame (recessed darkroom optical aesthetic) */
+.studio-display-waiting {
+    -fx-text-fill: #7d7d7d;
+    -fx-background-color: rgba(14, 14, 14, 0.82);
+    -fx-border-color: #292929;
+    -fx-border-width: 1;
+    -fx-border-radius: 3;
+    -fx-background-radius: 3;
+    -fx-padding: 3 9 3 9;
+    -fx-font-size: 12px;
+}
+
+/* Authentic reflective monochrome Sharp Memory-in-Pixel shoulder sub-LCD bezel */
+.studio-shoulder-lcd {
+    -fx-background-color: #1c221f;
+    -fx-border-color: #2b302d;
+    -fx-border-width: 1;
+    -fx-border-radius: 2;
+    -fx-background-radius: 2;
+}
+.studio-shoulder-backlit {
+    -fx-background-color: #dbe8f6;
+    -fx-border-color: rgba(220, 238, 255, 0.78);
+    -fx-border-width: 1.2;
+    -fx-border-radius: 2;
+    -fx-background-radius: 2;
+    -fx-effect: dropshadow(gaussian, rgba(205, 228, 255, 0.58), 14, 0.28, 0, 0);
+}
+
+/* Tactile ETERNA hardware input buttons in Window tab */
+.studio-input-key, .studio-setting-switch {
+    -fx-background-color: linear-gradient(to bottom, #515151 0%, #0b0b0b 50%, #515151 100%);
+    -fx-border-color: #000000;
+    -fx-border-width: 1.5;
+    -fx-background-radius: 4;
+    -fx-border-radius: 4;
+    -fx-text-fill: #f0f0f0;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 4 8 4 8;
+    -fx-cursor: hand;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+.studio-input-key:hover, .studio-setting-switch:hover {
+    -fx-background-color: linear-gradient(to bottom, #616161 0%, #161616 50%, #5e5e5e 100%);
+    -fx-border-color: #555555;
+    -fx-text-fill: #ffffff;
+}
+.studio-input-key:pressed, .studio-setting-switch:pressed {
+    -fx-background-color: linear-gradient(to bottom, #3c3c3c 0%, #050505 50%, #3c3c3c 100%);
+    -fx-border-color: #777777;
+}
+.studio-input-key:selected, .studio-setting-switch:selected {
+    -fx-background-color: linear-gradient(to bottom, #dedede 0%, #b5b5b5 50%, #d8d8d8 100%);
+    -fx-border-color: #ffffff;
+    -fx-text-fill: #0d0d0d;
+}
+.studio-input-key:focused, .studio-setting-switch:focused {
+    -fx-border-color: #cccccc;
+}
+
+/* Bottom status telemetry bar */
+.studio-statusbar {
+    -fx-background-color: #100f0f;
+    -fx-border-color: #282727 transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
+    -fx-font-size: 11px;
+}
+.studio-statusbar .label, .studio-control-status {
+    -fx-text-fill: #9c9c9c;
+}
+
+/* Right-hand Control Center sidebar (compact, zero-overflow segmented tabs) */
+.studio-sidebar {
+    -fx-background-color: #161515;
+    -fx-border-color: transparent transparent transparent #2a2929;
+    -fx-border-width: 0 0 0 1;
+    -fx-padding: 0;
+    -fx-tab-min-height: 30;
+    -fx-tab-max-height: 30;
+}
+.studio-sidebar .label, .studio-sidebar .check-box {
+    -fx-text-fill: #e4e4e4;
+}
+.studio-section-title {
+    -fx-text-fill: #9a9a9a;
+    -fx-font-size: 10.5px;
+    -fx-font-weight: bold;
+}
+.studio-hint-text {
+    -fx-text-fill: #888888;
+    -fx-font-size: 11px;
+}
+.studio-card {
+    -fx-background-color: #1c1b1b;
+    -fx-border-color: #2b2a2a;
+    -fx-border-width: 1;
+    -fx-background-radius: 4;
+    -fx-border-radius: 4;
+    -fx-padding: 8 10 8 10;
+}
+.studio-setting-label {
+    -fx-text-fill: #c6c6c6;
+    -fx-font-size: 11.5px;
+}
+.studio-table-head {
+    -fx-text-fill: #8e8e8e;
+    -fx-font-size: 10.5px;
+    -fx-font-weight: bold;
+}
+.studio-telemetry-val {
+    -fx-text-fill: #b4b4b4;
+    -fx-font-size: 11px;
+}
+.studio-tip-banner {
+    -fx-background-color: -fuji-bg-elevated;
+    -fx-border-color: -fuji-warn;
+    -fx-border-width: 1 1 1 3;
+    -fx-background-radius: 3;
+    -fx-border-radius: 3;
+    -fx-padding: 6 8 6 8;
+    -fx-text-fill: -fuji-text-primary;
+    -fx-font-size: 11px;
+}
+
+/* TabPane clean studio tabs */
+.studio-sidebar .tab-header-area {
+    -fx-padding: 0;
+}
+.studio-sidebar .tab-header-area .tab-header-background {
+    -fx-background-color: #121111;
+    -fx-border-color: transparent transparent #282727 transparent;
+    -fx-border-width: 0 0 1 0;
+}
+.studio-sidebar .tab-content-area {
+    -fx-background-color: #161515;
+}
+.studio-sidebar .tab {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+    -fx-padding: 6 7 6 7;
+    -fx-border-color: transparent transparent transparent transparent;
+    -fx-border-width: 0 0 2 0;
+    -fx-cursor: hand;
+}
+.studio-sidebar .tab:hover {
+    -fx-background-color: #1d1c1c;
+}
+.studio-sidebar .tab:selected {
+    -fx-background-color: #1e1d1d;
+    -fx-border-color: transparent transparent #ebebeb transparent;
+    -fx-border-width: 0 0 2 0;
+}
+.studio-sidebar .tab .tab-label {
+    -fx-text-fill: #8c8c8c;
+    -fx-font-size: 11.5px;
+    -fx-font-weight: bold;
+}
+.studio-sidebar .tab:hover .tab-label {
+    -fx-text-fill: #cccccc;
+}
+.studio-sidebar .tab:selected .tab-label {
+    -fx-text-fill: #ffffff;
+}
+.studio-sidebar .tab-pane:focused > .tab-header-area > .headers-region > .tab:selected .focus-indicator {
+    -fx-border-color: transparent;
+}
+.studio-sidebar .tab:focused {
+    -fx-border-color: transparent transparent #d0d0d0 transparent;
+}
+.studio-sidebar .tab-header-area .control-buttons-tab,
+.studio-sidebar .tab-header-area .tab-down-button {
+    -fx-background-color: #181717;
+    -fx-background-radius: 0;
+    -fx-border-color: #2f2e2e;
+}
+.studio-sidebar .tab-header-area .tab-down-button .arrow {
+    -fx-background-color: #c8c8c8;
+}
+
+/* ScrollPane & sleek dark scrollbar */
+.studio-sidebar .scroll-pane,
+.studio-sidebar .scroll-pane > .viewport,
+.studio-sidebar .scroll-pane > .corner {
+    -fx-background-color: #161515;
+}
+.studio-sidebar .scroll-bar:vertical,
+.studio-sidebar .scroll-bar:horizontal {
+    -fx-background-color: #131212;
+    -fx-pref-width: 7;
+    -fx-pref-height: 7;
+    -fx-padding: 1;
+}
+.studio-sidebar .scroll-bar .thumb {
+    -fx-background-color: #3c3b3b;
+    -fx-background-radius: 4;
+    -fx-background-insets: 1;
+}
+.studio-sidebar .scroll-bar .thumb:hover {
+    -fx-background-color: #5c5b5b;
+}
+.studio-sidebar .scroll-bar .increment-button,
+.studio-sidebar .scroll-bar .decrement-button {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+    -fx-pref-height: 0;
+    -fx-pref-width: 0;
+}
+.studio-sidebar .scroll-bar .increment-arrow,
+.studio-sidebar .scroll-bar .decrement-arrow {
+    -fx-shape: "";
+    -fx-padding: 0;
+}
+
+/* Component TitledPane accordion cards */
+.studio-sidebar .titled-pane {
+    -fx-text-fill: #e8e8e8;
+    -fx-padding: 0 8 4 8;
+}
+.studio-sidebar .titled-pane:focused {
+    -fx-text-fill: #ffffff;
+}
+.studio-sidebar .titled-pane > .title {
+    -fx-background-color: linear-gradient(to bottom, #242323 0%, #1d1c1c 100%);
+    -fx-background-radius: 4 4 0 0;
+    -fx-border-radius: 4 4 0 0;
+    -fx-border-color: #302f2f;
+    -fx-border-width: 1;
+    -fx-padding: 7 10 7 10;
+    -fx-cursor: hand;
+}
+.studio-sidebar .titled-pane:collapsed > .title {
+    -fx-background-radius: 4;
+    -fx-border-radius: 4;
+}
+.studio-sidebar .titled-pane > .title:hover {
+    -fx-background-color: linear-gradient(to bottom, #2b2a2a 0%, #222121 100%);
+    -fx-border-color: #424141;
+}
+.studio-sidebar .titled-pane > .title > .text {
+    -fx-fill: #e8e8e8;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+.studio-sidebar .titled-pane > .title > .arrow-button > .arrow {
+    -fx-background-color: #a8a8a8;
+}
+.studio-sidebar .titled-pane > .content {
+    -fx-background-color: #181717;
+    -fx-border-color: transparent #302f2f #302f2f #302f2f;
+    -fx-border-width: 0 1 1 1;
+    -fx-background-radius: 0 0 4 4;
+    -fx-border-radius: 0 0 4 4;
+    -fx-padding: 4 6 6 6;
+}
+
+/* ETERNA tactile buttons inside sidebar */
+.studio-sidebar .button {
+    -fx-background-color: linear-gradient(to bottom, #4b4b4b 0%, #141414 52%, #363636 100%);
+    -fx-border-color: #000000;
+    -fx-border-width: 1.2;
+    -fx-background-radius: 3;
+    -fx-border-radius: 3;
+    -fx-text-fill: #f0f0f0;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 5 9 5 9;
+    -fx-cursor: hand;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+.studio-sidebar .button:hover {
+    -fx-background-color: linear-gradient(to bottom, #5c5c5c 0%, #1e1e1e 52%, #474747 100%);
+    -fx-border-color: #666666;
+    -fx-text-fill: #ffffff;
+}
+.studio-sidebar .button:pressed {
+    -fx-background-color: linear-gradient(to bottom, #353535 0%, #050505 52%, #2c2c2c 100%);
+    -fx-border-color: #888888;
+}
+.studio-sidebar .button:disabled {
+    -fx-background-color: #201f1f;
+    -fx-border-color: #2d2c2c;
+    -fx-text-fill: #6e6e6e;
+    -fx-opacity: 0.7;
+}
+.studio-sidebar .button:focused,
+.studio-sidebar .check-box:focused .box {
+    -fx-border-color: #b8b8b8;
+    -fx-border-width: 1;
+}
+
+/* Inputs, TextAreas, ComboBoxes, CheckBoxes, Separators */
+.studio-sidebar .text-field,
+.studio-sidebar .text-area {
+    -fx-background-color: #0d0c0c;
+    -fx-text-fill: #efefef;
+    -fx-prompt-text-fill: #686868;
+    -fx-highlight-fill: #c8c8c8;
+    -fx-highlight-text-fill: #0d0d0d;
+    -fx-background-radius: 3;
+    -fx-border-radius: 3;
+    -fx-border-color: #302f2f;
+    -fx-border-width: 1;
+    -fx-padding: 4 7 4 7;
+    -fx-font-size: 11.5px;
+}
+.studio-sidebar .text-field:focused,
+.studio-sidebar .text-area:focused {
+    -fx-border-color: #8c8c8c;
+    -fx-background-color: #111010;
+}
+.studio-sidebar .text-field:disabled {
+    -fx-background-color: #141313;
+    -fx-text-fill: #7d7d7d;
+    -fx-border-color: #252424;
+    -fx-opacity: 1.0;
+}
+.studio-sidebar .text-area {
+    -fx-font-family: "Monospaced";
+    -fx-font-size: 11px;
+    -fx-padding: 2;
+}
+.studio-sidebar .text-area .content {
+    -fx-background-color: #0d0c0c;
+}
+.studio-sidebar .combo-box {
+    -fx-background-color: #121111;
+    -fx-border-color: #343333;
+    -fx-border-width: 1;
+    -fx-background-radius: 3;
+    -fx-border-radius: 3;
+    -fx-padding: 1 4 1 4;
+}
+.studio-sidebar .combo-box .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: #e8e8e8;
+    -fx-font-size: 11.5px;
+}
+.studio-sidebar .combo-box .arrow-button .arrow {
+    -fx-background-color: #b4b4b4;
+}
+.combo-box-popup .list-view {
+    -fx-background-color: #191818;
+    -fx-border-color: #3d3c3c;
+}
+.combo-box-popup .list-view .list-cell {
+    -fx-background-color: #191818;
+    -fx-text-fill: #e4e4e4;
+}
+.combo-box-popup .list-view .list-cell:hover,
+.combo-box-popup .list-view .list-cell:selected {
+    -fx-background-color: #2e2d2d;
+    -fx-text-fill: #ffffff;
+}
+.studio-sidebar .check-box .box {
+    -fx-background-color: #0e0d0d;
+    -fx-border-color: #4f4e4e;
+    -fx-border-width: 1;
+    -fx-background-radius: 2;
+    -fx-border-radius: 2;
+}
+.studio-sidebar .check-box:hover .box {
+    -fx-border-color: #888888;
+}
+.studio-sidebar .check-box:selected .box {
+    -fx-background-color: #302f2f;
+    -fx-border-color: #cccccc;
+}
+.studio-sidebar .check-box:selected .mark {
+    -fx-background-color: #ffffff;
+}
+.studio-sidebar .separator .line {
+    -fx-border-color: #282727;
+    -fx-border-width: 0.5 0 0 0;
+}
+
+/* Compact quick-preset chips & live optical sliders */
+.studio-sidebar .button.studio-chip-btn {
+    -fx-background-color: #222121;
+    -fx-border-color: #3a3939;
+    -fx-border-width: 1;
+    -fx-background-radius: 3;
+    -fx-border-radius: 3;
+    -fx-text-fill: #d8d8d8;
+    -fx-font-size: 10.5px;
+    -fx-font-weight: normal;
+    -fx-padding: 3 7 3 7;
+}
+.studio-sidebar .button.studio-chip-btn:hover {
+    -fx-background-color: #302f2f;
+    -fx-border-color: #666666;
+    -fx-text-fill: #ffffff;
+}
+.studio-sidebar .button.studio-chip-btn:pressed {
+    -fx-background-color: #141313;
+}
+
+/* Tactile segmented shooting switchers (MODE DIAL / AF-S-C-M / STILL-MOVIE) */
+.studio-sidebar .toggle-button.studio-seg-btn {
+    -fx-background-color: linear-gradient(to bottom, #343333 0%, #171616 55%, #272626 100%);
+    -fx-border-color: #0b0b0b;
+    -fx-border-width: 1.1;
+    -fx-background-radius: 3;
+    -fx-border-radius: 3;
+    -fx-text-fill: #d0d0d0;
+    -fx-font-size: 10.5px;
+    -fx-font-weight: bold;
+    -fx-padding: 4 4 4 4;
+    -fx-cursor: hand;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+.studio-sidebar .toggle-button.studio-seg-btn:hover {
+    -fx-background-color: linear-gradient(to bottom, #484747 0%, #222121 55%, #373636 100%);
+    -fx-border-color: #5b5a5a;
+    -fx-text-fill: #ffffff;
+}
+.studio-sidebar .toggle-button.studio-seg-btn:selected {
+    -fx-background-color: linear-gradient(to bottom, #ececec 0%, #c6c6c6 55%, #e2e2e2 100%);
+    -fx-border-color: #ffffff;
+    -fx-text-fill: #0d0d0d;
+}
+.studio-sidebar .toggle-button.studio-seg-btn:pressed {
+    -fx-background-color: linear-gradient(to bottom, #262525 0%, #090909 55%, #1e1d1d 100%);
+}
+.studio-sidebar .slider .track {
+    -fx-background-color: #0e0d0d;
+    -fx-border-color: #323131;
+    -fx-border-width: 1;
+    -fx-background-radius: 2;
+    -fx-border-radius: 2;
+    -fx-pref-height: 5;
+}
+.studio-sidebar .slider .thumb {
+    -fx-background-color: linear-gradient(to bottom, #e6e6e6 0%, #a8a8a8 100%);
+    -fx-border-color: #111111;
+    -fx-border-width: 1;
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
+    -fx-pref-width: 12;
+    -fx-pref-height: 12;
+}
+.studio-sidebar .slider .thumb:hover {
+    -fx-background-color: #ffffff;
+}
+.studio-sidebar .progress-bar.studio-vu-bar {
+    -fx-accent: #7be08a;
+    -fx-background-color: transparent;
+}
+.studio-sidebar .progress-bar.studio-vu-bar .track {
+    -fx-background-color: -fuji-bg-input;
+    -fx-border-color: -fuji-border;
+    -fx-border-width: 1;
+    -fx-background-radius: 2;
+    -fx-border-radius: 2;
+}
+.studio-sidebar .progress-bar.studio-vu-bar .bar {
+    -fx-background-color: linear-gradient(to right, #5cc474 0%, #c8e06c 75%, #eb6854 100%);
+    -fx-background-insets: 1;
+    -fx-background-radius: 1.5;
+}
+
+/* Header quick theme selectors */
+.studio-header-combo {
+    -fx-background-color: #1c1b1b;
+    -fx-border-color: #363535;
+    -fx-border-width: 1;
+    -fx-background-radius: 3;
+    -fx-border-radius: 3;
+    -fx-padding: 0 2 0 2;
+    -fx-font-size: 10.5px;
+    -fx-cursor: hand;
+}
+.studio-header-combo:hover {
+    -fx-border-color: #5a5959;
+}
+.studio-header-combo .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: #dcdcdc;
+    -fx-font-size: 10.5px;
+    -fx-padding: 2 4 2 5;
+}
+.studio-header-combo .arrow-button {
+    -fx-padding: 0 4 0 2;
+}
+.studio-header-combo .arrow-button .arrow {
+    -fx-background-color: #a8a8a8;
+}
+
+/* Matte Box / Ordered Optical Filter Rack (theme-adaptive across all 5 UI themes) */
+.filter-ev-badge {
+    -fx-background-color: rgba(128, 128, 128, 0.16);
+    -fx-border-color: rgba(128, 128, 128, 0.36);
+    -fx-border-width: 1;
+    -fx-background-radius: 3;
+    -fx-border-radius: 3;
+    -fx-padding: 2 6 2 6;
+    -fx-font-size: 10.5px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-text-base-color;
+}
+.filter-chain-pill {
+    -fx-background-color: rgba(128, 128, 128, 0.18);
+    -fx-border-color: -fx-accent;
+    -fx-border-width: 1;
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-padding: 2 7 2 7;
+    -fx-font-size: 10.5px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-text-base-color;
+    -fx-cursor: hand;
+}
+.filter-chain-pill:hover {
+    -fx-background-color: rgba(128, 128, 128, 0.30);
+}
+.filter-chain-pill-off {
+    -fx-opacity: 0.48;
+    -fx-border-color: rgba(128, 128, 128, 0.38);
+    -fx-border-style: dashed;
+}
+.filter-chain-arrow {
+    -fx-font-size: 11px;
+    -fx-opacity: 0.65;
+    -fx-text-fill: -fx-text-base-color;
+}
+.filter-slot-card {
+    -fx-background-color: rgba(128, 128, 128, 0.08);
+    -fx-border-color: rgba(128, 128, 128, 0.30);
+    -fx-border-width: 1;
+    -fx-background-radius: 4;
+    -fx-border-radius: 4;
+    -fx-padding: 6 7 6 7;
+}
+.filter-slot-card-disabled {
+    -fx-opacity: 0.58;
+    -fx-border-style: dashed;
+}
+.filter-slot-index {
+    -fx-background-color: rgba(128, 128, 128, 0.22);
+    -fx-background-radius: 3;
+    -fx-padding: 1 5 1 5;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-text-base-color;
+}
+.filter-slot-icon-btn {
+    -fx-padding: 2 5 2 5;
+    -fx-min-width: 22;
+    -fx-font-size: 10.5px;
+}
+.filter-preset-chip {
+    -fx-padding: 2 7 2 7;
+    -fx-font-size: 10.5px;
+    -fx-background-radius: 3;
+    -fx-border-radius: 3;
+}
+.filter-preset-chip-active {
+    -fx-border-color: -fx-accent;
+    -fx-border-width: 1.5;
+}
+
+/* Per-Button Combo Lock / Unlock Controls (theme-adaptive across all 5 UI themes) */
+.studio-lock-bar {
+    -fx-background-color: rgba(128, 128, 128, 0.08);
+    -fx-border-color: rgba(128, 128, 128, 0.28);
+    -fx-border-width: 1;
+    -fx-background-radius: 4;
+    -fx-border-radius: 4;
+    -fx-padding: 6 7 6 7;
+}
+.studio-lock-banner {
+    -fx-background-color: rgba(245, 158, 11, 0.14);
+    -fx-border-color: rgba(245, 158, 11, 0.65);
+    -fx-border-width: 1;
+    -fx-background-radius: 4;
+    -fx-border-radius: 4;
+    -fx-padding: 4 7 4 7;
+}
+.studio-lock-banner-text {
+    -fx-text-fill: #f59e0b;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+}
+.studio-sidebar .toggle-button.studio-lock-btn,
+.studio-sidebar .toggle-button.studio-lock-btn-compact {
+    -fx-background-color: rgba(128, 128, 128, 0.14);
+    -fx-border-color: rgba(128, 128, 128, 0.36);
+    -fx-border-width: 1;
+    -fx-background-radius: 3;
+    -fx-border-radius: 3;
+    -fx-text-fill: -fx-text-base-color;
+    -fx-font-size: 11px;
+    -fx-padding: 3 5 3 5;
+    -fx-min-width: 26;
+    -fx-pref-width: 26;
+    -fx-cursor: hand;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+.studio-sidebar .toggle-button.studio-lock-btn-compact {
+    -fx-padding: 3 4 3 4;
+    -fx-min-width: 24;
+    -fx-pref-width: 24;
+    -fx-font-size: 10.5px;
+}
+.studio-sidebar .toggle-button.studio-lock-btn:hover,
+.studio-sidebar .toggle-button.studio-lock-btn-compact:hover {
+    -fx-background-color: rgba(245, 158, 11, 0.22);
+    -fx-border-color: #f59e0b;
+}
+.studio-sidebar .toggle-button.studio-lock-btn.studio-lock-btn-active,
+.studio-sidebar .toggle-button.studio-lock-btn-compact.studio-lock-btn-active {
+    -fx-background-color: linear-gradient(to bottom, #f59e0b 0%, #d97706 100%);
+    -fx-border-color: #fbbf24;
+    -fx-text-fill: #111111;
+    -fx-font-weight: bold;
+}
+.studio-sidebar .toggle-button.studio-input-key.studio-key-locked,
+.studio-sidebar .button.studio-key-locked {
+    -fx-border-color: #f59e0b;
+    -fx-border-width: 1.8;
+    -fx-background-color: linear-gradient(to bottom, #78480a 0%, #3d2404 52%, #6b3f08 100%);
+    -fx-text-fill: #fef3c7;
+}
+.studio-hotspot.studio-key-locked {
+    -fx-background-color: rgba(245, 158, 11, 0.24);
+    -fx-border-color: #fbbf24;
+    -fx-border-width: 2.0;
+}
+.studio-adc-key-group {
+    -fx-alignment: center-left;
+}
+
+/* Theme v2 Semantic Component Styles (token-driven across dark, daylight, and external UI themes) */
+.source-badge-3d {
+    -fx-background-color: -fuji-source-3d-bg;
+    -fx-border-color: -fuji-source-3d-border;
+    -fx-border-width: 1;
+    -fx-background-radius: 3;
+    -fx-border-radius: 3;
+    -fx-text-fill: -fuji-source-3d-fg;
+    -fx-font-size: 10px;
+    -fx-padding: 2 6 2 6;
+}
+.source-badge-2d {
+    -fx-background-color: -fuji-source-2d-bg;
+    -fx-border-color: -fuji-source-2d-border;
+    -fx-border-width: 1;
+    -fx-background-radius: 3;
+    -fx-border-radius: 3;
+    -fx-text-fill: -fuji-source-2d-fg;
+    -fx-font-size: 10px;
+    -fx-padding: 3 6 3 6;
+}
+.studio-sidebar .toggle-button.source-mode-btn {
+    -fx-background-color: -fuji-bg-surface;
+    -fx-border-color: -fuji-border;
+    -fx-border-width: 1;
+    -fx-background-radius: 3;
+    -fx-border-radius: 3;
+    -fx-text-fill: -fuji-text-muted;
+    -fx-font-size: 10.5px;
+    -fx-font-weight: normal;
+    -fx-padding: 3 7 3 7;
+}
+.studio-sidebar .toggle-button.source-mode-btn.source-mode-3d-active {
+    -fx-background-color: -fuji-source-3d-bg;
+    -fx-border-color: -fuji-source-3d-border;
+    -fx-text-fill: -fuji-source-3d-fg;
+    -fx-font-weight: bold;
+}
+.studio-sidebar .toggle-button.source-mode-btn.source-mode-2d-active {
+    -fx-background-color: -fuji-source-2d-bg;
+    -fx-border-color: -fuji-source-2d-border;
+    -fx-text-fill: -fuji-source-2d-fg;
+    -fx-font-weight: bold;
+}
+.studio-sidebar .button.source-card-3d {
+    -fx-background-color: -fuji-bg-card;
+    -fx-border-color: -fuji-border;
+    -fx-border-width: 1;
+    -fx-background-radius: 3;
+    -fx-border-radius: 3;
+    -fx-text-fill: -fuji-text-primary;
+    -fx-font-size: 10.5px;
+    -fx-font-weight: bold;
+    -fx-padding: 3 7 3 7;
+}
+.studio-sidebar .button.source-card-3d:hover {
+    -fx-border-color: -fuji-source-3d-border;
+}
+.studio-sidebar .button.source-card-3d.source-card-3d-active {
+    -fx-background-color: -fuji-source-3d-bg;
+    -fx-border-color: -fuji-source-3d-border;
+    -fx-border-width: 1.2;
+    -fx-text-fill: -fuji-source-3d-fg;
+}
+.source-card-title {
+    -fx-text-fill: -fuji-text-primary;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+}
+.source-card-subtitle {
+    -fx-text-fill: -fuji-text-muted;
+    -fx-font-size: 9.5px;
+}
+.studio-sidebar .button.studio-chip-btn.source-chip-2d-active {
+    -fx-background-color: -fuji-source-2d-bg;
+    -fx-border-color: -fuji-source-2d-border;
+    -fx-border-width: 1.2;
+    -fx-text-fill: -fuji-source-2d-fg;
+    -fx-font-weight: bold;
+}
+.studio-sidebar .button.source-link-btn {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-text-fill: -fuji-text-muted;
+    -fx-font-size: 10px;
+    -fx-padding: 1 4 1 4;
+}
+.studio-sidebar .button.source-link-btn:hover {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-text-fill: -fuji-text-primary;
+}
+.source-status-error {
+    -fx-text-fill: -fuji-danger;
+}
+.studio-sidebar .button.lens-ring-active {
+    -fx-border-color: -fuji-ring-active-border;
+    -fx-border-width: 1.4;
+    -fx-text-fill: -fuji-ring-active-fg;
+    -fx-font-weight: bold;
+}
+.evf-viewport-tube {
+    -fx-background-color: #090909;
+}
+
+/* Minimal floating EVF window: edge-to-edge optical tube + auto-fading translucent HUD pills */
+.evf-window-root {
+    -fx-background-color: #000000;
+}
+.evf-hud-bar {
+    -fx-background-color: rgba(10, 10, 10, 0.64);
+    -fx-background-radius: 14;
+    -fx-border-color: rgba(255, 255, 255, 0.14);
+    -fx-border-width: 1;
+    -fx-border-radius: 14;
+    -fx-padding: 3 4 3 9;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.45), 8, 0.0, 0, 1);
+}
+.evf-hud-status {
+    -fx-text-fill: rgba(236, 236, 236, 0.9);
+    -fx-font-size: 10.5px;
+}
+.evf-hud-pill {
+    -fx-background-color: rgba(255, 255, 255, 0.07);
+    -fx-background-radius: 10;
+    -fx-border-color: rgba(255, 255, 255, 0.2);
+    -fx-border-width: 1;
+    -fx-border-radius: 10;
+    -fx-text-fill: #ececec;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-padding: 2 9 2 9;
+    -fx-cursor: hand;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+.evf-hud-pill:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.16);
+    -fx-border-color: rgba(255, 255, 255, 0.38);
+}
+.evf-hud-pill:pressed {
+    -fx-background-color: rgba(255, 255, 255, 0.24);
+}
+.evf-hud-pill:focused {
+    -fx-border-color: rgba(255, 255, 255, 0.6);
+}
+.evf-hud-pill:selected {
+    -fx-background-color: -fuji-accent;
+    -fx-border-color: -fuji-accent-hover;
+    -fx-text-fill: -fuji-accent-fg;
+}
+/* INPUT-BINDING-GAMEPAD-W11: Controls / key & gamepad binding dialog (semantic tokens only). */
+.input-binding-table {
+    -fx-background-color: transparent;
+}
+.studio-sidebar .button.input-binding-cell {
+    -fx-background-color: -fuji-bg-input;
+    -fx-border-color: -fuji-border;
+    -fx-border-width: 1;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-text-fill: -fuji-text-primary;
+    -fx-font-size: 11px;
+    -fx-padding: 3 8 3 8;
+    -fx-alignment: center-left;
+}
+.studio-sidebar .button.input-binding-cell:hover {
+    -fx-border-color: -fuji-border-strong;
+    -fx-background-color: -fuji-bg-elevated;
+}
+.studio-sidebar .button.input-binding-cell.input-binding-unbound {
+    -fx-text-fill: -fuji-text-muted;
+    -fx-font-style: italic;
+}
+.studio-sidebar .button.input-binding-cell.input-binding-capturing {
+    -fx-border-color: -fuji-accent;
+    -fx-border-width: 1.6;
+    -fx-text-fill: -fuji-accent;
+    -fx-font-weight: bold;
+}
+.studio-sidebar .button.input-binding-cell.input-binding-conflict {
+    -fx-border-color: -fuji-warn;
+    -fx-border-width: 1.6;
+}
+.studio-sidebar .button.input-binding-clear {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-text-fill: -fuji-text-muted;
+    -fx-font-size: 12px;
+    -fx-padding: 1 5 1 5;
+}
+.studio-sidebar .button.input-binding-clear:hover {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-text-fill: -fuji-danger;
+}
+.studio-sidebar .button.input-binding-clear:disabled {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-opacity: 0.35;
+}
+.label.input-binding-status {
+    -fx-background-color: -fuji-bg-card;
+    -fx-border-color: -fuji-border;
+    -fx-border-width: 1;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-padding: 6 10 6 10;
+    -fx-text-fill: -fuji-text-secondary;
+}
+.label.input-binding-status.input-binding-connected {
+    -fx-border-color: -fuji-ok;
+    -fx-text-fill: -fuji-ok;
+    -fx-font-weight: bold;
+}
+.label.input-binding-message {
+    -fx-text-fill: -fuji-text-secondary;
+    -fx-font-size: 11px;
+}
+
+/* Tactile draggable knurled command dials & body lever/dial state indicators */
+.studio-dial-wheel {
+    -fx-background-color: linear-gradient(to bottom, -fuji-bg-input 0%, -fuji-bg-elevated 26%, -fuji-bg-surface 52%, -fuji-bg-elevated 80%, -fuji-bg-input 100%);
+    -fx-border-color: -fuji-border-strong;
+    -fx-border-width: 1.1;
+    -fx-background-radius: 4;
+    -fx-border-radius: 4;
+    -fx-cursor: h-resize;
+}
+.studio-dial-wheel:hover {
+    -fx-border-color: -fuji-accent;
+}
+.studio-dial-wheel-dragging {
+    -fx-border-color: -fuji-accent-hover;
+    -fx-effect: dropshadow(gaussian, rgba(128, 128, 128, 0.35), 6, 0.15, 0, 0);
+}
+.studio-dial-rib-major {
+    -fx-stroke: -fuji-text-primary;
+}
+.studio-dial-rib-minor {
+    -fx-stroke: -fuji-text-muted;
+}
+.studio-dial-notch {
+    -fx-stroke: -fuji-accent;
+}
+.studio-sidebar .button.studio-dial-step-btn {
+    -fx-background-color: -fuji-bg-elevated;
+    -fx-border-color: -fuji-border;
+    -fx-border-width: 1;
+    -fx-background-radius: 3;
+    -fx-border-radius: 3;
+    -fx-text-fill: -fuji-text-primary;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-padding: 2 5 2 5;
+    -fx-min-height: 22;
+    -fx-pref-height: 22;
+}
+.studio-sidebar .button.studio-dial-step-btn:hover {
+    -fx-background-color: -fuji-bg-card;
+    -fx-border-color: -fuji-accent;
+    -fx-text-fill: -fuji-text-primary;
+}
+.studio-sidebar .button.studio-dial-step-btn:pressed {
+    -fx-background-color: -fuji-bg-input;
+}
+.studio-body-dial-badge {
+    -fx-background-color: rgba(16, 16, 16, 0.86);
+    -fx-border-color: rgba(240, 240, 240, 0.72);
+    -fx-border-width: 1.2;
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 1 6 1 6;
+    -fx-alignment: center;
+}
+.studio-body-lever-badge {
+    -fx-background-color: rgba(242, 242, 242, 0.92);
+    -fx-border-color: rgba(15, 15, 15, 0.85);
+    -fx-border-width: 1;
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
+    -fx-text-fill: #101010;
+    -fx-font-size: 9px;
+    -fx-font-weight: bold;
+    -fx-padding: 1 4 1 4;
+    -fx-alignment: center;
+}
+.studio-body-lever-badge-movie {
+    -fx-background-color: rgba(224, 68, 52, 0.94);
+    -fx-border-color: rgba(255, 220, 215, 0.9);
+    -fx-text-fill: #ffffff;
+}

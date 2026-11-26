@@ -1,0 +1,175 @@
+{
+  "schema": 1,
+  "id": "device.soc-sdio",
+  "componentId": "soc-sdio",
+  "depends": [],
+  "version": "0.0.1",
+  "name": "soc-sdio",
+  "physicalIdentity": "SDHCI v3.00 Host Controller (Channel 2 Wi-Fi SDIO)",
+  "implementationStatus": "PARTIAL",
+  "profiles": [
+    "disabled",
+    "soc-sdio-sdhci3-experimental-v1"
+  ],
+  "implementationSources": [
+    "components/soc-sdio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/sdio/SocSdioFactory.kt"
+  ],
+  "ports": [
+    {
+      "id": "definition.soc-sdio.sdhci",
+      "size": 256,
+      "kind": "MMIO",
+      "byteOrder": "little",
+      "backing": {
+        "source": "component-owned SDHCI v3.00 register state",
+        "permissions": "Standard SDHCI 1/2/4-byte registers across 0x00..0xFF"
+      },
+      "registers": [
+        {
+          "id": "reg.soc-sdio.sdhci.regs",
+          "offset": 0,
+          "size": 4,
+          "count": 64,
+          "stride": 4,
+          "alignment": 1,
+          "readWidths": [
+            1,
+            2,
+            4
+          ],
+          "writeWidths": [
+            1,
+            2,
+            4
+          ],
+          "status": "IMPLEMENTED_PARTIAL",
+          "behaviorId": "kotlin:soc-sdio",
+          "name": "sdhci_regs",
+          "namingBasis": "DAT section4 0x011F43A4..0x011F43B0 SDHC ch=2 base (0x3FFF1+2)<<14 = 0xFFFCC000 (standard SDHCI v3.00 0x100B register bank)",
+          "initial": {
+            "value": null,
+            "source": "SDHCI v3.00 reset state (Capabilities 0x25E832B2, Host Version 0x1002)"
+          },
+          "masks": {
+            "writable": 0,
+            "preserve": 0,
+            "unknown": 4294967295,
+            "prohibited": 0
+          },
+          "unknownBitPolicy": "known-device-validation; never fallback",
+          "sideEffects": {
+            "read": "component behaviorId",
+            "write": "component behaviorId",
+            "w1c": "+0x30 NormalIntStatus, +0x32 ErrorIntStatus",
+            "readClear": "UNKNOWN",
+            "selfClear": "+0x2F SoftwareReset"
+          },
+          "timing": "component behaviorId",
+          "stateTransitions": "component behaviorId",
+          "irq": "GIC IRQ 224 host interrupt (lid 0x60) & GIC IRQ 225 SDIO card interrupt (lid 0x7F)",
+          "dma": "SDMA (+0x00) and 32-bit ADMA2 (+0x58) via DmaMemory",
+          "connections": [],
+          "producerPcs": [
+            18826148
+          ],
+          "consumerPcs": [
+            18826148
+          ],
+          "evidence": [
+            "firmware-data/gfx100s/2.13/decoded/section4.bin",
+            "components/soc-sdio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/sdio/SocSdioFactory.kt"
+          ],
+          "tests": [
+            "components/soc-sdio/src/test/kotlin/com/github/nyabanban/fuji/emulator/components/sdio/SocSdioFactoryTest.kt"
+          ],
+          "provenance": {
+            "address": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "width": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "name": {
+              "confidence": "DAT",
+              "evidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ]
+            },
+            "initial": {
+              "confidence": "HYPOTHESIS",
+              "evidence": []
+            },
+            "behavior": {
+              "confidence": "SIM_UNDER_HYPOTHESIS",
+              "evidence": [
+                "components/soc-sdio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/sdio/SocSdioFactory.kt"
+              ]
+            }
+          },
+          "fields": [
+            {
+              "id": "reg.soc-sdio.sdhci.regs.raw",
+              "bitOffset": 0,
+              "bitWidth": 32,
+              "type": "unsigned",
+              "signed": false,
+              "unit": "raw bits",
+              "enums": {},
+              "access": "inherits-register",
+              "sideEffects": "behaviorId",
+              "definition": "Standard SDHCI v3.00 register bank (0x00..0xFF)",
+              "initial": {
+                "value": null,
+                "source": "HYPOTHESIS"
+              },
+              "provenance": {
+                "definition": {
+                  "confidence": "DAT",
+                  "evidence": [
+                    "firmware-data/gfx100s/2.13/decoded/section4.bin"
+                  ]
+                },
+                "initial": {
+                  "confidence": "HYPOTHESIS",
+                  "evidence": []
+                },
+                "behavior": {
+                  "confidence": "SIM_UNDER_HYPOTHESIS",
+                  "evidence": [
+                    "components/soc-sdio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/sdio/SocSdioFactory.kt"
+                  ]
+                }
+              },
+              "supportingEvidence": [
+                "firmware-data/gfx100s/2.13/decoded/section4.bin"
+              ],
+              "refutingEvidence": [],
+              "unknowns": [
+                "Vendor PHY registers above +0x100 if any remain unmodeled until observed."
+              ],
+              "nextValidation": "Observe live Wi-Fi SDIO bring-up on GXUP0004.DAT."
+            }
+          ],
+          "unknowns": [
+            "Timing delays are synchronous deterministic approximations."
+          ],
+          "nextValidation": "Verify live dhd_threadx SDIO enumeration and firmware download on GXUP0004.DAT."
+        }
+      ],
+      "unknownCoverage": "Standard SDHCI v3.00 0x00..0xFF register bank; vendor PHY registers above 0xFF remain unmodeled.",
+      "implementationSources": [
+        "components/soc-sdio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/sdio/SocSdioFactory.kt"
+      ]
+    }
+  ],
+  "unknowns": [
+    "Only standard SDHCI v3.00 0x00..0xFF bank at 0xFFFCC000 is mapped."
+  ],
+  "nextValidation": "Verify live Wi-Fi bring-up on GXUP0004.DAT."
+}

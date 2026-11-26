@@ -1,0 +1,296 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "schema",
+    "id",
+    "componentId",
+    "depends",
+    "version",
+    "name",
+    "physicalIdentity",
+    "implementationStatus",
+    "implementationSources",
+    "ports",
+    "unknowns",
+    "nextValidation"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "type": "integer",
+      "enum": [
+        1
+      ]
+    },
+    "id": {
+      "type": "string"
+    },
+    "componentId": {
+      "type": "string"
+    },
+    "depends": {
+      "description": "Direct component IDs required across all profiles. Use [] for standalone devices, host-provided services or profile-specific peer ports.",
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._:/-]*$"
+      }
+    },
+    "version": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "physicalIdentity": {
+      "type": "string"
+    },
+    "implementationStatus": {
+      "type": "string"
+    },
+    "implementationSources": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "ports": {
+      "type": "array",
+      "items": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "required": [
+          "id",
+          "size",
+          "kind",
+          "byteOrder",
+          "backing",
+          "registers",
+          "unknownCoverage",
+          "implementationSources"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "size": {
+            "type": "integer"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "MMIO",
+              "FLASH_APERTURE",
+              "CANDIDATE"
+            ]
+          },
+          "byteOrder": {
+            "type": "string"
+          },
+          "backing": {
+            "type": "object"
+          },
+          "registers": {
+            "type": "array"
+          },
+          "unknownCoverage": {
+            "type": "string"
+          },
+          "implementationSources": {
+            "type": "array"
+          }
+        }
+      }
+    },
+    "unknowns": {
+      "type": "array"
+    },
+    "nextValidation": {
+      "type": "string"
+    },
+    "profiles": {
+      "description": "Optional finite profile IDs exported by the real component profile setting. Register overrides must reference this owning-device list; component loading verifies it against actual factory choices.",
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._:/-]*$"
+      }
+    },
+    "logicalSpaces": {
+      "type": "array",
+      "maxItems": 16,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "portId",
+          "coordinateKind",
+          "selectorBits",
+          "wordBits",
+          "unit",
+          "byteOrder",
+          "unknownPolicy",
+          "registers",
+          "provenance",
+          "unknowns",
+          "nextValidation"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "portId": {
+            "type": "string"
+          },
+          "coordinateKind": {
+            "type": "string",
+            "enum": [
+              "PROTOCOL_SELECTOR"
+            ]
+          },
+          "selectorBits": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 16
+          },
+          "wordBits": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 32
+          },
+          "unit": {
+            "type": "string",
+            "enum": [
+              "selector"
+            ]
+          },
+          "byteOrder": {
+            "type": "string",
+            "enum": [
+              "big",
+              "little"
+            ]
+          },
+          "unknownPolicy": {
+            "type": "string",
+            "enum": [
+              "refuse"
+            ]
+          },
+          "registers": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 65536
+          },
+          "provenance": {
+            "type": "object"
+          },
+          "unknowns": {
+            "type": "array"
+          },
+          "nextValidation": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "protocolCandidates": {
+      "description": "Unassigned protocol request evidence only; excluded from component contracts and executable logical bindings.",
+      "type": "array",
+      "maxItems": 16,
+      "items": {
+        "type": "object"
+      }
+    },
+    "powerButtonBinding": {
+      "type": "object",
+      "required": [
+        "profile",
+        "buttonKey",
+        "coordinateKind",
+        "selector",
+        "bit",
+        "activeLow",
+        "confidence",
+        "sampling",
+        "applicability",
+        "evidence",
+        "unknowns"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "profile": {
+          "type": "string",
+          "enum": [
+            "gfx100s-2.13-power-switch-v1"
+          ]
+        },
+        "buttonKey": {
+          "type": "string",
+          "enum": [
+            "power"
+          ]
+        },
+        "coordinateKind": {
+          "type": "string",
+          "enum": [
+            "PROTOCOL_SELECTOR"
+          ]
+        },
+        "selector": {
+          "type": "integer"
+        },
+        "bit": {
+          "type": "integer"
+        },
+        "activeLow": {
+          "type": "boolean"
+        },
+        "confidence": {
+          "type": "string",
+          "enum": [
+            "SOURCE"
+          ]
+        },
+        "sampling": {
+          "type": "string"
+        },
+        "applicability": {
+          "type": "object",
+          "required": [
+            "body",
+            "firmware"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "body": {
+              "type": "string"
+            },
+            "firmware": {
+              "type": "string"
+            }
+          }
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "unknowns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

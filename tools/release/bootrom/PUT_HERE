@@ -1,0 +1,22 @@
+# GFX100S 32 KiB SPX4 Mask BootROM Directory / 32 KiB SPX4 掩膜 BootROM 目录
+
+Place the optional 32 KiB SPX4 mask BootROM image (`boot-rom.bin`) in this folder.
+请将可选的 32 KiB SPX4 掩膜 BootROM 镜像文件（`boot-rom.bin`）放置在本目录中。
+
+- **Expected filename / 文件名**: `boot-rom.bin`
+- **Expected size / 精确大小**: `32,768` bytes (`32 KiB`)
+- **Expected SHA-256 / 校验和**: `2a8b69986dd3fad0b73808c44e0834fa95c7b4e4f84e6c8664d4b0a82f7b24a4`
+
+## Boot Behavior / 启动模式说明
+
+- **Default (recommended)**: the emulator boots via verified **Flash-Direct** (`PC=0x0` reading `boot.bin` from `flash/nor-flash.bin[0x20000..0x3FFFF]`), whether or not `bootrom/boot-rom.bin` is present.
+  **默认（推荐）**：无论是否存在 `bootrom/boot-rom.bin`，模拟器均通过已验证的 **Flash-Direct** 模式（`PC=0x0` 从 `flash/nor-flash.bin[0x20000..0x3FFFF]` 加载 `boot.bin`）启动。
+- **Experimental opt-in full BootROM cold boot**: set `bootRomBoot: true` in `configs/emulator.yaml` or launch with `--boot-rom` to execute the real-silicon path from `PC=0xFFF00000` (BootROM → Stage-1 IPL → Stage-2 XIP → `flash/nor-flash.bin`). Known gap: rebooting after powering off mid-OOBE can stall under this path.
+  **实验性完整 BootROM 冷启（需显式开启）**：在 `configs/emulator.yaml` 中设置 `bootRomBoot: true`，或使用 `--boot-rom` 启动参数，即从 `PC=0xFFF00000` 执行真机路径（BootROM → Stage-1 IPL → Stage-2 XIP → `flash/nor-flash.bin`）。已知问题：在 OOBE 中途关机后再次以该模式启动可能卡死。
+- **Opted in but `bootrom/boot-rom.bin` missing**: the emulator does NOT fail — it logs `WARN [FALLBACK][bootrom]` and boots via Flash-Direct.
+  **已开启但缺失 `bootrom/boot-rom.bin` 时**：不会启动失败，而是记录显式 `WARN [FALLBACK][bootrom]` 日志并回退至 Flash-Direct 模式启动。
+
+## Privacy Reminder / 隐私提示
+
+- `boot-rom.bin` is a mask ROM identical across GFX100S units, whereas raw full NOR dumps contain personal `bank-14` serial/MAC/calibration data — **never share personal `bank-14` dumps**.
+- `boot-rom.bin` 为同型号通用的芯片掩膜 ROM；但如果您从个人相机导出完整 NOR Flash，请务必注意 **切勿公开分享包含个人序列号与 MAC 地址的 `bank-14` 区域**。
