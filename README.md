@@ -32,13 +32,13 @@
 
 ## *The Joy of Medium Format — 写真機としての歓び*
 
-There is a quiet audacity in what Fujifilm built with the GFX system. For decades, medium format belonged almost exclusively to tethered studio stands and deliberate, unhurried tripods. Fujifilm took a 43.8 × 32.9 mm sensor — over 1.7× the area of full-frame — and put it inside a weather-sealed body you can carry into rain, mountain wind, and crowded streets. More than the numbers, they kept faith with how a camera *feels* in the hand: physical dials that click with mechanical certainty, aperture rings with real detents, a two-stage shutter release that asks you to pause and breathe, and nearly ninety years of color memory distilled into PROVIA, Velvia, ASTIA, Classic Chrome, ACROS, and ETERNA — where light feels remembered rather than merely recorded.
+It is hard to say exactly when it began, but mention Fujifilm and what comes to mind first is rarely a cold spec sheet — it is a faintly grainy kind of nostalgia: afternoon dust drifting through venetian blinds, cool reflections along a rain-washed curb, or an old print pulled from the back of a drawer with softly warmed edges. That is also where the quiet spell of the GFX system lives. On one side sits the seemingly bottomless depth of a 102-megapixel medium-format sensor, generous enough to hold the faintest breath between shadow and highlight; on the other, an unhurried, old-world restraint that never rushes you to fire a burst, simply waiting until you look up and the right light settles. Even more than the numbers, it keeps faith with how a camera *feels* in the hand: physical dials that click with mechanical certainty, aperture rings with real detents, a two-stage shutter release that asks you to pause and breathe, and nearly ninety years of color memory distilled into PROVIA, Velvia, ASTIA, Classic Chrome, ACROS, and ETERNA — where light feels remembered rather than merely recorded.
 
-This project exists because we love that craft:
+This emulator grew out of that quiet fondness, tucked away in code:
 
-- **We wholeheartedly wish everyone could own a real Fujifilm camera.** Nothing rendered on a monitor can ever replace cold magnesium alloy against your palm, the damped resistance of a GF lens ring, or real glass gathering real photons.
-- **For students, dreamers, and photographers whose budget isn't quite there yet**, we hope this emulator gives you a window into Fujifilm's medium-format ergonomics, menu philosophy, and optical character on your own desk until the day you pick up the real thing.
-- **And for existing GFX100S / GFX owners**, we hope it serves as a playful, risk-free sandbox to explore how your camera thinks, test lighting and focal lengths, and discover new creative possibilities in the instrument you already hold.
+- **Every love of light deserves, sooner or later, to rest in the hands of a real Fujifilm camera.** Nothing rendered on a monitor can ever replace cool magnesium alloy against the palm, the damped click of a GF aperture ring, or real glass gathering real photons.
+- **Until the day the real body arrives, a desktop window can open a little earlier.** Even while a budget is still on the way, the ergonomics, menu rhythm, and optical character of Fujifilm medium format can already live quietly at arm's reach.
+- **For an existing GFX100S or GFX body, this space offers a calm, risk-free workbench.** With nothing physical on the line, following the shutter and dials inward can reveal unexpected possibilities hidden inside the instrument already on the shelf.
 
 ---
 
