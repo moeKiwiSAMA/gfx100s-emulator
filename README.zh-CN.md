@@ -2,7 +2,7 @@
 
 # FUJIFILM GFX100S Emulator
 
-*◈ MEDIUM FORMAT SYSTEM EMULATOR · 富士フイルム GFX100S エミュレータ ◈*
+*MEDIUM FORMAT SYSTEM EMULATOR · 富士フイルム GFX100S エミュレータ*
 
 [English](README.md) · **简体中文** · [日本語](README.ja.md)
 
@@ -11,7 +11,7 @@
 ![Firmware: GFX100S v2.13](https://img.shields.io/badge/Firmware-GFX100S%20v2.13-black)
 ![Zero Proprietary Binaries](https://img.shields.io/badge/Binaries-Zero%20Proprietary%20Included-success)
 
-*✦ AArch32 4 核 SMP Dynarmic JIT · Vulkan 1.1 计算光学 · 六面实体相机工作台 ✦*
+*AArch32 4 核 SMP Dynarmic JIT · Vulkan 1.1 计算光学 · 六面实体相机工作台*
 
 </div>
 
@@ -28,9 +28,9 @@
 
 ---
 
-> **✦ 关于第一版的小说明：** 这是项目的**第一个公开发布版本**——里头还藏着大大小小不少 Bug 和毛边，但拧拨盘、换镜头、按快门听着那一声咔嚓已经足够好玩了，实在忍不住想早点放出来和大家一起折腾。如果遇到奇怪的现象或崩溃，欢迎带上日志来提 Issue！
+> **关于第一版的小说明：** 这是项目的**第一个公开发布版本**——里头还藏着大大小小不少 Bug 和毛边，但拧拨盘、换镜头、按快门听着那一声咔嚓已经足够好玩了，实在忍不住想早点放出来和大家一起折腾。如果遇到奇怪的现象或崩溃，欢迎带上日志来提 Issue！
 
-## ✦ *致富士胶片 — 写真機としての歓び*
+## *致富士胶片 — 写真機としての歓び*
 
 说不清是从什么时候开始的，提起富士胶片，脑海里先浮出来的往往不是冰冷的规格表，而是某种略带颗粒感的旧时光——<br>
 午后透过百叶窗斜落下来的微尘、雨停后潮湿街角泛起的冷调反光，或是抽屉深处翻出来、边缘已经微微发黄的相纸。
@@ -45,13 +45,13 @@ GFX 的迷人之处也正在这里：<br>
 
 这个模拟器的诞生，只是把那份偏爱悄悄留在了代码里：
 
-- ◇ **每一份对光影的偏爱，都值得最终落在一台真正的富士相机上。** 屏幕里算出的像素再精细，也终究替不了掌心微凉的镁合金质感、GF 镜头光圈环细腻的段落阻尼，以及真实玻璃汇聚真实光线的那一刻。
-- ◇ **在真正捧起真机之前，这片桌面便是一扇先一步推开的窗。** 哪怕预算尚在路上，GFX 中画幅的操作逻辑、菜单节奏与光学性格，也可以先在手边慢慢熟悉起来。
-- ◇ **而对已经握有 GFX 的人来说，这里是一块安静又安全的试验田。** 不必担心折腾坏机身，顺着快门与拨盘往里看，也许就能撞见手头那台相机未曾展露过的另一面。
+- **每一份对光影的偏爱，都值得最终落在一台真正的富士相机上。** 屏幕里算出的像素再精细，也终究替不了掌心微凉的镁合金质感、GF 镜头光圈环细腻的段落阻尼，以及真实玻璃汇聚真实光线的那一刻。
+- **在真正捧起真机之前，这片桌面便是一扇先一步推开的窗。** 哪怕预算尚在路上，GFX 中画幅的操作逻辑、菜单节奏与光学性格，也可以先在手边慢慢熟悉起来。
+- **而对已经握有 GFX 的人来说，这里是一块安静又安全的试验田。** 不必担心折腾坏机身，顺着快门与拨盘往里看，也许就能撞见手头那台相机未曾展露过的另一面。
 
 ---
 
-## ◈ 平台与硬件要求 · *Platform*
+## 平台与硬件要求
 
 本模拟器高度依赖针对 `x86_64` 架构手调的 JIT 动态编译与 SIMD 图像桥接库，下载前请确认您的主机环境：
 
@@ -64,7 +64,7 @@ GFX 的迷人之处也正在这里：<br>
 
 ---
 
-## ◈ 核心特性一览 · *What's Inside*
+## 核心特性一览
 
 - **无修改运行 GFX100S v2.13 原厂固件**：在 4 核 SMP ARMv7-A + NEON/VFPv4 **Dynarmic JIT**（`cpuEngine: dynarmic`）上直接启动富士官方 GFX100S v2.13 固件（`0` 固件二进制补丁）；完整建模 64 MiB QSPI NOR Flash（`MT25QU512ABB` 扇区擦除与页编程语义）、Sub-MCU 纽扣电池 NVRAM、1.02 亿像素静态拍摄（内置零外部依赖的多线程 C 语言 JPEG 编码器、`LSRAW` 无损/压缩 RAW、4 亿像素位移多重拍摄及机内 RAW 冲印），以及 1080p H.264/HEVC `.MOV` 录制与回放。
 - **六面实体相机工作台与 Theme System v2**：可交互的机背、机顶、正面、左右侧面接口盖板与双 SD 卡/电池仓门；机顶肩屏 Sub-LCD；无边框置顶**悬浮 EVF 取景器**；可旋转**模式拨盘（`P/S/A/M/C1..C6`）**、**`S/C/M` 对焦拨杆**与**两段式 `S1`/`S2` 快门**；内置 4 套机身主题（**GFX100S**、**Hasselblad X2D II 100C**、**Hasselblad 907X & CFV 100C**、**紧凑旁轴 Compact Rangefinder**）、5 套 UI 界面主题，以及即时切换的 6 国语言界面（`en`、`zh_CN`、`ja_JP`、`de_DE`、`fr_FR`、`es_ES`）。
@@ -72,9 +72,9 @@ GFX 的迷人之处也正在这里：<br>
 
 ---
 
-## ◈ 快速上手 · *Quick Start*
+## 快速上手
 
-### ▸ 方式一 — 一键下载便携版（推荐所有人使用，无需安装 Java）
+### 方式一 — 一键下载便携版（推荐所有人使用，无需安装 Java）
 
 每个便携发行包均已内置精简版 **JDK 25（`jlink`）运行时**及全套 `x86_64` 原生动态库。您**无需**手动安装 Java、CMake 或任何编译器。
 
@@ -88,7 +88,7 @@ GFX 的迷人之处也正在这里：<br>
 4. **首次启动导入固件**：
    - 若 `flash/nor-flash.bin` 尚未初始化，模拟器会弹出友好的**固件设置向导**，直接选择下载好的 `GXUP0004.DAT` 即可（也可通过顶部菜单 **Flash → Flash Firmware (.DAT)...**，或命令行传入 `--flash-dat <GXUP0004.DAT路径>`）。程序会自动生成 64 MiB 的 `flash/nor-flash.bin` 并直接引导进入 GFX100S 首次开机语言与时钟设置界面。
 
-### ▸ 方式二 — 从源码构建（面向开发者与 Mod 作者）
+### 方式二 — 从源码构建（面向开发者与 Mod 作者）
 
 前置环境：**Git**、**Java 17+**（仅用于引导；`sh jvm.sh setup-jvm` 会自动拉取 **JDK 25**，也可自行配置 `JAVA_HOME` 指向 JDK 25），以及 **C/C++20 + CMake + Ninja** 工具链（Linux 使用 `gcc`/`g++`；Windows 使用 MSYS2 MinGW-w64，或使用 `x86_64-w64-mingw32-g++` 交叉编译）。
 
@@ -120,9 +120,9 @@ sh jvm.sh launch
 ---
 
 <a id="firmware"></a>
-## ◈ 固件准备与可选真机转储 · *Firmware*
+## 固件准备与可选真机转储
 
-### ▸ 必需 — 富士官方 GFX100S Ver. 2.13 固件（`GXUP0004.DAT`）
+### 必需 — 富士官方 GFX100S Ver. 2.13 固件（`GXUP0004.DAT`）
 
 1. 前往富士胶片官方支持页面下载 **`GXUP0004.DAT`**：
    <https://www.fujifilm-x.com/global/support/download/firmware/cameras/gfx100s/>
@@ -136,7 +136,7 @@ sh jvm.sh launch
    - **Windows**：`.\fuji-emulator-gfx100s.exe --flash-dat path\to\GXUP0004.DAT`
    - **Linux**：`./start-gfx100s.sh --flash-dat /path/to/GXUP0004.DAT`
 
-### ▸ 可选 — 真机 `bootrom` 与 `flash` 转储（还原完整芯片冷启动）
+### 可选 — 真机 `bootrom` 与 `flash` 转储（还原完整芯片冷启动）
 
 默认情况下，模拟器仅需官方 `GXUP0004.DAT` 即可通过 **Flash-Direct** 模式正常启动——**真机转储完全不是必需项**。
 
@@ -149,7 +149,7 @@ sh jvm.sh launch
 
 ---
 
-## ◈ 文档、扩展开发与 AI Skills 中心 · *Docs & Skills*
+## 文档、扩展开发与 AI Skills 中心
 
 | 文档 | 语言 | 内容概要 |
 |---|---|---|
@@ -158,7 +158,7 @@ sh jvm.sh launch
 | **扩展与 Mod 开发指南** | [EN](docs/extending/EXTENDING.md) · [中文](docs/extending/EXTENDING.zh-CN.md) · [日本語](docs/extending/EXTENDING.ja.md) | 自定义镜头 JAR、滤镜 / `.spv` 着色器、Theme v2、非目标与 6 语 i18n |
 | **HTTP 控制与遥测 API** | [EN](docs/api/HTTP_API.md) · [中文](docs/api/HTTP_API.zh-CN.md) · [日本語](docs/api/HTTP_API.ja.md) | 本地 `127.0.0.1:8787` REST 自动化与 Python/`curl` 脚本示例 |
 
-### ▸ 面向 AI 编程助手的公开 Skills（`skills/`）
+### 面向 AI 编程助手的公开 Skills（`skills/`）
 
 专为 Claude Code、Gemini CLI / Antigravity、Codex、Cursor 等 AI 编程代理准备的 `SKILL.md` 规范文件：
 
@@ -168,7 +168,7 @@ sh jvm.sh launch
 
 ---
 
-## ◈ 提交 Issue 与日志位置 · *Issues & Logs*
+## 提交 Issue 与日志位置
 
 欢迎在 [**GitHub Issues**](https://github.com/moeKiwiSAMA/gfx100s-emulator/issues) 提交缺陷报告或硬件行为对比反馈。提单时请务必附上纯 UTF-8 调试日志（`DEBUG` 级别，按每次运行自动轮转归档）：
 
@@ -180,17 +180,17 @@ sh jvm.sh launch
 
 ---
 
-## ◈ 开源协议与诚挚的非商业请求 · *License*
+## 开源协议与诚挚的非商业请求
 
 本项目采用 [**MIT 协议**](LICENSE) 开源（`Copyright (c) 2026 moeKiwiSAMA`）。第三方开源组件声明（含 `0BSD` 协议的 Dynarmic、`LGPL-2.1+` 协议的独立 FFmpeg 回放二进制及配套源码包、`GPLv2+CE` 协议的 OpenJDK/OpenJFX 25 等）详见 [`THIRD_PARTY_LICENSES.md`](THIRD_PARTY_LICENSES.md)。
 
 虽然 MIT 协议在法律上允许广泛的再分发与使用，但**强烈不建议将本模拟器用于任何商业用途、付费打包或商业化变现**。
 
-> **✦ 如果有拿它去做商业化的预算，不妨把这笔钱留给一台真正的富士相机。**
+> **如果有拿它去做商业化的预算，不妨把这笔钱留给一台真正的富士相机。**
 
 ---
 
-## ◈ 致谢 · *Acknowledgments*
+## 致谢
 
 1. **FUJIFILM Corporation（富士胶片）** — 感谢你们造出了如此非凡的 **GFX100S**、GF 光学系统，以及启发了本项目每一行代码的摄影工艺与色彩科学。
 2. [**fujimod**](https://github.com/justjake/fujimod)（[fujimod.com](https://fujimod.com)）与 [**FujiHack**](https://github.com/fujihack/fujihack) 社区 — 感谢你们在富士相机开放研究领域的开拓性工作与宝贵的架构参考资料。

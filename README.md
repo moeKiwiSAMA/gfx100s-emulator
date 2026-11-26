@@ -2,7 +2,7 @@
 
 # FUJIFILM GFX100S Emulator
 
-*◈ MEDIUM FORMAT SYSTEM EMULATOR · 富士フイルム GFX100S エミュレータ ◈*
+*MEDIUM FORMAT SYSTEM EMULATOR · 富士フイルム GFX100S エミュレータ*
 
 **English** · [简体中文](README.zh-CN.md) · [日本語](README.ja.md)
 
@@ -11,7 +11,7 @@
 ![Firmware: GFX100S v2.13](https://img.shields.io/badge/Firmware-GFX100S%20v2.13-black)
 ![Zero Proprietary Binaries](https://img.shields.io/badge/Binaries-Zero%20Proprietary%20Included-success)
 
-*✦ AArch32 4-Core SMP Dynarmic JIT · Vulkan 1.1 Computational Optics · Six-Face Tactile Camera Studio ✦*
+*AArch32 4-Core SMP Dynarmic JIT · Vulkan 1.1 Computational Optics · Six-Face Tactile Camera Studio*
 
 </div>
 
@@ -28,9 +28,9 @@
 
 ---
 
-> **✦ A quick note on this first release:** This is the **very first public version** — there are still plenty of rough edges and bugs, big and small, hiding under the hood. Even so, spinning the dials, swapping lenses, and hearing that shutter click already feels far too fun to keep sitting on a hard drive, so here it is early. If something breaks or behaves strangely, feel free to open an issue with your logs!
+> **A quick note on this first release:** This is the **very first public version** — there are still plenty of rough edges and bugs, big and small, hiding under the hood. Even so, spinning the dials, swapping lenses, and hearing that shutter click already feels far too fun to keep sitting on a hard drive, so here it is early. If something breaks or behaves strangely, feel free to open an issue with your logs!
 
-## ✦ *The Joy of Medium Format — 写真機としての歓び*
+## *The Joy of Medium Format — 写真機としての歓び*
 
 It is hard to say exactly when it began, but mention Fujifilm and what comes to mind first is rarely a cold spec sheet — it is a faintly grainy kind of nostalgia:<br>
 afternoon dust drifting through venetian blinds, cool reflections along a rain-washed curb, or an old print pulled from the back of a drawer with softly warmed edges.
@@ -45,13 +45,13 @@ where light feels remembered rather than merely recorded.
 
 This emulator grew out of that quiet fondness, tucked away in code:
 
-- ◇ **Every love of light deserves, sooner or later, to rest in the hands of a real Fujifilm camera.** Nothing rendered on a monitor can ever replace cool magnesium alloy against the palm, the damped click of a GF aperture ring, or real glass gathering real photons.
-- ◇ **Until the day the real body arrives, a desktop window can open a little earlier.** Even while a budget is still on the way, the ergonomics, menu rhythm, and optical character of Fujifilm medium format can already live quietly at arm's reach.
-- ◇ **For an existing GFX100S or GFX body, this space offers a calm, risk-free workbench.** With nothing physical on the line, following the shutter and dials inward can reveal unexpected possibilities hidden inside the instrument already on the shelf.
+- **Every love of light deserves, sooner or later, to rest in the hands of a real Fujifilm camera.** Nothing rendered on a monitor can ever replace cool magnesium alloy against the palm, the damped click of a GF aperture ring, or real glass gathering real photons.
+- **Until the day the real body arrives, a desktop window can open a little earlier.** Even while a budget is still on the way, the ergonomics, menu rhythm, and optical character of Fujifilm medium format can already live quietly at arm's reach.
+- **For an existing GFX100S or GFX body, this space offers a calm, risk-free workbench.** With nothing physical on the line, following the shutter and dials inward can reveal unexpected possibilities hidden inside the instrument already on the shelf.
 
 ---
 
-## ◈ Platform & Hardware Requirements · *動作環境*
+## Platform & Hardware Requirements
 
 This emulator relies on hand-tuned `x86_64` JIT code generation and SIMD imaging bridges. Please check your host machine before downloading:
 
@@ -64,7 +64,7 @@ This emulator relies on hand-tuned `x86_64` JIT code generation and SIMD imaging
 
 ---
 
-## ◈ What's Inside · *システム構成*
+## What's Inside
 
 - **Unmodified GFX100S v2.13 Firmware Execution**: Boots stock Fujifilm GFX100S v2.13 firmware (`0` firmware binary patches) on a 4-core SMP ARMv7-A + NEON/VFPv4 **Dynarmic JIT** (`cpuEngine: dynarmic`), modeling 64 MiB QSPI NOR Flash (`MT25QU512ABB` sector erase & page-program semantics), Sub-MCU coin-cell NVRAM, 102MP still capture (zero-dependency multi-threaded C JPEG encoder, `LSRAW` lossless/compressed RAW, 400MP Pixel Shift, and in-camera RAW conversion), plus 1080p H.264/HEVC `.MOV` recording and playback.
 - **Six-Face Tactile Camera Studio & Theme System v2**: Interactive Rear, Top, Front, Left/Right Side port covers, and Dual SD / Battery doors; shoulder Sub-LCD; borderless always-on-top **Floating EVF**; rotating **Mode Dial (`P/S/A/M/C1..C6`)**, **`S/C/M` Focus Lever**, and two-stage **`S1`/`S2` Shutter**; 4 built-in Body Themes (**GFX100S**, **Hasselblad X2D II 100C**, **Hasselblad 907X & CFV 100C**, **Compact Rangefinder**), 5 UI CSS themes, and instant 6-language switching (`en`, `zh_CN`, `ja_JP`, `de_DE`, `fr_FR`, `es_ES`).
@@ -72,9 +72,9 @@ This emulator relies on hand-tuned `x86_64` JIT code generation and SIMD imaging
 
 ---
 
-## ◈ Quick Start · *クイックスタート*
+## Quick Start
 
-### ▸ Option A — 1-Click Portable Download (Recommended — No Java Required)
+### Option A — 1-Click Portable Download (Recommended — No Java Required)
 
 Every portable bundle ships with a trimmed **JDK 25 (`jlink`) runtime** and all prebuilt `x86_64` native libraries. You do **not** need to install Java, CMake, or any compiler.
 
@@ -88,7 +88,7 @@ Every portable bundle ships with a trimmed **JDK 25 (`jlink`) runtime** and all 
 4. **Install Firmware on First Launch**:
    - If `flash/nor-flash.bin` has not been initialized yet, the emulator opens a **Firmware Setup** dialog where you can point it to your downloaded `GXUP0004.DAT` (or use **Flash → Flash Firmware (.DAT)...**, or pass `--flash-dat <path/to/GXUP0004.DAT>`). It writes the 64 MiB `flash/nor-flash.bin` image and boots straight into the GFX100S first-time language and clock setup.
 
-### ▸ Option B — Building from Source (Developers & Modders)
+### Option B — Building from Source (Developers & Modders)
 
 Prerequisites: **Git**, **Java 17+** (for bootstrap; `sh jvm.sh setup-jvm` fetches **JDK 25** automatically, or point `JAVA_HOME` at an existing JDK 25), and a **C/C++20 + CMake + Ninja** toolchain (`gcc`/`g++` on Linux; MSYS2 MinGW-w64 on Windows or `x86_64-w64-mingw32-g++` for cross-builds).
 
@@ -120,9 +120,9 @@ sh jvm.sh launch
 ---
 
 <a id="firmware"></a>
-## ◈ Firmware & Optional Hardware Dumps · *ファームウェア*
+## Firmware & Optional Hardware Dumps
 
-### ▸ Required — Official Fujifilm GFX100S Firmware Ver. 2.13 (`GXUP0004.DAT`)
+### Required — Official Fujifilm GFX100S Firmware Ver. 2.13 (`GXUP0004.DAT`)
 
 1. Download **`GXUP0004.DAT`** directly from Fujifilm's official support page:
    <https://www.fujifilm-x.com/global/support/download/firmware/cameras/gfx100s/>
@@ -136,7 +136,7 @@ sh jvm.sh launch
    - **Windows**: `.\fuji-emulator-gfx100s.exe --flash-dat path\to\GXUP0004.DAT`
    - **Linux**: `./start-gfx100s.sh --flash-dat /path/to/GXUP0004.DAT`
 
-### ▸ Optional — Real-Hardware `bootrom` & `flash` Dumps (Full Silicon Cold-Boot)
+### Optional — Real-Hardware `bootrom` & `flash` Dumps (Full Silicon Cold-Boot)
 
 By default, the emulator boots cleanly via **Flash-Direct** using only official `GXUP0004.DAT` — **hardware dumps are completely optional**.
 
@@ -149,7 +149,7 @@ Full step-by-step instructions: **[`docs/FIRMWARE.md`](docs/FIRMWARE.md)**
 
 ---
 
-## ◈ Documentation, Modding & AI Skills · *ドキュメント*
+## Documentation, Modding & AI Skills
 
 | Guide | Languages | What It Covers |
 |---|---|---|
@@ -158,7 +158,7 @@ Full step-by-step instructions: **[`docs/FIRMWARE.md`](docs/FIRMWARE.md)**
 | **Extending & Modding** | [EN](docs/extending/EXTENDING.md) · [中文](docs/extending/EXTENDING.zh-CN.md) · [日本語](docs/extending/EXTENDING.ja.md) | Custom Lens JARs, Filters / `.spv` shaders, Theme v2, non-goals & i18n |
 | **HTTP Control API** | [EN](docs/api/HTTP_API.md) · [中文](docs/api/HTTP_API.zh-CN.md) · [日本語](docs/api/HTTP_API.ja.md) | Local `127.0.0.1:8787` REST automation for shutter, dials, lenses & telemetry |
 
-### ▸ AI-Readable Public Skills (`skills/`)
+### AI-Readable Public Skills (`skills/`)
 
 Ready-to-use `SKILL.md` specifications for AI coding agents (Claude Code, Gemini CLI / Antigravity, Codex, Cursor):
 
@@ -168,7 +168,7 @@ Ready-to-use `SKILL.md` specifications for AI coding agents (Claude Code, Gemini
 
 ---
 
-## ◈ Reporting Issues & Attaching Logs · *不具合報告*
+## Reporting Issues & Attaching Logs
 
 Bug reports and hardware behavior observations are welcome on [**GitHub Issues**](https://github.com/moeKiwiSAMA/gfx100s-emulator/issues). Please attach the plain UTF-8 debug log (`DEBUG` threshold, rotated automatically per session) when opening an issue:
 
@@ -180,17 +180,17 @@ Never attach proprietary firmware binaries or personal camera serial/MAC dumps t
 
 ---
 
-## ◈ License & A Sincere Non-Commercial Plea · *ライセンス*
+## License & A Sincere Non-Commercial Plea
 
 Released under the [**MIT License**](LICENSE) (`Copyright (c) 2026 moeKiwiSAMA`). Third-party open-source notices — including `0BSD` Dynarmic, `LGPL-2.1+` standalone FFmpeg playback binary and companion source archive, and `GPLv2+CE` OpenJDK/OpenJFX 25 — are documented in [`THIRD_PARTY_LICENSES.md`](THIRD_PARTY_LICENSES.md).
 
 Even though the MIT License legally permits broad reuse, **commercial use, paid repackaging, or commercial exploitation of this emulator is strongly discouraged**.
 
-> **✦ If you have the budget to commercialize or monetize this project, please spend that money buying a real Fujifilm camera instead.**
+> **If you have the budget to commercialize or monetize this project, please spend that money buying a real Fujifilm camera instead.**
 
 ---
 
-## ◈ Acknowledgments · *謝辞*
+## Acknowledgments
 
 1. **FUJIFILM Corporation** — for creating the extraordinary **GFX100S**, the GF optical system, and generations of photographic craft and color science that inspired every line of this tribute.
 2. [**fujimod**](https://github.com/justjake/fujimod) ([fujimod.com](https://fujimod.com)) & the [**FujiHack**](https://github.com/fujihack/fujihack) community — for pioneering open Fujifilm camera research and sharing invaluable architectural references.
