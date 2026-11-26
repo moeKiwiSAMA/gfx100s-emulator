@@ -28,6 +28,8 @@
 
 ---
 
+> **A quick note on this first release:** This is the **very first public version** — there are still plenty of rough edges and bugs, big and small, hiding under the hood. Even so, spinning the dials, swapping lenses, and hearing that shutter click already feels far too fun to keep sitting on a hard drive, so here it is early. If something breaks or behaves strangely, feel free to open an issue with your logs!
+
 ## *The Joy of Medium Format — 写真機としての歓び*
 
 There is a quiet audacity in what Fujifilm built with the GFX system. For decades, medium format belonged almost exclusively to tethered studio stands and deliberate, unhurried tripods. Fujifilm took a 43.8 × 32.9 mm sensor — over 1.7× the area of full-frame — and put it inside a weather-sealed body you can carry into rain, mountain wind, and crowded streets. More than the numbers, they kept faith with how a camera *feels* in the hand: physical dials that click with mechanical certainty, aperture rings with real detents, a two-stage shutter release that asks you to pause and breathe, and nearly ninety years of color memory distilled into PROVIA, Velvia, ASTIA, Classic Chrome, ACROS, and ETERNA — where light feels remembered rather than merely recorded.
