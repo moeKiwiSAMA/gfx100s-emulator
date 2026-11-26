@@ -105,7 +105,12 @@ class InputBindingController(
 
     @Volatile var status: GamepadStatus = GamepadStatus(connected = false)
         private set
+    @Volatile var lastLt: Double = 0.0
+        private set
+    @Volatile var lastRt: Double = 0.0
+        private set
     private val statusListeners = ArrayList<(GamepadStatus) -> Unit>()
+    private val triggerListeners = ArrayList<(Double, Double) -> Unit>()
     var backendName: String = ""
         set(value) {
             field = value
@@ -117,6 +122,11 @@ class InputBindingController(
     fun addStatusListener(listener: (GamepadStatus) -> Unit): AutoCloseable {
         statusListeners += listener
         return AutoCloseable { statusListeners -= listener }
+    }
+
+    fun addTriggerListener(listener: (lt: Double, rt: Double) -> Unit): AutoCloseable {
+        triggerListeners += listener
+        return AutoCloseable { triggerListeners -= listener }
     }
 
     /** Applies [next]; held inputs whose action changed or was unbound are released first (no stuck buttons). */
@@ -133,7 +143,10 @@ class InputBindingController(
             if (!next.gamepadEnabled || next.actionForGamepad(input) != action) releasePadEntry(input, action)
         }
         config = next
-        if (!next.gamepadEnabled) publishStatus(status)
+        if (!next.gamepadEnabled) {
+            publishTriggerLevels(0.0, 0.0)
+            publishStatus(status)
+        }
     }
 
     // ---------------------------------------------------------------- keyboard
@@ -192,6 +205,9 @@ class InputBindingController(
             GamepadStatus(false, backend = backendName, devices = status.devices)
         }
         if (nextStatus != status) publishStatus(nextStatus)
+        val nextLt = if (frame.connected && config.gamepadEnabled) frame.lt else 0.0
+        val nextRt = if (frame.connected && config.gamepadEnabled) frame.rt else 0.0
+        publishTriggerLevels(nextLt, nextRt)
         val next = if (frame.connected) activeInputs(frame) else emptySet()
         if (isCapturing) {
             captureFromPad(next)
@@ -249,19 +265,22 @@ class InputBindingController(
         axis(frame.lx, GamepadInput.LS_RIGHT, GamepadInput.LS_LEFT)
         axis(frame.ry, GamepadInput.RS_UP, GamepadInput.RS_DOWN)
         axis(frame.rx, GamepadInput.RS_RIGHT, GamepadInput.RS_LEFT)
-        trigger(frame.lt, GamepadInput.LT_HALF, GamepadInput.LT_FULL, InputBindingConfig.LT_HALF_THRESHOLD, InputBindingConfig.LT_FULL_THRESHOLD, out)
-        trigger(frame.rt, GamepadInput.RT_HALF, GamepadInput.RT_FULL, InputBindingConfig.RT_HALF_THRESHOLD, InputBindingConfig.RT_FULL_THRESHOLD, out)
+        val fullAt = config.triggerFullThreshold
+        val ltHalfAt = minOf(InputBindingConfig.LT_HALF_THRESHOLD, fullAt - 0.10)
+        trigger(frame.lt, GamepadInput.LT_HALF, GamepadInput.LT_FULL, ltHalfAt, fullAt, out)
+        trigger(frame.rt, GamepadInput.RT_HALF, GamepadInput.RT_FULL, InputBindingConfig.RT_HALF_THRESHOLD, fullAt, out)
         return out
     }
 
     private fun trigger(value: Double, half: GamepadInput, full: GamepadInput, halfAt: Double, fullAt: Double, out: MutableSet<GamepadInput>) {
         fun stage(input: GamepadInput, threshold: Double): Boolean =
             value >= if (input in activePad) threshold - InputBindingConfig.TRIGGER_HYSTERESIS else threshold
-        if (config.twoStageTriggerEnabled || isCapturing) {
+        if (config.twoStageTriggerEnabled) {
             if (stage(half, halfAt)) out += half
             if (stage(full, fullAt)) out += full
         } else if (stage(half, halfAt)) {
-            // Single-stage: one pull past the half threshold presses both stages together (S1 + S2).
+            // Single-stage: one pull past the half threshold presses both stages together (S1 + S2)
+            // and resolves trigger capture directly to the full trigger (RT/LT) instead of RT ½ / LT ½.
             out += half
             out += full
         }
@@ -369,6 +388,13 @@ class InputBindingController(
     private fun publishStatus(next: GamepadStatus) {
         status = next
         statusListeners.toList().forEach { runCatching { it(next) } }
+    }
+
+    private fun publishTriggerLevels(lt: Double, rt: Double) {
+        if (lt == lastLt && rt == lastRt) return
+        lastLt = lt
+        lastRt = rt
+        triggerListeners.toList().forEach { runCatching { it(lt, rt) } }
     }
 
     companion object {

@@ -43,6 +43,7 @@ class InputBindingStore(val path: Path) {
             "gamepadEnabled" to config.gamepadEnabled,
             "stickDeadzone" to config.stickDeadzone,
             "twoStageTriggerEnabled" to config.twoStageTriggerEnabled,
+            "triggerFullThreshold" to config.triggerFullThreshold,
             "selectedGamepad" to config.selectedGamepad,
             "keyboard" to CameraInputAction.entries.mapNotNull { action ->
                 config.keyboardBindings[action]?.let { specs -> action.name to specs.map { it.encode() } }
@@ -63,6 +64,8 @@ class InputBindingStore(val path: Path) {
                 ?: defaults.stickDeadzone
             val twoStage = raw["twoStageTriggerEnabled"]?.let { require(it is Boolean) { "twoStageTriggerEnabled must be boolean" }; it }
                 ?: defaults.twoStageTriggerEnabled
+            val triggerFull = raw["triggerFullThreshold"]?.let { require(it is Number) { "triggerFullThreshold must be numeric" }; it.toDouble() }
+                ?: defaults.triggerFullThreshold
 
             fun section(name: String): Map<*, *>? = raw[name]?.let { value ->
                 require(value is Map<*, *>) { "$name must be a mapping" }
@@ -124,6 +127,11 @@ class InputBindingStore(val path: Path) {
             }
             val clampedDeadzone = deadzone.coerceIn(InputBindingConfig.MIN_STICK_DEADZONE, InputBindingConfig.MAX_STICK_DEADZONE)
             if (clampedDeadzone != deadzone) warn("Clamping stickDeadzone $deadzone to $clampedDeadzone")
+            val clampedTriggerFull = triggerFull.coerceIn(
+                InputBindingConfig.MIN_TRIGGER_FULL_THRESHOLD,
+                InputBindingConfig.MAX_TRIGGER_FULL_THRESHOLD,
+            )
+            if (clampedTriggerFull != triggerFull) warn("Clamping triggerFullThreshold $triggerFull to $clampedTriggerFull")
             val selected = when (val value = raw["selectedGamepad"]) {
                 null -> GamepadSelection.AUTO
                 is String -> runCatching { GamepadSelection.parse(value).encode() }.getOrElse {
@@ -139,6 +147,7 @@ class InputBindingStore(val path: Path) {
                 gamepadEnabled = gamepadEnabled,
                 stickDeadzone = clampedDeadzone,
                 twoStageTriggerEnabled = twoStage,
+                triggerFullThreshold = clampedTriggerFull,
                 keyboardBindings = keyboard,
                 gamepadBindings = gamepad,
                 selectedGamepad = selected,

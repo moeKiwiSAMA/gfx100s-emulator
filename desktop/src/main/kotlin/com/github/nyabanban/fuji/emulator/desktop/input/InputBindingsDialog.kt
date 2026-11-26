@@ -95,6 +95,31 @@ class InputBindingsDialog(
         id = "input-bindings-two-stage"
         textProperty().bind(I18n.bind("input.settings.two_stage"))
     }
+    private val triggerFull = Slider(
+        InputBindingConfig.MIN_TRIGGER_FULL_THRESHOLD,
+        InputBindingConfig.MAX_TRIGGER_FULL_THRESHOLD,
+        InputBindingConfig.DEFAULT_TRIGGER_FULL_THRESHOLD,
+    ).apply {
+        id = "input-bindings-trigger-full"
+        majorTickUnit = 0.10
+        minorTickCount = 1
+        isShowTickMarks = true
+        blockIncrement = 0.05
+        HBox.setHgrow(this, Priority.ALWAYS)
+        maxWidth = Double.MAX_VALUE
+    }
+    private val triggerFullValue = Label().apply {
+        id = "input-bindings-trigger-full-value"
+        styleClass += "studio-hint-text"
+        minWidth = 40.0
+    }
+    private val triggerLiveLabel = Label().apply {
+        id = "input-bindings-trigger-live"
+        styleClass += "studio-hint-text"
+        isWrapText = true
+        maxWidth = Double.MAX_VALUE
+    }
+    private var peakRt: Double = 0.0
     private val messageLabel = Label().apply {
         id = "input-bindings-message"
         styleClass += "input-binding-message"
@@ -110,6 +135,7 @@ class InputBindingsDialog(
     private var closed = false
 
     private val statusHandle: AutoCloseable
+    private val triggerHandle: AutoCloseable
     private val localeListener: ChangeListener<Locale>
 
     val isShowing: Boolean get() = stage.isShowing
@@ -129,6 +155,7 @@ class InputBindingsDialog(
         }
         deviceSelector.valueProperty().addListener { _, _, value ->
             if (syncing || value == null || value == controller.config.selectedGamepad) return@addListener
+            peakRt = 0.0
             apply(controller.config.copy(selectedGamepad = value))
             setMessage("input.message.device_selected") { arrayOf(deviceLabel(value)) }
         }
@@ -143,6 +170,17 @@ class InputBindingsDialog(
         deadzone.valueChangingProperty().addListener { _, _, changing ->
             if (!changing && !syncing) savePersisted(controller.config)
         }
+        triggerFull.valueProperty().addListener { _, _, value ->
+            if (syncing) return@addListener
+            val rounded = (value.toDouble() * 100.0).roundToInt() / 100.0
+            triggerFullValue.text = "${(rounded * 100.0).roundToInt()}%"
+            if (rounded != controller.config.triggerFullThreshold) {
+                apply(controller.config.copy(triggerFullThreshold = rounded), persistNow = !triggerFull.isValueChanging)
+            }
+        }
+        triggerFull.valueChangingProperty().addListener { _, _, changing ->
+            if (!changing && !syncing) savePersisted(controller.config)
+        }
 
         val settings = VBox(
             6.0,
@@ -154,6 +192,10 @@ class InputBindingsDialog(
                 alignment = Pos.CENTER_LEFT
             },
             twoStage,
+            HBox(8.0, Label().apply { textProperty().bind(I18n.bind("input.settings.trigger_full")) }, triggerFull, triggerFullValue).apply {
+                alignment = Pos.CENTER_LEFT
+            },
+            triggerLiveLabel,
             Label().apply {
                 id = "input-bindings-hint"
                 styleClass += "studio-hint-text"
@@ -220,7 +262,15 @@ class InputBindingsDialog(
         }
         stage.setOnHidden { cancelCapture() }
 
-        statusHandle = controller.addStatusListener { refreshStatus() }
+        statusHandle = controller.addStatusListener {
+            if (!controller.status.connected) peakRt = 0.0
+            refreshStatus()
+            refreshTriggerReadout()
+        }
+        triggerHandle = controller.addTriggerListener { _, rt ->
+            if (rt > peakRt) peakRt = rt
+            refreshTriggerReadout()
+        }
         localeListener = I18n.onLocaleChange { refreshAll() }
         refreshAll()
     }
@@ -396,16 +446,41 @@ class InputBindingsDialog(
             twoStage.isSelected = config.twoStageTriggerEnabled
             if (!deadzone.isValueChanging) deadzone.value = config.stickDeadzone
             deadzoneValue.text = String.format(Locale.ROOT, "%.2f", config.stickDeadzone)
+            if (!triggerFull.isValueChanging) triggerFull.value = config.triggerFullThreshold
+            triggerFullValue.text = "${(config.triggerFullThreshold * 100.0).roundToInt()}%"
             deadzone.isDisable = !config.gamepadEnabled
             twoStage.isDisable = !config.gamepadEnabled
+            triggerFull.isDisable = !config.gamepadEnabled || !config.twoStageTriggerEnabled
             deviceSelector.isDisable = !config.gamepadEnabled || !gamepadAvailable()
         } finally {
             syncing = false
         }
         refreshDevices()
         refreshStatus()
+        refreshTriggerReadout()
         refreshRows()
         refreshMessage()
+    }
+
+    private fun refreshTriggerReadout() {
+        if (closed) return
+        val config = controller.config
+        val active = gamepadAvailable() && config.gamepadEnabled && controller.status.connected
+        val lt = if (active) controller.lastLt else 0.0
+        val rt = if (active) controller.lastRt else 0.0
+        val peak = if (active) maxOf(peakRt, rt) else 0.0
+        val stageKey = when {
+            !active || rt < InputBindingConfig.RT_HALF_THRESHOLD -> "input.trigger.stage.idle"
+            !config.twoStageTriggerEnabled || rt >= config.triggerFullThreshold -> "input.trigger.stage.full"
+            else -> "input.trigger.stage.half"
+        }
+        triggerLiveLabel.text = I18n.t(
+            "input.settings.trigger_live",
+            (lt * 100.0).roundToInt(),
+            (rt * 100.0).roundToInt(),
+            I18n.t(stageKey),
+            (peak * 100.0).roundToInt(),
+        )
     }
 
     private fun refreshStatus() {
@@ -550,6 +625,7 @@ class InputBindingsDialog(
         cancelCapture()
         closed = true
         runCatching { statusHandle.close() }
+        runCatching { triggerHandle.close() }
         I18n.localeProperty.removeListener(localeListener)
         stage.close()
     }

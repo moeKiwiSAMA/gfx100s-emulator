@@ -144,11 +144,11 @@ Click **`Controls`** in the top header bar to open **Controls — Key & Gamepad 
 - **Native XInput / evdev Gamepad Support**:
   - Plug in up to 4 controllers on Windows (`XInput`) or Linux (`evdev`/`joydev`). Select `Auto (first connected)`, a fixed slot (`Slot 0..3`), or pin a specific controller by name, and tune the **Stick deadzone** (`0.10..0.50`, default `0.28`).
   - **Ergonomic Default Gamepad Profile**:
-    - **Right Trigger (`RT`) — Two-Stage Shutter**: Pull past `25%` (`RT ½`) to half-press **`S1`** (autofocus & AE lock); pull past `80%` (`RT`) to fire **`S2`**!
+    - **Right Trigger (`RT`) — Two-Stage Shutter**: Pull past `25%` (`RT ½`) to half-press **`S1`** (autofocus & AE lock); pull past **`65%`** (`RT`, adjustable `40%–95%` with a live `LT/RT` meter for short-travel handheld/Hall-effect triggers) to fire **`S2`**! Unchecking **Two-stage right trigger** makes any pull past `25%` fire `S1 + S2` directly.
     - **`RB` / `LB` / `LT ½`**: `AF-ON` / `Q Menu` / `DRIVE`
     - **Right Stick (`RS`)**: Left/Right = **Rear Command Dial**; Up/Down = **Front Command Dial**; Click (`R3`) = **Rear Dial Press**
     - **D-Pad & Left Stick (`LS`)**: 4-way navigation + Click (`L3`) = **Focus Lever Press**
-    - **`A` / `B` / `X` / `Y`**: `MENU/OK` / `DISP/BACK` / `Playback` / `Delete`
+    - **`B` / `A` / `X` / `Y`**: `MENU/OK` / `DISP/BACK` / `Playback` / `Delete`
     - **`Back` / `Start`**: `VIEW MODE` / `Fn1`
 
 ---

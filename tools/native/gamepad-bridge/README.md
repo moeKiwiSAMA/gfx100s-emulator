@@ -73,7 +73,7 @@ once-per-second rescan.
   *Reset Gamepad Default*, deadzone (0.10–0.50), two-stage RT toggle and a **Controller** selector.
 - Config lives in `<home>/input-bindings.yaml` (`schema: 1`). **The keyboard map is empty by default**; the gamepad
   ships an ergonomic profile (RT ½ = S1, RT full = S2, RB = AF-ON, LB = Q, LT ½ = DRIVE, D-pad/LS = directions,
-  L3 = focus lever press, RS = rear/front dials, R3 = rear dial press, A/B/X/Y = MENU-OK/DISP-BACK/Play/Delete,
+  L3 = focus lever press, RS = rear/front dials, R3 = rear dial press, B/A/X/Y = MENU-OK/DISP-BACK/Play/Delete,
   Back = VIEW MODE, Start = Fn1). A corrupt file logs `WARN [FALLBACK][input-bindings]` and uses the defaults.
 - `selectedGamepad`: `auto` (first connected), `slot:<0..3>`, or `<slot>:<name>` (that device only, followed when it
   re-plugs into another slot). Other controllers are ignored while one is pinned; unplugging it releases every held

@@ -175,7 +175,7 @@ class GamepadPollerTest {
         poller.pollOnce()
         assertEquals(listOf("+AF_ON", "-AF_ON"), sink.toList(), "selected pad unplugged: everything released")
         assertFalse(controller.status.connected)
-        backend.script.add(listOf(frame(0, buttons = GamepadFrame.Y, name = "Virtual Pad"), frame(2, buttons = GamepadFrame.A, name = "Xbox")))
+        backend.script.add(listOf(frame(0, buttons = GamepadFrame.Y, name = "Virtual Pad"), frame(2, buttons = GamepadFrame.B, name = "Xbox")))
         poller.pollOnce()
         assertEquals(listOf("+AF_ON", "-AF_ON", "+MENU_OK"), sink.toList(), "re-plugged into slot 2: re-bound automatically")
         assertEquals(2, controller.status.slot)

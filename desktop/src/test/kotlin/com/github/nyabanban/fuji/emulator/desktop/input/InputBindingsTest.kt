@@ -32,6 +32,7 @@ class InputBindingsTest {
         assertTrue(config.gamepadEnabled)
         assertEquals(0.28, config.stickDeadzone)
         assertTrue(config.twoStageTriggerEnabled)
+        assertEquals(0.65, config.triggerFullThreshold)
     }
 
     @Test fun defaultGamepadProfileIsComplete() {
@@ -52,8 +53,8 @@ class InputBindingsTest {
             CameraInputAction.FRONT_DIAL_CW to listOf(GamepadInput.RS_UP),
             CameraInputAction.FRONT_DIAL_CCW to listOf(GamepadInput.RS_DOWN),
             CameraInputAction.REAR_DIAL_PRESS to listOf(GamepadInput.R3),
-            CameraInputAction.MENU_OK to listOf(GamepadInput.A),
-            CameraInputAction.DISP_BACK to listOf(GamepadInput.B),
+            CameraInputAction.MENU_OK to listOf(GamepadInput.B),
+            CameraInputAction.DISP_BACK to listOf(GamepadInput.A),
             CameraInputAction.PLAY to listOf(GamepadInput.X),
             CameraInputAction.DELETE to listOf(GamepadInput.Y),
             CameraInputAction.VIEW_MODE to listOf(GamepadInput.BACK),
@@ -88,11 +89,18 @@ class InputBindingsTest {
             .withKeyboardBinding(CameraInputAction.SHUTTER_HALF, KeyBindingSpec("S")).config
             .withKeyboardBinding(CameraInputAction.PLAY, KeyBindingSpec("P", ctrl = true, alt = true)).config
             .withGamepadBinding(CameraInputAction.ZOOM_IN, GamepadBindingSpec(GamepadInput.LT_FULL)).config
-            .copy(gamepadEnabled = false, stickDeadzone = 0.35, twoStageTriggerEnabled = false, selectedGamepad = "1:Xbox Wireless Controller")
+            .copy(
+                gamepadEnabled = false,
+                stickDeadzone = 0.35,
+                twoStageTriggerEnabled = false,
+                triggerFullThreshold = 0.50,
+                selectedGamepad = "1:Xbox Wireless Controller",
+            )
         store.save(config)
         assertEquals(config, store.load())
         val raw = Formats.readData(store.path)
         assertEquals(1, raw["schema"])
+        assertEquals(0.50, (raw["triggerFullThreshold"] as Number).toDouble())
         assertEquals("1:Xbox Wireless Controller", raw["selectedGamepad"])
         assertEquals(listOf("Ctrl+Alt+P"), (raw["keyboard"] as Map<*, *>)["PLAY"])
         assertEquals(listOf("RT_HALF"), (raw["gamepad"] as Map<*, *>)["SHUTTER_HALF"])
@@ -102,6 +110,7 @@ class InputBindingsTest {
         val map = InputBindingStore.toYamlMap(InputBindingConfig.default())
         assertEquals(1, map["schema"])
         assertEquals(0.28, map["stickDeadzone"])
+        assertEquals(0.65, map["triggerFullThreshold"])
         assertEquals(emptyMap<String, Any>(), map["keyboard"])
         assertTrue((map["gamepad"] as Map<*, *>).isNotEmpty())
     }
@@ -113,9 +122,10 @@ class InputBindingsTest {
         assertEquals(InputBindingConfig.default(), store.load())
         store.path.writeText("schema: 99\nkeyboard: {}\n")
         assertEquals(InputBindingConfig.default(), store.load())
-        store.path.writeText("schema: 1\nstickDeadzone: 7.0\nselectedGamepad: 'slot:42'\n")
+        store.path.writeText("schema: 1\nstickDeadzone: 7.0\ntriggerFullThreshold: 0.1\nselectedGamepad: 'slot:42'\n")
         val clamped = store.load()
         assertEquals(InputBindingConfig.MAX_STICK_DEADZONE, clamped.stickDeadzone, "out-of-range deadzone is clamped")
+        assertEquals(InputBindingConfig.MIN_TRIGGER_FULL_THRESHOLD, clamped.triggerFullThreshold, "out-of-range trigger threshold is clamped")
         assertEquals("auto", clamped.selectedGamepad, "invalid selection falls back to auto")
         assertTrue(clamped.keyboardBindings.isEmpty())
         assertEquals(InputBindingConfig.defaultGamepadBindings(), clamped.gamepadBindings)
@@ -142,9 +152,9 @@ class InputBindingsTest {
 
     @Test fun rebindMovesInputAndReportsDisplacedAction() {
         val base = InputBindingConfig.default()
-        val moved = base.withGamepadBinding(CameraInputAction.PLAY, GamepadBindingSpec(GamepadInput.A))
+        val moved = base.withGamepadBinding(CameraInputAction.PLAY, GamepadBindingSpec(GamepadInput.B))
         assertEquals(CameraInputAction.MENU_OK, moved.displaced)
-        assertEquals(CameraInputAction.PLAY, moved.config.actionForGamepad(GamepadInput.A))
+        assertEquals(CameraInputAction.PLAY, moved.config.actionForGamepad(GamepadInput.B))
         assertNull(moved.config.gamepadBindings[CameraInputAction.MENU_OK], "MENU_OK lost its only input")
         assertNull(moved.config.actionForGamepad(GamepadInput.X), "PLAY's previous input is replaced")
 
@@ -219,7 +229,7 @@ class InputBindingsTest {
         val sink = RecordingSink()
         val c = InputBindingController(InputBindingConfig.default().withKeyboardBinding(CameraInputAction.UP, KeyBindingSpec("W")).config, sink)
         c.handleKey("W", true)
-        c.handleGamepadFrame(pad(buttons = GamepadFrame.A))
+        c.handleGamepadFrame(pad(buttons = GamepadFrame.B))
         c.updateConfig(c.config.clearKeyboard(CameraInputAction.UP).clearGamepad(CameraInputAction.MENU_OK))
         assertEquals(listOf("+UP", "+MENU_OK", "-UP", "-MENU_OK"), sink.take())
     }
@@ -242,25 +252,40 @@ class InputBindingsTest {
     @Test fun triggerHysteresisPreventsChatter() {
         val sink = RecordingSink()
         val c = InputBindingController(InputBindingConfig.default(), sink)
-        c.handleGamepadFrame(pad(rt = 0.82)); sink.take()
-        c.handleGamepadFrame(pad(rt = 0.77)); assertEquals(emptyList(), sink.take(), "within hysteresis of 0.80")
-        c.handleGamepadFrame(pad(rt = 0.74)); assertEquals(listOf("-SHUTTER_FULL"), sink.take())
+        c.handleGamepadFrame(pad(rt = 0.67)); sink.take()
+        c.handleGamepadFrame(pad(rt = 0.62)); assertEquals(emptyList(), sink.take(), "within hysteresis of 0.65")
+        c.handleGamepadFrame(pad(rt = 0.59)); assertEquals(listOf("-SHUTTER_FULL"), sink.take())
         c.handleGamepadFrame(pad(rt = 0.21)); assertEquals(emptyList(), sink.take(), "within hysteresis of 0.25")
         c.handleGamepadFrame(pad(rt = 0.19)); assertEquals(listOf("-SHUTTER_HALF"), sink.take())
     }
 
-    @Test fun singleStageTriggerPressesBothStagesTogether() {
+    @Test fun customTriggerFullThresholdSupportsShortTravelHallTriggers() {
+        val sink = RecordingSink()
+        val c = InputBindingController(InputBindingConfig.default().copy(triggerFullThreshold = 0.50), sink)
+        c.handleGamepadFrame(pad(rt = 0.35)); assertEquals(listOf("+SHUTTER_HALF"), sink.take())
+        c.handleGamepadFrame(pad(rt = 0.52)); assertEquals(listOf("+SHUTTER_FULL"), sink.take(), "short-travel full press fires S2")
+        c.handleGamepadFrame(pad(rt = 0.0)); assertEquals(listOf("-SHUTTER_FULL", "-SHUTTER_HALF"), sink.take())
+    }
+
+    @Test fun singleStageTriggerPressesBothStagesAndCapturesFullTrigger() {
         val sink = RecordingSink()
         val c = InputBindingController(InputBindingConfig.default().copy(twoStageTriggerEnabled = false), sink)
         c.handleGamepadFrame(pad(rt = 0.4)); assertEquals(listOf("+SHUTTER_HALF", "+SHUTTER_FULL"), sink.take())
         c.handleGamepadFrame(pad(rt = 0.9)); assertEquals(emptyList(), sink.take())
         c.handleGamepadFrame(pad(rt = 0.0)); assertEquals(listOf("-SHUTTER_FULL", "-SHUTTER_HALF"), sink.take())
+
+        // Capturing RT in single-stage mode resolves directly to RT_FULL even on a 45% short-travel trigger pull.
+        val captured = mutableListOf<CapturedInput?>()
+        c.beginCapture { captured += it }
+        c.handleGamepadFrame(pad(rt = 0.45))
+        c.handleGamepadFrame(pad(rt = 0.0))
+        assertEquals(listOf<CapturedInput?>(CapturedInput.Pad(GamepadBindingSpec(GamepadInput.RT_FULL))), captured)
     }
 
     @Test fun hotDisconnectReleasesEverything() {
         val sink = RecordingSink()
         val c = InputBindingController(InputBindingConfig.default(), sink)
-        c.handleGamepadFrame(pad(buttons = GamepadFrame.A or GamepadFrame.RB or GamepadFrame.DPAD_UP, rt = 1.0))
+        c.handleGamepadFrame(pad(buttons = GamepadFrame.B or GamepadFrame.RB or GamepadFrame.DPAD_UP, rt = 1.0))
         assertEquals(setOf("+MENU_OK", "+AF_ON", "+UP", "+SHUTTER_HALF", "+SHUTTER_FULL"), sink.take().toSet())
         assertTrue(c.status.connected)
         c.handleGamepadFrame(GamepadFrame.DISCONNECTED)
@@ -273,9 +298,9 @@ class InputBindingsTest {
     @Test fun disablingGamepadReleasesAndIgnoresInput() {
         val sink = RecordingSink()
         val c = InputBindingController(InputBindingConfig.default(), sink)
-        c.handleGamepadFrame(pad(buttons = GamepadFrame.B))
+        c.handleGamepadFrame(pad(buttons = GamepadFrame.A))
         c.updateConfig(c.config.copy(gamepadEnabled = false))
-        c.handleGamepadFrame(pad(buttons = GamepadFrame.B or GamepadFrame.A))
+        c.handleGamepadFrame(pad(buttons = GamepadFrame.A or GamepadFrame.B))
         assertEquals(listOf("+DISP_BACK", "-DISP_BACK"), sink.take())
     }
 
@@ -349,13 +374,13 @@ class InputBindingsTest {
     @Test fun captureIgnoresInputsAlreadyHeld() {
         val sink = RecordingSink()
         val c = InputBindingController(InputBindingConfig.default(), sink)
-        c.handleGamepadFrame(pad(buttons = GamepadFrame.A))
+        c.handleGamepadFrame(pad(buttons = GamepadFrame.B))
         val captured = mutableListOf<CapturedInput?>()
         c.beginCapture { captured += it }
         assertEquals(listOf("+MENU_OK", "-MENU_OK"), sink.take(), "capture releases held actions")
-        c.handleGamepadFrame(pad(buttons = GamepadFrame.A))
+        c.handleGamepadFrame(pad(buttons = GamepadFrame.B))
         assertTrue(captured.isEmpty())
-        c.handleGamepadFrame(pad(buttons = GamepadFrame.A or GamepadFrame.X))
+        c.handleGamepadFrame(pad(buttons = GamepadFrame.B or GamepadFrame.X))
         assertEquals(CapturedInput.Pad(GamepadBindingSpec(GamepadInput.X)), captured.single())
     }
 

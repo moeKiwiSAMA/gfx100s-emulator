@@ -72,6 +72,10 @@ class InputBindingsDialogTest {
             val slider = assertNotNull(scene.lookup("#input-bindings-deadzone") as? Slider)
             assertEquals(0.10, slider.min); assertEquals(0.50, slider.max); assertEquals(0.28, slider.value)
             assertNotNull(scene.lookup("#input-bindings-two-stage") as? CheckBox)
+            val triggerSlider = assertNotNull(scene.lookup("#input-bindings-trigger-full") as? Slider)
+            assertEquals(0.40, triggerSlider.min); assertEquals(0.95, triggerSlider.max); assertEquals(0.65, triggerSlider.value)
+            val triggerLive = assertNotNull(scene.lookup("#input-bindings-trigger-live") as? Label)
+            assertTrue(triggerLive.text.contains("0%"))
 
             // Defaults: every keyboard cell unbound, gamepad cells show the default profile.
             assertEquals(I18n.t("input.binding.unbound"), dialog.cellText(CameraInputAction.SHUTTER_HALF, gamepad = false))
@@ -111,10 +115,10 @@ class InputBindingsDialogTest {
 
             // Gamepad capture through controller frames (as the poller would deliver them).
             button("input-binding-gp-PLAY").fire()
-            controller.handleGamepadFrame(GamepadFrame(connected = true, slot = 0, name = "Pad", buttons = GamepadFrame.A))
+            controller.handleGamepadFrame(GamepadFrame(connected = true, slot = 0, name = "Pad", buttons = GamepadFrame.B))
             controller.handleGamepadFrame(GamepadFrame(connected = true, slot = 0, name = "Pad"))
-            assertEquals("A", dialog.cellText(CameraInputAction.PLAY, gamepad = true))
-            assertEquals(I18n.t("input.binding.unbound"), dialog.cellText(CameraInputAction.MENU_OK, gamepad = true), "A moved off MENU_OK")
+            assertEquals("B", dialog.cellText(CameraInputAction.PLAY, gamepad = true))
+            assertEquals(I18n.t("input.binding.unbound"), dialog.cellText(CameraInputAction.MENU_OK, gamepad = true), "B moved off MENU_OK")
             assertEquals(I18n.t("input.status.connected", "Pad", 1), dialog.statusText)
 
             // × clears one binding.
@@ -124,7 +128,8 @@ class InputBindingsDialogTest {
             // Reset Gamepad Default / Clear All Keyboard.
             button("input-bindings-reset-gamepad").fire()
             assertEquals(InputBindingConfig.defaultGamepadBindings(), controller.config.gamepadBindings)
-            assertEquals("A", dialog.cellText(CameraInputAction.MENU_OK, gamepad = true))
+            assertEquals("B", dialog.cellText(CameraInputAction.MENU_OK, gamepad = true))
+            assertEquals("A", dialog.cellText(CameraInputAction.DISP_BACK, gamepad = true))
             assertEquals(1, controller.config.keyboardBindings.size)
             button("input-bindings-clear-keyboard").fire()
             assertTrue(controller.config.keyboardBindings.isEmpty())
@@ -146,9 +151,19 @@ class InputBindingsDialogTest {
             dialog.selectDevice("auto")
             assertEquals("auto", store.load().selectedGamepad)
 
+            // Live trigger readout tracks current RT and peak RT; threshold slider applies live and persists.
+            controller.handleGamepadFrame(GamepadFrame(connected = true, slot = 0, name = "Pad", rt = 0.55))
+            assertTrue(triggerLive.text.contains("55%"), triggerLive.text)
+            assertTrue(triggerLive.text.contains(I18n.t("input.trigger.stage.half")), triggerLive.text)
+            triggerSlider.value = 0.50
+            assertEquals(0.50, controller.config.triggerFullThreshold)
+            assertEquals(0.50, store.load().triggerFullThreshold)
+            assertTrue(triggerLive.text.contains(I18n.t("input.trigger.stage.full")), triggerLive.text)
+
             // Settings toggles apply live and persist.
             (scene.lookup("#input-bindings-two-stage") as CheckBox).isSelected = false
             assertFalse(controller.config.twoStageTriggerEnabled)
+            assertTrue(triggerSlider.isDisable, "single-stage mode disables full-press threshold slider")
             slider.value = 0.4
             assertEquals(0.4, controller.config.stickDeadzone)
             assertEquals(0.4, store.load().stickDeadzone)

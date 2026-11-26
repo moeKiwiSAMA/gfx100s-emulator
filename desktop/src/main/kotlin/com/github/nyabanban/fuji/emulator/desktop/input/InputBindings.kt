@@ -219,6 +219,7 @@ data class InputBindingConfig(
     val gamepadEnabled: Boolean = true,
     val stickDeadzone: Double = DEFAULT_STICK_DEADZONE,
     val twoStageTriggerEnabled: Boolean = true,
+    val triggerFullThreshold: Double = DEFAULT_TRIGGER_FULL_THRESHOLD,
     val keyboardBindings: Map<CameraInputAction, List<KeyBindingSpec>> = emptyMap(),
     val gamepadBindings: Map<CameraInputAction, List<GamepadBindingSpec>> = defaultGamepadBindings(),
     /** Encoded [GamepadSelection]: `auto`, `slot:<n>` or `<slot>:<name>`. */
@@ -231,6 +232,9 @@ data class InputBindingConfig(
         require(runCatching { GamepadSelection.parse(selectedGamepad) }.isSuccess) { "Invalid selectedGamepad: '$selectedGamepad'" }
         require(stickDeadzone.isFinite() && stickDeadzone in MIN_STICK_DEADZONE..MAX_STICK_DEADZONE) {
             "stickDeadzone must be within $MIN_STICK_DEADZONE..$MAX_STICK_DEADZONE: $stickDeadzone"
+        }
+        require(triggerFullThreshold.isFinite() && triggerFullThreshold in MIN_TRIGGER_FULL_THRESHOLD..MAX_TRIGGER_FULL_THRESHOLD) {
+            "triggerFullThreshold must be within $MIN_TRIGGER_FULL_THRESHOLD..$MAX_TRIGGER_FULL_THRESHOLD: $triggerFullThreshold"
         }
         val keys = keyboardBindings.values.flatten()
         require(keys.size == keys.toSet().size) { "A key combination is bound to more than one action" }
@@ -284,10 +288,13 @@ data class InputBindingConfig(
         const val MAX_STICK_DEADZONE: Double = 0.50
         /** Stick direction stays active until it falls this far below the deadzone (anti-chatter). */
         const val STICK_HYSTERESIS: Double = 0.04
+        const val DEFAULT_TRIGGER_FULL_THRESHOLD: Double = 0.65
+        const val MIN_TRIGGER_FULL_THRESHOLD: Double = 0.40
+        const val MAX_TRIGGER_FULL_THRESHOLD: Double = 0.95
         const val RT_HALF_THRESHOLD: Double = 0.25
-        const val RT_FULL_THRESHOLD: Double = 0.80
+        const val RT_FULL_THRESHOLD: Double = DEFAULT_TRIGGER_FULL_THRESHOLD
         const val LT_HALF_THRESHOLD: Double = 0.50
-        const val LT_FULL_THRESHOLD: Double = 0.80
+        const val LT_FULL_THRESHOLD: Double = DEFAULT_TRIGGER_FULL_THRESHOLD
         /** A trigger stage releases only below `threshold - TRIGGER_HYSTERESIS`. */
         const val TRIGGER_HYSTERESIS: Double = 0.05
 
@@ -312,8 +319,8 @@ data class InputBindingConfig(
                 CameraInputAction.FRONT_DIAL_CW to pads(GamepadInput.RS_UP),
                 CameraInputAction.FRONT_DIAL_CCW to pads(GamepadInput.RS_DOWN),
                 CameraInputAction.REAR_DIAL_PRESS to pads(GamepadInput.R3),
-                CameraInputAction.MENU_OK to pads(GamepadInput.A),
-                CameraInputAction.DISP_BACK to pads(GamepadInput.B),
+                CameraInputAction.MENU_OK to pads(GamepadInput.B),
+                CameraInputAction.DISP_BACK to pads(GamepadInput.A),
                 CameraInputAction.PLAY to pads(GamepadInput.X),
                 CameraInputAction.DELETE to pads(GamepadInput.Y),
                 CameraInputAction.VIEW_MODE to pads(GamepadInput.BACK),
