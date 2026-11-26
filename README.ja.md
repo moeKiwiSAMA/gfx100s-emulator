@@ -139,12 +139,12 @@ GFX100S 実機をお持ちの上級ユーザーは、[**fujimod**](https://githu
 
 ## ドキュメント・拡張開発・AI Skills ハブ
 
-| ガイド | English | 简体中文 | 日本語 | 内容 |
-|---|---|---|---|---|
-| **ファームウェア & 実機ダンプガイド** | [`docs/FIRMWARE.md`](docs/FIRMWARE.md) | [`docs/FIRMWARE.zh-CN.md`](docs/FIRMWARE.zh-CN.md) | [`docs/FIRMWARE.ja.md`](docs/FIRMWARE.ja.md) | `GXUP0004.DAT` v2.13 の入手と SHA-256 検証、NOR Flash 構築、任意・サニタイズ済み `boot-rom.bin` / `nor-flash.bin` 抽出手順 |
-| **エミュレータ ユーザーマニュアル** | [`docs/manual/USER_MANUAL.md`](docs/manual/USER_MANUAL.md) | [`docs/manual/USER_MANUAL.zh-CN.md`](docs/manual/USER_MANUAL.zh-CN.md) | [`docs/manual/USER_MANUAL.ja.md`](docs/manual/USER_MANUAL.ja.md) | 6 面ワークスペース、ボディ/UI テーマ、ダイヤル & ショートカット、モジュラーレンズ、光学フィルタ、3D シーン、デュアル SD、オーディオ I/O、Vulkan GPU & ログ |
-| **拡張 & Mod 開発ガイド** | [`docs/extending/EXTENDING.md`](docs/extending/EXTENDING.md) | [`docs/extending/EXTENDING.zh-CN.md`](docs/extending/EXTENDING.zh-CN.md) | [`docs/extending/EXTENDING.ja.md`](docs/extending/EXTENDING.ja.md) | カスタムレンズ JAR、光学フィルタ / ボケ瞳マスク / `.spv` シェーダ、Theme System v2 パックの作り方、非目標事項、6 言語 i18n 規約 |
-| **HTTP 制御 & テレメトリ API** | [`docs/api/HTTP_API.md`](docs/api/HTTP_API.md) | [`docs/api/HTTP_API.zh-CN.md`](docs/api/HTTP_API.zh-CN.md) | [`docs/api/HTTP_API.ja.md`](docs/api/HTTP_API.ja.md) | ローカル `127.0.0.1:8787` REST API によるシャッター、ダイヤル、レンズ、フィルタ、テーマ制御、ライブ状態取得 & Python/`curl` 例 |
+| ガイド | 言語 | 内容 |
+|---|---|---|
+| **ファームウェア & ダンプ** | [EN](docs/FIRMWARE.md) · [中文](docs/FIRMWARE.zh-CN.md) · [日本語](docs/FIRMWARE.ja.md) | `GXUP0004.DAT` v2.13 検証、NOR Flash 構築と任意の実機ダンプ |
+| **ユーザーマニュアル** | [EN](docs/manual/USER_MANUAL.md) · [中文](docs/manual/USER_MANUAL.zh-CN.md) · [日本語](docs/manual/USER_MANUAL.ja.md) | 6 面スタジオ、テーマ、ダイヤル、レンズ、フィルタ、3D、SD、音声 |
+| **拡張 & Mod 開発ガイド** | [EN](docs/extending/EXTENDING.md) · [中文](docs/extending/EXTENDING.zh-CN.md) · [日本語](docs/extending/EXTENDING.ja.md) | レンズ JAR、フィルタ / `.spv` シェーダ、Theme v2、非目標と 6 言語 i18n |
+| **HTTP 制御 & テレメトリ API** | [EN](docs/api/HTTP_API.md) · [中文](docs/api/HTTP_API.zh-CN.md) · [日本語](docs/api/HTTP_API.ja.md) | ローカル `127.0.0.1:8787` REST 自動化と Python/`curl` 例 |
 
 ### AI コーディングエージェント向け公開 Skills（`skills/`）
 

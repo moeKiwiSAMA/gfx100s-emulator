@@ -139,12 +139,12 @@ sh jvm.sh launch
 
 ## 文档、扩展开发与 AI Skills 中心
 
-| 文档 | English | 简体中文 | 日本語 | 内容概要 |
-|---|---|---|---|---|
-| **固件与真机转储指南** | [`docs/FIRMWARE.md`](docs/FIRMWARE.md) | [`docs/FIRMWARE.zh-CN.md`](docs/FIRMWARE.zh-CN.md) | [`docs/FIRMWARE.ja.md`](docs/FIRMWARE.ja.md) | 下载与 SHA-256 校验 `GXUP0004.DAT` v2.13、NOR Flash 初始化，以及可选的脱敏 `boot-rom.bin` / `nor-flash.bin` 提取流程 |
-| **模拟器用户手册** | [`docs/manual/USER_MANUAL.md`](docs/manual/USER_MANUAL.md) | [`docs/manual/USER_MANUAL.zh-CN.md`](docs/manual/USER_MANUAL.zh-CN.md) | [`docs/manual/USER_MANUAL.ja.md`](docs/manual/USER_MANUAL.ja.md) | 六面操作台、机身与 UI 主题、拨盘与快捷键、模块化镜头、光学滤镜、3D 场景、双 SD 卡、音频 I/O、Vulkan GPU 与日志 |
-| **扩展与 Mod 开发指南** | [`docs/extending/EXTENDING.md`](docs/extending/EXTENDING.md) | [`docs/extending/EXTENDING.zh-CN.md`](docs/extending/EXTENDING.zh-CN.md) | [`docs/extending/EXTENDING.ja.md`](docs/extending/EXTENDING.ja.md) | 编写自定义镜头 JAR、光学滤镜 / 散景光瞳遮罩 / `.spv` 着色器、Theme System v2 主题包、明确非目标与 6 语种国际化规范 |
-| **HTTP 控制与遥测 API** | [`docs/api/HTTP_API.md`](docs/api/HTTP_API.md) | [`docs/api/HTTP_API.zh-CN.md`](docs/api/HTTP_API.zh-CN.md) | [`docs/api/HTTP_API.ja.md`](docs/api/HTTP_API.ja.md) | 本地 `127.0.0.1:8787` REST 自动化接口：快门、拨盘、镜头、滤镜、主题热重载、实时遥测与 Python/`curl` 脚本示例 |
+| 文档 | 语言 | 内容概要 |
+|---|---|---|
+| **固件与真机转储指南** | [EN](docs/FIRMWARE.md) · [中文](docs/FIRMWARE.zh-CN.md) · [日本語](docs/FIRMWARE.ja.md) | `GXUP0004.DAT` v2.13 校验、NOR Flash 初始化与可选真机转储 |
+| **模拟器用户手册** | [EN](docs/manual/USER_MANUAL.md) · [中文](docs/manual/USER_MANUAL.zh-CN.md) · [日本語](docs/manual/USER_MANUAL.ja.md) | 六面操作台、主题、拨盘、镜头、滤镜、3D 场景、双 SD 卡与音频 |
+| **扩展与 Mod 开发指南** | [EN](docs/extending/EXTENDING.md) · [中文](docs/extending/EXTENDING.zh-CN.md) · [日本語](docs/extending/EXTENDING.ja.md) | 自定义镜头 JAR、滤镜 / `.spv` 着色器、Theme v2、非目标与 6 语 i18n |
+| **HTTP 控制与遥测 API** | [EN](docs/api/HTTP_API.md) · [中文](docs/api/HTTP_API.zh-CN.md) · [日本語](docs/api/HTTP_API.ja.md) | 本地 `127.0.0.1:8787` REST 自动化与 Python/`curl` 脚本示例 |
 
 ### 面向 AI 编程助手的公开 Skills（`skills/`）
 

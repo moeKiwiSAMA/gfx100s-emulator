@@ -139,12 +139,12 @@ Full step-by-step instructions: **[`docs/FIRMWARE.md`](docs/FIRMWARE.md)**
 
 ## Documentation, Modding & AI Skills
 
-| Guide | English | 简体中文 | 日本語 | What It Covers |
-|---|---|---|---|---|
-| **Firmware & Hardware Dump Guide** | [`docs/FIRMWARE.md`](docs/FIRMWARE.md) | [`docs/FIRMWARE.zh-CN.md`](docs/FIRMWARE.zh-CN.md) | [`docs/FIRMWARE.ja.md`](docs/FIRMWARE.ja.md) | Downloading & SHA-256 verifying `GXUP0004.DAT` v2.13, NOR Flash setup, and optional sanitized `boot-rom.bin` / `nor-flash.bin` dumps |
-| **Emulator User Manual** | [`docs/manual/USER_MANUAL.md`](docs/manual/USER_MANUAL.md) | [`docs/manual/USER_MANUAL.zh-CN.md`](docs/manual/USER_MANUAL.zh-CN.md) | [`docs/manual/USER_MANUAL.ja.md`](docs/manual/USER_MANUAL.ja.md) | Six-face workspace, body/UI themes, dials & shortcuts, modular lenses, optical filters, 3D scenes, dual SD cards, audio I/O, Vulkan GPU & logs |
-| **Extending & Modding Guide** | [`docs/extending/EXTENDING.md`](docs/extending/EXTENDING.md) | [`docs/extending/EXTENDING.zh-CN.md`](docs/extending/EXTENDING.zh-CN.md) | [`docs/extending/EXTENDING.ja.md`](docs/extending/EXTENDING.ja.md) | Authoring custom Lens JARs, Optical Filters / Bokeh Masks / `.spv` shaders, Theme System v2 packs, explicit non-goals & 6-language i18n |
-| **HTTP Control & Telemetry API** | [`docs/api/HTTP_API.md`](docs/api/HTTP_API.md) | [`docs/api/HTTP_API.zh-CN.md`](docs/api/HTTP_API.zh-CN.md) | [`docs/api/HTTP_API.ja.md`](docs/api/HTTP_API.ja.md) | Local `127.0.0.1:8787` REST automation for shutter, dials, lenses, filters, themes, live state & Python/`curl` scripting |
+| Guide | Languages | What It Covers |
+|---|---|---|
+| **Firmware & Dump Guide** | [EN](docs/FIRMWARE.md) · [中文](docs/FIRMWARE.zh-CN.md) · [日本語](docs/FIRMWARE.ja.md) | `GXUP0004.DAT` v2.13 SHA-256, NOR Flash setup & optional dumps |
+| **Emulator User Manual** | [EN](docs/manual/USER_MANUAL.md) · [中文](docs/manual/USER_MANUAL.zh-CN.md) · [日本語](docs/manual/USER_MANUAL.ja.md) | Six-face studio, themes, dials, lenses, filters, 3D scenes, SD & audio |
+| **Extending & Modding** | [EN](docs/extending/EXTENDING.md) · [中文](docs/extending/EXTENDING.zh-CN.md) · [日本語](docs/extending/EXTENDING.ja.md) | Custom Lens JARs, Filters / `.spv` shaders, Theme v2, non-goals & i18n |
+| **HTTP Control API** | [EN](docs/api/HTTP_API.md) · [中文](docs/api/HTTP_API.zh-CN.md) · [日本語](docs/api/HTTP_API.ja.md) | Local `127.0.0.1:8787` REST automation for shutter, dials, lenses & telemetry |
 
 ### AI-Readable Public Skills (`skills/`)
 
