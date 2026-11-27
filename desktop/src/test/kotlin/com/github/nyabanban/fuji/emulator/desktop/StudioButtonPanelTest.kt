@@ -970,22 +970,36 @@ class StudioButtonPanelTest {
 
             val matrixBody = holder.lookup("#physical-controls-body") as javafx.scene.layout.VBox
             val matrixToggle = holder.lookup("#physical-controls-toggle") as javafx.scene.control.Button
-            assertTrue(matrixBody.isVisible, "Physical controls matrix must be expanded by default for photographer-first priority")
+            val readbackBody = holder.lookup("#raw-readback-body") as javafx.scene.layout.VBox
+            val readbackToggle = holder.lookup("#raw-readback-toggle") as javafx.scene.control.Button
+            assertTrue(matrixBody.isVisible, "Physical buttons panel must be expanded by default for photographer-first priority")
             assertTrue(matrixBody.isManaged)
+            assertTrue(readbackBody.isVisible, "Raw hardware readback card must also be expanded by default")
+            assertTrue(readbackBody.isManaged)
+            assertNull(matrixBody.lookup("#quick-mode-dial"), "Redundant mode dial dropdown must not clutter Physical Buttons card")
+            assertNotNull(readbackBody.lookup("#quick-mode-dial"), "Mode dial raw override must reside in Raw Readback card")
+            assertNotNull(matrixBody.lookup("#physical-dpad-grid"), "Physical buttons must present a tactile 3x3 D-pad cluster")
             matrixToggle.fire()
-            assertFalse(matrixBody.isVisible, "Clicking toggle must collapse physical controls matrix")
+            assertFalse(matrixBody.isVisible, "Clicking toggle must collapse physical buttons panel")
             assertFalse(matrixBody.isManaged)
             matrixToggle.fire()
-            assertTrue(matrixBody.isVisible, "Clicking toggle again must re-expand physical controls matrix")
+            assertTrue(matrixBody.isVisible, "Clicking toggle again must re-expand physical buttons panel")
             assertTrue(matrixBody.isManaged)
+            readbackToggle.fire()
+            assertFalse(readbackBody.isVisible, "Clicking readback toggle must collapse raw readback card")
+            assertFalse(readbackBody.isManaged)
+            readbackToggle.fire()
+            assertTrue(readbackBody.isVisible, "Clicking readback toggle again must re-expand raw readback card")
+            assertTrue(readbackBody.isManaged)
 
-            // Verify photographer-first sidebar card order: Shooting Controls (#0) -> Physical Controls (#1) -> Viewfinder (#2) -> Faces (#3) -> Source (#4)
+            // Verify photographer-first sidebar card order: Shooting Controls (#0) -> Physical Buttons (#1) -> Raw Readback (#2) -> Viewfinder (#3) -> Faces (#4) -> Source (#5)
             val centerCards = (studio.root.center as javafx.scene.layout.VBox).children
             assertEquals("shooting-controls-card", centerCards[0].id)
-            assertNotNull(centerCards[1].lookup("#physical-controls-body"), "Physical controls card must be #2 in sidebar")
-            assertNotNull(centerCards[2].lookup("#viewfinder-active-status"), "Viewfinder card must be #3 in sidebar")
-            assertNotNull(centerCards[3].lookup("#show-face-rear"), "Camera faces card must be #4 in sidebar")
-            assertNotNull(centerCards[4].lookup("#source-mode-3d"), "Scene source card must be #5 in sidebar")
+            assertNotNull(centerCards[1].lookup("#physical-controls-body"), "Physical buttons card must be #2 in sidebar")
+            assertNotNull(centerCards[2].lookup("#raw-readback-body"), "Raw readback card must be #3 in sidebar")
+            assertNotNull(centerCards[3].lookup("#viewfinder-active-status"), "Viewfinder card must be #4 in sidebar")
+            assertNotNull(centerCards[4].lookup("#show-face-rear"), "Camera faces card must be #5 in sidebar")
+            assertNotNull(centerCards[5].lookup("#source-mode-3d"), "Scene source card must be #6 in sidebar")
 
             studio.observeSnapshot(
                 mapOf(

@@ -108,6 +108,11 @@ class CameraStudio(private val owner: Stage, sendButton: (String, Boolean) -> Co
     private var controlsExpanded = true
     @Suppress("UNNECESSARY_LATEINIT")
     private lateinit var controlsToggleBtn: Button
+    private var readbackExpanded = true
+    @Suppress("UNNECESSARY_LATEINIT")
+    private lateinit var readbackToggleBtn: Button
+    private val readbackKeyLabels = linkedMapOf<String, Label>()
+    private val readbackSettingLabels = linkedMapOf<String, Label>()
     private var localeListener: javafx.beans.value.ChangeListener<java.util.Locale>? = null
     private var lastSnapshot: Map<String, Any?>? = null
     private val dragHandles=linkedMapOf<String,Region>()
@@ -183,6 +188,8 @@ class CameraStudio(private val owner: Stage, sendButton: (String, Boolean) -> Co
     private var frontDialVersion = 0L
     private val quickModeDialCombo = ComboBox<String>().apply {
         id = "quick-mode-dial"
+        minWidth = 0.0
+        maxWidth = Double.MAX_VALUE
         items.setAll(MODE_DIAL_CHOICES)
         value = "default"
         tooltip = Tooltip().apply { textProperty().bind(I18n.bind("studio.dials.mode_dial.tooltip")) }
@@ -818,19 +825,10 @@ class CameraStudio(private val owner: Stage, sendButton: (String, Boolean) -> Co
             },
             quickEvfWindowToggle,
         ).apply { styleClass += "studio-card" }
-        val dialAndAdcStrip = VBox(6.0,
-            HBox(6.0,
-                Label().apply { styleClass += "studio-table-head"; textProperty().bind(I18n.bind("studio.dials.mode_dial")) },
-                quickModeDialCombo,
-            ).apply { alignment = javafx.geometry.Pos.CENTER_LEFT },
-            quickAdcButtonStrip(),
-        )
+        initInputAndSettingRows()
         val controlsBody = VBox(7.0,
-            Label().apply { styleClass += "studio-hint-text"; isWrapText = true; textProperty().bind(I18n.bind("studio.matrix.hint")) },
             comboLockBar,
-            dialAndAdcStrip,
-            inputGrid(),
-            pendingText,
+            buildPhysicalButtonsMatrix(),
         ).apply {
             id = "physical-controls-body"
             isVisible = controlsExpanded
@@ -849,11 +847,37 @@ class CameraStudio(private val owner: Stage, sendButton: (String, Boolean) -> Co
                 updateControlsToggleText()
             }
         }
-        val controlsCard = VBox(6.0, controlsToggleBtn, comboLockBanner, controlsBody).apply { styleClass += "studio-card" }
+        val controlsCard = VBox(6.0, controlsToggleBtn, comboLockBanner, controlsBody).apply {
+            id = "physical-controls-card"
+            styleClass += "studio-card"
+        }
+        val readbackBody = buildRawReadbackBody().apply {
+            id = "raw-readback-body"
+            isVisible = readbackExpanded
+            isManaged = readbackExpanded
+        }
+        readbackToggleBtn = Button(I18n.t("studio.readback.toggle.expanded")).apply {
+            id = "raw-readback-toggle"
+            styleClass += "studio-chip-btn"
+            maxWidth = Double.MAX_VALUE
+            alignment = javafx.geometry.Pos.CENTER_LEFT
+            tooltip = Tooltip().apply { textProperty().bind(I18n.bind("studio.readback.toggle.tooltip")) }
+            setOnAction {
+                readbackExpanded = !readbackBody.isVisible
+                readbackBody.isVisible = readbackExpanded
+                readbackBody.isManaged = readbackExpanded
+                updateReadbackToggleText()
+            }
+        }
+        val readbackCard = VBox(6.0, readbackToggleBtn, readbackBody).apply {
+            id = "raw-readback-card"
+            styleClass += "studio-card"
+        }
         root.center = VBox(
             8.0,
             shootingControlsPane.root,
             controlsCard,
+            readbackCard,
             viewfinderCard,
             facesCard,
             sourceSelectorPane.root,
@@ -863,6 +887,8 @@ class CameraStudio(private val owner: Stage, sendButton: (String, Boolean) -> Co
         refreshAllBodyIndicators()
         updateButtons()
         pendingText.styleClass += "studio-control-status"
+        pendingText.isVisible = pendingText.text.isNotEmpty()
+        pendingText.isManaged = pendingText.text.isNotEmpty()
         latch.selectedProperty().addListener { _, _, on -> if (!syncingLatchMode) setGlobalLatchMode(on) }
         owner.focusedProperty().addListener { _, _, focused -> if (!focused && !closed) { releaseTransientViewMode(); releaseTransientMomentarySettings(); cancelPendingReleases(); inputs.releaseTransient() } }
         owner.showingProperty().addListener { _, _, showing -> if (!showing && !closed) { cancelAndReleaseTouch(); releaseTransientViewMode(); releaseTransientMomentarySettings(); cancelPendingReleases(); inputs.releaseTransient() } }
@@ -899,7 +925,22 @@ class CameraStudio(private val owner: Stage, sendButton: (String, Boolean) -> Co
             I18n.t(if (controlsExpanded) "studio.matrix.toggle.expanded" else "studio.matrix.toggle.collapsed")
         }
     }
+    private fun updateReadbackToggleText() {
+        if (!::readbackToggleBtn.isInitialized) return
+        readbackToggleBtn.text = I18n.t(
+            if (readbackExpanded) "studio.readback.toggle.expanded" else "studio.readback.toggle.collapsed",
+        )
+    }
     private fun controlLabel(c: PanelControl): String = c.localizedLabel()
+
+    private fun compactKeyLabel(keyOrId: String, fallback: PanelControl): String = when (keyOrId) {
+        "focusMode" -> I18n.t("studio.raw.short.focusMode")
+        "movieMode" -> I18n.t("studio.raw.short.movieMode")
+        "frontDialPress" -> I18n.t("studio.raw.short.frontDialPress")
+        "rearDialPress" -> I18n.t("studio.raw.short.rearDialPress")
+        "rear-eye-sensor" -> I18n.t("studio.raw.short.eyeSensor")
+        else -> controlLabel(fallback)
+    }
 
     private fun panelShortLabel(panel: CameraPanel): String = panel.localizedShortTitle()
 
@@ -908,16 +949,23 @@ class CameraStudio(private val owner: Stage, sendButton: (String, Boolean) -> Co
     private fun refreshLocalizedCopy() {
         updateFacesSectionTitle()
         updateControlsToggleText()
+        updateReadbackToggleText()
         catalog.forEach { panel ->
             (dragHandles[panel.id] as? Label)?.text = panelCaption(panel)
             viewToggles[panel.id]?.text = panelShortLabel(panel)
             faceWindows[panel.id]?.title = "${bodyTheme.modelLabel} · ${panelShortLabel(panel)}"
         }
         inputRows.forEach { (key, row) ->
-            originControlsByButtonKey[key]?.let { row.button.text = controlLabel(it) }
+            originControlsByButtonKey[key]?.let { ctrl ->
+                val text = compactKeyLabel(key, ctrl)
+                row.button.text = text
+                readbackKeyLabels[key]?.text = text
+            }
         }
         settingRows.values.forEach { row ->
-            row.gridButton.text = controlLabel(row.control)
+            val text = compactKeyLabel(row.control.id, row.control)
+            row.gridButton.text = text
+            readbackSettingLabels[row.control.id]?.text = text
         }
         surfaces.values.forEach { surface ->
             if (surface.port != null) surface.waiting.text = I18n.t("studio.display.waiting")
@@ -1169,28 +1217,21 @@ class CameraStudio(private val owner: Stage, sendButton: (String, Boolean) -> Co
         faceWindows.keys.forEach { setFaceShowing(it, it in windowLayout.faces) }
         arrangeWindows(fitScale)
     }
-    private fun inputGrid() = GridPane().apply {
-        hgap = 8.0
-        vgap = 5.0
-        columnConstraints.addAll(
-            ColumnConstraints().apply { minWidth = 118.0; prefWidth = 138.0; hgrow = Priority.SOMETIMES },
-            ColumnConstraints().apply { minWidth = 72.0; hgrow = Priority.ALWAYS },
-            ColumnConstraints().apply { minWidth = 44.0; hgrow = Priority.NEVER }
-        )
-        addRow(0,
-            Label().apply { styleClass += "studio-table-head"; textProperty().bind(I18n.bind("studio.table.col.key")) },
-            Label().apply { styleClass += "studio-table-head"; textProperty().bind(I18n.bind("studio.table.col.request")) },
-            Label().apply { styleClass += "studio-table-head"; textProperty().bind(I18n.bind("studio.table.col.readback")) }
-        )
-        PanelCatalog.buttonKeys.forEachIndexed { index, key ->
+    private fun initInputAndSettingRows() {
+        PanelCatalog.buttonKeys.forEach { key ->
             val control = originControlsByButtonKey.getValue(key)
-            val button = keyButton(control, onBody = false).apply { text = controlLabel(control); maxWidth = Double.MAX_VALUE }
+            val button = keyButton(control, onBody = false).apply {
+                text = compactKeyLabel(key, control)
+                minWidth = 0.0
+                maxWidth = Double.MAX_VALUE
+                textOverrun = javafx.scene.control.OverrunStyle.ELLIPSIS
+            }
             val lockBtn = if (inputs.isLatching(key)) {
                 null
             } else {
                 ToggleButton(UNLOCK_ICON).apply {
                     id = "lock-$key"
-                    styleClass += "studio-lock-btn"
+                    styleClass += "studio-lock-btn-compact"
                     isFocusTraversable = false
                     tooltip = Tooltip()
                     setOnAction {
@@ -1198,34 +1239,242 @@ class CameraStudio(private val owner: Stage, sendButton: (String, Boolean) -> Co
                     }
                 }
             }
-            val keyCell: Node = if (lockBtn != null) {
-                HBox(3.0, button, lockBtn).apply {
-                    alignment = javafx.geometry.Pos.CENTER_LEFT
-                    HBox.setHgrow(button, Priority.ALWAYS)
-                }
-            } else {
-                button
-            }
-            val row = InputRow(
+            inputRows[key] = InputRow(
                 button,
                 lockBtn,
-                Label().apply { id = "request-$key"; styleClass += "studio-telemetry-val" },
-                Label().apply { id = "readback-$key"; styleClass += "studio-telemetry-val" }
+                Label().apply {
+                    id = "request-$key"
+                    styleClass += "studio-telemetry-val"
+                    minWidth = 0.0
+                    maxWidth = Double.MAX_VALUE
+                    textOverrun = javafx.scene.control.OverrunStyle.ELLIPSIS
+                },
+                Label().apply {
+                    id = "readback-$key"
+                    styleClass += "studio-telemetry-val"
+                    minWidth = 0.0
+                    maxWidth = Double.MAX_VALUE
+                    alignment = javafx.geometry.Pos.CENTER_RIGHT
+                    textOverrun = javafx.scene.control.OverrunStyle.ELLIPSIS
+                },
             )
-            inputRows[key] = row
-            addRow(index + 1, keyCell, row.request, row.readback)
         }
-        val baseRow = PanelCatalog.buttonKeys.size + 1
-        latchingSettingControls.forEachIndexed { index, control ->
-            val button = settingToggleButton(control, onBody = false).apply { text = controlLabel(control); maxWidth = Double.MAX_VALUE }
-            val row = SettingRow(
+        latchingSettingControls.forEach { control ->
+            val button = settingToggleButton(control, onBody = false).apply {
+                text = compactKeyLabel(control.id, control)
+                minWidth = 0.0
+                maxWidth = Double.MAX_VALUE
+                textOverrun = javafx.scene.control.OverrunStyle.ELLIPSIS
+            }
+            settingRows[control.id] = SettingRow(
                 control,
                 button,
-                Label().apply { id = "request-${control.id}"; styleClass += "studio-telemetry-val" },
-                Label().apply { id = "readback-${control.id}"; styleClass += "studio-telemetry-val" }
+                Label().apply {
+                    id = "request-${control.id}"
+                    styleClass += "studio-telemetry-val"
+                    minWidth = 0.0
+                    maxWidth = Double.MAX_VALUE
+                    textOverrun = javafx.scene.control.OverrunStyle.ELLIPSIS
+                },
+                Label().apply {
+                    id = "readback-${control.id}"
+                    styleClass += "studio-telemetry-val"
+                    minWidth = 0.0
+                    maxWidth = Double.MAX_VALUE
+                    alignment = javafx.geometry.Pos.CENTER_RIGHT
+                    textOverrun = javafx.scene.control.OverrunStyle.ELLIPSIS
+                },
             )
-            settingRows[control.id] = row
-            addRow(baseRow + index, button, row.request, row.readback)
+        }
+    }
+
+    private fun buttonCellForKey(key: String): Node {
+        val row = inputRows.getValue(key)
+        val lockBtn = row.lockButton
+        return if (lockBtn != null) {
+            HBox(2.0, row.button, lockBtn).apply {
+                minWidth = 0.0
+                alignment = javafx.geometry.Pos.CENTER_LEFT
+                HBox.setHgrow(row.button, Priority.ALWAYS)
+            }
+        } else {
+            row.button
+        }
+    }
+
+    private fun twoColButtonGrid(nodes: List<Node>): GridPane = GridPane().apply {
+        hgap = 5.0
+        vgap = 4.0
+        minWidth = 0.0
+        columnConstraints.addAll(
+            ColumnConstraints().apply { percentWidth = 50.0; minWidth = 0.0; hgrow = Priority.ALWAYS },
+            ColumnConstraints().apply { percentWidth = 50.0; minWidth = 0.0; hgrow = Priority.ALWAYS },
+        )
+        nodes.forEachIndexed { idx, node ->
+            add(node, idx % 2, idx / 2)
+        }
+    }
+
+    private fun matrixSubhead(i18nKey: String): Label = Label().apply {
+        styleClass += listOf("studio-table-head", "studio-matrix-subhead")
+        maxWidth = Double.MAX_VALUE
+        textProperty().bind(I18n.bind(i18nKey))
+    }
+
+    private fun buildPhysicalButtonsMatrix(): VBox {
+        val shutterPowerKeys = listOf("power", "shutterHalf", "shutterFull", "afOn")
+            .filter { it in inputRows }
+        val shutterPowerSection = VBox(
+            4.0,
+            matrixSubhead("studio.matrix.group.shutter_power"),
+            twoColButtonGrid(shutterPowerKeys.map(::buttonCellForKey)),
+        ).apply { id = "physical-group-shutter-power" }
+
+        val dpadGrid = GridPane().apply {
+            id = "physical-dpad-grid"
+            styleClass += "studio-dpad-grid"
+            hgap = 4.0
+            vgap = 4.0
+            minWidth = 0.0
+            repeat(3) {
+                columnConstraints.add(ColumnConstraints().apply { percentWidth = 33.333; minWidth = 0.0; hgrow = Priority.ALWAYS })
+            }
+            if ("up" in inputRows) add(buttonCellForKey("up"), 1, 0)
+            if ("left" in inputRows) add(buttonCellForKey("left"), 0, 1)
+            if ("focusStickPress" in inputRows) add(buttonCellForKey("focusStickPress"), 1, 1)
+            if ("right" in inputRows) add(buttonCellForKey("right"), 2, 1)
+            if ("down" in inputRows) add(buttonCellForKey("down"), 1, 2)
+        }
+        val navKeys = listOf("menu", "back", "play", "drive", "delete", "fn4")
+            .filter { it in inputRows }
+        val navigationSection = VBox(
+            5.0,
+            matrixSubhead("studio.matrix.group.navigation"),
+            dpadGrid,
+            twoColButtonGrid(navKeys.map(::buttonCellForKey)),
+        ).apply { id = "physical-group-navigation" }
+
+        val fnAdcSection = VBox(
+            4.0,
+            matrixSubhead("studio.matrix.group.fn_adc"),
+            quickAdcButtonGrid(),
+        ).apply { id = "physical-group-fn-adc" }
+
+        return VBox(8.0, shutterPowerSection, navigationSection, fnAdcSection).apply {
+            minWidth = 0.0
+        }
+    }
+
+    private fun buildRawReadbackBody(): VBox {
+        val rawSwitchNodes = mutableListOf<Node>()
+        listOf("movieMode", "focusMode", "frontDialPress", "rearDialPress")
+            .filter { it in inputRows }
+            .forEach { rawSwitchNodes += buttonCellForKey(it) }
+        settingRows.values.forEach { row ->
+            rawSwitchNodes += row.gridButton
+        }
+        rawSwitchNodes += HBox(
+            4.0,
+            Label().apply {
+                styleClass += "studio-table-head"
+                minWidth = Region.USE_PREF_SIZE
+                textProperty().bind(I18n.bind("studio.dials.mode_dial"))
+            },
+            quickModeDialCombo.apply { HBox.setHgrow(this, Priority.ALWAYS) },
+        ).apply {
+            minWidth = 0.0
+            alignment = javafx.geometry.Pos.CENTER_LEFT
+        }
+        val rawSwitchesSection = VBox(
+            4.0,
+            matrixSubhead("studio.readback.group.raw_switches"),
+            twoColButtonGrid(rawSwitchNodes),
+        ).apply { id = "raw-readback-switches" }
+
+        val table = GridPane().apply {
+            id = "raw-readback-table"
+            styleClass += "studio-readback-table"
+            hgap = 4.0
+            vgap = 1.0
+            minWidth = 0.0
+            columnConstraints.addAll(
+                ColumnConstraints().apply { percentWidth = 36.0; minWidth = 0.0; hgrow = Priority.ALWAYS },
+                ColumnConstraints().apply { percentWidth = 38.0; minWidth = 0.0; hgrow = Priority.ALWAYS },
+                ColumnConstraints().apply {
+                    percentWidth = 26.0
+                    minWidth = 0.0
+                    hgrow = Priority.ALWAYS
+                    halignment = javafx.geometry.HPos.RIGHT
+                },
+            )
+            addRow(
+                0,
+                Label().apply { styleClass += "studio-table-head"; textProperty().bind(I18n.bind("studio.table.col.key")) },
+                Label().apply { styleClass += "studio-table-head"; textProperty().bind(I18n.bind("studio.table.col.request")) },
+                Label().apply {
+                    styleClass += "studio-table-head"
+                    maxWidth = Double.MAX_VALUE
+                    alignment = javafx.geometry.Pos.CENTER_RIGHT
+                    textProperty().bind(I18n.bind("studio.table.col.readback"))
+                },
+            )
+            val orderedKeys = listOf(
+                "power", "shutterHalf", "shutterFull", "afOn",
+                "up", "down", "left", "right", "focusStickPress",
+                "menu", "back", "play", "drive", "delete", "fn4",
+                "movieMode", "focusMode", "frontDialPress", "rearDialPress",
+            ).filter { it in inputRows } + inputRows.keys.filter { it !in setOf(
+                "power", "shutterHalf", "shutterFull", "afOn",
+                "up", "down", "left", "right", "focusStickPress",
+                "menu", "back", "play", "drive", "delete", "fn4",
+                "movieMode", "focusMode", "frontDialPress", "rearDialPress",
+            ) }
+            var rowIndex = 1
+            orderedKeys.forEach { key ->
+                val row = inputRows.getValue(key)
+                val ctrl = originControlsByButtonKey.getValue(key)
+                val nameLabel = Label(compactKeyLabel(key, ctrl)).apply {
+                    styleClass += "studio-readback-key"
+                    minWidth = 0.0
+                    maxWidth = Double.MAX_VALUE
+                    textOverrun = javafx.scene.control.OverrunStyle.ELLIPSIS
+                }
+                readbackKeyLabels[key] = nameLabel
+                if (rowIndex % 2 == 0) {
+                    nameLabel.styleClass += "studio-readback-cell-alt"
+                    row.request.styleClass += "studio-readback-cell-alt"
+                    row.readback.styleClass += "studio-readback-cell-alt"
+                }
+                row.request.styleClass += "studio-readback-cell"
+                row.readback.styleClass += "studio-readback-cell"
+                addRow(rowIndex++, nameLabel, row.request, row.readback)
+            }
+            settingRows.values.forEach { row ->
+                val nameLabel = Label(compactKeyLabel(row.control.id, row.control)).apply {
+                    styleClass += "studio-readback-key"
+                    minWidth = 0.0
+                    maxWidth = Double.MAX_VALUE
+                    textOverrun = javafx.scene.control.OverrunStyle.ELLIPSIS
+                }
+                readbackSettingLabels[row.control.id] = nameLabel
+                if (rowIndex % 2 == 0) {
+                    nameLabel.styleClass += "studio-readback-cell-alt"
+                    row.request.styleClass += "studio-readback-cell-alt"
+                    row.readback.styleClass += "studio-readback-cell-alt"
+                }
+                row.request.styleClass += "studio-readback-cell"
+                row.readback.styleClass += "studio-readback-cell"
+                addRow(rowIndex++, nameLabel, row.request, row.readback)
+            }
+        }
+        val liveReadbackSection = VBox(
+            4.0,
+            matrixSubhead("studio.readback.group.live_table"),
+            table,
+        ).apply { id = "raw-readback-live-section" }
+
+        return VBox(8.0, rawSwitchesSection, liveReadbackSection, pendingText).apply {
+            minWidth = 0.0
         }
     }
     private fun formatRequest(request: StudioInputState.Request, onLabel: String, offLabel: String): String {
@@ -1355,6 +1604,7 @@ class CameraStudio(private val owner: Stage, sendButton: (String, Boolean) -> Co
             if (row.button.isSelected != selected) row.button.isSelected = selected
             val nextReadback = when (observed) { true -> onLabel; false -> offLabel; null -> if (inputs.supports(key)) unreadText else unavailableText }
             if (row.readback.text != nextReadback) row.readback.text = nextReadback
+            setStyleClassPresent(row.readback, "studio-readback-active", observed == true)
             val nextRequest = inputs.lastRequest(key)?.let { formatRequest(it, onLabel, offLabel) } ?: "—"
             if (row.request.text != nextRequest) row.request.text = nextRequest
         }
@@ -1365,6 +1615,7 @@ class CameraStudio(private val owner: Stage, sendButton: (String, Boolean) -> Co
             if (row.gridButton.isSelected != selected) row.gridButton.isSelected = selected
             val nextReadback = when (observed) { true -> onText; false -> offText; null -> unreadText }
             if (row.readback.text != nextReadback) row.readback.text = nextReadback
+            setStyleClassPresent(row.readback, "studio-readback-active", observed == true)
             val nextRequest = settingRequests[id]?.let { formatRequest(it, onText, offText) } ?: "—"
             if (row.request.text != nextRequest) row.request.text = nextRequest
         }
@@ -1378,6 +1629,11 @@ class CameraStudio(private val owner: Stage, sendButton: (String, Boolean) -> Co
             else -> ""
         }
         if (pendingText.text != nextPending) pendingText.text = nextPending
+        val showPending = nextPending.isNotEmpty()
+        if (pendingText.isVisible != showPending) {
+            pendingText.isVisible = showPending
+            pendingText.isManaged = showPending
+        }
         val moviePending = inputs.lastRequest("movieMode")?.submission == StudioInputState.Submission.PENDING
         val effectiveMovie = effectiveBodyButtonState("movieMode")
         if (moviePending || inputs.observed("movieMode") != null) {
@@ -1858,20 +2114,16 @@ class CameraStudio(private val owner: Stage, sendButton: (String, Boolean) -> Co
             }
         }
     }
-    private fun quickAdcButtonStrip(): FlowPane = FlowPane(5.0, 5.0).apply {
-        val quickOrder = listOf(
-            "rear-q" to "Q",
-            "rear-ael" to "AEL",
-            "top-fn1" to "Fn1 / ±",
-            "top-fn2" to "Fn2",
-            "top-fn3" to "Fn3",
-            "rear-sub-backlight" to "LIGHT",
-        )
-        quickOrder.forEach { (controlId, shortLabel) ->
-            val control = momentarySettingControls[controlId] ?: return@forEach
+    private fun quickAdcButtonGrid(): GridPane {
+        val cells = mutableListOf<Node>()
+        fun adcCell(controlId: String, shortLabel: String) {
+            val control = momentarySettingControls[controlId] ?: return
             val source = "grid-$controlId"
             val btn = Button(shortLabel).apply {
                 id = "quick-adc-$controlId"
+                minWidth = 0.0
+                maxWidth = Double.MAX_VALUE
+                textOverrun = javafx.scene.control.OverrunStyle.ELLIPSIS
                 tooltip = Tooltip().apply {
                     textProperty().bind(I18n.bindDynamic {
                         "${controlLabel(control)} (${control.componentId}.${control.settingKey})\n${I18n.t("studio.tip.key_combo_hint")}"
@@ -1942,14 +2194,21 @@ class CameraStudio(private val owner: Stage, sendButton: (String, Boolean) -> Co
             }
             adcQuickButtons[controlId] = btn
             adcLockButtons[controlId] = lockBtn
-            children += HBox(2.0, btn, lockBtn).apply { styleClass += "studio-adc-key-group" }
+            cells += HBox(2.0, btn, lockBtn).apply {
+                minWidth = 0.0
+                styleClass += "studio-adc-key-group"
+                HBox.setHgrow(btn, Priority.ALWAYS)
+            }
         }
-        // Latching hold-assist for physical top-plate Exposure Compensation (± / Fn1, ADC CH6):
-        // real GFX100S defaults to HOLD mode (bExpBtnType=0), requiring Fn1/± to stay pressed
-        // while turning the Rear Command Dial — single-pointer desktop users can latch ± Hold here.
+        adcCell("rear-q", "Q")
+        adcCell("rear-ael", "AEL")
+        adcCell("top-fn1", "Fn1 / ±")
         if ("top-fn1" in momentarySettingControls) {
             val evHoldToggle = ToggleButton("± Hold").apply {
                 id = "quick-adc-ev-hold"
+                minWidth = 0.0
+                maxWidth = Double.MAX_VALUE
+                textOverrun = javafx.scene.control.OverrunStyle.ELLIPSIS
                 tooltip = Tooltip("Hold top-plate ± (Fn1, ADC CH6) while turning Rear Dial to adjust Exposure Comp (-5..+5 EV)")
                 setOnAction {
                     if (!hasBooleanSettingSender()) {
@@ -1963,8 +2222,12 @@ class CameraStudio(private val owner: Stage, sendButton: (String, Boolean) -> Co
                     }
                 }
             }
-            children += evHoldToggle
+            cells += evHoldToggle
         }
+        adcCell("top-fn2", "Fn2")
+        adcCell("top-fn3", "Fn3")
+        adcCell("rear-sub-backlight", "LIGHT")
+        return twoColButtonGrid(cells)
     }
     private fun setMovieModeFromStudio(movie: Boolean) {
         if (inputs.supports("movieMode")) {

@@ -962,6 +962,39 @@
 .studio-adc-key-group {
     -fx-alignment: center-left;
 }
+.studio-matrix-subhead {
+    -fx-padding: 2 0 3 0;
+    -fx-border-color: transparent transparent -fuji-border transparent;
+    -fx-border-width: 0 0 1 0;
+}
+.studio-dpad-grid {
+    -fx-background-color: -fuji-bg-elevated;
+    -fx-border-color: -fuji-border;
+    -fx-border-width: 1;
+    -fx-background-radius: 4;
+    -fx-border-radius: 4;
+    -fx-padding: 5 5 5 5;
+}
+.studio-readback-table {
+    -fx-padding: 2 0 0 0;
+}
+.studio-readback-key {
+    -fx-text-fill: -fuji-text-primary;
+    -fx-font-size: 10.5px;
+    -fx-padding: 2 4 2 4;
+}
+.studio-readback-cell {
+    -fx-font-size: 10.5px;
+    -fx-padding: 2 4 2 4;
+}
+.studio-readback-cell-alt {
+    -fx-background-color: -fuji-bg-elevated;
+    -fx-background-radius: 2;
+}
+.studio-readback-active {
+    -fx-text-fill: -fuji-accent;
+    -fx-font-weight: bold;
+}
 
 /* Theme v2 Semantic Component Styles (token-driven across dark, daylight, and external UI themes) */
 .source-badge-3d {
