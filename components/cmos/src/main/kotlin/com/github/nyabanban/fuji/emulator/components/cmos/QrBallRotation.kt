@@ -14,7 +14,7 @@ internal class QrBallRotation private constructor(
     fun frame(): Long {
         if (!moving) return 0L
         val elapsed = (nanoClock() - startNanos).coerceAtLeast(0L)
-        return elapsed / 1_000_000_000L * 60L + elapsed % 1_000_000_000L * 60L / 1_000_000_000L
+        return cameraAnimationFrame(elapsed)
     }
 
     fun turns(frame: Long): Float = ((initialTurns + frame / (periodSeconds * 60.0)) % 1.0).toFloat()

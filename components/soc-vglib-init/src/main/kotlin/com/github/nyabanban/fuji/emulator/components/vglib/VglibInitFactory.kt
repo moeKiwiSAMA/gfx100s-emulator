@@ -22,6 +22,8 @@ class VglibInitFactory:ComponentFactory {
             Setting("controlWordInputFile",ValueKind.TEXT,"",live=false),
             Setting(LcdcIrq118.SETTING,ValueKind.INTEGER,0L,minimum=0.0,maximum=4294967295.0,live=false),
             Setting(LcdcIrq117.SETTING,ValueKind.INTEGER,0L,minimum=0.0,maximum=4294967295.0,live=false),
+            Setting(LcdcIrq117.PERIOD_SETTING, ValueKind.INTEGER, LcdcIrq118.PERIOD, minimum=1.0, maximum=4294967295.0, live=false,
+                description="Continuous LCDC1 phase interrupt period in SoC ticks"),
             Setting(LcdcIrq117.FOLLOWUPS,ValueKind.TEXT,"",live=false),
             Setting(LcdcIrq118.SYNC,ValueKind.INTEGER,0L,minimum=0.0,maximum=4294967295.0,live=false),
             Setting(LcdcIrq118.RESUME,ValueKind.INTEGER,0L,minimum=0.0,maximum=4294967295.0,live=false),
@@ -118,7 +120,8 @@ class VglibInitFactory:ComponentFactory {
         private val phaseTicks = LcdcIrq117.parseTicks(config.getOrDefault(LcdcIrq117.FOLLOWUPS, "") as String, phaseDeadline)
         private val phase = phaseDeadline.takeIf { it > 0 }?.let { deadline ->
             require(functional.size == 2) { "LCD IRQ117 requires functional LCD banks" }
-            LcdcIrq117(context, irq ?: functional[1], deadline, phaseTicks, continuous = continuousScanout)
+            val period = unsigned(config.getOrDefault(LcdcIrq117.PERIOD_SETTING, LcdcIrq118.PERIOD))
+            LcdcIrq117(context, irq ?: functional[1], deadline, phaseTicks, continuous = continuousScanout, periodTicks = period)
         }
         private val lcdc0Irqs = if (continuousScanout && functional.size == 2 && (irq != null || phase != null)) {
             Lcdc0ContinuousIrqs(context, functional[0])

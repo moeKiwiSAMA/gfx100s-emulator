@@ -2,15 +2,24 @@ package com.github.nyabanban.fuji.emulator.components.ispsetup
 
 import com.github.nyabanban.fuji.emulator.api.AddressWindow
 import com.github.nyabanban.fuji.emulator.api.AudioCaptureStats
+import com.github.nyabanban.fuji.emulator.api.AudioCodecControlPort
+import com.github.nyabanban.fuji.emulator.api.AudioOutputRoute
 import com.github.nyabanban.fuji.emulator.api.AudioPcmChunk
 import com.github.nyabanban.fuji.emulator.api.AudioPlaybackStats
-import com.github.nyabanban.fuji.emulator.api.DmaSourcePeer
+import com.github.nyabanban.fuji.emulator.api.CameraTimedAudioCodec
 import com.github.nyabanban.fuji.emulator.api.CameraTimedI2sRxPort
-import com.github.nyabanban.fuji.emulator.api.I2sAudioPort
+import com.github.nyabanban.fuji.emulator.api.DmaDestinationActivityListener
+import com.github.nyabanban.fuji.emulator.api.DmaSourcePeer
 import com.github.nyabanban.fuji.emulator.api.MmioDevice
 import com.github.nyabanban.fuji.emulator.api.RangedDmaDestinationPeer
+import com.github.nyabanban.fuji.emulator.api.RoutedAudioPcm
+import com.github.nyabanban.fuji.emulator.api.RoutedI2sOutput
+import com.github.nyabanban.fuji.emulator.api.TimedAudioRoute
+import com.github.nyabanban.fuji.emulator.api.WaitableI2sTx
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.util.concurrent.Semaphore
+import java.util.concurrent.TimeUnit
 
 /**
  * Dual-channel SoC I2S/PCM audio capture & DMA destination engine (`0xFFF4F000` Ch 0 & `0xFFF78000` Ch 1).
@@ -36,9 +45,10 @@ internal class DualI2sAudioEngine(
     ringCapacityFrames: Int = DEFAULT_RING_CAPACITY_FRAMES,
     rxRingCapacityFrames: Int = DEFAULT_RX_RING_CAPACITY_FRAMES,
     private val movieExposureTick: () -> Long? = { null },
-) : I2sAudioPort, CameraTimedI2sRxPort {
+) : RoutedI2sOutput, CameraTimedI2sRxPort, WaitableI2sTx {
     companion object {
         private const val TICKS_PER_AUDIO_FRAME = 54_000_000L / 48_000L
+        private const val GENERIC_MONITOR_ONLY = 0x80
         const val PORT_AUDIO = "soc-isp-setup.i2s-audio"
         const val PORT_I2S0_DMA_TX = "soc-isp-setup.i2s0-dma-tx"
         const val PORT_I2S1_DMA_TX = "soc-isp-setup.i2s1-dma-tx"
@@ -120,6 +130,9 @@ internal class DualI2sAudioEngine(
         var hasPendingRxRightSample = false
         var pendingRxRightSample: Short = 0
 
+        // The DMA controller owns these bindings across I2S register resets and restores.
+        var activeTxDmaChannels = 0
+
         fun isTxReady(): Boolean = txEnabled || txDmaEnabled
         fun isRxReady(): Boolean = rxEnabled || rxDmaEnabled
 
@@ -145,9 +158,41 @@ internal class DualI2sAudioEngine(
     // Lock-guarded circular stereo TX buffer (2 shorts per frame: interleaved L, R)
     private val capacityFrames = ringCapacityFrames.also { require(it in 64..480_000) }
     private val ringSamples = ShortArray(capacityFrames * 2)
+    // Low seven bits encode bit depth and channel. The high bit excludes a frame from the codec
+    // feed but preserves it for generic monitoring. -1 excludes it from both monitored streams.
+    private val monitorTags = ByteArray(capacityFrames)
+    private val codecRoutes = arrayOfNulls<AudioOutputRoute>(capacityFrames)
+    private var outputCodec: AudioCodecControlPort? = null
+
+    @Synchronized
+    override fun bindOutputCodec(codec: AudioCodecControlPort?) {
+        outputCodec = codec
+        var visible = 0
+        var idx = ringReadIndex
+        repeat(ringQueuedFrames) {
+            if (isWakeVisible(monitorTags[idx])) visible++
+            if (++idx == capacityFrames) idx = 0
+        }
+        ringWakeVisibleFrames = visible
+    }
+
+    private fun isWakeVisible(tag: Byte): Boolean =
+        if (outputCodec != null) tag >= 0 else tag != (-1).toByte()
+
+    private fun codecRouteAt(tick: Long): TimedAudioRoute? = when (val codec = outputCodec) {
+        is CameraTimedAudioCodec -> codec.outputRouteAt(tick)
+        null -> null
+        else -> TimedAudioRoute(codec.outputRoute(), Long.MAX_VALUE)
+    }
+
+    private var primaryBurstStart = -1L
+    private var primaryBurstEnd = -1L
     private var ringReadIndex = 0
     private var ringWriteIndex = 0
     private var ringQueuedFrames = 0
+    private var ringWakeVisibleFrames = 0
+    private val txArrival = Semaphore(0)
+    private var txWaitArmed = false
     private var ringLastChannel = 0
     private var ringLastBitDepth = 16
     private var ringLastTick = 0L
@@ -232,6 +277,10 @@ internal class DualI2sAudioEngine(
     @Synchronized
     fun onSoftReset(channelIndex: Int) {
         channel(channelIndex).reset()
+        if (channelIndex == 0) {
+            primaryBurstStart = -1L
+            primaryBurstEnd = -1L
+        }
     }
 
     private fun updateArmedTick(ch: ChannelState, wasTxReady: Boolean, wasRxReady: Boolean) {
@@ -250,13 +299,26 @@ internal class DualI2sAudioEngine(
         }
     }
 
+    private fun isMonitorSource(channelIndex: Int): Boolean =
+        channelIndex == 0 || !(channels[0].isTxReady() && channels[0].activeTxDmaChannels != 0)
+
+    private fun monitorTag(channel: Int, bits: Int, monitored: Boolean): Byte {
+        val tag = (bits * 2 + channel).toByte()
+        return if (monitored && tag >= 0) tag else (-1).toByte()
+    }
+
     /** Decode a single 32-bit little-endian TX FIFO word into 16-bit stereo frames and enqueue. */
     @Synchronized
     fun pushTxFifoWord(channelIndex: Int, word32: Long, tick: Long = clockProvider()) {
-        pushTxFifoWordLocked(channel(channelIndex), channelIndex, word32.toInt(), tick)
+        val ch = channel(channelIndex)
+        val tag = monitorTag(channelIndex, ch.wordBitDepth, isMonitorSource(channelIndex))
+        pushTxFifoWordLocked(ch, channelIndex, word32.toInt(), tick, tag, codecRouteAt(tick)?.route)
+        signalTxArrival()
     }
 
-    private fun pushTxFifoWordLocked(ch: ChannelState, channelIndex: Int, raw: Int, tick: Long) {
+    private fun pushTxFifoWordLocked(
+        ch: ChannelState, channelIndex: Int, raw: Int, tick: Long, monitored: Byte, route: AudioOutputRoute?,
+    ) {
         ch.txWords++
         totalTxWords++
         when (ch.wordBitDepth) {
@@ -264,13 +326,13 @@ internal class DualI2sAudioEngine(
                 // Packed 8-bit signed stereo (low byte L, byte 1 R) upscaled to 16-bit
                 val left = ((raw and 0xFF).toByte().toInt() shl 8).toShort()
                 val right = (((raw ushr 8) and 0xFF).toByte().toInt() shl 8).toShort()
-                enqueueFrameLocked(channelIndex, left, right, 8, tick)
+                enqueueFrameLocked(channelIndex, left, right, 8, tick, monitored, route)
             }
             16 -> {
                 // GFX100S native 48 kHz 16-bit stereo packed as 0xRRRRLLLL (L = low16, R = high16)
                 val left = (raw and 0xFFFF).toShort()
                 val right = ((raw ushr 16) and 0xFFFF).toShort()
-                enqueueFrameLocked(channelIndex, left, right, 16, tick)
+                enqueueFrameLocked(channelIndex, left, right, 16, tick, monitored, route)
             }
             24 -> {
                 // 24-bit signed sample per 32-bit FIFO word (L then R alternating); scale down to 16-bit
@@ -281,7 +343,7 @@ internal class DualI2sAudioEngine(
                     ch.hasPendingLeftSample = true
                 } else {
                     ch.hasPendingLeftSample = false
-                    enqueueFrameLocked(channelIndex, ch.pendingLeftSample, sample16, 24, tick)
+                    enqueueFrameLocked(channelIndex, ch.pendingLeftSample, sample16, 24, tick, monitored, route)
                 }
             }
             else -> {
@@ -292,7 +354,7 @@ internal class DualI2sAudioEngine(
                     ch.hasPendingLeftSample = true
                 } else {
                     ch.hasPendingLeftSample = false
-                    enqueueFrameLocked(channelIndex, ch.pendingLeftSample, sample16, 32, tick)
+                    enqueueFrameLocked(channelIndex, ch.pendingLeftSample, sample16, 32, tick, monitored, route)
                 }
             }
         }
@@ -302,20 +364,53 @@ internal class DualI2sAudioEngine(
     internal fun pushTxFifoBytes(channelIndex: Int, bytes: ByteArray, length: Int, tick: Long) {
         require(length % 4 == 0 && length in 0..bytes.size) { "I2S TX byte payload must be 4-byte aligned" }
         val ch = channel(channelIndex)
+        val words = length / 4
+        val pendingWords = if (ch.hasPendingLeftSample) 1 else 0
+        val frames = if (ch.wordBitDepth >= 24) (words + pendingWords) / 2 else words
+        val start = tick - frames * TICKS_PER_AUDIO_FRAME
+        // Monitor TX0 while its DMA transport is active. TX1 can independently feed the same
+        // converter data on a second clock. Its lone transfers (including microphone monitoring)
+        // remain audible. The raw port retains every frame on both transmitters.
+        val overlapsPrimary = primaryBurstEnd >= 0L && start < primaryBurstEnd && tick > primaryBurstStart
+        val monitored = channelIndex == 0 || (isMonitorSource(channelIndex) && !overlapsPrimary)
+        var tag = monitorTag(channelIndex, ch.wordBitDepth, monitored)
+        // With both GFX100S transports set to TX DMA only, TX0 carries the WM8962 signal.
+        // During microphone monitoring the guest arms RX0 and sends the headphone feed on TX1.
+        // Capture the configuration at FIFO completion so a later mode change cannot retag queued audio.
+        if (tag >= 0 && channelIndex == 1 && channels.all { it.txEnabled && it.txDmaEnabled && !it.isRxReady() }) {
+            tag = (tag.toInt() or GENERIC_MONITOR_ONLY).toByte()
+        }
+        if (channelIndex == 0) {
+            primaryBurstStart = start
+            primaryBurstEnd = tick
+        }
+        // The DMA completion tick ends the sampled interval. A register write inside the burst
+        // takes effect on the first subsequent sample edge, even when the host drains much later.
+        var sampleTick = start
+        var interval = if (tag >= 0) codecRouteAt(sampleTick) else null
         var off = 0
         while (off < length) {
             val raw = (bytes[off].toInt() and 0xFF) or
                 ((bytes[off + 1].toInt() and 0xFF) shl 8) or
                 ((bytes[off + 2].toInt() and 0xFF) shl 16) or
                 (bytes[off + 3].toInt() shl 24)
-            pushTxFifoWordLocked(ch, channelIndex, raw, tick)
+            if (interval != null && sampleTick >= interval.untilExclusive) interval = codecRouteAt(sampleTick)
+            pushTxFifoWordLocked(ch, channelIndex, raw, tick, tag, interval?.route)
+            if (!ch.hasPendingLeftSample) sampleTick += TICKS_PER_AUDIO_FRAME
             off += 4
         }
+        signalTxArrival()
     }
 
-    private fun enqueueFrameLocked(channelIndex: Int, left: Short, right: Short, bitDepth: Int, tick: Long) {
+    private fun enqueueFrameLocked(
+        channelIndex: Int, left: Short, right: Short, bitDepth: Int, tick: Long, monitored: Byte, route: AudioOutputRoute?,
+    ) {
         if (ringQueuedFrames == capacityFrames) {
             // Bounded overwrite of oldest frame so emulation never stalls or allocates unboundedly
+            if (isWakeVisible(monitorTags[ringReadIndex]) && ringWakeVisibleFrames > 0) {
+                ringWakeVisibleFrames--
+            }
+            codecRoutes[ringReadIndex] = null
             var nextRead = ringReadIndex + 1
             if (nextRead == capacityFrames) nextRead = 0
             ringReadIndex = nextRead
@@ -323,12 +418,15 @@ internal class DualI2sAudioEngine(
             droppedFrames++
         }
         val offset = ringWriteIndex shl 1
+        monitorTags[ringWriteIndex] = monitored
+        codecRoutes[ringWriteIndex] = route
         ringSamples[offset] = left
         ringSamples[offset + 1] = right
         var nextWrite = ringWriteIndex + 1
         if (nextWrite == capacityFrames) nextWrite = 0
         ringWriteIndex = nextWrite
         ringQueuedFrames++
+        if (isWakeVisible(monitored)) ringWakeVisibleFrames++
         totalTxFrames++
         sequence++
         ringLastChannel = channelIndex
@@ -352,9 +450,12 @@ internal class DualI2sAudioEngine(
         require(channel == 0 || channel == 1) { "I2S channel must be 0 or 1, got $channel" }
         require(frames >= 0 && pcmStereoInterleaved.size >= frames * 2) { "Insufficient interleaved stereo PCM buffer" }
         require(sampleRateHz > 0) { "sampleRateHz must be positive" }
+        val monitored = monitorTag(channel, bitDepth, isMonitorSource(channel))
+        val route = codecRouteAt(tick)?.route
         for (i in 0 until frames) {
-            enqueueFrameLocked(channel, pcmStereoInterleaved[i * 2], pcmStereoInterleaved[i * 2 + 1], bitDepth, tick)
+            enqueueFrameLocked(channel, pcmStereoInterleaved[i * 2], pcmStereoInterleaved[i * 2 + 1], bitDepth, tick, monitored, route)
         }
+        signalTxArrival()
     }
 
     override fun pushRxSamples(
@@ -504,9 +605,17 @@ internal class DualI2sAudioEngine(
         if (secondFrames > 0) {
             System.arraycopy(ringSamples, 0, out, firstFrames * 2, secondFrames * 2)
         }
-        ringReadIndex += count
-        if (ringReadIndex >= capacityFrames) ringReadIndex -= capacityFrames
+        var idx = ringReadIndex
+        repeat(count) {
+            if (isWakeVisible(monitorTags[idx]) && ringWakeVisibleFrames > 0) {
+                ringWakeVisibleFrames--
+            }
+            codecRoutes[idx] = null
+            if (++idx == capacityFrames) idx = 0
+        }
+        ringReadIndex = idx
         ringQueuedFrames -= count
+        if (ringQueuedFrames == 0) ringWakeVisibleFrames = 0
         return AudioPcmChunk(
             channel = ringLastChannel,
             sampleRateHz = DEFAULT_SAMPLE_RATE_HZ,
@@ -516,6 +625,89 @@ internal class DualI2sAudioEngine(
             sequence = sequence,
             tick = ringLastTick,
         )
+    }
+
+    private fun signalTxArrival() {
+        if (txWaitArmed && ringWakeVisibleFrames != 0) {
+            txWaitArmed = false
+            txArrival.release()
+        }
+    }
+
+    override fun awaitTxData(timeoutNanos: Long) {
+        synchronized(this) {
+            if (ringWakeVisibleFrames > 0) return
+            // Check and arm under the producer's lock, including when a DMA completes
+            // after the host's empty read but before its call to awaitTxData.
+            txArrival.drainPermits()
+            txWaitArmed = true
+        }
+        txArrival.tryAcquire(timeoutNanos, TimeUnit.NANOSECONDS)
+    }
+
+    override fun drainMonitorPcm(maxFrames: Int): AudioPcmChunk? = drainTaggedPcm(maxFrames, codec = false)?.pcm
+
+    override fun drainCodecPlaybackPcm(maxFrames: Int): AudioPcmChunk? = drainRoutedCodecPcm(maxFrames)?.pcm
+
+    override fun drainRoutedCodecPcm(maxFrames: Int): RoutedAudioPcm? = drainTaggedPcm(maxFrames, codec = true)
+
+    private fun monitoredBy(tag: Byte, codec: Boolean): Boolean =
+        tag >= 0 || (!codec && tag != (-1).toByte())
+
+    @Synchronized
+    private fun drainTaggedPcm(maxFrames: Int, codec: Boolean): RoutedAudioPcm? {
+        require(maxFrames > 0) { "maxFrames must be positive" }
+        var read = ringReadIndex
+        var consumed = 0
+        var frames = 0
+        var tag = -1
+        var route: AudioOutputRoute? = null
+        while (consumed < ringQueuedFrames && frames < maxFrames) {
+            val encoded = monitorTags[read]
+            if (monitoredBy(encoded, codec)) {
+                val nextTag = encoded.toInt() and 0x7f
+                val nextRoute = if (codec) codecRoutes[read] else null
+                if (tag >= 0 && (nextTag != tag || nextRoute != route)) break
+                route = nextRoute
+                tag = nextTag
+                frames++
+            }
+            consumed++
+            if (++read == capacityFrames) read = 0
+        }
+        var source = ringReadIndex
+        ringReadIndex = read
+        ringQueuedFrames -= consumed
+        if (frames == 0) {
+            repeat(consumed) {
+                if (isWakeVisible(monitorTags[source]) && ringWakeVisibleFrames > 0) {
+                    ringWakeVisibleFrames--
+                }
+                codecRoutes[source] = null
+                if (++source == capacityFrames) source = 0
+            }
+            if (ringQueuedFrames == 0) ringWakeVisibleFrames = 0
+            return null
+        }
+
+        val samples = ShortArray(frames * 2)
+        var dest = 0
+        repeat(consumed) {
+            val slotTag = monitorTags[source]
+            if (monitoredBy(slotTag, codec)) {
+                samples[dest++] = ringSamples[source * 2]
+                samples[dest++] = ringSamples[source * 2 + 1]
+            }
+            if (isWakeVisible(slotTag) && ringWakeVisibleFrames > 0) {
+                ringWakeVisibleFrames--
+            }
+            codecRoutes[source] = null
+            if (++source == capacityFrames) source = 0
+        }
+        if (ringQueuedFrames == 0) ringWakeVisibleFrames = 0
+        val pcm = AudioPcmChunk(tag and 1, DEFAULT_SAMPLE_RATE_HZ, tag shr 1, samples,
+            frames, sequence, ringLastTick)
+        return RoutedAudioPcm(pcm, route)
     }
 
     @Synchronized
@@ -773,7 +965,12 @@ internal class DualI2sAudioEngine(
     private inner class ChannelDmaTxPeer(
         private val ch: ChannelState,
         private val window: AddressWindow,
-    ) : RangedDmaDestinationPeer {
+    ) : RangedDmaDestinationPeer, DmaDestinationActivityListener {
+        override fun setTransferActive(channel: Int, active: Boolean) = synchronized(this@DualI2sAudioEngine) {
+            val bit = 1 shl channel
+            ch.activeTxDmaChannels = if (active) ch.activeTxDmaChannels or bit else ch.activeTxDmaChannels and bit.inv()
+        }
+
         private var leaseOwner: Int = -1
         private var leaseSize: Int = 0
         private var scratchBuffer: ByteArray = ByteArray(0)
@@ -950,9 +1147,13 @@ internal class DualI2sAudioEngine(
 
     @Synchronized
     fun applySnapshot(parsed: ParsedSnapshot?) {
+        primaryBurstStart = -1L
+        primaryBurstEnd = -1L
+        codecRoutes.fill(null)
         ringReadIndex = 0
         ringWriteIndex = 0
         ringQueuedFrames = 0
+        ringWakeVisibleFrames = 0
         synchronized(rxLock) {
             rxRingReadIndex = 0
             rxRingWriteIndex = 0

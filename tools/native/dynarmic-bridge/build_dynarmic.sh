@@ -15,6 +15,24 @@ WIN64_BUILD="${HOME_DIR}/build-win64"
 TARGET="${1:-all}"
 JOBS="${FUJI_BUILD_JOBS:-$(nproc 2>/dev/null || echo 4)}"
 
+bridge_source_hash() (
+    cd "${REPO_ROOT}"
+    local target="$1" dir="tools/native/dynarmic-bridge" name
+    local inputs=()
+    while IFS= read -r name || [ -n "$name" ]; do
+        inputs+=("${dir}/${name}")
+    done < "${dir}/bridge-inputs.txt"
+    if [ "$target" = win64 ]; then
+        inputs+=("${dir}/mingw64-dynarmic-toolchain.cmake")
+    fi
+    sha256sum --binary "${inputs[@]}" | sha256sum | awk '{print $1}'
+)
+
+case "${TARGET}" in
+    hash-linux) bridge_source_hash linux; exit ;;
+    hash-win64) bridge_source_hash win64; exit ;;
+esac
+
 ensure_source() {
     mkdir -p "${HOME_DIR}"
     local cache_dir="${FUJI_DYNARMIC_CACHE_DIR:-/opt/fuji-cache/dynarmic-v1/source}"
@@ -101,6 +119,7 @@ cmake_gen_args() {
 
 build_linux() {
     echo "[dynarmic] Building Linux x86_64 libfuji_dynarmic.so + test_dynarmic_bridge (jobs=${JOBS}) ..."
+    rm -f -- "${LINUX_BUILD}/bridge.sha256"
     local boost_wrap
     boost_wrap="$(resolve_boost_wrap)"
     # shellcheck disable=SC2046
@@ -115,10 +134,12 @@ build_linux() {
     write_identity "linux-x86_64" "${LINUX_BUILD}/libfuji_dynarmic.so" "${LINUX_BUILD}/source.properties"
     echo "[dynarmic] Built: ${LINUX_BUILD}/libfuji_dynarmic.so"
     "${LINUX_BUILD}/test_dynarmic_bridge"
+    bridge_source_hash linux > "${LINUX_BUILD}/bridge.sha256"
 }
 
 build_win64() {
     echo "[dynarmic] Cross-compiling Windows x86_64 fuji_dynarmic.dll via MinGW-w64 (jobs=${JOBS}) ..."
+    rm -f -- "${WIN64_BUILD}/bridge.sha256"
     local boost_wrap
     boost_wrap="$(resolve_boost_wrap)"
     # shellcheck disable=SC2046
@@ -132,6 +153,7 @@ build_win64() {
         -DFUJI_DYNARMIC_BUILD_TESTS=OFF
     cmake --build "${WIN64_BUILD}" --parallel "${JOBS}"
     write_identity "windows-x86_64" "${WIN64_BUILD}/fuji_dynarmic.dll" "${WIN64_BUILD}/source.properties"
+    bridge_source_hash win64 > "${WIN64_BUILD}/bridge.sha256"
     echo "[dynarmic] Built: ${WIN64_BUILD}/fuji_dynarmic.dll"
 }
 

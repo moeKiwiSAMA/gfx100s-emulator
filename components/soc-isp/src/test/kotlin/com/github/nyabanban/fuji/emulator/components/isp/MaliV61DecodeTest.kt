@@ -13,6 +13,74 @@ import kotlin.test.assertTrue
 
 class MaliV61DecodeTest {
     @Test
+    fun absentAndInvalidColourDescriptionsKeepLegacySps() {
+        val enc = MaliV61BitstreamEncoder
+        val parse = MaliV61BitstreamEncoder.ColourDescription.Companion::fromMve
+        assertEquals(null, parse(intArrayOf(15, -4)))
+        assertEquals(null, parse(intArrayOf(15, -4, 0x03030102)))
+        assertEquals(null, parse(intArrayOf(15, -4, 0x09120903)))
+
+        // Recorded from the original public SPS overloads at 1920x1080 and 30 fps.
+        val avc = listOf(
+            "000000016742c02ada01e0089f961001b7740066ff300840",
+            "000000016742c02ada01e0089f966c800dbba00337f98042",
+        )
+        val hevc = listOf(
+            "00000001420101022000000300b00000030000030099a003c0801107cad94baba08804006ddd000cdfe60020",
+            "00000001420101022000000300b00000030000030099a003c0801107cad94baba089b020036ee80066ff3001",
+        )
+        for ((index, full) in listOf(false, true).withIndex()) {
+            assertEquals(avc[index], enc.buildH264Sps(1920, 1080, 30L shl 16, full).toHexString())
+            assertEquals(hevc[index], enc.buildH265Sps(1920, 1080, true, 30L shl 16, full).toHexString())
+        }
+    }
+
+    @Test
+    fun avcAndHevcSignalMveColourDescriptionInTheElementaryStream(@TempDir dir: Path) {
+        val enc = MaliV61BitstreamEncoder
+        for (packed in listOf(0x06060101, 0x09120902, 0x06060100)) {
+            val colour = requireNotNull(MaliV61BitstreamEncoder.ColourDescription.fromMve(intArrayOf(15, -4, packed)))
+            // A range of zero inherits the existing full-range input-surface setting.
+            val expectedRange = if (colour.range == 1) 0 else 1
+            val fps = 30L shl 16
+            val streams = mapOf(
+                "h264" to enc.buildH264Sps(16, 16, fps, true, colour) + enc.buildH264Pps() +
+                    enc.buildH264IdrSlice(16, 16, 0),
+                "hevc" to enc.buildH265Vps(true) + enc.buildH265Sps(16, 16, true, fps, true, false, colour) +
+                    enc.buildH265Pps() + enc.buildH265IdrSlice(16, 16, bitDepth10 = true),
+            )
+            for ((codec, data) in streams) {
+                val input = Files.write(dir.resolve("picture.$codec"), data)
+                val log = dir.resolve("trace.txt")
+                val explicit = System.getenv("FUJI_FFMPEG")
+                val trace = try {
+                    ProcessBuilder(explicit ?: "ffmpeg", "-hide_banner", "-i", input.toString(), "-c:v", "copy",
+                        "-bsf:v", "trace_headers", "-frames:v", "1", "-f", "null", "-")
+                        .redirectError(log.toFile()).start()
+                } catch (e: IOException) {
+                    if (explicit != null) throw e
+                    assumeTrue(false, "FFmpeg unavailable: ${e.message}")
+                    return
+                }
+                try {
+                    assertTrue(trace.waitFor(30, TimeUnit.SECONDS), "FFmpeg header trace timed out")
+                    val headers = Files.readString(log)
+                    assertEquals(0, trace.exitValue(), headers)
+                    val expected = mapOf("video_full_range_flag" to expectedRange,
+                        "colour_description_present_flag" to 1, "colour_primaries" to colour.primaries,
+                        "transfer_characteristics" to colour.transfer, "matrix_coefficients" to colour.matrix)
+                    for ((field, value) in expected) {
+                        assertTrue(Regex("""(?m)\b$field\s+[01]+ = $value\s*$""").containsMatchIn(headers),
+                            "$codec missing $field=$value: $headers")
+                    }
+                } finally {
+                    if (trace.isAlive) trace.destroyForcibly()
+                }
+            }
+        }
+    }
+
+    @Test
     fun avcCoarseFramesKeepNeutralChromaBesideColouredBlocks(@TempDir dir: Path) {
         val width = 256
         val height = 128
@@ -58,6 +126,44 @@ class MaliV61DecodeTest {
                 assertTrue(abs(actual - reference) <= 2, "frame=$n plane=$plane block=$block ($x,$y): $actual vs $reference")
             }
         }
+    }
+
+    @Test
+    fun avcConstantRateReadsOnlyBlocksThatCanUseRawPixels() {
+        val reads = ArrayList<Int>()
+        var marker = 400
+        val source = MvePcmSource { x, _, pixels ->
+            reads += x
+            pixels.fill(400, 0, 256)
+            pixels.fill(512, 256, 384)
+            pixels[17] = marker.toShort()
+            true
+        }
+        var previous: AvcReferenceFrame? = null
+        var frameNum = 0
+        fun picture(firstY: Int, budget: Int): AvcReferenceFrame {
+            reads.clear()
+            val current = AvcReferenceFrame(32, 16, byteArrayOf(firstY.toByte(), 100),
+                ByteArray(2) { 128.toByte() }, ByteArray(2) { 128.toByte() }, ByteArray(32) { 100 },
+                trackChroma = true)
+            MaliV61BitstreamEncoder.buildH264Picture(current, previous, 0, frameNum++, source, budget, true)
+            previous = current
+            return current
+        }
+        picture(100, 0)
+        assertTrue(reads.isEmpty())
+        picture(100, 2000)
+        assertTrue(reads.isEmpty())
+        val changed = picture(104, 2000)
+        assertEquals(listOf(0), reads)
+        val prior = requireNotNull(changed.pcmBlocks?.get(0))
+        val repeated = picture(104, 0)
+        assertEquals(listOf(0), reads)
+        assertTrue(repeated.pcmBlocks?.get(0) === prior)
+        marker += 4
+        val refreshed = picture(104, 0)
+        assertEquals(listOf(0), reads)
+        assertEquals(null, refreshed.pcmBlocks?.get(0))
     }
 
     @Test

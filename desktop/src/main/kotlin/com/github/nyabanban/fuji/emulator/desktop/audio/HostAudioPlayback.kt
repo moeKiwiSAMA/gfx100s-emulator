@@ -5,6 +5,9 @@ import com.github.nyabanban.fuji.emulator.api.AudioOutputRoute
 import com.github.nyabanban.fuji.emulator.api.AudioSinkKind
 import com.github.nyabanban.fuji.emulator.api.GpioInputPort
 import com.github.nyabanban.fuji.emulator.api.I2sAudioPort
+import com.github.nyabanban.fuji.emulator.api.RoutedAudioPcm
+import com.github.nyabanban.fuji.emulator.api.RoutedI2sOutput
+import com.github.nyabanban.fuji.emulator.api.WaitableI2sTx
 import com.github.nyabanban.fuji.emulator.api.Ports
 import com.github.nyabanban.fuji.emulator.api.SceneAudioProvider
 import com.github.nyabanban.fuji.emulator.api.SensorPort
@@ -483,6 +486,7 @@ class HostAudioPlayback @JvmOverloads constructor(
         boundI2s = ports.find("soc-isp-setup.i2s-audio", I2sAudioPort::class.java)
         boundCodec = ports.find("wm8962.codec", AudioCodecControlPort::class.java)
             ?: ports.find("soc-spi.wm8962.codec", AudioCodecControlPort::class.java)
+        (boundI2s as? RoutedI2sOutput)?.bindOutputCodec(boundCodec)
         boundGpio = ports.find("soc-gpio.inputs", GpioInputPort::class.java)
         boundSceneAudio = ports.find(SceneAudioProvider.PORT_NAME, SceneAudioProvider::class.java)
             ?: (ports.find("cmos", SensorPort::class.java) as? SceneAudioProvider)
@@ -730,10 +734,15 @@ class HostAudioPlayback @JvmOverloads constructor(
     /** Drain and process one available PCM chunk (or monitor chunk) immediately. */
     fun pumpOnce(): Boolean = synchronized(pumpLock) {
         val i2s = resolveI2sPort()
-        val chunk = i2s?.drainPlaybackPcm(CHUNK_FRAMES)
-        if (chunk != null) {
-            val codec = resolveCodecPort()
-            val route = codec?.outputRoute()
+        val codec = resolveCodecPort()
+        val output = when {
+            codec == null -> i2s?.drainMonitorPcm(CHUNK_FRAMES)?.let { RoutedAudioPcm(it, null) }
+            i2s is RoutedI2sOutput -> i2s.drainRoutedCodecPcm(CHUNK_FRAMES)
+            else -> i2s?.drainCodecPlaybackPcm(CHUNK_FRAMES)?.let { RoutedAudioPcm(it, null) }
+        }
+        if (output != null) {
+            val chunk = output.pcm
+            val route = output.route ?: codec?.outputRoute()
             val monFrames = if (capture.monitor && !capture.muted) drainMonitorPcm(mixShortScratch, chunk.frames) else 0
             val sourceSamples = if (monFrames > 0) {
                 for (i in 0 until chunk.frames * 2) {
@@ -756,8 +765,7 @@ class HostAudioPlayback @JvmOverloads constructor(
             )
             outputPeakLeft = peakScratch[0]
             outputPeakRight = peakScratch[1]
-            writeRenderedBytes(byteLen)
-            framesPlayed.addAndGet(chunk.frames.toLong())
+            framesPlayed.addAndGet(writeRenderedBytes(byteLen).toLong() / BYTES_PER_FRAME)
             chunksPlayed.incrementAndGet()
             return true
         }
@@ -776,8 +784,7 @@ class HostAudioPlayback @JvmOverloads constructor(
             )
             outputPeakLeft = peakScratch[0]
             outputPeakRight = peakScratch[1]
-            writeRenderedBytes(byteLen)
-            framesPlayed.addAndGet(monFrames.toLong())
+            framesPlayed.addAndGet(writeRenderedBytes(byteLen).toLong() / BYTES_PER_FRAME)
             chunksPlayed.incrementAndGet()
             return true
         }
@@ -789,21 +796,41 @@ class HostAudioPlayback @JvmOverloads constructor(
         return false
     }
 
-    private fun writeRenderedBytes(byteLen: Int) {
+    private fun writeRenderedBytes(byteLen: Int): Int {
         onRenderedPcm?.invoke(renderBuffer, byteLen)
-        val line = activeLine
-        if (line != null && backendMode == AudioBackendMode.ACTIVE_LINE) {
-            try {
-                line.write(renderBuffer, 0, byteLen)
-            } catch (error: Throwable) {
-                log.warn("Host audio output write failed ({}); degrading to silent mode", error.message ?: error.javaClass.simpleName)
-                degradationReason = error.message ?: error.javaClass.simpleName
-                closeLineQuietly()
-                backendMode = AudioBackendMode.HEADLESS_SILENT
-                activeBackend = "HEADLESS_SILENT"
-                actualLatencyMs = 0
+        val line = activeLine ?: return byteLen // Keep draining rendered frames in headless mode.
+        var offset = 0
+        var noProgressSince = 0L
+        try {
+            while (offset < byteLen && running.get() && !closed.get()) {
+                val remaining = byteLen - offset
+                val written = line.write(renderBuffer, offset, remaining)
+                check(written in 0..remaining && written % BYTES_PER_FRAME == 0) {
+                    "Invalid audio write result of $written bytes for $remaining bytes"
+                }
+                if (written > 0) {
+                    offset += written
+                    noProgressSince = 0L
+                } else {
+                    val now = System.nanoTime()
+                    if (noProgressSince == 0L) noProgressSince = now
+                    check(now - noProgressSince < bufferMs * 1_000_000L) {
+                        "Audio output made no progress for $bufferMs ms"
+                    }
+                    Thread.sleep(1L)
+                }
             }
+        } catch (_: InterruptedException) {
+            Thread.currentThread().interrupt()
+        } catch (error: Throwable) {
+            log.warn("Host audio output write failed ({}); degrading to silent mode", error.message ?: error.javaClass.simpleName)
+            degradationReason = error.message ?: error.javaClass.simpleName
+            closeLineQuietly()
+            backendMode = AudioBackendMode.HEADLESS_SILENT
+            activeBackend = "HEADLESS_SILENT"
+            actualLatencyMs = 0
         }
+        return offset
     }
 
     fun status(): Map<String, Any?> {
@@ -945,11 +972,21 @@ class HostAudioPlayback @JvmOverloads constructor(
 
     private fun pumpLoop() {
         NativeOsScheduler.tuneCurrentThread(NativeOsScheduler.ThreadRole.AUDIO_IO)
+        var consecutiveIdlePolls = 0
         while (running.get() && !closed.get()) {
             try {
-                if (!pumpOnce()) {
+                if (pumpOnce()) {
+                    consecutiveIdlePolls = 0
+                } else {
                     idlePolls.incrementAndGet()
-                    if (!NativeOsScheduler.sleepNanos(5_000_000L)) {
+                    val idleStreak = ++consecutiveIdlePolls
+                    val transport = resolveI2sPort()
+                    if (transport is WaitableI2sTx) {
+                        // awaitTxData wakes immediately on audio arrival, so a longer idle timeout
+                        // adds zero wake latency while cutting idle lock/wakeup churn by 5x.
+                        val waitNanos = if (idleStreak >= 4) 25_000_000L else 5_000_000L
+                        transport.awaitTxData(waitNanos)
+                    } else if (!NativeOsScheduler.sleepNanos(5_000_000L)) {
                         Thread.sleep(5L)
                     } else if (Thread.interrupted()) {
                         break

@@ -437,7 +437,33 @@ class IspCmdFactory : ComponentFactory {
             }
         }
 
+        private fun completeChannel(ch: Int, tick: Long) {
+            if (!isChannelArmed(ch)) {
+                channelNextIrqTick[ch] = -1L
+                return
+            }
+            channelNextIrqTick[ch] = tick + CHANNEL_IRQ_PERIOD_TICKS
+            if (channelStatus[ch] != 0L) return
+            val buf = c000Bytes ?: return
+            val mask = readWord(buf, CH_MASK_OFFS[ch])
+            channelStatus[ch] = if (mask and 1L != 0L) 1L else 2L
+            writeWord(buf, CH_STATUS_OFFS[ch], channelStatus[ch])
+            if (!channelIrqAsserted[ch]) {
+                channelIrqAsserted[ch] = true
+                irqSink?.setLine(CH_IRQS[ch], true)
+            }
+            channelIrqCount[ch]++
+            if (channelDrainPending[ch] && !isChannelRunning(ch)) {
+                channelDrainPending[ch] = false
+                channelNextIrqTick[ch] = -1L
+            }
+        }
+
         private fun registerPorts() {
+            if (channelIrqsEnabled) {
+                context.ports.register(id, CcdMovieFrameInput.PORT_ID, CcdMovieFrameInput::class.java,
+                    CcdMovieFrameInput { tick -> completeChannel(0, tick) })
+            }
             context.ports.register(id, PORT_C000, MmioDevice::class.java, object : TickAwareMmioDevice {
                 override val clockOrder = 76
                 override fun readMayMutateSchedule(): Boolean = false
@@ -453,31 +479,15 @@ class IspCmdFactory : ComponentFactory {
                 override fun nextInterestedTick(): Long = nextDeadline() ?: Long.MAX_VALUE
                 override fun beforeInstruction(tick: Long) {
                     if (!channelIrqsEnabled || closed) return
-                    val buf = c000Bytes ?: return
                     for (ch in 0..1) {
-                        val due = channelNextIrqTick[ch]
-                        if (due in 0L..tick) {
-                            if (!isChannelArmed(ch)) {
-                                channelNextIrqTick[ch] = -1L
-                            } else if (channelStatus[ch] == 0L) {
-                                val mask = readWord(buf, CH_MASK_OFFS[ch]) and 0x3L
-                                val statusBit = if ((mask and 1L) != 0L) 1L else 2L
-                                channelStatus[ch] = channelStatus[ch] or statusBit
-                                writeWord(buf, CH_STATUS_OFFS[ch], channelStatus[ch])
-                                if (!channelIrqAsserted[ch]) {
-                                    channelIrqAsserted[ch] = true
-                                    irqSink?.setLine(CH_IRQS[ch], true)
-                                }
-                                channelIrqCount[ch]++
-                                if (channelDrainPending[ch] && !isChannelRunning(ch)) {
-                                    channelDrainPending[ch] = false
-                                    channelNextIrqTick[ch] = -1L
-                                } else {
-                                    channelNextIrqTick[ch] = tick + CHANNEL_IRQ_PERIOD_TICKS
-                                }
-                            } else {
-                                channelNextIrqTick[ch] = tick + CHANNEL_IRQ_PERIOD_TICKS
-                            }
+                        if (channelNextIrqTick[ch] !in 0L..tick) continue
+                        if (ch == 0 && context.ports.find(CcdFrameClockPort.PORT_ID, CcdFrameClockPort::class.java)
+                                ?.movieFrameClockActive == true) {
+                            // CCDIF supplies channel 2's edges during recording. Keep a standby
+                            // deadline for the transition back to free-running operation.
+                            channelNextIrqTick[ch] = tick + CHANNEL_IRQ_PERIOD_TICKS
+                        } else {
+                            completeChannel(ch, tick)
                         }
                     }
                 }

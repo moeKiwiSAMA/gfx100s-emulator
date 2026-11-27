@@ -2,6 +2,7 @@ package com.github.nyabanban.fuji.emulator.components.jpeg
 
 import com.github.nyabanban.fuji.emulator.api.IspStillReadoutPort
 import com.github.nyabanban.fuji.emulator.api.*
+import java.lang.foreign.Arena
 import java.lang.foreign.MemorySegment
 import java.lang.foreign.ValueLayout
 import java.nio.ByteBuffer
@@ -514,6 +515,32 @@ class SocJpegFactory : ComponentFactory {
             return true
         }
 
+        private inline fun withEncodeSegment(
+            dma: DirectGuestRamPort, address: Long, size: Long, encode: (MemorySegment) -> Unit,
+        ) {
+            val direct = dma.sliceDirect(address, size, write = false)
+            if (direct != null) {
+                encode(direct)
+                return
+            }
+            // The native codec accepts contiguous UYVY. High physical RAM can be mapped as
+            // individual pages without a contiguous host view. Read it directly into one
+            // scoped native buffer, avoiding a full-frame heap allocation and second copy.
+            if (address + size <= 0x1_0000_0000L || !NativeCodecBridge.hasJpeg) return
+            Arena.ofConfined().use { arena ->
+                val staging = arena.allocate(size)
+                var done = 0L
+                while (done < size) {
+                    val count = minOf(DMA_CHUNK_BYTES.toLong(), size - done)
+                    val slice = staging.asSlice(done, count).asByteBuffer()
+                    dma.read(address + done, slice)
+                    check(!slice.hasRemaining()) { "Incomplete JPEG source DMA read" }
+                    done += count
+                }
+                encode(staging)
+            }
+        }
+
         private fun dmaReadChunked(dma: DmaMemory, address: Long, size: Int): ByteArray {
             val bytes = ByteArray(size)
             val direct = (dma as? DirectGuestRamPort)?.sliceDirect(address, size.toLong(), write = false)
@@ -669,7 +696,7 @@ class SocJpegFactory : ComponentFactory {
             val axiHigh = context.ports.find("soc-isp.axi-high34", MmioDevice::class.java)
             val srcHi = axiHigh?.let { runCatching { it.read(0x40L, 4) and 3L }.getOrNull() } ?: 0L
             val dstHi = axiHigh?.let { runCatching { it.read(0x44L, 4) and 3L }.getOrNull() } ?: 0L
-            val srcAddr = encRegs.getValue(ENC_SRC_YC_ADDR)
+            val srcAddr = (srcHi shl 32) or encRegs.getValue(ENC_SRC_YC_ADDR)
             val dstAddr = encRegs.getValue(ENC_DST_JPEG_ADDR)
             val dstMax = encRegs.getValue(ENC_DST_JPEG_MAX)
             val srcSizeWord = encRegs.getValue(ENC_SRC_SIZE)
@@ -681,9 +708,13 @@ class SocJpegFactory : ComponentFactory {
             val width = if (winW > 0 && winH > 0) winW else srcW
             val height = if (winW > 0 && winH > 0) winH else srcH
             val pitchReg = (encRegs.getValue(ENC_LINE_PITCH) and 0xFFFFL).toInt()
-            // DAT 0x011ff814 / 0x021e1800 writes pixel stride (e.g. 160 for 160x120); legacy unit tests pass byte stride (width*2).
+            // RECC's stock descriptor uses a pixel pitch even for a 4000-pixel RAF preview
+            // in a 11664-pixel RESZ surface. Older descriptors also allow byte pitches.
+            val reccUyvy = encRegs.getValue(ENC_FORMAT_CTRL) == 0x000A_0003L &&
+                encRegs.getValue(ENC_SUBSAMPLE) == 1L && encRegs.getValue(ENC_MODE) == 1L && winDimWord == 0L
             val linePitch = when {
                 pitchReg <= 0 -> width * 2
+                reccUyvy -> pitchReg * 2
                 pitchReg in width until width * 2 -> pitchReg * 2
                 else -> pitchReg
             }
@@ -694,7 +725,7 @@ class SocJpegFactory : ComponentFactory {
             }
             val srcBytesNeeded = (height - 1).toLong() * linePitch.toLong() + width.toLong() * 2L
             if (srcBytesNeeded <= 0L || srcBytesNeeded > MAX_SOURCE_YC_BYTES ||
-                (srcHi == 0L && srcAddr > 0x1_0000_0000L - srcBytesNeeded) ||
+                srcAddr > 0x4_0000_0000L - srcBytesNeeded ||
                 (dstMax > 0L && (dstMax > MAX_JPEG_BYTES || dstAddr > 0x1_0000_0000L - dstMax))
             ) {
                 failEncode("transfer exceeds the address or size limit")
@@ -711,7 +742,7 @@ class SocJpegFactory : ComponentFactory {
                 tableQuality(sum)
             } else null
 
-            val mappedSrc32 = srcHi == 0L && runCatching {
+            val mappedSource = runCatching {
                 dma.check(srcAddr, srcBytesNeeded, false)
             }.isSuccess
 
@@ -877,11 +908,11 @@ class SocJpegFactory : ComponentFactory {
             }
             fun identity(): List<Long>? {
                 // Check the bytes as well as the DMA slots: the movie recorder reuses both addresses.
-                if (!mappedSrc32 || srcBytesNeeded > 1_048_576L) return null
+                if (!mappedSource || srcBytesNeeded > 1_048_576L) return null
                 val crc = java.util.zip.CRC32C()
                 val source = (dma as? DirectGuestRamPort)?.sliceDirect(srcAddr, srcBytesNeeded, false)
                 if (source != null) crc.update(source.asByteBuffer()) else crc.update(dmaReadChunked(dma, srcAddr, srcBytesNeeded.toInt()))
-                return listOf((srcHi shl 32) or srcAddr, (dstHi shl 32) or dstAddr, dstMax, srcSizeWord, winDimWord,
+                return listOf(srcAddr, (dstHi shl 32) or dstAddr, dstMax, srcSizeWord, winDimWord,
                     linePitch.toLong(), encRegs.getValue(ENC_SUBSAMPLE), encRegs.getValue(ENC_MODE), encRegs.getValue(ENC_SWAP_CTRL), crc.value)
             }
             fun matchesPrevious(key: List<Long>?, quant: List<Int>): Boolean =
@@ -914,9 +945,8 @@ class SocJpegFactory : ComponentFactory {
                 updateEncoderIrq()
             }
 
-            if (mappedSrc32 && dma is DirectGuestRamPort) {
-                val srcSeg = dma.sliceDirect(srcAddr, srcBytesNeeded, write = false)
-                if (srcSeg != null) {
+            if (mappedSource && dma is DirectGuestRamPort) {
+                withEncodeSegment(dma, srcAddr, srcBytesNeeded) { srcSeg ->
                     val allZero = isAllZeroSegment(srcSeg, srcBytesNeeded)
                     val liveSensor = if (allZero) context.ports.find("cmos", SensorPort::class.java) else null
                     if (liveSensor == null) {
@@ -971,7 +1001,7 @@ class SocJpegFactory : ComponentFactory {
                 }
             }
 
-            val res = if (mappedSrc32) {
+            val res = if (mappedSource) {
                 val uyvyBytes = dmaReadChunked(dma, srcAddr, srcBytesNeeded.toInt())
                 var allZero = true
                 for (b in uyvyBytes) {
@@ -982,11 +1012,8 @@ class SocJpegFactory : ComponentFactory {
                 }
                 val liveSensor = if (allZero) context.ports.find("cmos", SensorPort::class.java) else null
                 if (liveSensor != null) {
-                    // BUG-V3-8-4: During STILL capture, firmware encodes the 160x120 EXIF thumbnail
-                    // and 640x480 DCF screen-nail (e.g. 0xbfefe000 / 0xbfdd0000) populated on real
-                    // silicon by RECC_S. Because RECC_S does not render pixels into DRAM, the buffer
-                    // remains all-zero; synthesize from the active CMOS optical sensor instead.
-                    val msg = "[FALLBACK][SocJpegFactory] 32-bit JPEG encode source 0x${srcAddr.toString(16)} (${width}x$height) is unwritten all-zero DRAM; synthesizing from CMOS optical sensor"
+                    // Keep the optical fallback for unwritten thumbnail and screen-nail buffers.
+                    val msg = "[FALLBACK][SocJpegFactory] JPEG encode source 0x${srcAddr.toString(16)} (${width}x$height) is all zero; synthesizing from CMOS optical sensor"
                     if (width <= 640 && height <= 480) {
                         LOGGER.fine(msg)
                     } else if (!loggedZeroSourceFallback) {
@@ -1009,7 +1036,7 @@ class SocJpegFactory : ComponentFactory {
                 val sensor = context.ports.find("cmos", SensorPort::class.java)
                 if (sensor == null) {
                     JpegUyvyCodec.EncodeResult.Error(
-                        "Unmapped/high-AXI JPEG encode source 0x${srcHi.toString(16)}_${srcAddr.toString(16)} without CMOS sensor",
+                        "Unmapped JPEG encode source 0x${srcAddr.toString(16)} without CMOS sensor",
                     )
                 } else {
                     encodeFromLiveOpticalSensor(sensor)

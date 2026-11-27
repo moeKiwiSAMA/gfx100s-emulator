@@ -2,6 +2,8 @@ package com.github.nyabanban.fuji.emulator.components.spi
 
 import com.github.nyabanban.fuji.emulator.api.CameraOrientationPort
 import com.github.nyabanban.fuji.emulator.api.IbisShiftPort
+import com.github.nyabanban.fuji.emulator.api.IbisEfcsShutterPort
+import com.github.nyabanban.fuji.emulator.api.IbisMechanicalShutterPort
 import com.github.nyabanban.fuji.emulator.api.LensPort
 import com.github.nyabanban.fuji.emulator.api.SpiPeer
 import java.util.function.LongSupplier
@@ -21,7 +23,7 @@ internal class Frame32SpiPeer(
     private val orientationProvider: () -> CameraOrientationPort? = { null },
     private val lensPortProvider: () -> LensPort? = { null },
     private val powerOnSequence: LongSupplier = LongSupplier { -1L },
-) : SpiPeer, IbisShiftPort {
+) : SpiPeer, IbisEfcsShutterPort, IbisMechanicalShutterPort {
     private var observedPowerOnSequence = -1L
     private var txAcc = 0L
     private var txBytes = 0
@@ -37,6 +39,8 @@ internal class Frame32SpiPeer(
     private var stageLockedState: Boolean = true
     private var stabilizationStateVal: Int = 0
     private var stabilizationGainVal: Int = 0
+    private var efcsShutterTv16: Int? = null
+    private var mechanicalShutterTv16: Int? = null
     private var focalLengthMmVal: Double = 63.0
     private var exposureParamCh0: Int = 0
     private var exposureParamCh1: Int = 0
@@ -57,6 +61,16 @@ internal class Frame32SpiPeer(
     override val stageLocked: Boolean get() = stageLockedState
     override val stabilizationState: Int get() = stabilizationStateVal
     override val stabilizationGain: Int get() = stabilizationGainVal
+    override fun takeEfcsShutterTv16(): Int? {
+        val tv16 = efcsShutterTv16 ?: return null
+        efcsShutterTv16 = null
+        return tv16.takeIf { observedPowerOnSequence < 0L || observedPowerOnSequence == powerOnSequence.asLong }
+    }
+    override fun takeMechanicalShutterTv16(): Int? {
+        val tv16 = mechanicalShutterTv16 ?: return null
+        mechanicalShutterTv16 = null
+        return tv16.takeIf { observedPowerOnSequence < 0L || observedPowerOnSequence == powerOnSequence.asLong }
+    }
     override val focalLengthMm: Double
         get() = lensPortProvider()?.parameters()?.focalLengthMm?.takeIf { it.isFinite() && it > 0.0 }
             ?: focalLengthMmVal
@@ -118,6 +132,8 @@ internal class Frame32SpiPeer(
             pendingCmdId = -1L
             pendingTxPayload = 0L
             slaveSeq = 0L
+            efcsShutterTv16 = null
+            mechanicalShutterTv16 = null
         }
         if (sequence >= 0L) observedPowerOnSequence = sequence
         val outByte = ((rxShift ushr ((3 - txBytes) * 8)) and 0xffL).toInt()
@@ -207,6 +223,13 @@ internal class Frame32SpiPeer(
             0x0A9L -> {
                 // IBIS Stabilization Gain/Parameter {b0[3:0], b0[5:4], u10[15:6]} (DAT 0x01230da4)
                 stabilizationGainVal = ((txPayload ushr 6) and 0x3ffL).toInt()
+                if ((b0 and 0x0f) == 3) {
+                    // Capture packets select mechanical (0), EFCS (1) or electronic (2)
+                    // in bits 5:4. A new capture supersedes either previous shutter command.
+                    val tv16 = txPayload.toShort().toInt() shr 6
+                    efcsShutterTv16 = tv16.takeIf { (b0 and 0x30) == 0x10 }
+                    mechanicalShutterTv16 = tv16.takeIf { (b0 and 0x30) == 0 }
+                }
                 0x0000L
             }
             0x0B1L -> {
@@ -306,6 +329,8 @@ internal class Frame32SpiPeer(
         (if (!stageLockedState) mapOf("stageLocked" to stageLockedState) else emptyMap()) +
         (if (stabilizationStateVal != 0) mapOf("stabilizationState" to stabilizationStateVal) else emptyMap()) +
         (if (stabilizationGainVal != 0) mapOf("stabilizationGain" to stabilizationGainVal) else emptyMap()) +
+        efcsShutterTv16?.let { mapOf("efcsShutterTv16" to it) }.orEmpty() +
+        mechanicalShutterTv16?.let { mapOf("mechanicalShutterTv16" to it) }.orEmpty() +
         (if (pixelShiftAxisVal != 0) mapOf("pixelShiftAxis" to pixelShiftAxisVal) else emptyMap()) +
         (if (pixelShiftTargetXVal != IbisShiftPort.HALL_CENTER) mapOf("pixelShiftTargetX" to pixelShiftTargetXVal) else emptyMap()) +
         (if (pixelShiftTargetYVal != IbisShiftPort.HALL_CENTER) mapOf("pixelShiftTargetY" to pixelShiftTargetYVal) else emptyMap()) +
@@ -330,6 +355,8 @@ internal class Frame32SpiPeer(
         val sensorBank: Int = 0,
         val commandCount: Long = 0L,
         val powerOnSequence: Long = -1L,
+        val efcsShutterTv16: Int? = null,
+        val mechanicalShutterTv16: Int? = null,
     )
 
     fun parse(raw: Any?): ParsedState {
@@ -368,10 +395,18 @@ internal class Frame32SpiPeer(
         val powerOnSequence = map["powerOnSequence"]?.let {
             parseIntegralLong(it, "powerOnSequence").also { sequence -> require(sequence >= 0L) { "Negative biscom powerOnSequence" } }
         } ?: -1L
-        return ParsedState(acc, bytes, shift, frames, pending, pendingPayload, seq, mode, locked, stabState, stabGain, psAxis, psX, psY, bank, cmds, powerOnSequence)
+        fun readTv16(key: String) = map[key]?.let {
+            parseIntegralInt(it, key).also { value -> require(value in -512..511) }
+        }
+        val efcs = readTv16("efcsShutterTv16")
+        val mechanical = readTv16("mechanicalShutterTv16")
+        require(efcs == null || mechanical == null) { "Multiple pending BIS shutter commands" }
+        return ParsedState(acc, bytes, shift, frames, pending, pendingPayload, seq, mode, locked, stabState, stabGain, psAxis, psX, psY, bank, cmds, powerOnSequence, efcs, mechanical)
     }
 
     fun restore(parsed: ParsedState?) {
+        efcsShutterTv16 = parsed?.efcsShutterTv16
+        mechanicalShutterTv16 = parsed?.mechanicalShutterTv16
         observedPowerOnSequence = parsed?.powerOnSequence ?: -1L
         if (parsed == null) {
             txAcc = 0L; txBytes = 0; rxShift = 0L; frameCount = 0L; pendingCmdId = -1L; pendingTxPayload = 0L; slaveSeq = 0L
@@ -396,7 +431,7 @@ internal class Frame32SpiPeer(
         private const val HALL_UM_PER_LSB = 0.0376
         private val OPTIONAL_SNAPSHOT_KEYS = setOf(
             "pendingCmdId", "pendingTxPayload", "slaveSeq", "powerOnSequence", "resetSequence",
-            "ibisMode", "stageLocked", "stabilizationState", "stabilizationGain",
+            "ibisMode", "stageLocked", "stabilizationState", "stabilizationGain", "efcsShutterTv16", "mechanicalShutterTv16",
             "pixelShiftAxis", "pixelShiftTargetX", "pixelShiftTargetY",
             "sensorBank", "commandCount",
         )

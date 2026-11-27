@@ -27,6 +27,8 @@ C++ self-test (`test_dynarmic_bridge`): `9/9 PASS` (`1,075–1,206 MIPS` synthet
 
 Gradle is the canonical build entrypoint (required by CI and Release packaging `:stageReleaseLinux` / `:stageReleaseWindows`):
 
+Its CMake target builds the pinned x64 emitter with a private checked-memory overlay. At addresses four bytes past a doubleword boundary, ordinary A32 and Thumb-2 `LDRD`/`STRD` issue two word accesses while exclusive doubleword operations keep their separate path. Use `build_dynarmic.sh hash-linux` or `build_dynarmic.sh hash-win64` to check the platform's source fingerprint in `bridge.sha256`. The resulting library's SHA-256 is in `source.properties`.
+
 ```sh
 # Recommended via Gradle (canonical CI & developer workflow):
 ./gradlew --no-daemon --offline -PfujiTestForks=1 :cpu-dynarmic:buildDynarmicNative

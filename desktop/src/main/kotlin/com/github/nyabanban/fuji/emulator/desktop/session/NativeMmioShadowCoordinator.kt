@@ -180,7 +180,7 @@ internal class NativeMmioShadowCoordinator {
         }
         gicShadowArena = null
         ispBindStatsShadowHandle?.let { mh ->
-            try { mh.invokeExact(null as MemorySegment?) } catch (_: Throwable) {}
+            try { mh.invoke(null as MemorySegment?) } catch (_: Throwable) {}
         }
         ispBindStatsShadowHandle = null
         ispRoRangeCount = 0
@@ -319,41 +319,45 @@ internal class NativeMmioShadowCoordinator {
         }
 
         // 5. soc-isp read-only stats & result surface ranges (0xFFF10000..0xFFF1E000, ~21-41% of all MMIO reads!)
-        // When soc-isp exposes a live 28 KiB Stats SRAM engine (AE photometry + 256-bin Histogram), back both
-        // Bank 0 (0xFFF10000..0xFFF16FFF) and Bank 1 (0xFFF17000..0xFFF1DFFF) with one shared live MemorySegment
-        // so Dynarmic reads live stats at C++ fastpath speed with zero per-read Java upcalls.
+        // The banked API publishes completed DMA directly into the native read-only range.
+        // Older component packages expose a single 28 KiB window.
         if (dyn.supportsRoMmioRanges()) {
             dyn.clearRoMmioRanges()
             var rangeCount = 0
             val ispComp = host.components().singleOrNull { it.descriptor.id == "soc-isp" }?.component
             var liveStatsSeg: MemorySegment? = null
             if (ispComp != null) {
-                try {
-                    val bindMh = lookup.findVirtual(
-                        ispComp.javaClass,
-                        "bindLiveStatsShadow",
-                        MethodType.methodType(Boolean::class.javaPrimitiveType, MemorySegment::class.java),
-                    ).bindTo(ispComp)
-                    val seg = dyn.allocateRoMmioBuffer(ISP_STATS_BANK_SIZE)
-                    if (seg != null && (bindMh.invokeExact(seg) as Boolean)) {
+                val signature = MethodType.methodType(Boolean::class.javaPrimitiveType, MemorySegment::class.java)
+                val bindings = listOf(
+                    "bindLiveStatsBanks" to 2 * ISP_STATS_BANK_SIZE,
+                    "bindLiveStatsShadow" to ISP_STATS_BANK_SIZE,
+                )
+                for ((method, bytes) in bindings) {
+                    val bindMh = try {
+                        lookup.findVirtual(ispComp.javaClass, method, signature).bindTo(ispComp)
+                    } catch (_: ReflectiveOperationException) {
+                        continue
+                    }
+                    val seg = dyn.allocateRoMmioBuffer(bytes) ?: continue
+                    val bound = try {
+                        bindMh.invokeExact(seg) as Boolean
+                    } catch (_: Exception) {
+                        false
+                    }
+                    if (bound) {
                         liveStatsSeg = seg
                         ispBindStatsShadowHandle = bindMh
+                        break
                     }
-                } catch (_: Throwable) {
-                    liveStatsSeg = null
-                    ispBindStatsShadowHandle = null
                 }
             }
             for (win in activeWindows) {
                 if (win.id != "soc-isp") continue
                 val port = win.port
                 if (liveStatsSeg != null && (port in ISP_ZERO_RO_PORTS || port in ISP_BUFFER_RO_PORTS)) {
-                    val bankOff = when {
-                        win.address in 0xFFF1_0000L until 0xFFF1_7000L -> win.address - 0xFFF1_0000L
-                        win.address in 0xFFF1_7000L until 0xFFF1_E000L -> win.address - 0xFFF1_7000L
-                        else -> -1L
-                    }
-                    if (bankOff >= 0L && bankOff + win.size <= ISP_STATS_BANK_SIZE.toLong()) {
+                    val physicalOffset = win.address - 0xFFF1_0000L
+                    if (physicalOffset >= 0L && physicalOffset + win.size <= 2L * ISP_STATS_BANK_SIZE) {
+                        val bankOff = physicalOffset % liveStatsSeg.byteSize()
                         val slice = liveStatsSeg.asSlice(bankOff, win.size)
                         if (dyn.addRoMmioSegmentRange(win.address, slice, win.size.toInt())) {
                             rangeCount++

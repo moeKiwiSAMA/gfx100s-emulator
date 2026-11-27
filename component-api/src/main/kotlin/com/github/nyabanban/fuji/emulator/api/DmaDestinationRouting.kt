@@ -5,3 +5,8 @@ package com.github.nyabanban.fuji.emulator.api
 interface RangedDmaDestinationPeer : DmaDestinationPeer {
     fun destinationRanges(): List<AddressWindow>
 }
+
+/** Optional notification of a controller's entire transfer, including idle time between paced DMA bursts. */
+interface DmaDestinationActivityListener {
+    fun setTransferActive(channel: Int, active: Boolean)
+}

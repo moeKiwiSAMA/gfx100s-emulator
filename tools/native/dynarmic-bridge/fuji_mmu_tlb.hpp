@@ -604,7 +604,6 @@ public:
         return static_cast<std::uint32_t>(res.phys_addr) & 0xFFFFF000u;
     }
 
-private:
     static bool is_device_or_strongly_ordered(const Cp15State& cp15, std::uint32_t tex, bool c, bool b) {
         if ((cp15.sctlr & (1u << 28)) != 0u) {
             /* SCTLR.TRE == 1: PRRR[2*idx+1 : 2*idx]: 0b00 = Strongly-ordered, 0b01 = Device,
@@ -628,6 +627,7 @@ private:
         }
     }
 
+private:
     static bool check_ap(std::uint32_t ap2, std::uint32_t ap10, bool afe, bool user_mode, bool is_write) {
         if (afe) {
             if ((ap10 & 1u) == 0u) return false;

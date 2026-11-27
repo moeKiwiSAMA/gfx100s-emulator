@@ -59,6 +59,29 @@ class Wm8962FactoryTest {
     }
 
     @Test
+    fun codecRouteUsesTheRegisterDataWordTickOnBothBuses() {
+        var now = 0L
+        val codec = Wm8962CodecDevice(clock = { now })
+        fun spi(reg: Int, value: Int, tick: Long) {
+            codec.exchange(16, reg, tick - 1)
+            codec.exchange(16, value, tick)
+        }
+        spi(0x1a, 0x10, 10)
+        spi(0x31, 0x40, 20)
+        now = 70
+        i2cWrite16(codec, 5, 8)
+        spi(5, 0, 93)
+        assertEquals(AudioSinkKind.MUTED, codec.outputRouteAt(19).route.activeSink)
+        assertEquals(AudioSinkKind.SPEAKER_MONO, codec.outputRouteAt(20).route.activeSink)
+        assertEquals(70L, codec.outputRouteAt(69).untilExclusive)
+        assertTrue(codec.outputRouteAt(70).route.dacMuted)
+        assertFalse(codec.outputRouteAt(93).route.dacMuted)
+        spi(0xf, 0x6243, 141)
+        assertEquals(AudioSinkKind.SPEAKER_MONO, codec.outputRouteAt(140).route.activeSink)
+        assertEquals(AudioSinkKind.MUTED, codec.outputRouteAt(141).route.activeSink)
+    }
+
+    @Test
     fun i2cAndSpi4ShareSingleRegisterFileAndExposeLiveAudioCodecRouting() {
         val h = Harness()
         val factory = Wm8962Factory()

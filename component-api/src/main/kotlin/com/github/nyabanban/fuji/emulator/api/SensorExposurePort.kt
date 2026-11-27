@@ -1,5 +1,6 @@
 package com.github.nyabanban.fuji.emulator.api
 
+import kotlin.math.pow
 import kotlin.math.roundToInt
 import kotlin.math.roundToLong
 
@@ -32,11 +33,23 @@ data class StillShutterHardwareTiming(
 fun interface CcdFrameClockPort {
     fun resumeLiveView()
 
+    /** True while CCDIF is generating frame boundaries for an active recording session. */
+    val movieFrameClockActive: Boolean get() = false
+
     /** Latest sensor frame-sync edge with a current input image while the movie encoder is running. */
     fun latestMovieFrameSyncTick(): Long? = null
 
     companion object {
         const val PORT_ID = "soc-isp.ccd-frame-clock"
+    }
+}
+
+/** CCDTG channel 2 consumes the same physical frame boundary as the recording readout. */
+fun interface CcdMovieFrameInput {
+    fun onFrameSync(tick: Long)
+
+    companion object {
+        const val PORT_ID = "soc-isp-cmd.ccd-movie-frame"
     }
 }
 
@@ -273,6 +286,13 @@ interface Imx461ExposurePort {
             port: Imx461ExposurePort?,
             nominalDurationNanos: Long = NOMINAL_DURATION_NANOS,
             nominalIso: Int = NOMINAL_ISO,
+        ): EffectiveSensorExposure? = computeEffectiveStillExposure(port, nominalDurationNanos, nominalIso, null)
+
+        fun computeEffectiveStillExposure(
+            port: Imx461ExposurePort?,
+            nominalDurationNanos: Long,
+            nominalIso: Int,
+            mechanicalShutterTv16: Int?,
         ): EffectiveSensorExposure? {
             if (port == null || !port.hasExposureRegs) return null
             val timing = port.stillShutterTiming ?: return null
@@ -294,7 +314,12 @@ interface Imx461ExposurePort {
             val exposureTicks = when {
                 rearDelay != null && frontDelay != null -> {
                     // Mechanical Shutter (MS): Front curtain = config-bank-1, Rear curtain = config-bank-0.
-                    (svr * frameLines * hmax + (rearDelay - frontDelay)).coerceAtLeast(1L)
+                    val interval = svr * frameLines * hmax + rearDelay - frontDelay
+                    // Pulses armed in different timing periods can have a negative difference
+                    // even for a long exposure. The BIS capture command supplies its signed Tv.
+                    if (interval <= 0L && mechanicalShutterTv16 != null) {
+                        (250.0 * STILL_NOMINAL_TGCLK_TICKS * 2.0.pow(-mechanicalShutterTv16 / 16.0)).roundToLong()
+                    } else interval.coerceAtLeast(1L)
                 }
                 rearDelay != null -> {
                     // EFCS: Electronic Front Curtain = IMX461 SHR (2-line units), Rear curtain = config-bank-0

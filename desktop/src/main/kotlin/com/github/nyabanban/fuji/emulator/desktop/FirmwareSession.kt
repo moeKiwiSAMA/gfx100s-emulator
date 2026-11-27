@@ -152,6 +152,7 @@ class FirmwareSession(
     fun discoveryState(): Map<String,Any?> { host.owner.requireOwner(); return discoveryBus?.let(catalogRuntime::observation) ?: mapOf("executionMode" to catalogRuntime.mode,"accesses" to emptyList<Any>()) }
     private var dynarmic: Dynarmic? = null
     private var pooledDynarmic: Dynarmic? = null
+    private var imageDmaMemory: ImageDmaMemory? = null
     private var dynCluster: DynarmicCluster? = null
     private var cpuEngineSelection: CpuEngineConfig.Selection? = null
     private var dynTranslatedFetches = 0L
@@ -189,6 +190,7 @@ class FirmwareSession(
     private var firmwareId: String? = null
     private var stockShutterProfile = false
     private var verifiedShutterCode = false
+    private val stillModeTransition = StillModeTransition()
     private var bootMode: String? = null
     private var initialPc = 0L
     private var contracts: Map<String, Any?> = emptyMap()
@@ -825,6 +827,9 @@ class FirmwareSession(
             override fun imageIrq106LineActive() = imageIrq106LineActive(host)
             override fun interruptSink() = host.ports.find("soc-gic.lines", com.github.nyabanban.fuji.emulator.api.InterruptSink::class.java)
             override fun sensorPort() = host.ports.find("cmos", com.github.nyabanban.fuji.emulator.api.SensorPort::class.java)
+            override fun facePreviewScaler() = host.ports.find(
+                "lens.uniresz", com.github.nyabanban.fuji.emulator.api.FacePreviewScalerPort::class.java,
+            )
             override fun dmaMemory() = host.ports.find("cpu.memory", DmaMemory::class.java)
             override fun lensParameters() =
                 host.ports.find("mount", com.github.nyabanban.fuji.emulator.api.MountPort::class.java)?.attachedLens()
@@ -1319,7 +1324,13 @@ class FirmwareSession(
                     }
                 }
             }
-            val dmaRam = if (RelaxedBootstrapRam.selected(config, relaxedMode)) ImageDmaMemory(cpuRam, host.owner::requireOwner) else cpuRam
+            imageDmaMemory?.close()
+            val dmaRam = if (RelaxedBootstrapRam.selected(config, relaxedMode)) {
+                ImageDmaMemory(cpuRam, host.owner::requireOwner).also { imageDmaMemory = it }
+            } else {
+                imageDmaMemory = null
+                cpuRam
+            }
             host.ports.register("cpu", "cpu.memory", DmaMemory::class.java, dmaRam)
             val interrupts = if ("soc-gic" in selected) host.ports.find("soc-gic.cpu", com.github.nyabanban.fuji.emulator.api.CpuInterruptPort::class.java) ?: error("GIC CPU port missing") else null
             cpuInterrupts = interrupts
@@ -1506,6 +1517,7 @@ class FirmwareSession(
             firmwareId = meta.id
             stockShutterProfile = !customMode && meta.id == "gfx100s-213" && meta.sha256 == catalogRuntime.catalog.firmwareSha256
             verifiedShutterCode = false
+            stillModeTransition.clear()
             bootMode = artifacts.bootMode
             nativeSha = sha256(dynLib)
             stopped = false
@@ -2199,6 +2211,7 @@ class FirmwareSession(
         firmwareId = null
         stockShutterProfile = false
         verifiedShutterCode = false
+        stillModeTransition.clear()
         bootMode = null
         initialPc = 0L
         contracts = emptyMap()
@@ -2552,6 +2565,19 @@ class FirmwareSession(
             .order(java.nio.ByteOrder.LITTLE_ENDIAN).int
     }
 
+    internal fun studioModeSwitchChanged(movie: Boolean) {
+        host.owner.requireOwner()
+        if (movie || socPoweredOff) stillModeTransition.clear() else stillModeTransition.leftMovie(stillShutterScreen())
+    }
+
+    internal fun studioSwitchingToStill(): Boolean {
+        host.owner.requireOwner()
+        if (stillModeTransition.active) {
+            stillModeTransition.observe(if (socPoweredOff) null else stillShutterScreen())
+        }
+        return stillModeTransition.active
+    }
+
     internal fun stillShutterBusy(): Boolean? = stillShutterScreen()?.let { it == 0x015A }
 
     /** Read-only S1 acceptance from the qualified 2.13 still-shooting state machine, between CPU slices. */
@@ -2605,6 +2631,7 @@ class FirmwareSession(
         irqSubscription?.close()
         dynCluster = null
         host.ports.removeOwner("cpu")
+        imageDmaMemory?.close(); imageDmaMemory = null
         dynShadow.reset()
         dynarmic?.close(); dynarmic = null
         if (!preservePooledDynarmic) {

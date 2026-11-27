@@ -125,6 +125,9 @@ class CameraStudio(private val owner: Stage, sendButton: (String, Boolean) -> Co
     private val bodyFocusModeIndicators = mutableListOf<BodyIndicatorSlot>()
     private val center = StackPane()
     private val pendingText = Label()
+    private var switchingToStill = false
+    internal val showingStillModeTransition: Boolean
+        get() = switchingToStill && !effectiveBodyButtonState("movieMode")
     private val originControlsByButtonKey: Map<String, PanelControl> = originCatalog
         .flatMap { it.controls }
         .filter { it.buttonKey != null }
@@ -1368,7 +1371,12 @@ class CameraStudio(private val owner: Stage, sendButton: (String, Boolean) -> Co
         syncLockUi()
         val pendingSettings = settingRequests.values.count { it.submission == StudioInputState.Submission.PENDING }
         val totalPending = inputs.pending + pendingSettings
-        val nextPending = if (totalPending > 0) I18n.t("studio.pending.count", totalPending) else if (inputs.failureCount > 0) I18n.t("studio.pending.failed") else ""
+        val nextPending = when {
+            totalPending > 0 -> I18n.t("studio.pending.count", totalPending)
+            inputs.failureCount > 0 -> I18n.t("studio.pending.failed")
+            showingStillModeTransition -> I18n.t("studio.mode.switching_to_still")
+            else -> ""
+        }
         if (pendingText.text != nextPending) pendingText.text = nextPending
         val moviePending = inputs.lastRequest("movieMode")?.submission == StudioInputState.Submission.PENDING
         val effectiveMovie = effectiveBodyButtonState("movieMode")
@@ -2988,6 +2996,7 @@ class CameraStudio(private val owner: Stage, sendButton: (String, Boolean) -> Co
         }
     }
     @Suppress("UNCHECKED_CAST") fun observeSnapshot(snapshot: Map<String, Any?>) {
+        switchingToStill = snapshot["switchingToStill"] == true
         val components = (snapshot["components"] as? List<Map<String, Any?>>).orEmpty().associateBy { it["id"] }
         val buttonState = components["buttons"]?.get("state") as? Map<String, Any?>
         buttonState?.let(inputs::observe)

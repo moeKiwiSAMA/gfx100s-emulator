@@ -8,7 +8,9 @@ import kotlin.test.*
 class DmaDestinationRoutesTest {
  private class Context:ComponentContext {var tick=0L;var data:Map<String,Any?> = mapOf("schema" to 1,"profile" to DestinationRoutes.PROFILE,"ports" to listOf("test.flash"));val claims=linkedMapOf<String,Any>();val irqs=mutableMapOf<Int,Boolean>();override val directory=Path.of(".").toAbsolutePath();override val clock=EmulationClock{tick};override fun readData(relative:String):Map<String,Any?> {require(relative=="routes.yaml");return data};override val ports=object:Ports{override fun<T:Any>register(owner:String,name:String,type:Class<T>,port:T){check(claims.putIfAbsent(name,port)==null)};override fun<T:Any>find(name:String,type:Class<T>):T?=claims[name]?.let{type.cast(it)};override fun removeOwner(owner:String){}};override val events=object:EventChannel{override fun publish(event:ComponentEvent){};override fun subscribe(listener:(ComponentEvent)->Unit)=AutoCloseable{}};override fun dataPath(relative:String)=directory.resolve(relative)}
  private class Ram:DmaMemory {val bytes=ByteArray(4096){it.toByte()};var reads=0;var writes=0;override fun check(address:Long,size:Long,write:Boolean){require(!write&&address>=0x100000&&size>0&&address<=0x101000-size)};override fun read(address:Long,destination:ByteBuffer){check(address,destination.remaining().toLong(),false);reads++;destination.put(bytes,(address-0x100000).toInt(),destination.remaining())};override fun write(address:Long,source:ByteBuffer){writes++;error("No destination RAM writes expected")}}
- private class Sink(val c:Context,var base:Long,val request:Int):RangedDmaDestinationPeer {val bytes=ByteArray(64);var ready:Long?=0;var owner:Int?=null;var received=0;var claims=0;var releases=0;var finishes=0;var lie=false;var badRange=false
+ private class Sink(val c:Context,var base:Long,val request:Int):RangedDmaDestinationPeer,DmaDestinationActivityListener {val bytes=ByteArray(64);var ready:Long?=0;var owner:Int?=null;var received=0;var claims=0;var releases=0;var finishes=0;var lie=false;var badRange=false
+  val activity = mutableListOf<Pair<Int, Boolean>>()
+  override fun setTransferActive(channel: Int, active: Boolean) { activity += channel to active }
   override fun destinationRanges()=listOf(AddressWindow("test.endpoint",base,if(badRange)Long.MAX_VALUE else 4));override fun matches(address:Long)=if(lie)address==0x100000L else address==base
   override fun check(address:Long,size:Long,width:Int,request:Int){require(matches(address)&&size==64L&&width==4&&request==this.request)}
   override fun acceptedAt()=ready?.takeIf{c.tick>=it};override fun claim(channel:Int,address:Long,size:Long,width:Int,request:Int):Long?{check(address,size,width,request);val at=acceptedAt()?:return null;check(owner==null||owner==channel);owner=channel;claims++;return at};override fun release(channel:Int){if(owner==channel){owner=null;received=0;releases++}}
@@ -17,6 +19,26 @@ class DmaDestinationRoutesTest {
  private data class Fixture(val c:Context,val ram:Ram,val serial:Sink,val flash:Sink,val h:HardwareComponent,val dma:ScheduledMmioDevice,val mux:MmioDevice)
  private fun fixture(change:(Context,Sink,Sink)->Unit = {_,_,_->}):Fixture{val c=Context();val ram=Ram();val serial=Sink(c,0xfff30024,21);val flash=Sink(c,0xf3dc0000,43);c.claims["cpu.memory"]=ram;c.claims["test.serial"]=serial;c.claims["test.flash"]=flash;c.claims["test.irq"]=object:InterruptSink{override fun setLine(irq:Int,high:Boolean){c.irqs[irq]=high}};change(c,serial,flash);val factory=DmaFactory();val cfg=factory.descriptor.settings.associate{it.key to it.default}+mapOf("transmitPeerPort" to "test.serial","destinationPeersFile" to "routes.yaml","interruptPort" to "test.irq");val h=factory.create(c,cfg);h.start();return Fixture(c,ram,serial,flash,h,c.ports.find("soc-dma.registers",MmioDevice::class.java)as ScheduledMmioDevice,checkNotNull(c.ports.find("soc-dma.mux",MmioDevice::class.java)))}
  private fun configure(f:Fixture,channel:Int,destination:Long,request:Int,source:Long=0x100000){val shift=channel%2*8;f.mux.write(channel/2*4L,4,(if(shift==0)0x10000L else 0x1000000L)or(request.toLong()shl shift));listOf(0x10 to 63L,0x14 to source,0x18 to destination,0x1c to 0x20000L,0x20 to 0x20004L,0x24 to 0L).forEach{(o,v)->f.dma.write(channel*4096L+o,4,v)};f.dma.write(channel*4096L+0x28,4,0x201011)}
+ @Test fun destinationActivityFollowsSubmissionAbortRestoreAndClose() {
+  val f = fixture()
+  val stateful = f.h as StatefulComponent
+  f.serial.ready = null
+  configure(f, 1, f.serial.base, f.serial.request)
+  val idle = stateful.saveSnapshot()
+  f.dma.write(0x1028, 4, 0x10201011)
+  val submitted = stateful.saveSnapshot()
+  assertEquals(listOf(1 to true), f.serial.activity)
+  f.dma.write(0x1028, 4, 0)
+  assertEquals(1 to false, f.serial.activity.last())
+  stateful.restoreSnapshot(submitted)
+  assertEquals(1 to true, f.serial.activity.last())
+  stateful.restoreSnapshot(idle)
+  assertEquals(1 to false, f.serial.activity.last())
+  stateful.restoreSnapshot(submitted)
+  f.h.close()
+  assertEquals(listOf(true, false, true, false, true, false), f.serial.activity.map { it.second })
+ }
+
  @Test fun separatePeersCanWaitAndCompleteConcurrentlyInDeadlineOrder(){val f=fixture();f.flash.ready=20;f.serial.ready=10;configure(f,0,0xf3dc0000,43);configure(f,1,0xfff30024,21,0x100040);f.dma.write(0x28,4,0x10201011);f.dma.write(0x1028,4,0x10201011);assertNull(f.dma.nextDeadline());f.c.tick=40;f.dma.beforeInstruction(40);assertContentEquals(f.ram.bytes.copyOfRange(0,64),f.flash.bytes);assertContentEquals(f.ram.bytes.copyOfRange(64,128),f.serial.bytes);assertEquals(0,f.ram.writes);assertEquals(1,f.flash.finishes);assertEquals(1,f.serial.finishes);val events=(f.h.state()["events"]as List<*>).map{it as Map<*,*>};assertEquals(listOf(1,0),events.map{it["channel"]});assertEquals(listOf(30L,40L),events.map{it["completedAt"]});assertEquals(listOf("test.serial","test.flash"),events.map{it["destinationPeer"]});assertEquals(true,f.c.irqs[207]);assertEquals(true,f.c.irqs[208]);f.h.close()}
  @Test fun simultaneousSameDeadlineUsesExistingChannelTiePolicyAcrossPeers(){val f=fixture();configure(f,0,0xf3dc0000,43);configure(f,1,0xfff30024,21);f.dma.write(0x1028,4,0x10201011);f.dma.write(0x28,4,0x10201011);f.c.tick=20;f.dma.beforeInstruction(20);assertEquals(listOf(0,1),(f.h.state()["events"]as List<*>).map{(it as Map<*,*>)["channel"]});f.h.close()}
  @Test fun samePeerStillHasOneSubmissionAndCancelTargetsItsOwnLease(){val f=fixture();configure(f,0,0xf3dc0000,43);configure(f,1,0xfff30024,21);configure(f,2,0xf3dc0000,43);f.dma.write(0x28,4,0x10201011);f.dma.write(0x1028,4,0x10201011);val before=f.h.state();assertFails{f.dma.write(0x2028,4,0x10201011)};assertEquals(before,f.h.state());f.dma.write(0x28,4,0x201011);assertNull(f.flash.owner);assertEquals(1,f.flash.releases);assertEquals(1,f.serial.owner);assertEquals(0,f.serial.releases);f.dma.write(0x2028,4,0x10201011);assertEquals(2,f.flash.owner);f.h.close();assertNull(f.flash.owner);assertNull(f.serial.owner)}

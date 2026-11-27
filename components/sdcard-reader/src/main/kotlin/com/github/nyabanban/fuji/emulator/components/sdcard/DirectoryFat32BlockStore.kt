@@ -65,6 +65,7 @@ internal class DirectoryFat32BlockStore private constructor(
         private const val ATTR_VOLUME_ID = 0x08
         private const val ATTR_LFN = 0x0F
         private const val FAT_PAGE_ENTRIES = 1024 // 4 KiB per sparse FAT page
+        private val ZERO_BYTES = ByteArray(8192)
         private const val MAX_OPEN_READ_CHANNELS = 16
         private const val MAX_DIR_DEPTH = 32
 
@@ -343,7 +344,8 @@ internal class DirectoryFat32BlockStore private constructor(
     private val fatPages = TreeMap<Int, IntArray>() // pageIndex -> FAT_PAGE_ENTRIES ints
     private val dirClusterBytes = HashMap<Int, ByteArray>()
     private val fileClusterMap = HashMap<Int, FileClusterSlice>()
-    private val dirtySectors = TreeMap<Long, ByteArray>()
+    private val dirtySectors = PendingSdSectors(sidecarPath.toAbsolutePath().parent)
+    private val fatEntryBytes = ByteBuffer.allocate(Int.SIZE_BYTES).order(ByteOrder.LITTLE_ENDIAN)
     private val readChannels = object : LinkedHashMap<Path, FileChannel>(MAX_OPEN_READ_CHANNELS + 1, 0.75f, true) {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Path, FileChannel>?): Boolean {
             if (size > MAX_OPEN_READ_CHANNELS && eldest != null) {
@@ -930,23 +932,32 @@ internal class DirectoryFat32BlockStore private constructor(
         setFatEntry(clusters.last(), FAT_EOC)
     }
 
-    private fun readHostFileSlice(slice: FileClusterSlice, inClusterOffset: Int, length: Int): ByteArray {
-        val out = ByteArray(length)
+    private fun readHostFileSlice(slice: FileClusterSlice, inClusterOffset: Int, length: Int, target: ByteBuffer) {
+        val start = target.position()
+        val end = start + length
         val filePos = slice.fileByteOffset + inClusterOffset
-        if (filePos >= slice.fileSize) return out
-        val toRead = minOf(length.toLong(), slice.fileSize - filePos).toInt()
-        val hostPath = directory.resolve(slice.relativePath)
-        val channel = readChannels.computeIfAbsent(hostPath) { p ->
-            FileChannel.open(p, StandardOpenOption.READ, NOFOLLOW_LINKS)
+        val available = (slice.fileSize - filePos).coerceIn(0L, length.toLong()).toInt()
+        val output = target.duplicate()
+        if (available > 0) {
+            val channel = readChannels.computeIfAbsent(directory.resolve(slice.relativePath)) { path ->
+                FileChannel.open(path, StandardOpenOption.READ, NOFOLLOW_LINKS)
+            }
+            output.limit(start + available)
+            try {
+                while (output.hasRemaining()) {
+                    if (channel.read(output, filePos + (output.position() - start)) <= 0) break
+                }
+            } catch (error: java.io.IOException) {
+                // A later failed read must leave the caller positioned after the last completed cluster.
+                val received = output.position() - start
+                val inCompletedClusters = (inClusterOffset.toLong() + received) / volume.clusterBytes * volume.clusterBytes
+                target.position(start + (inCompletedClusters - inClusterOffset).coerceAtLeast(0L).toInt())
+                throw error
+            }
         }
-        val buf = ByteBuffer.wrap(out, 0, toRead)
-        var done = 0
-        while (buf.hasRemaining()) {
-            val n = channel.read(buf, filePos + done)
-            if (n <= 0) break
-            done += n
-        }
-        return out
+        output.limit(end)
+        while (output.hasRemaining()) output.put(ZERO_BYTES, 0, minOf(output.remaining(), ZERO_BYTES.size))
+        target.position(end)
     }
 
     private fun closeReadChannels() {
@@ -984,28 +995,37 @@ internal class DirectoryFat32BlockStore private constructor(
                 return buf.copyOfRange(byteOff, byteOff + SECTOR_BYTES)
             }
             fileClusterMap[cluster]?.let { slice ->
-                return readHostFileSlice(slice, byteOff, SECTOR_BYTES)
+                val bytes = ByteArray(SECTOR_BYTES)
+                readHostFileSlice(slice, byteOff, SECTOR_BYTES, ByteBuffer.wrap(bytes))
+                return bytes
             }
         }
         return ByteArray(SECTOR_BYTES)
     }
 
     private fun readLayeredSector(lba: Long): ByteArray =
-        dirtySectors[lba]?.copyOf() ?: readBaseSector(lba)
+        dirtySectors[lba] ?: readBaseSector(lba)
 
     private fun readLayeredFatEntry(vol: VolumeGeometry, cluster: Int): Int {
-        val fatSector = vol.fat1StartLba + (cluster.toLong() * 4L) / SECTOR_BYTES
-        val offsetInSector = ((cluster.toLong() * 4L) % SECTOR_BYTES).toInt()
-        val sector = readLayeredSector(fatSector)
-        return le32(sector, offsetInSector) and FAT_MASK
+        val sectorIndex = cluster / (SECTOR_BYTES / Int.SIZE_BYTES)
+        val offsetInSector = (cluster % (SECTOR_BYTES / Int.SIZE_BYTES)) * Int.SIZE_BYTES
+        val lba = vol.fat1StartLba + sectorIndex
+        fatEntryBytes.clear()
+        if (dirtySectors.read(lba, offsetInSector, fatEntryBytes) != 0) return fatEntryBytes.getInt(0) and FAT_MASK
+        rawSectors[lba]?.let { return le32(it, offsetInSector) and FAT_MASK }
+        if (vol.fat1StartLba == volume.fat1StartLba && sectorIndex < volume.sectorsPerFat) {
+            return getFatEntryBase(cluster) and FAT_MASK
+        }
+        // During a guest format the new BPB may put this FAT entry over another old physical sector.
+        return le32(readBaseSector(lba), offsetInSector) and FAT_MASK
     }
 
     private fun readLayeredCluster(vol: VolumeGeometry, cluster: Int, out: ByteArray = ByteArray(vol.clusterBytes)): ByteArray {
         val baseLba = vol.clusterToStartLba(cluster)
-        for (s in 0 until vol.sectorsPerCluster) {
-            val lba = baseLba + s
-            val sec = dirtySectors[lba] ?: readBaseSector(lba)
-            System.arraycopy(sec, 0, out, s * SECTOR_BYTES, SECTOR_BYTES)
+        val target = ByteBuffer.wrap(out, 0, vol.clusterBytes)
+        while (target.hasRemaining()) {
+            val lba = baseLba + target.position() / SECTOR_BYTES
+            if (dirtySectors.read(lba, 0, target) == 0) target.put(readBaseSector(lba))
         }
         return out
     }
@@ -1090,7 +1110,7 @@ internal class DirectoryFat32BlockStore private constructor(
      * host files are NEVER deleted and dirty sectors stay safely buffered.
      */
     private fun reconcileGuestWrites(preserveUnlinkedData: Boolean = false): Boolean {
-        if (readOnly || dirtySectors.isEmpty()) return false
+        if (readOnly || dirtySectors.size == 0) return false
         val liveVol = parseLiveVolumeGeometry() ?: return false
         val rootChain = readLayeredClusterChain(liveVol, liveVol.rootCluster, maxClusters = 4096) ?: return false
 
@@ -1219,20 +1239,26 @@ internal class DirectoryFat32BlockStore private constructor(
             }
             val dataEndLba = liveVol.partitionStartLba + liveVol.partitionSectorCount
             val fatEndLba = liveVol.fat1StartLba + liveVol.numFats.toLong() * liveVol.sectorsPerFat.toLong()
-            val unlinkedClusters = HashSet<Int>()
-            val kept = TreeMap<Long, ByteArray>()
-            for ((lba, secBytes) in dirtySectors) {
-                if (lba >= liveVol.dataStartLba && lba < dataEndLba) {
+            val unlinkedFatSectors = HashSet<Long>()
+            val kept = PendingSdSectors.Selection()
+            dirtySectors.forEachRange { start, end ->
+                var lba = maxOf(start, liveVol.dataStartLba)
+                val dataEnd = minOf(end, dataEndLba)
+                while (lba < dataEnd) {
                     val cluster = ((lba - liveVol.dataStartLba) / liveVol.sectorsPerCluster).toInt() + 2
+                    val next = minOf(dataEnd, liveVol.clusterToStartLba(cluster) + liveVol.sectorsPerCluster)
                     if (cluster !in referencedClusters && cluster !in previouslyTrackedClusters) {
-                        unlinkedClusters.add(cluster)
-                        kept[lba] = secBytes
+                        unlinkedFatSectors.add((cluster.toLong() * 4L) / SECTOR_BYTES)
+                        kept.add(lba, next)
                     }
-                } else if (lba >= liveVol.fat1StartLba && lba < fatEndLba) {
+                    lba = next
+                }
+                for (fatLba in maxOf(start, liveVol.fat1StartLba) until minOf(end, fatEndLba)) {
                     // Preserve any dirty FAT sector containing non-zero unlinked/pre-allocated clusters
                     // or a linked cluster chained forward across a 128-cluster FAT-sector boundary
                     // (e.g. an open streaming .MOV file growing chunk-by-chunk before dir entry close).
-                    val fatSecIdx = ((lba - liveVol.fat1StartLba) % liveVol.sectorsPerFat.toLong()).toInt()
+                    val secBytes = checkNotNull(dirtySectors[fatLba])
+                    val fatSecIdx = ((fatLba - liveVol.fat1StartLba) % liveVol.sectorsPerFat.toLong()).toInt()
                     val baseCluster = fatSecIdx * (SECTOR_BYTES / 4)
                     var hasUnlinkedAlloc = false
                     for (i in 0 until (SECTOR_BYTES / 4)) {
@@ -1247,17 +1273,14 @@ internal class DirectoryFat32BlockStore private constructor(
                         }
                     }
                     if (hasUnlinkedAlloc) {
-                        kept[lba] = secBytes
+                        kept.add(fatLba, fatLba + 1)
                     }
                 }
             }
-            if (unlinkedClusters.isNotEmpty()) {
-                for (cluster in unlinkedClusters) {
-                    val fatSecIdx = (cluster.toLong() * 4L) / SECTOR_BYTES
-                    for (fatCopy in 0 until liveVol.numFats) {
-                        val fatLba = liveVol.fat1StartLba + fatCopy.toLong() * liveVol.sectorsPerFat.toLong() + fatSecIdx
-                        dirtySectors[fatLba]?.let { kept[fatLba] = it }
-                    }
+            for (fatSecIdx in unlinkedFatSectors) {
+                for (fatCopy in 0 until liveVol.numFats) {
+                    val fatLba = liveVol.fat1StartLba + fatCopy.toLong() * liveVol.sectorsPerFat + fatSecIdx
+                    kept.add(fatLba, fatLba + 1)
                 }
             }
             kept
@@ -1385,12 +1408,9 @@ internal class DirectoryFat32BlockStore private constructor(
         }
         dirClusterBytes.putAll(liveDirClusters)
 
-        dirtySectors.clear()
-        if (preservedDirty != null && preservedDirty.isNotEmpty()) {
-            dirtySectors.putAll(preservedDirty)
-        }
-        dirtyMetadataPending = false
         persistSidecar()
+        dirtySectors.retain(preservedDirty)
+        dirtyMetadataPending = false
         return true
     }
 
@@ -1421,6 +1441,8 @@ internal class DirectoryFat32BlockStore private constructor(
             if (entry.mtimeEpochMillis > 0L) {
                 runCatching { Files.setLastModifiedTime(tmp, FileTime.fromMillis(entry.mtimeEpochMillis)) }
             }
+            // Reading clean sectors for the replacement can reopen the old backing file.
+            readChannels.remove(hostPath)?.close()
             try {
                 Files.move(tmp, hostPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
             } catch (_: AtomicMoveNotSupportedException) {
@@ -1450,34 +1472,41 @@ internal class DirectoryFat32BlockStore private constructor(
             val inSec = (pos % SECTOR_BYTES).toInt()
             val chunk = minOf(total - done, SECTOR_BYTES - inSec)
 
-            // Bulk fast-path for contiguous clean host-file sectors inside a cluster
-            if (inSec == 0 && total - done >= SECTOR_BYTES &&
-                lba >= vol.dataStartLba && lba < partEndLba &&
-                !dirtySectors.containsKey(lba) && !rawSectors.containsKey(lba)
+            val pending = dirtySectors.read(lba, inSec, target)
+            if (pending > 0) {
+                done += pending
+                continue
+            }
+            if (inSec == 0 && total - done >= SECTOR_BYTES && !target.isReadOnly &&
+                lba >= vol.dataStartLba && lba < partEndLba && !rawSectors.containsKey(lba)
             ) {
                 val dataOffset = lba - vol.dataStartLba
                 val cluster = (dataOffset / vol.sectorsPerCluster).toInt() + 2
                 val slice = fileClusterMap[cluster]
                 if (slice != null && !dirClusterBytes.containsKey(cluster)) {
-                    val sectorInCluster = (dataOffset % vol.sectorsPerCluster).toInt()
-                    val remainingInClusterSectors = vol.sectorsPerCluster - sectorInCluster
-                    val maxSectorsWanted = minOf((total - done) / SECTOR_BYTES, remainingInClusterSectors)
-                    var cleanSectors = 1
-                    while (cleanSectors < maxSectorsWanted &&
-                        !dirtySectors.containsKey(lba + cleanSectors) &&
-                        !rawSectors.containsKey(lba + cleanSectors)
-                    ) {
-                        cleanSectors++
+                    // A pending/raw sector or a discontinuity in either allocation map ends this host read.
+                    val endLba = minOf(partEndLba, lba + (total - done) / SECTOR_BYTES)
+                    val cleanEnd = minOf(endLba, dirtySectors.ceilingKey(lba) ?: endLba,
+                        rawSectors.ceilingKey(lba) ?: endLba)
+                    val wanted = ((cleanEnd - lba) * SECTOR_BYTES).toInt()
+                    val inCluster = (dataOffset % vol.sectorsPerCluster).toInt() * SECTOR_BYTES
+                    var span = minOf(wanted, vol.clusterBytes - inCluster)
+                    var nextCluster = cluster
+                    while (span < wanted) {
+                        nextCluster++
+                        val next = fileClusterMap[nextCluster] ?: break
+                        if (next.relativePath != slice.relativePath || next.fileSize != slice.fileSize ||
+                            next.fileByteOffset != slice.fileByteOffset + inCluster + span ||
+                            dirClusterBytes.containsKey(nextCluster)) break
+                        span += minOf(vol.clusterBytes, wanted - span)
                     }
-                    val spanBytes = cleanSectors * SECTOR_BYTES
-                    val bytes = readHostFileSlice(slice, sectorInCluster * SECTOR_BYTES, spanBytes)
-                    target.put(bytes, 0, spanBytes)
-                    done += spanBytes
+                    readHostFileSlice(slice, inCluster, span, target)
+                    done += span
                     continue
                 }
             }
 
-            val sec = dirtySectors[lba] ?: readBaseSector(lba)
+            val sec = readBaseSector(lba)
             target.put(sec, inSec, chunk)
             done += chunk
         }
@@ -1510,12 +1539,24 @@ internal class DirectoryFat32BlockStore private constructor(
             val pos = offset + done
             val lba = pos / SECTOR_BYTES
             val inSec = (pos % SECTOR_BYTES).toInt()
-            val chunk = minOf(total - done, SECTOR_BYTES - inSec)
-            val sec = if (inSec == 0 && chunk == SECTOR_BYTES) ByteArray(SECTOR_BYTES) else readLayeredSector(lba)
-            source.get(sec, inSec, chunk)
-            dirtySectors[lba] = sec
-            noteDirtySector(lba)
-            done += chunk
+            val fullSectors = if (inSec == 0) (total - done) / SECTOR_BYTES else 0
+            if (fullSectors > 0) {
+                var index = 0
+                while (index < fullSectors && !dirtyMetadataPending) {
+                    noteDirtySector(lba + index)
+                    index++
+                }
+                dirtySectors.write(lba, fullSectors, source)
+                done += fullSectors * SECTOR_BYTES
+            } else {
+                val chunk = minOf(total - done, SECTOR_BYTES - inSec)
+                val sec = readLayeredSector(lba)
+                source.get(source.position(), sec, inSec, chunk)
+                dirtySectors.write(lba, 1, ByteBuffer.wrap(sec))
+                source.position(source.position() + chunk)
+                noteDirtySector(lba)
+                done += chunk
+            }
         }
         return done
     }
@@ -1530,18 +1571,18 @@ internal class DirectoryFat32BlockStore private constructor(
         require(sectorBytes.size == SECTOR_BYTES)
         checkRange(sectorIndex * SECTOR_BYTES, SECTOR_BYTES.toLong())
         invalidateDigestCache()
-        dirtySectors[sectorIndex] = sectorBytes.copyOf()
+        dirtySectors.write(sectorIndex, 1, ByteBuffer.wrap(sectorBytes))
         noteDirtySector(sectorIndex)
     }
 
     override fun flush() {
-        if (!readOnly && dirtySectors.isNotEmpty()) {
+        if (!readOnly && dirtySectors.size != 0) {
             reconcileGuestWrites(preserveUnlinkedData = false)
         }
     }
 
     override fun flushIfConsistent() {
-        if (!readOnly && dirtyMetadataPending && dirtySectors.isNotEmpty()) {
+        if (!readOnly && dirtyMetadataPending && dirtySectors.size != 0) {
             reconcileGuestWrites(preserveUnlinkedData = true)
         }
     }
@@ -1563,7 +1604,7 @@ internal class DirectoryFat32BlockStore private constructor(
             if (s < e) rawRanges.add(s to e)
         }
         for (lba in rawSectors.keys) addRange(lba, lba + 1L)
-        for (lba in dirtySectors.keys) addRange(lba, lba + 1L)
+        dirtySectors.forEachRange(::addRange)
         for (lba in sectorOverrides.keys) addRange(lba, lba + 1L)
         for (lba in baselineSectors.keys) addRange(lba, lba + 1L)
 
@@ -1635,8 +1676,12 @@ internal class DirectoryFat32BlockStore private constructor(
         try {
             flush()
         } finally {
-            closeReadChannels()
-            closed = true
+            try {
+                dirtySectors.close()
+            } finally {
+                closeReadChannels()
+                closed = true
+            }
         }
     }
 }

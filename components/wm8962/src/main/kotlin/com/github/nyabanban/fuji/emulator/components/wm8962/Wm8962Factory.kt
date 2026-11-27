@@ -48,7 +48,7 @@ class Wm8962Factory : ComponentFactory {
         private var attachedBus: I2cBusPort? = null
         private var closed: Boolean = false
 
-        private val device = Wm8962CodecDevice(address7 = address7)
+        private val device = Wm8962CodecDevice(address7 = address7) { context.clock.ticks() }
 
         init {
             if (enabled) {

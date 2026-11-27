@@ -144,9 +144,10 @@ class MmioRouter(
     private var nextScheduledTick = 0L
 
     private fun overridesBeforeInstruction(port: MmioDevice): Boolean = try {
+        if (port is RetainedMmioBank) return false
         val m = port.javaClass.getMethod("beforeInstruction", Long::class.javaPrimitiveType)
         val owner = m.declaringClass
-        if (owner === MmioDevice::class.java) return false
+        if (owner === MmioDevice::class.java || owner === RetainedMmioBank::class.java) return false
         val bytes = owner.classLoader?.getResourceAsStream(owner.name.replace('.', '/') + ".class")?.use { it.readAllBytes() }
             ?: return true
         val cf = java.lang.classfile.ClassFile.of().parse(bytes)
@@ -165,6 +166,8 @@ class MmioRouter(
             if (invoke.name().equalsString("beforeInstruction") && (
                     targetOwner == "com/github/nyabanban/fuji/emulator/api/MmioDevice" ||
                         targetOwner == "com/github/nyabanban/fuji/emulator/api/MmioDevice\$DefaultImpls" ||
+                        targetOwner == "com/github/nyabanban/fuji/emulator/api/RetainedMmioBank" ||
+                        targetOwner == "com/github/nyabanban/fuji/emulator/api/RetainedMmioBank\$DefaultImpls" ||
                         targetOwner == "com/github/nyabanban/fuji/emulator/api/ScheduledMmioDevice" ||
                         targetOwner == "com/github/nyabanban/fuji/emulator/api/TickAwareMmioDevice"
                     )
@@ -327,7 +330,8 @@ class MmioRouter(
             val w = this.windows[i]
             if (w.id in PURE_READ_NON_SCHEDULING_DEVICES) windowReadMutatesSchedule[i] = false
             when {
-                w.id in PURE_NON_SCHEDULING_DEVICES -> windowScheduleMode[i] = SCHEDULE_NONE
+                w.port is RetainedMmioBank || w.id in PURE_NON_SCHEDULING_DEVICES ->
+                    windowScheduleMode[i] = SCHEDULE_NONE
                 awareCount <= 64 && w.id in SELF_CONTAINED_SCHEDULING_DEVICES -> {
                     val mask = awareIdMask[w.id] ?: 0L
                     if (mask == 0L) {

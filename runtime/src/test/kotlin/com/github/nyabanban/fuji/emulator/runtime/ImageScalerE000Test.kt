@@ -84,7 +84,7 @@ class ImageScalerE000Test {
         assertEquals(0x01000100L, promoted.access(1L, 0xfff7e10cL, 4, false))
     }
 
-    private class MockDmaMemory : DmaMemory {
+    private class MockDmaMemory(private val maxTransfer: Int = Int.MAX_VALUE) : DmaMemory {
         private val regions = LinkedHashMap<Long, ByteArray>()
         fun map(base: Long, size: Int) { regions[base] = ByteArray(size) }
         fun bytes(base: Long): ByteArray = regions.getValue(base)
@@ -99,14 +99,204 @@ class ImageScalerE000Test {
         override fun check(address: Long, size: Long, write: Boolean) { locate(address, size) }
         override fun read(address: Long, destination: ByteBuffer) {
             val len = destination.remaining()
+            require(len <= maxTransfer) { "Unbounded read: $len" }
             val (base, arr) = locate(address, len.toLong())
             destination.put(arr, (address - base).toInt(), len)
         }
         override fun write(address: Long, source: ByteBuffer) {
             val len = source.remaining()
+            require(len <= maxTransfer) { "Unbounded write: $len" }
             val (base, arr) = locate(address, len.toLong())
             source.get(arr, (address - base).toInt(), len)
         }
+    }
+
+    @Test
+    fun stillCropReadsAcrossFourGiBIntoHighPhysicalRam() {
+        assertPhysicalStillCrop(0xffff_fff4L, 0x1_1000_0ffcL)
+    }
+
+    @Test
+    fun stillCropWritesAcrossFourGiBFromHighPhysicalRam() {
+        assertPhysicalStillCrop(0x1_3000_0ff4L, 0xffff_fffcL)
+    }
+
+    @Test
+    fun largePhysicalStillDownsampleUsesBoundedRowsAndPreservesPadding() {
+        val src = 0x1_1000_0000L
+        val dst = 0x1_9000_0000L
+        val width = 2048
+        val height = 2048
+        val sourceStride = width * 4
+        val outputStride = width * 2 + 8
+        val dma = MockDmaMemory(maxTransfer = sourceStride)
+        dma.map(src, sourceStride * height)
+        dma.map(dst, outputStride * height)
+        val source = dma.bytes(src)
+        val output = dma.bytes(dst)
+        output.fill(0x55)
+        for (i in source.indices) source[i] = (32 + i % 181).toByte()
+
+        val scaler = ImageScalerE000(ImageScalerE000.IRQ132_PROFILE)
+        fun write(offset: Int, value: Long) = scaler.access(0xfff7e000L + offset, true, value)
+        write(0x08, 0x100)
+        write(0x0c, (height - 1L) shl 16 or (width * 2 - 1L))
+        write(0x14, (height - 1L) shl 16 or (width * 2 - 1L))
+        write(0x18, (height - 1L) shl 16 or (width - 1L))
+        write(0xc0, src ushr 32)
+        write(0xc4, src and 0xffff_ffffL)
+        write(0xd0, sourceStride.toLong())
+        write(0xd4, dst ushr 32)
+        write(0xd8, dst and 0xffff_ffffL)
+        write(0xe4, outputStride.toLong())
+        write(0x04, 1)
+        scaler.beforeInstruction(ImageScalerE000.COMPLETION_DELAY_TICKS, dma) {}
+        for (y in 0 until height) {
+            val start = y * outputStride
+            val srcRow = y * sourceStride
+            assertEquals(source[srcRow + 1], output[start + 1])
+            assertEquals(source[srcRow + sourceStride - 1], output[start + width * 2 - 1])
+            assertEquals(0x55, output[start + width * 2].toInt())
+        }
+    }
+
+    @Test
+    fun largeStillThumbnailStreamsRowsWithoutFullSourceRead() {
+        for ((src, dst) in listOf(0x1_7300_0000L to 0x2c48_2000L, 0xf300_0000L to 0x2c48_2000L)) {
+            val srcW = 4096
+            val srcH = 2160
+            val dstW = 160
+            val dstH = 120
+            val srcStride = srcW * 2
+            val dstStride = dstW * 2
+            val dma = MockDmaMemory(maxTransfer = srcStride)
+            dma.map(src, srcStride * srcH)
+            dma.map(dst, dstStride * dstH)
+            val source = dma.bytes(src)
+            for (y in 0 until srcH) {
+                val yVal = (16 + (y * 200) / (srcH - 1)).toByte()
+                val rowOff = y * srcStride
+                source[rowOff] = 0x80.toByte()
+                source[rowOff + 1] = yVal
+                source[rowOff + 2] = 0x80.toByte()
+                source[rowOff + 3] = yVal
+                source[rowOff + srcStride - 4] = 0x80.toByte()
+                source[rowOff + srcStride - 3] = yVal
+                source[rowOff + srcStride - 2] = 0x80.toByte()
+                source[rowOff + srcStride - 1] = yVal
+            }
+
+            val scaler = ImageScalerE000(ImageScalerE000.IRQ132_PROFILE)
+            fun write(offset: Int, value: Long) = scaler.access(0xfff7e000L + offset, true, value)
+            write(0x08, 0x100)
+            write(0x0c, ((srcH - 1L) shl 16) or (srcW - 1L))
+            write(0x14, ((srcH - 1L) shl 16) or (srcW - 1L))
+            write(0x18, ((dstH - 1L) shl 16) or (dstW - 1L))
+            write(0xc0, src ushr 32)
+            write(0xc4, src and 0xffff_ffffL)
+            write(0xd0, srcStride.toLong())
+            write(0xd4, dst ushr 32)
+            write(0xd8, dst and 0xffff_ffffL)
+            write(0xe4, dstStride.toLong())
+            write(0x04, 1)
+            var completed = false
+            scaler.beforeInstruction(ImageScalerE000.COMPLETION_DELAY_TICKS, dma) { completed = true }
+            assertTrue(completed)
+            val output = dma.bytes(dst)
+            assertEquals(16, output[1].toInt() and 0xff)
+            assertEquals(216, output[(dstH - 1) * dstStride + 1].toInt() and 0xff)
+        }
+    }
+
+    private fun assertPhysicalStillCrop(source: Long, destination: Long) {
+        val dma = MockDmaMemory()
+        val sourceStride = 24
+        val destinationStride = 12
+        dma.map(source, 3 * sourceStride + 16)
+        dma.map(destination, 3 * destinationStride + 8 + 4)
+        val input = dma.bytes(source)
+        for (i in input.indices) input[i] = (16 + (i * 7) % 223).toByte()
+        val output = dma.bytes(destination)
+        output.fill(0x55)
+        val expected = output.copyOf()
+        for (y in 0 until 4) {
+            input.copyInto(expected, y * destinationStride, y * sourceStride + 4, y * sourceStride + 12)
+        }
+
+        val scaler = ImageScalerE000(ImageScalerE000.IRQ132_PROFILE)
+        fun write(offset: Int, value: Long) = scaler.access(0xfff7e000L + offset, true, value)
+        write(0x08, 0x100)
+        write(0x0c, 0x0003_0007)
+        write(0x10, 2)
+        write(0x14, 0x0003_0003)
+        write(0x18, 0x0003_0003)
+        write(0xc0, source ushr 32)
+        write(0xc4, source and 0xffff_ffffL)
+        write(0xd0, sourceStride.toLong())
+        write(0xd4, destination ushr 32)
+        write(0xd8, destination and 0xffff_ffffL)
+        write(0xe4, destinationStride.toLong())
+        write(0x04, 1)
+        var completed = false
+        scaler.beforeInstruction(ImageScalerE000.COMPLETION_DELAY_TICKS, dma) { completed = true }
+        assertTrue(completed)
+        assertContentEquals(expected, output)
+    }
+
+    @Test
+    fun dciPlaybackCropsPaddedTileRowsAndTransfersLargeFramesWithinTheNativeLimit() {
+        val src = 0x3400_0000L
+        val dst = 0x3800_0000L
+        val width = 4095
+        val height = 2159
+        val tileStride = 16448
+        val dstStride = 8192
+        val dma = MockDmaMemory(maxTransfer = 16 * 1024 * 1024)
+        // Last source tile row ends immediately after its picture data, without its usual padding.
+        dma.map(src, 1079 * tileStride + 16384)
+        dma.map(dst, height * dstStride + 8)
+        dma.bytes(dst).fill(0x55)
+        val tiles = ByteBuffer.wrap(dma.bytes(src)).order(ByteOrder.LITTLE_ENDIAN)
+        fun luma(x: Int, y: Int) = 10 + ((37 * x + 3 * y) and 127)
+        val rows = listOf(0, 1, 1023, 1024, height - 1)
+        val columns = listOf(0, 1, width - 2, width - 1)
+        for (y in rows) {
+            for (x in columns) {
+                val tileX = (x + 1) / 2
+                val tileY = (y + 1) / 2
+                // Each cropped output pair may reference adjacent source tiles.
+                for (tx in maxOf(0, tileX - 1)..minOf(2047, tileX + 1)) {
+                    for (field in 0..1) {
+                        val sy = tileY * 2 + field
+                        val chroma = if (field == 0) 64 else 151
+                        tiles.putInt(tileY * tileStride + tx * 8 + field * 4,
+                            (luma(tx * 2, sy) shl 2) or (chroma shl 12) or (luma(tx * 2 + 1, sy) shl 22))
+                    }
+                }
+            }
+        }
+        val scaler = ImageScalerE000(ImageScalerE000.IRQ132_PROFILE)
+        fun set(offset: Int, value: Long) { scaler.access(0xfff7e000L + offset, true, value) }
+        set(0x08, 0x103)
+        set(0x0c, (2159L shl 16) or 4095L)
+        set(0x10, (1L shl 16) or 1L)
+        val cropSize = ((height - 1L) shl 16) or (width - 1L)
+        set(0x14, cropSize)
+        set(0x18, cropSize)
+        set(0xc4, src)
+        set(0xd0, tileStride.toLong())
+        set(0xd8, dst)
+        set(0xe4, dstStride.toLong())
+        set(0x04, 1)
+        var completed = false
+        scaler.beforeInstruction(ImageScalerE000.COMPLETION_DELAY_TICKS, dma) { completed = true }
+        assertTrue(completed)
+        val result = dma.bytes(dst)
+        for (y in rows) for (x in columns) {
+            assertEquals(Triple(luma(x + 1, y + 1), 64, 151), readUyvyPixel(result, x, y, dstStride))
+        }
+        assertEquals(result[height * dstStride - 3], result[height * dstStride - 1])
+        assertTrue(result.takeLast(8).all { it == 0x55.toByte() })
     }
 
     private fun fillUyvyQuadrants(buf: ByteArray, width: Int, height: Int, stride: Int) {

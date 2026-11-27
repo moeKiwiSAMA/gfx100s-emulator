@@ -12,10 +12,48 @@ import java.util.concurrent.TimeUnit
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class MaliV61PlaybackDecoderTest {
+    @Test
+    fun onlyDeclaredDecodeOrderAvcUsesLowDelayPolling() {
+        val baseline = MaliV61BitstreamEncoder.buildH264Sps(1920, 1080, 60L shl 16)
+        val start = baseline.indexOf(0x67.toByte())
+        assertTrue(isDecodeOrderAvcSps(baseline, start, baseline.size - start))
+        val high = baseline.copyOf().apply { this[start + 1] = 100 }
+        assertFalse(isDecodeOrderAvcSps(high, start, high.size - start))
+        val pocZero = baseline.copyOf().apply { this[start + 4] = 0xe0.toByte() }
+        assertFalse(isDecodeOrderAvcSps(pocZero, start, pocZero.size - start))
+        assertFalse(isDecodeOrderAvcSps(baseline, start, 4))
+        assertFalse(isDecodeOrderAvcSps(byteArrayOf(0x67, 66, 0xc0.toByte(), 42, 0), 0, 5))
+    }
+
+    @Test
+    fun pipeTransfersBoundNativeRequestsAndHandlePartialReads() {
+        val input = ByteArray(3 * 8192 + 17) { (it * 31).toByte() }
+        val encoded = object : java.io.ByteArrayOutputStream() {
+            override fun write(bytes: ByteArray, off: Int, len: Int) {
+                assertTrue(len in 1..8192)
+                super.write(bytes, off, len)
+            }
+        }
+        encoded.writeBitstreamPacket(input)
+        assertContentEquals(input, encoded.toByteArray())
+
+        val source = object : java.io.ByteArrayInputStream(input) {
+            override fun read(bytes: ByteArray, off: Int, len: Int): Int {
+                assertTrue(len in 1..8192)
+                return super.read(bytes, off, minOf(len, 997))
+            }
+        }
+        val output = ByteArray(input.size)
+        source.readPicturePixels(output)
+        assertContentEquals(input, output)
+        kotlin.test.assertFailsWith<java.io.EOFException> { source.readPicturePixels(ByteArray(1)) }
+    }
+
     @Test
     fun rejectsInvalidLengthsAndClosedSessions() {
         MaliV61PlaybackDecoder().use { decoder ->
@@ -23,22 +61,14 @@ class MaliV61PlaybackDecoderTest {
                 assertFalse(decoder.submit(input))
             }
             decoder.close()
+            assertNull(decoder.takeAnnouncedFrame(96, 64))
             assertFalse(decoder.submit(byteArrayOf(1, 0, 0, 0, 0x67)))
         }
     }
 
     @Test
     fun avcAndHevcKeepReferencesAcrossFirmwareRequests(@TempDir dir: Path) {
-        val executable = System.getProperty("fuji.ffmpeg.bin") ?: System.getenv("FUJI_FFMPEG_BIN")
-            ?: System.getenv("FUJI_FFMPEG") ?: "ffmpeg"
-        val available = try {
-            ProcessBuilder(executable, "-version").redirectOutput(ProcessBuilder.Redirect.DISCARD).start()
-                .waitFor(10, TimeUnit.SECONDS)
-        } catch (ex: IOException) {
-            if (executable != "ffmpeg") throw ex
-            false
-        }
-        assumeTrue(available, "FFmpeg is required for decoder integration")
+        val executable = requireFfmpeg()
         fun ffmpeg(vararg args: String) {
             val log = dir.resolve("ffmpeg.log")
             val process = ProcessBuilder(listOf(executable, "-v", "error", "-y") + args)
@@ -68,7 +98,15 @@ class MaliV61PlaybackDecoderTest {
                     var interPictures = 0
                     fun checkNextFrame() {
                         val size = 96 * 64 * 3 / 2
-                        if (tenBit) {
+                        if (bFrames == 0) {
+                            val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5)
+                            var frame = decoder.takeAnnouncedFrame(96, 64)
+                            while (frame == null && decoder.lastError == null && System.nanoTime() < deadline) {
+                                Thread.sleep(1)
+                                frame = decoder.takeAnnouncedFrame(96, 64)
+                            }
+                            assertContentEquals(expected.readNBytes(size), assertNotNull(frame, decoder.lastError).pixels)
+                        } else if (tenBit) {
                             val frame = assertNotNull(decoder.takeNativeFrame(96, 64), decoder.lastError)
                             assertEquals(10, frame.bitDepth)
                             assertContentEquals(expected.readNBytes(size * 2), frame.pixels)
@@ -84,18 +122,72 @@ class MaliV61PlaybackDecoderTest {
                             .putInt(nal.size).put(nal).array()
                         assertTrue(decoder.submit(packet), "$codec type=$type error=${decoder.lastError}")
                         if (if (codec == "h264") type in 1..5 else type < 32) {
-                            if (bFrames == 0) checkNextFrame()
+                            if (bFrames == 0) {
+                                checkNextFrame()
+                            } else {
+                                // Ordinary output polling must let the guest submit later B pictures.
+                                repeat(8) {
+                                    decoder.takeAnnouncedFrame(96, 64)?.let { frame ->
+                                        val size = 96 * 64 * 3 / 2 * (if (tenBit) 2 else 1)
+                                        assertContentEquals(expected.readNBytes(size), frame.pixels)
+                                        decoded++
+                                    }
+                                }
+                            }
                             if (if (codec == "h264") type == 1 else type in 0..9) interPictures++
                         }
                     }
                     assertTrue(decoder.finishInput())
-                    if (bFrames > 0) repeat(5) { checkNextFrame() }
+                    if (bFrames > 0) repeat(5 - decoded) { checkNextFrame() }
                     assertEquals(5, decoded, codec)
                     assertTrue(interPictures > 0, codec)
                     assertEquals(-1, expected.read())
                 }
             }
         }
+    }
+
+    @Test
+    fun truncatedFinalPictureReportsFailureAndClosedSessionRejectsMoreInput() {
+        requireFfmpeg()
+        val sps = MaliV61BitstreamEncoder.buildH264Sps(96, 64, 30L shl 16)
+        val pps = MaliV61BitstreamEncoder.buildH264Pps()
+        val packets = annexBNals(sps + pps).map { nal ->
+            ByteBuffer.allocate(nal.size + 4).order(ByteOrder.LITTLE_ENDIAN).putInt(nal.size).put(nal).array()
+        }
+        val truncatedIdr = byteArrayOf(1, 0, 0, 0, 0x65)
+        for (cancel in listOf(false, true)) {
+            MaliV61PlaybackDecoder().use { decoder ->
+                for (packet in packets) assertTrue(decoder.submit(packet))
+                assertTrue(decoder.submit(truncatedIdr))
+                assertTrue(decoder.finishInput())
+                if (cancel) {
+                    decoder.close()
+                    assertNull(decoder.takeNativeFrame(96, 64, 0))
+                    assertFalse(decoder.submit(truncatedIdr))
+                } else {
+                    val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5)
+                    while (decoder.lastError == null && System.nanoTime() < deadline) {
+                        assertNull(decoder.takeNativeFrame(96, 64, 4))
+                    }
+                    assertNotNull(decoder.lastError)
+                }
+            }
+        }
+    }
+
+    private fun requireFfmpeg(): String {
+        val executable = System.getProperty("fuji.ffmpeg.bin") ?: System.getenv("FUJI_FFMPEG_BIN")
+            ?: System.getenv("FUJI_FFMPEG") ?: "ffmpeg"
+        val available = try {
+            ProcessBuilder(executable, "-version").redirectOutput(ProcessBuilder.Redirect.DISCARD).start()
+                .waitFor(10, TimeUnit.SECONDS)
+        } catch (ex: IOException) {
+            if (executable != "ffmpeg") throw ex
+            false
+        }
+        assumeTrue(available, "FFmpeg is required for decoder integration")
+        return executable
     }
 
     private fun annexBNals(bytes: ByteArray): List<ByteArray> {

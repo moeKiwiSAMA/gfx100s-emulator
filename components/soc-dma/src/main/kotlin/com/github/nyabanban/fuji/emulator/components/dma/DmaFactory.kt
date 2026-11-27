@@ -252,7 +252,7 @@ class DmaFactory : ComponentFactory {
             }
             return routes
         }
-        private class Channel {
+        private class Channel(val index: Int) {
             val registers = LongArray(14)
             var deadline: Long? = null
             var submittedAt: Long? = null
@@ -265,7 +265,16 @@ class DmaFactory : ComponentFactory {
             var ringEnd = 0L
             var ringChunkBytes = 0L
             var toPeer = false
-            var destinationBinding:DestinationRoutes.Binding? = null
+            var destinationBinding: DestinationRoutes.Binding? = null
+                set(value) {
+                    val previous = field?.peer
+                    val next = value?.peer
+                    field = value
+                    if (previous !== next) {
+                        (previous as? DmaDestinationActivityListener)?.setTransferActive(index, false)
+                        (next as? DmaDestinationActivityListener)?.setTransferActive(index, true)
+                    }
+                }
             var audioRxPeerName: String? = null
             var audioRxPeer: DmaSourcePeer? = null
             var pending = false
@@ -291,7 +300,7 @@ class DmaFactory : ComponentFactory {
             val ringChunkBytes: Long = 0L,
         )
         private var closed=false
-        private val channels = Array(16) { Channel() }
+        private val channels = Array(16) { Channel(it) }
         private val mux = LongArray(8)
         private val muxChanged = LongArray(16)
         private val requests = LongArray(32)
@@ -1557,6 +1566,7 @@ class DmaFactory : ComponentFactory {
             finishChannel(channel)
         }
         private fun finishChannel(channel: Channel) {
+            channel.destinationBinding = null
             val registers = channel.registers
             registers[12] = 1
             registers[10] = registers[10] and 0x10000000L.inv()

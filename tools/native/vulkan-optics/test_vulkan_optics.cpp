@@ -13,6 +13,7 @@
  */
 
 #include "fuji_vulkan_optics.h"
+#include "fuji_vulkan_stats.h"
 
 #include <cmath>
 #include <cstdio>
@@ -734,6 +735,126 @@ int main() {
                                                            cachedUyvy.data(), cachedUyvy.size(), nullptr, 0, &fIsp, &cachedYuvMs) == FUJI_VK_OK,
                     "Cached VRAM scene optics_to_isp_yuv failed");
         ASSERT_TRUE(cachedUyvy == fusedUyvy, "Cached VRAM scene fused UYVY422 must match direct upload bit-for-bit");
+        const uint8_t* view = nullptr;
+        ASSERT_TRUE(fuji_vk_render_cached_scene_to_isp_uyvy_view(ctx, sceneKey, &fGnd, &fOp, &fCmos,
+            nullptr, nullptr, nullptr, &fIsp, nullptr, nullptr, &view, cachedUyvy.size(), nullptr) == FUJI_VK_OK,
+            "Completed UYVY mapping must be available");
+        ASSERT_TRUE(view && std::memcmp(view, cachedUyvy.data(), cachedUyvy.size()) == 0,
+            "Mapped UYVY must match legacy readback");
+        ASSERT_TRUE(fuji_vk_render_cached_scene_to_isp_uyvy_view(ctx, sceneKey, &fGnd, &fOp, &fCmos,
+            nullptr, nullptr, nullptr, &fIsp, nullptr, nullptr, &view, cachedUyvy.size() - 1, nullptr) ==
+            FUJI_VK_ERR_INVALID_ARG && view == nullptr, "Short capacity must clear the returned view");
+        fIsp.outputFormat = FUJI_VK_ISP_FMT_NV16;
+        ASSERT_TRUE(fuji_vk_render_cached_scene_to_isp_uyvy_view(ctx, sceneKey, &fGnd, &fOp, &fCmos,
+            nullptr, nullptr, nullptr, &fIsp, nullptr, nullptr, &view, cachedUyvy.size(), nullptr) ==
+            FUJI_VK_ERR_INVALID_ARG && view == nullptr, "Planar layout cannot expose the UYVY view");
+        // Compare consumers of one physical readout against independent full fused submissions.
+        // The output geometry, transfer precision, exposure, noise seed and frame index vary separately.
+        struct TestReadout { FujiVkCmosParams sensor; FujiVkIspDemosaicParams isp; };
+        std::vector<TestReadout> cases;
+        FujiVkIspDemosaicParams layout = fIsp;
+        layout.outputFormat = FUJI_VK_ISP_FMT_UYVY422;
+        auto sensor = fCmos;
+        sensor.enableNoise = 0;
+        cases.push_back({sensor, layout});
+        ++sensor.frameIndexLo;
+        layout.dstWidth /= 2;
+        layout.dstHeight /= 2;
+        layout.dstStrideBytes = layout.dstWidth * 2;
+        cases.push_back({sensor, layout});
+        layout.is16Bit = 0;
+        cases.push_back({sensor, layout});
+        layout.is16Bit = 1;
+        sensor.opticalExposureScale *= 0.25f;
+        cases.push_back({sensor, layout});
+        sensor.enableNoise = 1;
+        cases.push_back({sensor, layout});
+        ++sensor.frameIndexLo;
+        cases.push_back({sensor, layout});
+        ++sensor.seedHi;
+        cases.push_back({sensor, layout});
+        cases.push_back(cases.front());
+
+        auto statsForLayout = [](size_t i) {
+            FujiVkIspStatsParams req{};
+            req.flags = FUJI_VK_STATS_FLAG_ALL;
+            if (i == 1) {
+                req.viewX = 2;
+                req.viewY = 2;
+                req.viewW = 16;
+                req.viewH = 12;
+                req.gridCols = 2;
+                req.gridRows = 3;
+            }
+            return req;
+        };
+        std::vector<std::vector<uint8_t>> oracle;
+        std::vector<FujiVkIspStatsOutput> oracleStats(cases.size());
+        for (size_t i = 0; i < cases.size(); ++i) {
+            const auto& c = cases[i];
+            const auto statsReq = statsForLayout(i);
+            oracle.emplace_back(static_cast<size_t>(c.isp.dstWidth) * c.isp.dstHeight * 2);
+            ASSERT_TRUE(fuji_vk_render_optics_to_isp_yuv_with_stats(ctx, fIn.data(), &fGnd, &fOp, &c.sensor,
+                nullptr, nullptr, nullptr, oracle.back().data(), oracle.back().size(), nullptr, 0,
+                &c.isp, &statsReq, &oracleStats[i], nullptr) == FUJI_VK_OK, "Direct Bayer oracle failed");
+        }
+        ASSERT_TRUE(std::memcmp(&oracleStats[0], &oracleStats[1], sizeof(oracleStats[0])) != 0,
+                    "Changing the metering window must update statistics even when Bayer is reused");
+        ASSERT_TRUE(oracle[4] != oracle[5] && oracle[5] != oracle[6], "Noisy frame and seed must affect pixels");
+        ASSERT_TRUE(fuji_vk_upload_scene(ctx, sceneKey, fIn.data(), static_cast<size_t>(fw) * fh, nullptr) == FUJI_VK_OK,
+                    "Reload scene for shared Bayer test");
+        for (size_t i = 0; i < cases.size(); ++i) {
+            const auto& c = cases[i];
+            const auto statsReq = statsForLayout(i);
+            std::vector<uint8_t> pixels(oracle[i].size());
+            FujiVkIspStatsOutput stats{};
+            ASSERT_TRUE(fuji_vk_render_cached_scene_to_isp_yuv_with_stats(ctx, sceneKey, &fGnd, &fOp, &c.sensor,
+                nullptr, nullptr, nullptr, pixels.data(), pixels.size(), nullptr, 0, &c.isp,
+                &statsReq, &stats, nullptr) == FUJI_VK_OK, "Cached Bayer render failed");
+            ASSERT_TRUE(pixels == oracle[i] && std::memcmp(&stats, &oracleStats[i], sizeof(stats)) == 0,
+                        "Cached Bayer pixel and statistics must match full submission");
+            // The standalone ISP uses the same device Bayer range. Follow it with an identical readout.
+            if (i == cases.size() - 1) {
+                std::vector<uint8_t> otherBayer(refBayer.size(), 0);
+                ASSERT_TRUE(fuji_vk_isp_demosaic(ctx, otherBayer.data(), otherBayer.size(), nullptr, nullptr, nullptr,
+                    pixels.data(), pixels.size(), nullptr, 0, &c.isp, nullptr) == FUJI_VK_OK && pixels != oracle[i],
+                    "Standalone ISP must replace device Bayer range");
+                ASSERT_TRUE(fuji_vk_render_cached_scene_to_isp_yuv_with_stats(ctx, sceneKey, &fGnd, &fOp, &c.sensor,
+                    nullptr, nullptr, nullptr, pixels.data(), pixels.size(), nullptr, 0, &c.isp, &statsReq, &stats,
+                    nullptr) == FUJI_VK_OK && pixels == oracle[i] && std::memcmp(&stats, &oracleStats[i], sizeof(stats)) == 0,
+                    "Standalone ISP input must not leak into the next cached scene");
+            }
+        }
+        // A constant gray LUT gives an absolute oracle independent of Bayer and of the other ISP path.
+        // Grow staging and VRAM together, then VRAM alone, then staging alone.
+        struct LutCase { uint32_t size; bool fused; uint8_t gray; };
+        const LutCase lutCases[] = {
+            {64, false, 93}, {96, false, 93}, {128, true, 93}, {128, false, 93}, {128, true, 0}
+        };
+        for (const auto& c : lutCases) {
+            auto isp = layout;
+            isp.srcWidth = isp.srcHeight = c.size;
+            isp.flags = 0;
+            std::vector<int32_t> lut(4096, c.gray);
+            std::vector<uint8_t> pixels(isp.dstStrideBytes * isp.dstHeight);
+            const size_t n = static_cast<size_t>(c.size) * c.size;
+            if (c.fused) {
+                auto optics = make_default_optics(c.size, c.size);
+                auto cmos = fCmos;
+                cmos.width = cmos.height = c.size;
+                std::vector<float> scene(n * 4, 0.5f);
+                ASSERT_TRUE(fuji_vk_render_optics_to_isp_yuv(ctx, scene.data(), nullptr, &optics, &cmos,
+                    lut.data(), lut.data(), lut.data(), pixels.data(), pixels.size(), nullptr, 0, &isp,
+                    nullptr) == FUJI_VK_OK, "Fused LUT resize failed");
+            } else {
+                std::vector<uint8_t> raw(n * 2, 0x80);
+                ASSERT_TRUE(fuji_vk_isp_demosaic(ctx, raw.data(), raw.size(), lut.data(), lut.data(), lut.data(),
+                    pixels.data(), pixels.size(), nullptr, 0, &isp, nullptr) == FUJI_VK_OK, "Standalone LUT resize failed");
+            }
+            for (size_t i = 0; i < pixels.size(); i += 2) {
+                ASSERT_TRUE(pixels[i] == 128 && pixels[i + 1] == c.gray, "ISP resize must preserve every LUT sample");
+            }
+        }
         std::printf("[test_vulkan_optics] GPU-Resident VRAM Scene Cache PASSED (0 LSB diff, upload=%.2f ms, hit=%.2f ms, cachedBayer=%.2f ms, cachedYuv=%.2f ms)\n",
                     uploadMs1, uploadMs2, cachedBayerMs, cachedYuvMs);
     }

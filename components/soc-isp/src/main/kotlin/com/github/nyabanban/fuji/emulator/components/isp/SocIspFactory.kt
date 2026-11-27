@@ -7,6 +7,7 @@ import java.nio.ByteOrder
 import java.nio.file.Files
 import java.security.MessageDigest
 import java.util.Base64
+import kotlin.math.pow
 import kotlin.math.roundToInt
 import kotlin.math.roundToLong
 
@@ -400,6 +401,13 @@ class SocIspFactory : ComponentFactory {
             return true
         }
 
+        fun bindLiveStatsBanks(seg: MemorySegment?): Boolean {
+            val engine = liveStatsEngine ?: return false
+            if (!extendedResultSurface) return false
+            engine.completedBanks.bind(seg)
+            return true
+        }
+
         private var interruptSink: InterruptSink? = null
         private var dmaMemory: DmaMemory? = null
 
@@ -619,6 +627,8 @@ class SocIspFactory : ComponentFactory {
                 context.ports.register(id, CcdFrameClockPort.PORT_ID, CcdFrameClockPort::class.java,
                     object : CcdFrameClockPort {
                         override fun resumeLiveView() = rescheduleFrameDeadline(null)
+                        override val movieFrameClockActive: Boolean
+                            get() = !closed && maliV61?.activeVideoFramePeriodTicks() != null
 
                         override fun latestMovieFrameSyncTick(): Long? {
                             val edge = lastFrameSyncTick
@@ -629,7 +639,7 @@ class SocIspFactory : ComponentFactory {
                     })
             }
             context.ports.register(id, IspStillReadoutPort.PORT_ID, IspStillReadoutPort::class.java,
-                IspStillReadoutPort { stillReadouts.processing })
+                IspStillReadoutPort { currentColorReadout() })
             context.ports.register(id, IspColorStatePort.PORT_ID, IspColorStatePort::class.java, object : IspColorStatePort {
                 private fun refresh(): IspColorPipeline {
                     colorPipeline.updateFromBank68000(bank68000Words)
@@ -950,20 +960,24 @@ class SocIspFactory : ComponentFactory {
                                 val sensor = context.ports.find("cmos", SensorPort::class.java)
                                 val lens = context.ports.find("mount", MountPort::class.java)?.attachedLens()
                                     ?: context.ports.find("lens", LensPort::class.java)?.parameters()
+                                val ibis = context.ports.find(IbisShiftPort.PORT_NAME, IbisShiftPort::class.java)
                                 val stillEff = Imx461ExposurePort.computeEffectiveStillExposure(
                                     port = expPort,
                                     nominalDurationNanos = LiveViewDmaEngine.NOMINAL_DURATION_NANOS,
                                     nominalIso = LiveViewDmaEngine.NOMINAL_ISO,
+                                    mechanicalShutterTv16 = (ibis as? IbisMechanicalShutterPort)?.takeMechanicalShutterTv16(),
                                 )
+                                val efcsTv16 = (ibis as? IbisEfcsShutterPort)?.takeEfcsShutterTv16()
                                 val overrideExposure = stillEff?.let { eff ->
                                     val base = stillReadouts.currentIntegration() ?: computeLiveExposureParams()
-                                    LiveViewDmaEngine.ExposureParams(
-                                        durationNanos = eff.durationNanos,
-                                        iso = eff.iso,
-                                        gainR1024 = base.gainR1024,
-                                        gainG1024 = base.gainG1024,
-                                        gainB1024 = base.gainB1024,
-                                    )
+                                    // The EFCS rear pulse can be programmed for zero delay, with identical
+                                    // sensor SHR at different shutter speeds. BIS receives the signed Tv
+                                    // before readout. The sensor model's nominal duration represents 1/250 s.
+                                    val duration = efcsTv16?.let {
+                                        (250.0 * LiveViewDmaEngine.NOMINAL_DURATION_NANOS * 2.0.pow(-it / 16.0))
+                                            .roundToLong().coerceIn(1L, 256_000L)
+                                    } ?: eff.durationNanos
+                                    base.copy(durationNanos = duration, iso = eff.iso)
                                 }
                                 stillReadouts.capture(context.clock.ticks(), sensor, lens, overrideExposure)
                             } else if (previousLines >= STILL_READOUT_VLINES_THRESHOLD && (value and 0x7FFFL) < STILL_READOUT_VLINES_THRESHOLD) {
@@ -983,7 +997,7 @@ class SocIspFactory : ComponentFactory {
 
             // 12. Result surface (v1: bank 0 0xfff11060..0xfff129e0; v2: bank 0 0xfff11060..0xfff16000 & bank 1 0xfff18060..0xfff1d000) - read-only
             if (extendedResultSurface) {
-                fun resultSurfaceV2Device(portId: String): MmioDevice = object : MmioDevice {
+                fun resultSurfaceV2Device(portId: String, bank: Int): MmioDevice = object : MmioDevice {
                     override val clockOrder = 80
                     override fun read(offset: Long, size: Int): Long {
                         requireWordAccess(portId, offset, size, RESULT_SURFACE_V2_SIZE.toLong())
@@ -992,9 +1006,7 @@ class SocIspFactory : ComponentFactory {
                             "$portId unmodeled offset 0x${off.toString(16)}"
                         }
                         val stats = liveStatsEngine
-                        if (stats != null && stats.aeFramesUpdated > 0L) {
-                            return stats.readResultSurfaceWord(off)
-                        }
+                        if (stats != null) return stats.readResultSurfaceWord(off, bank)
                         return if (IspCoreOffsets.validResultSurfaceOffset(off)) {
                             readLittleWord(checkNotNull(resultSurface), off)
                         } else {
@@ -1007,8 +1019,8 @@ class SocIspFactory : ComponentFactory {
                 }
                 val surf0 = if (movieCaptureV3) PORT_RESULT_SURFACE_V3 else PORT_RESULT_SURFACE_V2
                 val surf1 = if (movieCaptureV3) PORT_RESULT_SURFACE_1_V3 else PORT_RESULT_SURFACE_1_V2
-                context.ports.register(id, surf0, MmioDevice::class.java, resultSurfaceV2Device(surf0))
-                context.ports.register(id, surf1, MmioDevice::class.java, resultSurfaceV2Device(surf1))
+                context.ports.register(id, surf0, MmioDevice::class.java, resultSurfaceV2Device(surf0, 0))
+                context.ports.register(id, surf1, MmioDevice::class.java, resultSurfaceV2Device(surf1, 1))
             } else {
                 context.ports.register(id, PORT_RESULT_SURFACE, MmioDevice::class.java, object : MmioDevice {
                     override val clockOrder = 80
@@ -1032,7 +1044,7 @@ class SocIspFactory : ComponentFactory {
 
             // 13 & 14. Stats buffers 0 & 1 (0xfff16000..0xfff17000, 0xfff1d000..0xfff1e000) - read-only Histogram SRAM
             // Under v2/v3 also expose Bank 0 & Bank 1 selector 0..5 stats heads (0xfff10000..0xfff11060, 0xfff17000..0xfff18060).
-            fun statsDevice(portId: String, limit: Long = STATS_SIZE, isHead: Boolean = false): MmioDevice = object : MmioDevice {
+            fun statsDevice(portId: String, bank: Int, limit: Long = STATS_SIZE, isHead: Boolean = false): MmioDevice = object : MmioDevice {
                 override val clockOrder = 80
                 override fun read(offset: Long, size: Int): Long {
                     check(!closed) { "$portId closed" }
@@ -1040,6 +1052,10 @@ class SocIspFactory : ComponentFactory {
                         "$portId invalid read offset=0x${offset.toString(16)} size=$size"
                     }
                     val stats = liveStatsEngine ?: return 0L
+                    if (extendedResultSurface) {
+                        return if (isHead) stats.readHead(offset.toInt(), size, bank)
+                        else stats.readHistogram(offset.toInt(), size, bank)
+                    }
                     return if (isHead) {
                         if (stats.aeFramesUpdated > 0L) stats.readHead(offset.toInt(), size) else 0L
                     } else {
@@ -1050,13 +1066,13 @@ class SocIspFactory : ComponentFactory {
                 override fun write(offset: Long, size: Int, value: Long): Unit =
                     error("$portId is read-only")
             }
-            context.ports.register(id, PORT_STATS_0, MmioDevice::class.java, statsDevice(PORT_STATS_0))
-            context.ports.register(id, PORT_STATS_1, MmioDevice::class.java, statsDevice(PORT_STATS_1))
+            context.ports.register(id, PORT_STATS_0, MmioDevice::class.java, statsDevice(PORT_STATS_0, 0))
+            context.ports.register(id, PORT_STATS_1, MmioDevice::class.java, statsDevice(PORT_STATS_1, 1))
             if (extendedResultSurface) {
                 val head0 = if (movieCaptureV3) PORT_STATS_HEAD_0_V3 else PORT_STATS_HEAD_0_V2
                 val head1 = if (movieCaptureV3) PORT_STATS_HEAD_1_V3 else PORT_STATS_HEAD_1_V2
-                context.ports.register(id, head0, MmioDevice::class.java, statsDevice(head0, STATS_HEAD_V2_SIZE, isHead = true))
-                context.ports.register(id, head1, MmioDevice::class.java, statsDevice(head1, STATS_HEAD_V2_SIZE, isHead = true))
+                context.ports.register(id, head0, MmioDevice::class.java, statsDevice(head0, 0, STATS_HEAD_V2_SIZE, isHead = true))
+                context.ports.register(id, head1, MmioDevice::class.java, statsDevice(head1, 1, STATS_HEAD_V2_SIZE, isHead = true))
             }
 
             // 15 & 16. Live-View Channel 0 & 1 (0xfff72000..0xfff72130, 0xfff73000..0xfff73130)
@@ -1308,6 +1324,20 @@ class SocIspFactory : ComponentFactory {
                     } else {
                         stillColorPipeline.updateFromBank68000(bank68000Words)
                     }
+                    val packedStillYc = realSiliconLayout && words[0x008 / 4] == 0x490100L
+                    val firstRow = if (packedStillYc) hi54 else 0
+                    val stripEnd = firstRow + height
+                    val reader = comp?.companion6F000?.words
+                    var frameHeight = stripEnd
+                    if (packedStillYc && reader != null && words[0x00c / 4] != 0L &&
+                        reader[0x010 / 4] == words[0x00c / 4] && reader[0x014 / 4] == words[0x010 / 4]) {
+                        // The upper command includes the filter overlap. Extend it to the active
+                        // RAW reader end in whole 16-line groups so both strips use one projection.
+                        val top = (reader[0x04c / 4] ushr 16).toInt() and 0x3fff
+                        val extent = (reader[0x050 / 4] ushr 16).toInt() and 0x3fff
+                        val missing = (top + extent + 1 - stripEnd).coerceAtLeast(0)
+                        frameHeight += (missing + 15) and -16
+                    }
                     val cropFactor35mm = if (offlinePlaybackRawDev) 1.0 else computeStill35mmCropFactor()
                     pumped = dmaEngine.renderOpticalUyvyToDma(
                         tick = tick,
@@ -1321,7 +1351,9 @@ class SocIspFactory : ComponentFactory {
                         exposure = exposure,
                         colorPipeline = stillColorPipeline,
                         cropFactor = cropFactor35mm,
-                        stillReadout = if (offlinePlaybackRawDev) null else stillReadouts.processing,
+                        stillReadout = if (offlinePlaybackRawDev) null else currentColorReadout(),
+                        firstRow = firstRow,
+                        frameHeight = frameHeight,
                     )
                 }
                 if (pumped) stillDmaPumps++
@@ -1340,6 +1372,11 @@ class SocIspFactory : ComponentFactory {
                 "stride" to stride,
                 "pumped" to pumped,
             )
+        }
+
+        private fun currentColorReadout(): IspStillReadout? {
+            val captured = stillReadouts.processing ?: return null
+            return companionEngines?.colorReadout(captured) ?: captured
         }
 
         private fun sensorExposurePort(): Imx461ExposurePort? =
@@ -1470,25 +1507,30 @@ class SocIspFactory : ComponentFactory {
             val formatMode = ((ctrl ushr 16) and 0x7L).toInt()
             val isYyuv422 = isLvCh0 && formatMode == 4
             val cropZoom = computeLiveViewCropZoom(words)
-            val pumped = dmaEngine.pumpLiveViewDma(
-                tick,
-                yAddr,
-                stride,
-                sizeWord,
-                ctrl,
-                sensor,
-                memory,
-                lens,
-                uvAddr,
-                yHigh,
-                uvHigh,
-                peaking,
-                exposure,
-                statsConfig,
-                colorPipeline,
-                yyuv422 = isYyuv422,
-                cropZoom = cropZoom,
-            )
+            val readout = (sensor as? LiveSensorReadout)?.beginLiveReadout(tick)
+            val pumped = try {
+                dmaEngine.pumpLiveViewDma(
+                    tick,
+                    yAddr,
+                    stride,
+                    sizeWord,
+                    ctrl,
+                    sensor,
+                    memory,
+                    lens,
+                    uvAddr,
+                    yHigh,
+                    uvHigh,
+                    peaking,
+                    exposure,
+                    statsConfig,
+                    colorPipeline,
+                    yyuv422 = isYyuv422,
+                    cropZoom = cropZoom,
+                )
+            } finally {
+                readout?.close()
+            }
             if (pumped) {
                 lastLiveViewPumpTick = tick
                 stillReadouts.observeIntegration(sensorExposurePort()?.mdsel8, exposure)
@@ -1647,10 +1689,13 @@ class SocIspFactory : ComponentFactory {
             nextAutoIrqTick = anchor + framePeriod
             val sink = interruptSink ?: context.ports.find("soc-gic.lines", InterruptSink::class.java)?.also {
                 interruptSink = it
-            } ?: return
-            val enabledSink = sink as? EnabledEdgeInterruptSink ?: return
-
-            stepPrimaryReceiver(enabledSink)
+            }
+            val enabledSink = sink as? EnabledEdgeInterruptSink
+            if (enabledSink != null) stepPrimaryReceiver(enabledSink)
+            if (maliV61?.activeVideoFramePeriodTicks() != null) {
+                context.ports.find(CcdMovieFrameInput.PORT_ID, CcdMovieFrameInput::class.java)?.onFrameSync(anchor)
+            }
+            if (enabledSink == null) return
             val rx = slvsEc
             if (rx != null) {
                 if (enabledSink.lineEnabled(IRQ_298) && !rx.irq298Asserted) {
@@ -1683,6 +1728,9 @@ class SocIspFactory : ComponentFactory {
                 }
             }
 
+            // Both the hardware DMA and its completion interrupt follow the frame boundary.
+            // Masking the GIC interrupt leaves the programmed statistics destination active.
+            if (extendedResultSurface) liveStatsEngine?.publishCompletedFrame(coreWords)
             // 3. Core ISP frame-completion IRQ 106 (W1C 0xfff7000c, armed one frame after enable)
             if (!enabledSink.lineEnabled(IRQ_106)) {
                 irq106ArmedAt = null
@@ -1739,7 +1787,10 @@ class SocIspFactory : ComponentFactory {
                     val coupled = requireNotNull(sink as? CoupledEdgeInterruptSink) {
                         "GIC lacks CoupledEdgeInterruptSink for IRQ 106"
                     }
-                    coupled.pulseWithDevice(IRQ_106, 2) { irq106Mask = statusMask }
+                    coupled.pulseWithDevice(IRQ_106, 2) {
+                        if (extendedResultSurface) liveStatsEngine?.publishCompletedFrame(coreWords)
+                        irq106Mask = statusMask
+                    }
                 }
                 IRQ_296 -> {
                     val rx = slvsEc
@@ -1960,6 +2011,9 @@ class SocIspFactory : ComponentFactory {
             if (firstReceiverSyncTick != Long.MAX_VALUE) {
                 result["receiverSyncDelay"] = (firstReceiverSyncTick - context.clock.ticks()).coerceAtLeast(0L)
             }
+            if (extendedResultSurface) {
+                encodeBase64OrNull(liveStatsEngine?.completedBanks?.save())?.let { result["statsSramBase64"] = it }
+            }
             if (movieCaptureV3) {
                 stillReadouts.save()?.let { result["stillReadout"] = it }
                 result["maliV61"] = checkNotNull(maliV61).saveSnapshot()
@@ -2018,6 +2072,7 @@ class SocIspFactory : ComponentFactory {
             val hasPdafBlock = "pdaf" in data
             val hasSlvsEcBlock = "slvsEc" in data
             val expectedKeys = LinkedHashSet(SNAPSHOT_KEYS).apply {
+                if (extendedResultSurface && liveStatsEngine != null && "statsSramBase64" in data) add("statsSramBase64")
                 if (autoFrameIrqs && "receiverSyncDelay" in data) add("receiverSyncDelay")
                 if (hasV3Blocks) {
                     require(movieCaptureV3) { "Unexpected v3 snapshot keys for $id" }
@@ -2033,6 +2088,7 @@ class SocIspFactory : ComponentFactory {
             }
             val nextStillReadouts = StillReadoutLatch.restore(data["stillReadout"])
             require(data.keys == expectedKeys) { "Unexpected snapshot keys for $id" }
+            val nextStatsSram = data["statsSramBase64"]?.let { decodeBase64Fixed(it, "statsSramBase64", IspStatsBanks.SIZE) }
             require(snapshotLong(data["schema"], "schema", 1L, Int.MAX_VALUE.toLong()).toInt() == snapshotSchemaVersion) {
                 "Unsupported snapshot schema for $id"
             }
@@ -2199,6 +2255,7 @@ class SocIspFactory : ComponentFactory {
                 nextLiveView1.copyInto(liveView1Words)
                 nextLiveView2.copyInto(liveView2Words)
                 liveStatsEngine?.clear()
+                if (nextStatsSram != null) liveStatsEngine?.completedBanks?.restore(nextStatsSram)
                 colorPipeline.reset()
                 lastFrameSyncTick = Long.MIN_VALUE
                 nextAutoIrqTick = context.clock.ticks() + activeFrameIrqPeriod()

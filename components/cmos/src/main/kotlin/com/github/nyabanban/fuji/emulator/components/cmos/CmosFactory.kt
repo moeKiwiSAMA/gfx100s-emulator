@@ -26,7 +26,7 @@ class CmosFactory(
     )
 
     override fun create(context: ComponentContext, config: Map<String, Any>): HardwareComponent =
-        object : ScalarComponent("cmos", context, config), SensorPort, CameraTimedSceneAudioProvider, StatefulComponent {
+        object : ScalarComponent("cmos", context, config), SensorPort, LiveSensorReadout, CameraTimedSceneAudioProvider, StatefulComponent {
             @Volatile
             private var sceneSource: SceneSource? = null
             @Volatile
@@ -37,6 +37,36 @@ class CmosFactory(
             private val frameGeneration = java.util.concurrent.atomic.AtomicLong(0L)
             private var lastExposeStateSig: Long = 0L
             private var hasExposedFrame: Boolean = false
+            private var activeReadoutTick: Long? = null
+            private var capturedExposure: Exposure? = null
+            private var capturedImage: ReadoutImage? = null
+            private var readoutBayer = CachedPackedBayerConverter()
+            private val endReadout = AutoCloseable { activeReadoutTick = null }
+
+            override fun beginLiveReadout(tick: Long): AutoCloseable {
+                activeReadoutTick = tick
+                return endReadout
+            }
+
+            private fun captureReadout(source: SceneSource, exposure: Exposure): ReadoutImage? {
+                if (source !is PackedReadoutSource || activeReadoutTick != exposure.startTick) return null
+                val previous = capturedImage
+                if (previous != null && capturedExposure == exposure) return previous
+                val packed = source.acquirePackedFrame() ?: return null
+                val image = if (previous != null && previous.packed === packed) previous else {
+                    ReadoutImage(packed, (source as? SceneSource2D)?.virtualSubjectDistanceM)
+                }
+                capturedImage = image
+                capturedExposure = exposure
+                return image
+            }
+
+            private fun clearReadout() {
+                capturedExposure = null
+                capturedImage = null
+                readoutBayer = CachedPackedBayerConverter()
+            }
+
             private val filterScratch = OpticalFilterScratch()
             private var filteredR = FloatArray(0)
             private var filteredG = FloatArray(0)
@@ -127,6 +157,7 @@ class CmosFactory(
             private var lastFocusMotorBusyTick: Long = Long.MIN_VALUE
 
             private fun resetAsyncOpticsWorker() {
+                clearReadout()
                 asyncOpticsWorker?.close()
                 asyncOpticsWorker = null
                 cachedSyncSpatialSrcRed = null
@@ -309,7 +340,13 @@ class CmosFactory(
                 if (registry.providerFor(kind).capability != SceneSourceCapability.READY) return -1L
                 val source = sceneSource ?: return -1L
                 // A live producer can reuse its output only while the exact sampled generation is unchanged.
-                val liveGeneration = if (source is LiveStreamSceneSource) source.fusedFrameSequence ?: return -1L else null
+                val liveGeneration = if (source is LiveStreamSceneSource) {
+                    if (activeReadoutTick == exposure.startTick && source is PackedReadoutSource) {
+                        captureReadout(source, exposure)?.packed?.sequence ?: return -1L
+                    } else {
+                        source.fusedFrameSequence ?: return -1L
+                    }
+                } else null
                 val opticalFilter = findOpticalFilter() ?: return -1L
                 if (!opticalFilter.enabled) return -1L
                 if (opticalFilter.opticalStateVersion() < 0L) return -1L
@@ -400,7 +437,7 @@ class CmosFactory(
                         return true
                     }
                 }
-                val frame = sampleRadianceFrame(source, pose) ?: return false
+                val frame = captureReadout(source, request.exposure)?.radiance ?: sampleRadianceFrame(source, pose) ?: return false
                 val ok = opticalFilter.tryFilterRadianceToIspYuv(
                     frame = frame,
                     geometry = SENSOR_GEOMETRY,
@@ -459,6 +496,7 @@ class CmosFactory(
                 var asyncPublishedGen: Long = -1L
                 var syncSourceSeq: Long = 0L
                 val syncPoseKey: Long = pose?.quantizedFullKey() ?: 0L
+                val readout = captureReadout(source, exposure)
                 val supportsRadiance = source is SceneSource3D || source is SceneSource2D || source is LinearRgbFrameSource
 
                 if (opticalFilter != null && opticalFilter.enabled && supportsRadiance) {
@@ -484,6 +522,7 @@ class CmosFactory(
                         val worker = asyncOpticsWorker ?: AsyncOpticsWorker(FRAME_BYTES).also { asyncOpticsWorker = it }
                         asyncPublishedGen = worker.exposeDoubleBuffered(
                             source = source,
+                            readout = readout,
                             pose = pose,
                             opticalFilter = opticalFilter,
                             filterStack = filterStack,
@@ -515,7 +554,7 @@ class CmosFactory(
                         if (gpuSpec != null && gpuBytes > 0) {
                             syncSourceSeq = gpuSpec.sequence
                         } else {
-                            val rawFrame = checkNotNull(sampleRadianceFrame(source, pose))
+                            val rawFrame = readout?.radiance ?: checkNotNull(sampleRadianceFrame(source, pose))
                             syncSourceSeq = rawFrame.sequence
                             val frame = applySpatialFiltersSync(rawFrame, filterStack, exposure, framesExposed, opticalFilter)
                             opticalFilter.filterRadianceFrame(
@@ -530,7 +569,7 @@ class CmosFactory(
                 } else {
                     val directExposure = exposureWithDirectFilterTransmittance(exposure, filterStack)
                     val rawFrame = if (filterStack != null && filterStack.hasActiveSpatialEffects()) {
-                        sampleRadianceFrame(source, pose)
+                        readout?.radiance ?: sampleRadianceFrame(source, pose)
                     } else {
                         null
                     }
@@ -538,6 +577,9 @@ class CmosFactory(
                         syncSourceSeq = rawFrame.sequence
                         val frame = applySpatialFiltersSync(rawFrame, filterStack, directExposure, framesExposed)
                         SceneFrameCodec.writeLinearRadianceToBayer(frame, directExposure, SENSOR_GEOMETRY, destination)
+                    } else if (readout != null) {
+                        syncSourceSeq = readout.packed.sequence
+                        readoutBayer.writeCached(readout.packed, directExposure, SENSOR_GEOMETRY, destination)
                     } else {
                         syncSourceSeq = if (source is SceneSource3D && pose != null && (pose.hasViewTransform || source.currentPose.hasViewTransform)) {
                             source.renderForPose(pose).sequence
@@ -685,6 +727,8 @@ class CmosFactory(
                 if (previous !== nextSource) {
                     resetAsyncOpticsWorker()
                     previous?.close()
+                } else {
+                    clearReadout()
                 }
                 sceneSource = nextSource
                 values = nextScalars.toMap()
@@ -701,6 +745,17 @@ class CmosFactory(
             }
         }
 
+    /** Per-pixel conversion remains lazy, including when the readout is handed to the optics worker. */
+    private class ReadoutImage(val packed: PackedRawFrame, subjectDistanceM: Double?) {
+        val radiance by lazy {
+            SceneFrameCodec.toLinearRgbFrame(packed).toRadianceFrame(
+                dimension = if (packed.depthMeters == null) SceneDimension.DIM_2D else SceneDimension.DIM_3D,
+                virtualSubjectDistanceM = subjectDistanceM,
+                sequence = packed.sequence,
+            )
+        }
+    }
+
     /**
      * Single-thread daemon worker offloading optical filtering for live-updating
      * streaming CMOS sources (`ffmpeg-pipe`, `screen-capture`, `stream-ingest`), 3D dynamic
@@ -713,6 +768,7 @@ class CmosFactory(
     private class AsyncOpticsWorker(private val frameBytes: Int) : AutoCloseable {
         private class PendingJob(
             val source: SceneSource,
+            val readout: ReadoutImage?,
             val pose: CameraPose3D?,
             val poseKey: Long,
             val filter: OpticalSceneFilter,
@@ -870,6 +926,7 @@ class CmosFactory(
 
         fun exposeDoubleBuffered(
             source: SceneSource,
+            readout: ReadoutImage?,
             pose: CameraPose3D?,
             opticalFilter: OpticalSceneFilter,
             filterStack: OpticalFilterStackPort?,
@@ -880,7 +937,7 @@ class CmosFactory(
             periodicRefresh: Boolean = false,
         ): Long {
             val poseKey = pose?.quantizedFullKey() ?: 0L
-            val liveSeq = (source as? LiveStreamSceneSource)?.latestFrameSequence ?: -1L
+            val liveSeq = readout?.packed?.sequence ?: (source as? LiveStreamSceneSource)?.latestFrameSequence ?: -1L
             val filterRev = filterStack?.revision ?: 0L
             val filterTrans = filterStack?.totalTransmittance() ?: 1.0
             val filterTransBits = filterTrans.toRawBits()
@@ -922,7 +979,7 @@ class CmosFactory(
             }
 
             if (readyRef == null) {
-                val rawFrame = checkNotNull(sampleRadianceFrame(source, pose))
+                val rawFrame = readout?.radiance ?: checkNotNull(sampleRadianceFrame(source, pose))
                 val frame = applySpatialWithBuffers(rawFrame, filterStack, exposure, frameIndex, isWorker = false, opticalFilter = opticalFilter)
                 val effectiveSeq = if (liveSeq >= 0L) liveSeq else rawFrame.sequence
                 val blackLevel = opticalFilter.sensorBlackLevelAdu(geometry.bitDepth)
@@ -996,7 +1053,7 @@ class CmosFactory(
                 (liveSeq < 0L || liveSeq == pubSeq) &&
                 opticalFilter.hasHotStage1CacheForExposureOnlyChange()
             if (sameOpticsForHotSync) {
-                val rawFrame = sampleRadianceFrame(source, pose)
+                val rawFrame = readout?.radiance ?: sampleRadianceFrame(source, pose)
                 if (rawFrame != null) {
                     val frame = applySpatialWithBuffers(rawFrame, filterStack, exposure, frameIndex, isWorker = false, opticalFilter = opticalFilter)
                     val effectiveSeq = if (liveSeq >= 0L) liveSeq else rawFrame.sequence
@@ -1045,7 +1102,7 @@ class CmosFactory(
             }
 
             if (exposureChanged) {
-                exposureScaler.copy(readyRef, destination, evRatio, pubBlackLevel, pubBitDepth)
+                exposureScaler.copy(readyRef, destination, evRatio, pubBlackLevel, pubBitDepth, sourceGeneration = readyGen)
             } else {
                 destination.put(readyRef, 0, frameBytes)
             }
@@ -1073,6 +1130,7 @@ class CmosFactory(
                         lastSubmittedOpticsVersion = opticsVer
                         pendingJob = PendingJob(
                             source = source,
+                            readout = readout,
                             pose = pose,
                             poseKey = poseKey,
                             filter = opticalFilter,
@@ -1141,7 +1199,7 @@ class CmosFactory(
                     }
                     var publishedSeqFromJob = job.sourceSeq
                     if (gpuWritten <= 0) {
-                        val rawFrame = sampleRadianceFrame(job.source, job.pose) ?: return@runCatching
+                        val rawFrame = job.readout?.radiance ?: sampleRadianceFrame(job.source, job.pose) ?: return@runCatching
                         if (publishedSeqFromJob < 0L) publishedSeqFromJob = rawFrame.sequence
                         val frame = applySpatialWithBuffers(rawFrame, job.filterStack, job.exposure, job.frameIndex, isWorker = true, opticalFilter = job.filter)
                         job.filter.filterRadianceFrame(
@@ -1266,3 +1324,10 @@ class CmosFactory(
 // 54 MHz virtual clock. Dividing first keeps the conversion exact beyond a few minutes of uptime.
 internal fun cameraNanos(tick: Long): Long =
     tick / 54_000_000L * 1_000_000_000L + tick % 54_000_000L * 1_000L / 54L
+
+// A camera tick at a 60 Hz edge converts to the integer nanosecond containing that edge.
+// Splitting off whole seconds keeps every intermediate in range for long-running clocks.
+internal fun cameraAnimationFrame(elapsedNanos: Long): Long {
+    val withinSecond = elapsedNanos % 1_000_000_000L
+    return elapsedNanos / 1_000_000_000L * 60L + ((withinSecond + 1L) * 60L - 1L) / 1_000_000_000L
+}

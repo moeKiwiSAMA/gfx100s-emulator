@@ -64,7 +64,7 @@ build_win64() {
         -I"${SCRIPT_DIR}" \
         "${SCRIPT_DIR}/fuji_audio_win32.c" \
         -static-libgcc \
-        -Wl,--exclude-libs,ALL \
+        -Wl,--exclude-all-symbols \
         -o "${WIN64_BUILD}/fuji_audio.dll" \
         -lole32 -lavrt -lksguid
     write_identity "windows-x86_64" "${WIN64_BUILD}/fuji_audio.dll" "${WIN64_BUILD}/source.properties"

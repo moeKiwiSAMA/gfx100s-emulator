@@ -5,6 +5,8 @@
  * via dlopen / LoadLibraryW — ZERO static Vulkan linkage, ZERO extra runtime DLLs.
  */
 
+#include <cstdint>
+#include "fuji_vulkan_uniresz_spirv.h"
 #include "fuji_vulkan_optics.h"
 #include "fuji_vulkan_stats.h"
 #include "fuji_vk_abi.h"
@@ -13,6 +15,7 @@
 #include "fuji_vulkan_stats_spirv.h"
 
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <cmath>
 #include <cstdarg>
@@ -207,6 +210,9 @@ struct FujiVkContext {
     VkDescriptorSet       descSets[kFrameSlots][kDescSetsPerSlot] = {};
 
     VkShaderModule        shaderModules[FUJI_VK_SHADER_COUNT] = {};
+    VkPipeline       uniReszPipeline = nullptr;
+    VkShaderModule   uniReszModule = nullptr;
+    VkBufferAlloc    bufUniReszIn{}, bufUniReszOut{}, bufUniReszParams{};
     VkPipeline            pipelines[FUJI_VK_SHADER_COUNT] = {};
     VkShaderModule        statsShaderModule = nullptr;
     VkPipeline            statsPipeline = nullptr;
@@ -256,7 +262,8 @@ struct FujiVkContext {
     VkBufferAlloc bufIspStatsOut{};    /* 9,280 B HOST_CACHED readback buffer copied via vkCmdCopyBuffer */
     VkBufferAlloc bufIspStatsUbo{};    /* 96 B FujiVkIspStatsParams */
 
-    uint64_t     cachedLutHash = 0ULL;
+    uint32_t     cachedLutPacked[4096]{};
+    bool         cachedLutDefault = false;
     bool         cachedLutValid = false;
     bool         cachedLutDeviceSynced = false;
     uint64_t     cachedSceneKey = 0ULL;
@@ -265,6 +272,8 @@ struct FujiVkContext {
     uint64_t     cachedOpticsKey = 0ULL;
     VkDeviceSize cachedOpticsBytes = 0ULL;
     bool         cachedOpticsValid = false;
+    FujiVkCmosParams cachedIspBayerParams{};
+    bool         cachedIspBayerValid = false;
 
     void setError(const std::string& msg) { lastError = msg; }
 
@@ -285,6 +294,14 @@ struct FujiVkContext {
     }
 
     void freeBuffer(VkBufferAlloc& a) {
+        // The driver can recycle an identical VkBuffer handle for a new allocation.
+        if (&a == &bufIspIn) {
+            cachedLutValid = false;
+            cachedLutDeviceSynced = false;
+        } else if (&a == &bufIspInDevice) {
+            cachedLutDeviceSynced = false;
+            cachedIspBayerValid = false;
+        }
         if (device) {
             if (a.mapped && a.memory && vk.unmapMemory) {
                 vk.unmapMemory(device, a.memory);
@@ -713,6 +730,11 @@ struct FujiVkContext {
             asyncSlots[s].inFlight = false;
             asyncSlots[s].ticket = 0ULL;
         }
+        freeBuffer(bufUniReszIn);
+        freeBuffer(bufUniReszOut);
+        freeBuffer(bufUniReszParams);
+        if (uniReszPipeline) vk.destroyPipeline(device, uniReszPipeline, nullptr);
+        if (uniReszModule) vk.destroyShaderModule(device, uniReszModule, nullptr);
         freeBuffer(bufIn);
         freeBuffer(bufSceneDevice);
         freeBuffer(bufFilter);
@@ -1438,6 +1460,16 @@ FUJI_VK_EXPORT int32_t fuji_vk_create_with_cache(
     }
 
     /* Pre-warm common LiveView specialized pipelines + default 1024x576 HWM buffers & flush cache */
+    // Compile the optional AF-preview kernel before the firmware starts consuming live-view DMA.
+    // An unavailable scaler must not prevent other optical pipelines from opening.
+    if (create_compute_pipeline(ctx.get(), kSpvUniResz, sizeof(kSpvUniResz) / sizeof(uint32_t),
+                                ctx->uniReszModule, ctx->uniReszPipeline)) {
+        ctx->ensureHostBuffer(ctx->bufUniReszIn, 575u * 2560u + 2048u, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+        ctx->ensureReadbackBuffer(ctx->bufUniReszOut, 640u * 360u * 2u, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+        ctx->ensureHostBuffer(ctx->bufUniReszParams, 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    } else {
+        ctx->lastError.clear();
+    }
     ctx->prewarmDefaultLiveView();
     ctx->flushPipelineCacheToDisk();
     auto warmupT1 = std::chrono::steady_clock::now();
@@ -1845,9 +1877,8 @@ FUJI_VK_EXPORT int32_t fuji_vk_render_optics_to_bayer(
 static_assert(sizeof(FujiVkIspDemosaicParams) == 160, "FujiVkIspDemosaicParams must be 160 bytes (std140 aligned)");
 
 static const uint32_t* default_srgb_lut_packed() {
-    static uint32_t table[4096];
-    static bool inited = false;
-    if (!inited) {
+    static const auto table = [] {
+        std::array<uint32_t, 4096> entries{};
         for (int i = 0; i < 4096; ++i) {
             double c = static_cast<double>(i) / 4095.0;
             double srgb = (c <= 0.0031308) ? (c * 12.92) : (1.055 * std::pow(c, 1.0 / 2.4) - 0.055);
@@ -1855,50 +1886,34 @@ static const uint32_t* default_srgb_lut_packed() {
             if (v < 0) v = 0;
             if (v > 255) v = 255;
             uint32_t u = static_cast<uint32_t>(v);
-            table[i] = u | (u << 8) | (u << 16);
+            entries[i] = u | (u << 8) | (u << 16);
         }
-        inited = true;
-    }
-    return table;
-}
-
-static uint64_t hash_lut_4096(const int32_t* r, const int32_t* g, const int32_t* b) {
-    if (!r || !g || !b) return 0x535247424C555431ULL; /* sentinel for default sRGB LUT */
-    uint64_t h = 1469598103934665603ULL;
-    /* Sample every 16th entry + endpoints (258 points) for fast O(1) LUT change detection */
-    for (size_t i = 0; i < 4096; i += 16) {
-        uint64_t v = (static_cast<uint64_t>(r[i] & 0xFF)) |
-                     (static_cast<uint64_t>(g[i] & 0xFF) << 8) |
-                     (static_cast<uint64_t>(b[i] & 0xFF) << 16) |
-                     (static_cast<uint64_t>(r[i + 15] & 0xFF) << 24) |
-                     (static_cast<uint64_t>(g[i + 15] & 0xFF) << 32) |
-                     (static_cast<uint64_t>(b[i + 15] & 0xFF) << 40);
-        h = (h ^ v) * 1099511628211ULL;
-    }
-    return h;
+        return entries;
+    }();
+    return table.data();
 }
 
 static bool upload_isp_lut_cached(
-    FujiVkContext* ctx,
-    uint32_t* dstWords,
-    const int32_t* lut_r_4096,
-    const int32_t* lut_g_4096,
-    const int32_t* lut_b_4096) {
-    uint64_t h = hash_lut_4096(lut_r_4096, lut_g_4096, lut_b_4096);
-    if (ctx->cachedLutValid && ctx->cachedLutHash == h) {
-        return false;
-    }
-    if (lut_r_4096 && lut_g_4096 && lut_b_4096) {
-        for (size_t i = 0; i < 4096; ++i) {
-            uint32_t r = static_cast<uint32_t>(lut_r_4096[i] & 0xFF);
-            uint32_t g = static_cast<uint32_t>(lut_g_4096[i] & 0xFF);
-            uint32_t b = static_cast<uint32_t>(lut_b_4096[i] & 0xFF);
-            dstWords[i] = r | (g << 8) | (b << 16);
-        }
+    FujiVkContext* ctx, uint32_t* dstWords, const int32_t* red, const int32_t* green, const int32_t* blue) {
+    const bool useDefault = !red || !green || !blue;
+    if (useDefault) {
+        if (ctx->cachedLutValid && ctx->cachedLutDefault) return false;
+        std::memcpy(dstWords, default_srgb_lut_packed(), sizeof(ctx->cachedLutPacked));
     } else {
-        std::memcpy(dstWords, default_srgb_lut_packed(), 4096 * sizeof(uint32_t));
+        auto packed = [&](size_t i) {
+            return (static_cast<uint32_t>(red[i]) & 255u) |
+                   ((static_cast<uint32_t>(green[i]) & 255u) << 8) |
+                   ((static_cast<uint32_t>(blue[i]) & 255u) << 16);
+        };
+        if (ctx->cachedLutValid && !ctx->cachedLutDefault) {
+            uint32_t difference = 0;
+            for (size_t i = 0; i < 4096; ++i) difference |= ctx->cachedLutPacked[i] ^ packed(i);
+            if (!difference) return false;
+        }
+        for (size_t i = 0; i < 4096; ++i) ctx->cachedLutPacked[i] = packed(i);
+        std::memcpy(dstWords, ctx->cachedLutPacked, sizeof(ctx->cachedLutPacked));
     }
-    ctx->cachedLutHash = h;
+    ctx->cachedLutDefault = useDefault;
     ctx->cachedLutValid = true;
     ctx->cachedLutDeviceSynced = false;
     return true;
@@ -2046,20 +2061,11 @@ FUJI_VK_EXPORT int32_t fuji_vk_isp_demosaic(
     const VkDeviceSize outPairsBytes = pairCount * 4ULL;
 
     ctx->drainAllAsyncSlots();
-    const VkBuffer prevIspInHost = ctx->bufIspIn.buffer;
-    const VkBuffer prevIspInDev = ctx->bufIspInDevice.buffer;
     if (!ctx->ensureHostBuffer(ctx->bufIspIn, inBytes, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT) ||
         !ctx->ensureDeviceBuffer(ctx->bufIspInDevice, inBytes, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT) ||
         !ctx->ensureReadbackBuffer(ctx->bufIspOut, outPairsBytes, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT) ||
         (runPeaking && !ctx->ensureDeviceBuffer(ctx->bufIspMid, outPairsBytes, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT))) {
         return FUJI_VK_ERR_OUT_OF_MEMORY;
-    }
-    if (ctx->bufIspIn.buffer != prevIspInHost) {
-        ctx->cachedLutValid = false;
-        ctx->cachedLutDeviceSynced = false;
-    }
-    if (ctx->bufIspInDevice.buffer != prevIspInDev) {
-        ctx->cachedLutDeviceSynced = false;
     }
 
     const uint32_t slot = ctx->nextSlot();
@@ -2067,6 +2073,7 @@ FUJI_VK_EXPORT int32_t fuji_vk_isp_demosaic(
     VkDescriptorSet* ds = ctx->descSets[slot];
 
     auto t0 = std::chrono::steady_clock::now();
+    ctx->cachedIspBayerValid = false;
     uint32_t* inDst = reinterpret_cast<uint32_t*>(ctx->bufIspIn.mapped);
     upload_isp_lut_cached(ctx, inDst, lut_r_4096, lut_g_4096, lut_b_4096);
 
@@ -2227,8 +2234,9 @@ static int32_t dispatch_optics_to_isp_yuv_internal(
     const FujiVkIspDemosaicParams* isp_params,
     const FujiVkIspStatsParams* stats_params,
     FujiVkIspStatsOutput* out_stats,
-    double* out_gpu_ms) {
-    if (!ctx || !srcBuffer || !optics || !cmos || !out_y_or_packed || !isp_params) {
+    double* out_gpu_ms,
+    const uint8_t** mapped_uyvy = nullptr) {
+    if (!ctx || !srcBuffer || !optics || !cmos || (!out_y_or_packed && !mapped_uyvy) || !isp_params) {
         return FUJI_VK_ERR_INVALID_ARG;
     }
     if (optics->srcWidth == 0 || optics->srcHeight == 0 ||
@@ -2238,7 +2246,8 @@ static int32_t dispatch_optics_to_isp_yuv_internal(
         return FUJI_VK_ERR_INVALID_ARG;
     }
     if (cmos->bitDepth < 8 || cmos->bitDepth > 16 ||
-        isp_params->dstWidth < 2 || (isp_params->dstWidth & 1u) != 0u || isp_params->dstHeight < 2) {
+        isp_params->dstWidth < 2 || isp_params->dstWidth > UINT32_MAX / 2u ||
+        (isp_params->dstWidth & 1u) != 0u || isp_params->dstHeight < 2) {
         ctx->setError("Invalid CMOS bitDepth or ISP output dimensions");
         return FUJI_VK_ERR_INVALID_ARG;
     }
@@ -2307,8 +2316,6 @@ static int32_t dispatch_optics_to_isp_yuv_internal(
         (ctx->cachedOpticsBytes == dstRgbBytes) &&
         (prevOutBuf != nullptr);
 
-    const VkBuffer prevIspInHost = ctx->bufIspIn.buffer;
-    const VkBuffer prevIspInDev = ctx->bufIspInDevice.buffer;
     const VkFlags outUsage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     if ((!candidateStage1Hit && runFilter && !ctx->ensureDeviceBuffer(ctx->bufFilter, inBytes, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)) ||
         (!candidateStage1Hit && runBokeh && !ctx->ensureDeviceBuffer(ctx->bufMid, midTotalBytes, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)) ||
@@ -2318,13 +2325,6 @@ static int32_t dispatch_optics_to_isp_yuv_internal(
         (runPeaking && !ctx->ensureDeviceBuffer(ctx->bufIspMid, outPairsBytes, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)) ||
         !ctx->ensureReadbackBuffer(ctx->bufIspOut, outPairsBytes, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)) {
         return FUJI_VK_ERR_OUT_OF_MEMORY;
-    }
-    if (ctx->bufIspIn.buffer != prevIspInHost) {
-        ctx->cachedLutValid = false;
-        ctx->cachedLutDeviceSynced = false;
-    }
-    if (ctx->bufIspInDevice.buffer != prevIspInDev) {
-        ctx->cachedLutDeviceSynced = false;
     }
     const bool stage1VramHit = candidateStage1Hit && (ctx->bufOut.buffer == prevOutBuf);
     if (!stage1VramHit && candidateStage1Hit) {
@@ -2350,6 +2350,10 @@ static int32_t dispatch_optics_to_isp_yuv_internal(
      * retain the public bitDepth (8..16) and emit the native ADC code. */
     FujiVkCmosParams fusedCmos = *cmos;
     fusedCmos.bitDepth = p.is16Bit ? 1u : 0u;
+    // Frame-index variation affects the shader only when shot/read noise is enabled.
+    if (!fusedCmos.enableNoise) fusedCmos.frameIndexLo = 0;
+    const bool reuseBayer = stage1VramHit && ctx->cachedIspBayerValid && std::memcmp(&ctx->cachedIspBayerParams, &fusedCmos, sizeof(fusedCmos)) == 0;
+    if (!reuseBayer) ctx->cachedIspBayerValid = false;
 
     FujiVkOpticsParams effOptics = *optics;
     if (runBokehDown) {
@@ -2393,13 +2397,15 @@ static int32_t dispatch_optics_to_isp_yuv_internal(
         }
     }
 
-    /* Pass 3 writes 12-bit Bayer samples directly into DEVICE_LOCAL bufIspInDevice at byte offset 16384 (word 4096)! */
-    std::memcpy(ctx->bufCmosUbo.mapped, &fusedCmos, sizeof(FujiVkCmosParams));
-    ctx->updateDescriptorSetWithOffsets(
-        ds[2],
-        ctx->bufOut.buffer, 0, dstRgbBytes,
-        ctx->bufIspInDevice.buffer, lutBytes, bayerU32Bytes,
-        ctx->bufCmosUbo.buffer, sizeof(FujiVkCmosParams));
+    if (!reuseBayer) {
+        /* Pass 3 writes 12-bit Bayer samples directly into DEVICE_LOCAL bufIspInDevice at byte offset 16384 (word 4096)! */
+        std::memcpy(ctx->bufCmosUbo.mapped, &fusedCmos, sizeof(FujiVkCmosParams));
+        ctx->updateDescriptorSetWithOffsets(
+            ds[2],
+            ctx->bufOut.buffer, 0, dstRgbBytes,
+            ctx->bufIspInDevice.buffer, lutBytes, bayerU32Bytes,
+            ctx->bufCmosUbo.buffer, sizeof(FujiVkCmosParams));
+    }
 
     /* Pass 4 reads packed LUT [0..4095] + DEVICE_LOCAL Bayer [4096..] from bufIspInDevice -> UYVY422 pairs */
     std::memcpy(ctx->bufIspUbo.mapped, &p, sizeof(FujiVkIspDemosaicParams));
@@ -2499,10 +2505,12 @@ static int32_t dispatch_optics_to_isp_yuv_internal(
         ctx->vk.cmdPipelineBarrier(cmdBuf, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &mb, 0, nullptr, 0, nullptr);
     }
 
-    /* Pass 3: CMOS Bayer directly into bufIspIn + 16384 */
-    ctx->vk.cmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, ctx->pipelines[FUJI_VK_SHADER_CMOS_BAYER]);
-    ctx->vk.cmdBindDescriptorSets(cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, ctx->pipelineLayout, 0, 1, &ds[2], 0, nullptr);
-    ctx->vk.cmdDispatch(cmdBuf, ogx, ogy, 1);
+    if (!reuseBayer) {
+        /* Pass 3: CMOS Bayer directly into bufIspIn + 16384 */
+        ctx->vk.cmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, ctx->pipelines[FUJI_VK_SHADER_CMOS_BAYER]);
+        ctx->vk.cmdBindDescriptorSets(cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, ctx->pipelineLayout, 0, 1, &ds[2], 0, nullptr);
+        ctx->vk.cmdDispatch(cmdBuf, ogx, ogy, 1);
+    }
 
     /* Pass 4: ISP Demosaic + CCM + Tone LUT + RGB->YCbCr directly from GPU-resident Bayer (specialized) */
     const uint32_t igx = static_cast<uint32_t>((pairsW + 7u) / 8u);
@@ -2547,6 +2555,10 @@ static int32_t dispatch_optics_to_isp_yuv_internal(
     if (ctx->vk.endCommandBuffer(cmdBuf) != VK_SUCCESS || !ctx->submitAndWait(slot)) {
         return FUJI_VK_ERR_DISPATCH_FAILED;
     }
+    if (!reuseBayer) {
+        ctx->cachedIspBayerParams = fusedCmos;
+        ctx->cachedIspBayerValid = opticsStage1Key != 0ULL;
+    }
     if (needLutCopyToDevice) {
         ctx->cachedLutDeviceSynced = true;
     }
@@ -2558,7 +2570,8 @@ static int32_t dispatch_optics_to_isp_yuv_internal(
 
     ctx->invalidateReadback(ctx->bufIspOut);
     const uint32_t* pairs = reinterpret_cast<const uint32_t*>(ctx->bufIspOut.mapped);
-    pack_isp_pairs_to_yuv(pairs, p, out_y_or_packed, out_uv_plane, stride, rowBytes, pairsW);
+    if (mapped_uyvy) *mapped_uyvy = reinterpret_cast<const uint8_t*>(pairs);
+    else pack_isp_pairs_to_yuv(pairs, p, out_y_or_packed, out_uv_plane, stride, rowBytes, pairsW);
     if (runStats) {
         ctx->invalidateReadback(ctx->bufIspStatsOut);
         std::memcpy(out_stats, ctx->bufIspStatsOut.mapped, FUJI_VK_STATS_OUTPUT_BYTES);
@@ -2626,6 +2639,52 @@ FUJI_VK_EXPORT int32_t fuji_vk_render_optics_to_isp_yuv(
         lut_r_4096, lut_g_4096, lut_b_4096,
         out_y_or_packed, out_y_or_packed_bytes, out_uv_plane, out_uv_plane_bytes,
         isp_params, nullptr, nullptr, out_gpu_ms);
+}
+
+FUJI_VK_EXPORT int32_t fuji_vk_resize_1024_to_640_422(
+    FujiVkContext* ctx, const uint8_t* source, size_t source_bytes, uint32_t src_stride,
+    uint8_t* destination, size_t destination_bytes, uint32_t yyuv, double* timings_ms) {
+    constexpr size_t out_bytes = 640u * 360u * 2u;
+    if (!ctx || !source || !destination || src_stride < 2048u || src_stride > 0x3ffffu ||
+        (src_stride & 3u) || yyuv > 1u || destination_bytes < out_bytes)
+        return FUJI_VK_ERR_INVALID_ARG;
+    const size_t in_bytes = static_cast<size_t>(575u) * src_stride + 2048u;
+    if (source_bytes < in_bytes) return FUJI_VK_ERR_INVALID_ARG;
+    if (!ctx->uniReszPipeline || !ctx->ensureHostBuffer(ctx->bufUniReszIn, in_bytes, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT) ||
+        !ctx->ensureReadbackBuffer(ctx->bufUniReszOut, out_bytes, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT) ||
+        !ctx->ensureHostBuffer(ctx->bufUniReszParams, 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT))
+        return FUJI_VK_ERR_DISPATCH_FAILED;
+
+    const auto start = std::chrono::steady_clock::now();
+    const uint32_t params[4] = {src_stride / 4u, yyuv, 0u, 0u};
+    std::memcpy(ctx->bufUniReszIn.mapped, source, in_bytes);
+    std::memcpy(ctx->bufUniReszParams.mapped, params, sizeof(params));
+    const auto uploaded = std::chrono::steady_clock::now();
+    ctx->drainAllAsyncSlots();
+    const uint32_t slot = ctx->nextSlot();
+    const auto cmd = ctx->cmdBufs[slot];
+    const auto ds = ctx->descSets[slot][0];
+    ctx->updateDescriptorSet(ds, ctx->bufUniReszIn.buffer, in_bytes, ctx->bufUniReszOut.buffer, out_bytes,
+                             ctx->bufUniReszParams.buffer, sizeof(params));
+    VkCommandBufferBeginInfo begin{};
+    begin.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    begin.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    if (ctx->vk.resetCommandBuffer(cmd, 0) != VK_SUCCESS ||
+        ctx->vk.beginCommandBuffer(cmd, &begin) != VK_SUCCESS) return FUJI_VK_ERR_DISPATCH_FAILED;
+    ctx->vk.cmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, ctx->uniReszPipeline);
+    ctx->vk.cmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, ctx->pipelineLayout, 0, 1, &ds, 0, nullptr);
+    ctx->vk.cmdDispatch(cmd, 10, 90, 1);
+    if (ctx->vk.endCommandBuffer(cmd) != VK_SUCCESS || !ctx->submitAndWait(slot)) return FUJI_VK_ERR_DISPATCH_FAILED;
+    ctx->invalidateReadback(ctx->bufUniReszOut);
+    const auto complete = std::chrono::steady_clock::now();
+    std::memcpy(destination, ctx->bufUniReszOut.mapped, out_bytes);
+    if (timings_ms) {
+        using Ms = std::chrono::duration<double, std::milli>;
+        timings_ms[0] = Ms(uploaded - start).count();
+        timings_ms[1] = Ms(complete - uploaded).count();
+        timings_ms[2] = Ms(std::chrono::steady_clock::now() - complete).count();
+    }
+    return FUJI_VK_OK;
 }
 
 FUJI_VK_EXPORT int32_t fuji_vk_upload_scene(
@@ -2733,6 +2792,40 @@ FUJI_VK_EXPORT int32_t fuji_vk_render_cached_scene_to_bayer(
     return dispatch_optics_pipeline_internal(ctx, ctx->bufSceneDevice.buffer, inBytes, filter, optics, cmos, nullptr, out_bayer, out_gpu_ms);
 }
 
+static int32_t dispatch_cached_isp_yuv(
+    FujiVkContext* ctx,
+    uint64_t scene_key,
+    const FujiVkFilterStackParams* filter,
+    const FujiVkOpticsParams* optics,
+    const FujiVkCmosParams* cmos,
+    const int32_t* lut_r_4096,
+    const int32_t* lut_g_4096,
+    const int32_t* lut_b_4096,
+    uint8_t* out_y_or_packed,
+    size_t out_y_or_packed_bytes,
+    uint8_t* out_uv_plane,
+    size_t out_uv_plane_bytes,
+    const FujiVkIspDemosaicParams* isp_params,
+    const FujiVkIspStatsParams* stats_params,
+    FujiVkIspStatsOutput* out_stats,
+    double* out_gpu_ms, const uint8_t** mapped_uyvy) {
+    if (!ctx || !optics || scene_key == 0ULL) return FUJI_VK_ERR_INVALID_ARG;
+    if (optics->srcWidth == 0 || optics->srcHeight == 0) {
+        ctx->setError("Invalid optics source dimensions");
+        return FUJI_VK_ERR_INVALID_ARG;
+    }
+    const VkDeviceSize inBytes = static_cast<VkDeviceSize>(optics->srcWidth) * optics->srcHeight * 16ULL;
+    if (!ctx->cachedSceneValid || ctx->cachedSceneKey != scene_key || ctx->cachedSceneBytes != inBytes || !ctx->bufSceneDevice.buffer) {
+        ctx->setError("Cached VRAM scene miss for requested scene_key");
+        return FUJI_VK_ERR_INVALID_ARG;
+    }
+    return dispatch_optics_to_isp_yuv_internal(
+        ctx, ctx->bufSceneDevice.buffer, inBytes, scene_key, filter, optics, cmos,
+        lut_r_4096, lut_g_4096, lut_b_4096,
+        out_y_or_packed, out_y_or_packed_bytes, out_uv_plane, out_uv_plane_bytes,
+        isp_params, stats_params, out_stats, out_gpu_ms, mapped_uyvy);
+}
+
 FUJI_VK_EXPORT int32_t fuji_vk_render_cached_scene_to_isp_yuv_with_stats(
     FujiVkContext* ctx,
     uint64_t scene_key,
@@ -2750,21 +2843,22 @@ FUJI_VK_EXPORT int32_t fuji_vk_render_cached_scene_to_isp_yuv_with_stats(
     const FujiVkIspStatsParams* stats_params,
     FujiVkIspStatsOutput* out_stats,
     double* out_gpu_ms) {
-    if (!ctx || !optics || scene_key == 0ULL) return FUJI_VK_ERR_INVALID_ARG;
-    if (optics->srcWidth == 0 || optics->srcHeight == 0) {
-        ctx->setError("Invalid optics source dimensions");
-        return FUJI_VK_ERR_INVALID_ARG;
-    }
-    const VkDeviceSize inBytes = static_cast<VkDeviceSize>(optics->srcWidth) * optics->srcHeight * 16ULL;
-    if (!ctx->cachedSceneValid || ctx->cachedSceneKey != scene_key || ctx->cachedSceneBytes != inBytes || !ctx->bufSceneDevice.buffer) {
-        ctx->setError("Cached VRAM scene miss for requested scene_key");
-        return FUJI_VK_ERR_INVALID_ARG;
-    }
-    return dispatch_optics_to_isp_yuv_internal(
-        ctx, ctx->bufSceneDevice.buffer, inBytes, scene_key, filter, optics, cmos,
-        lut_r_4096, lut_g_4096, lut_b_4096,
+    return dispatch_cached_isp_yuv(ctx, scene_key, filter, optics, cmos, lut_r_4096, lut_g_4096, lut_b_4096,
         out_y_or_packed, out_y_or_packed_bytes, out_uv_plane, out_uv_plane_bytes,
-        isp_params, stats_params, out_stats, out_gpu_ms);
+        isp_params, stats_params, out_stats, out_gpu_ms, nullptr);
+}
+
+FUJI_VK_EXPORT int32_t fuji_vk_render_cached_scene_to_isp_uyvy_view(
+    FujiVkContext* ctx, uint64_t scene_key, const FujiVkFilterStackParams* filter,
+    const FujiVkOpticsParams* optics, const FujiVkCmosParams* cmos,
+    const int32_t* lut_r_4096, const int32_t* lut_g_4096, const int32_t* lut_b_4096,
+    const FujiVkIspDemosaicParams* isp_params, const FujiVkIspStatsParams* stats_params,
+    FujiVkIspStatsOutput* out_stats, const uint8_t** mapped_uyvy, size_t dst_capacity, double* out_gpu_ms) {
+    if (!mapped_uyvy) return FUJI_VK_ERR_INVALID_ARG;
+    *mapped_uyvy = nullptr;
+    if (!isp_params || isp_params->outputFormat != FUJI_VK_ISP_FMT_UYVY422) return FUJI_VK_ERR_INVALID_ARG;
+    return dispatch_cached_isp_yuv(ctx, scene_key, filter, optics, cmos, lut_r_4096, lut_g_4096, lut_b_4096,
+        nullptr, dst_capacity, nullptr, 0, isp_params, stats_params, out_stats, out_gpu_ms, mapped_uyvy);
 }
 
 FUJI_VK_EXPORT int32_t fuji_vk_render_cached_scene_to_isp_yuv(

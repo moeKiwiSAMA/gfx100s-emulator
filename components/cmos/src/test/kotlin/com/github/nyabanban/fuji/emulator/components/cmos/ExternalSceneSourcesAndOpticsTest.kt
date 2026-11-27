@@ -18,6 +18,8 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import javax.imageio.ImageIO
 import kotlin.test.*
@@ -158,9 +160,23 @@ class ExternalSceneSourcesAndOpticsTest {
         val fileTarget = FfmpegInputTarget.LocalVideoFile(clip, "demo.mp4")
         val fileCmd = FfmpegPipeSceneSource.buildFfmpegCommand(fileTarget, 1024, 576, loop = true, ffmpegExecutable = "ffmpeg")
         assertTrue("-stream_loop" in fileCmd && "-1" in fileCmd)
-        assertTrue("-re" in fileCmd)
+        assertFalse("-re" in fileCmd)
         assertTrue("-pix_fmt" in fileCmd && "rgb24" in fileCmd)
         assertEquals("pipe:1", fileCmd.last())
+
+        fun hasPresentationClock(command: List<String>) =
+            command[command.indexOf("-vf") + 1].endsWith(",realtime=limit=${Long.MAX_VALUE}us")
+
+        assertTrue(hasPresentationClock(fileCmd))
+        val rawThreads = fileCmd.indexOf("-threads:v")
+        assertTrue(rawThreads > fileCmd.indexOf("-i"))
+        assertEquals("1", fileCmd[rawThreads + 1])
+        for ((loop, paced) in listOf(false to true, true to false, false to false)) {
+            val other = FfmpegPipeSceneSource.buildFfmpegCommand(fileTarget, 1024, 576, loop, realTimePacing = paced)
+            assertFalse(hasPresentationClock(other))
+            assertFalse("-threads:v" in other)
+            assertEquals(paced, "-re" in other)
+        }
 
         val rtspTarget = FfmpegInputTarget.NetworkStream("rtsp://127.0.0.1:8554/live", "rtsp")
         val rtspCmd = FfmpegPipeSceneSource.buildFfmpegCommand(rtspTarget, 640, 360, loop = false, ffmpegExecutable = "ffmpeg")
@@ -185,6 +201,12 @@ class ExternalSceneSourcesAndOpticsTest {
 
         val macCmd = FfmpegPipeSceneSource.buildFfmpegCommand(camTarget, 640, 360, loop = true, osName = "Mac OS X")
         assertTrue("avfoundation" in macCmd && "0" in macCmd)
+        val loopedRtsp = FfmpegPipeSceneSource.buildFfmpegCommand(rtspTarget, 640, 360, loop = true)
+        for (live in listOf(rtspCmd, loopedRtsp, linuxCmd, winCmd, winNamedCmd, macCmd)) {
+            assertFalse(hasPresentationClock(live))
+            assertFalse("-threads:v" in live)
+            assertFalse("-re" in live)
+        }
     }
 
     @Test
@@ -338,6 +360,39 @@ class ExternalSceneSourcesAndOpticsTest {
                 assertEquals(4L, source.framesReceived)
                 assertEquals(0L, source.framesDropped)
             }
+        }
+    }
+
+    @Test
+    fun ffmpegReconnectBudgetResetsOnlyAfterACompleteFrame() = withTempDir { dir ->
+        val opens = AtomicInteger()
+        val reader = CompletableFuture<Thread>()
+        val source = FfmpegPipeSceneSource(
+            FfmpegInputTarget.NetworkStream("rtsp://localhost/camera", "rtsp"), 2, 2, true,
+            FfmpegStreamOpener { _, _ ->
+                reader.complete(Thread.currentThread())
+                val bytes = when (opens.incrementAndGet()) {
+                    1 -> byteArrayOf()
+                    2 -> ByteArray(12) { 37 }
+                    3 -> byteArrayOf(1)
+                    else -> throw IOException("Unexpected reopen")
+                }
+                object : FfmpegStreamHandle {
+                    override val inputStream = ByteArrayInputStream(bytes)
+                    override fun close() = inputStream.close()
+                }
+            },
+            SceneFrameCodec.createFallbackSource { dir.resolve(it) },
+            reconnectDelayMs = 0, maxReconnectAttempts = 1,
+        )
+        source.use {
+            val thread = reader.get(3, TimeUnit.SECONDS)
+            thread.join(3_000)
+            assertFalse(thread.isAlive)
+            assertEquals(3, opens.get())
+            assertEquals(2L, source.reconnectAttempts)
+            assertEquals(1L, source.framesReceived)
+            assertTrue(source.lastSourceError.orEmpty().contains("Truncated"))
         }
     }
 

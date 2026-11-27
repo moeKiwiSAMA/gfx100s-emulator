@@ -2,7 +2,9 @@ package com.github.nyabanban.fuji.emulator.components.isp
 
 import com.github.nyabanban.fuji.emulator.api.DmaMemory
 import com.github.nyabanban.fuji.emulator.api.InterruptSink
+import com.github.nyabanban.fuji.emulator.api.IspStillReadout
 import com.github.nyabanban.fuji.emulator.api.MmioDevice
+import com.github.nyabanban.fuji.emulator.api.RetainedMmioBank
 import com.github.nyabanban.fuji.emulator.api.TickAwareMmioDevice
 
 /**
@@ -666,7 +668,7 @@ internal class ImagingCompanionEngines(
     }
 
     private fun createRetainedWordBank(portId: String, sizeBytes: Long, words: LongArray, isClosed: () -> Boolean): MmioDevice =
-        object : MmioDevice {
+        object : RetainedMmioBank {
             override val clockOrder = 82
             override fun read(offset: Long, size: Int): Long {
                 check(!isClosed()) { "$portId closed" }
@@ -694,6 +696,26 @@ internal class ImagingCompanionEngines(
 
     fun createIsp85000Device(isClosed: () -> Boolean): MmioDevice =
         createRetainedWordBank(PORT_ISP_85000, ISP_85000_SIZE, isp85000Words, isClosed)
+
+    /** Apply the RECC_S developer's gains to this exposure without copying its Bayer samples. */
+    fun colorReadout(readout: IspStillReadout): IspStillReadout {
+        val redGreen = isp85000Words[0xd4 / 4]
+        val red = (redGreen ushr 16).toInt() and 0x7fff
+        val green = redGreen.toInt() and 0x7fff
+        val blue = isp85000Words[0xd8 / 4].toInt() and 0x7fff
+        if (red == 0 || green == 0 || blue == 0) return readout
+
+        // RECC_S 0xFFF850D4/D8 uses Q8 gain scaling (unity G ~= 256, daylight R:G:B ~= 460:256:486),
+        // half the Q9 scale of LiveView 0xFFF68108/10C (919:512:972). Scale by 2048 so daylight
+        // develops at unity (~1024) instead of -1 EV (~513), preserving the same CFA WB ratios.
+        return IspStillReadout(
+            readout.tick, readout.width, readout.height,
+            (red * 2048 / 919).coerceIn(64, 8192),
+            (green * 2048 / 512).coerceIn(64, 8192),
+            (blue * 2048 / 972).coerceIn(64, 8192),
+            readout.bayerSamples(),
+        )
+    }
 
     fun createIsp86000Device(isClosed: () -> Boolean): MmioDevice =
         createRetainedWordBank(PORT_ISP_86000, ISP_86000_SIZE, isp86000Words, isClosed)

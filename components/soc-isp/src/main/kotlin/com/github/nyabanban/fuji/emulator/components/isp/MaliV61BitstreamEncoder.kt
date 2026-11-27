@@ -114,17 +114,56 @@ internal object MaliV61BitstreamEncoder {
         }
     }
 
-    private fun writeVideoSignalType(bw: BitWriter, fullRange: Boolean) {
-        bw.writeBit(if (fullRange) 1 else 0)
-        if (fullRange) {
-            bw.writeBits(5, 3) // unspecified camera video format
-            bw.writeBit(1) // video_full_range_flag
-            bw.writeBit(0) // preserve the container's colour description
+    /** GFX100S 2.13 S4 0x01205DF0 sends type 15, followed by flags and four packed bytes. */
+    @ConsistentCopyVisibility
+    data class ColourDescription private constructor(
+        val range: Int,
+        val primaries: Int,
+        val transfer: Int,
+        val matrix: Int,
+    ) {
+        companion object {
+            fun fromMve(payload: IntArray): ColourDescription? {
+                if (payload.size < 3) return null
+                val packed = payload[2]
+                val range = packed and 0xff
+                val primaries = (packed ushr 8) and 0xff
+                val transfer = (packed ushr 16) and 0xff
+                val matrix = packed ushr 24
+                // H.273 reserves code point 3 in all three tables; only the matrix permits 0.
+                val validPrimaries = primaries in 1..2 || primaries in 4..12 || primaries == 22
+                val validTransfer = transfer in 1..2 || transfer in 4..18
+                val validMatrix = matrix in 0..2 || matrix in 4..17
+                if (range !in 0..2 || !validPrimaries || !validTransfer || !validMatrix) return null
+                return ColourDescription(range, primaries, transfer, matrix)
+            }
+        }
+    }
+
+    private fun writeVideoSignalType(bw: BitWriter, fullRange: Boolean, colour: ColourDescription?) {
+        val present = fullRange || colour != null
+        bw.writeBit(if (present) 1 else 0)
+        if (!present) return
+        bw.writeBits(5, 3) // unspecified camera video format
+        val range = when (colour?.range) {
+            1 -> false
+            2 -> true
+            else -> fullRange
+        }
+        bw.writeBit(if (range) 1 else 0)
+        bw.writeBit(if (colour == null) 0 else 1)
+        if (colour != null) {
+            bw.writeBits(colour.primaries.toLong(), 8)
+            bw.writeBits(colour.transfer.toLong(), 8)
+            bw.writeBits(colour.matrix.toLong(), 8)
         }
     }
 
     /** H.264 SPS (`0x67`, <= 40 bytes, fits inside 64-byte GFX100S header buffer slot). */
-    fun buildH264Sps(width: Int, height: Int, fpsQ16: Long, fullRange: Boolean = false): ByteArray {
+    fun buildH264Sps(width: Int, height: Int, fpsQ16: Long, fullRange: Boolean = false): ByteArray =
+        buildH264Sps(width, height, fpsQ16, fullRange, null)
+
+    fun buildH264Sps(width: Int, height: Int, fpsQ16: Long, fullRange: Boolean, colour: ColourDescription?): ByteArray {
         val w = width.coerceIn(16, 4096)
         val h = height.coerceIn(16, 2160)
         val mbW = (w + 15) / 16
@@ -161,7 +200,7 @@ internal object MaliV61BitstreamEncoder {
         bw.writeBit(1) // vui_parameters_present_flag
         bw.writeBit(0) // aspect_ratio_info_present_flag
         bw.writeBit(0) // overscan_info_present_flag
-        writeVideoSignalType(bw, fullRange)
+        writeVideoSignalType(bw, fullRange, colour)
         bw.writeBit(0) // chroma_loc_info_present_flag
         bw.writeBit(1) // timing_info_present_flag
         // One progressive frame spans two H.264 clock units. Use the actual ISP period.
@@ -283,21 +322,18 @@ internal object MaliV61BitstreamEncoder {
                 val edge = idx * 10
                 val detailOffset = firstRow * mbW * 4 + firstCol
                 val targetY = if (hasLuma) (mbLumaAvg[idx].toInt() and 255) else 128
-                val hasDetail = luma4x4 != null && (0 until 16).any { block ->
-                    val offset = detailOffset + block / 4 * mbW * 4 + block % 4
-                    kotlin.math.abs((luma4x4[offset].toInt() and 255) - targetY) >= 4
-                }
-                val byteTargetHere = targetBytes.toLong() * (idx + 1) / totalMbs
-                val canSpend = bw.byteCount + 385 <= byteTargetHere
+                val canSpend = bw.byteCount + 385 <= targetBytes.toLong() * (idx + 1) / totalMbs
                 val priorPcm = previous?.pcmBlocks?.get(idx)
+                val matchesReference = current != null && previous != null && current.matches(previous, idx, detailOffset)
+                // A coarsely unchanged CBR block with no prior PCM uses P_Skip without reading guest pixels.
+                val canPromote = canSpend && !constantRate && luma4x4 != null
+                val checkPromotion = matchesReference && priorPcm == null
                 val raw = pcmPixels?.takeIf {
-                    (priorPcm != null || canSpend) && pcm?.readBlock(mx, my, it) == true
+                    if (checkPromotion) canPromote && pcm?.readDetailedBlock(mx, my, it, luma4x4, detailOffset, mbW * 4) == true
+                    else (canSpend || matchesReference) && pcm?.readBlock(mx, my, it) == true
                 }
-                val rawDetail = !constantRate && raw != null && luma4x4 != null &&
-                    AvcReferenceFrame.hasFineDetail(raw, luma4x4, detailOffset, mbW * 4)
-                val promote = priorPcm == null && canSpend && rawDetail
-                val accurateReference = priorPcm == null || (raw != null && AvcReferenceFrame.matchesPcm(raw, priorPcm))
-                if (current != null && previous != null && accurateReference && !promote && current.matches(previous, idx, detailOffset)) {
+                val promote = checkPromotion && raw != null
+                if (matchesReference && !promote && (priorPcm == null || (raw != null && AvcReferenceFrame.matchesPcm(raw, priorPcm)))) {
                     // P_Skip uses the colocated reference block (all motion vector predictors are zero).
                     previous.edges.copyInto(current.edges, edge, edge, edge + 10)
                     current.pcmBlocks?.set(idx, priorPcm)
@@ -321,7 +357,14 @@ internal object MaliV61BitstreamEncoder {
                 val wasPcmAbove = pcmAbove[mx]
                 val wasPcmLeft = pcmLeft
                 // PCM carries all original samples at the selected bitrate, including detail below the 4x4 grid.
-                val pixels = raw.takeIf { canSpend && (constantRate || hasDetail || rawDetail) }
+                val pcmCandidate = raw?.takeIf { canSpend }
+                val usePcm = pcmCandidate != null && (constantRate || promote)
+                val hasDetail = !usePcm && luma4x4 != null && (0 until 16).any { block ->
+                    val offset = detailOffset + block / 4 * mbW * 4 + block % 4
+                    kotlin.math.abs((luma4x4[offset].toInt() and 255) - targetY) >= 4
+                }
+                val pixels = pcmCandidate?.takeIf { usePcm || hasDetail ||
+                    (luma4x4 != null && AvcReferenceFrame.hasFineDetail(it, luma4x4, detailOffset, mbW * 4)) }
                 pcmAbove[mx] = pixels != null
                 pcmLeft = pixels != null
                 if (pixels != null) {
@@ -557,6 +600,11 @@ internal object MaliV61BitstreamEncoder {
     fun buildH265Sps(
         width: Int, height: Int, bitDepth10: Boolean, fpsQ16: Long = 3_928_227L,
         fullRange: Boolean = false, pcmEnabled: Boolean = false,
+    ): ByteArray = buildH265Sps(width, height, bitDepth10, fpsQ16, fullRange, pcmEnabled, null)
+
+    fun buildH265Sps(
+        width: Int, height: Int, bitDepth10: Boolean, fpsQ16: Long, fullRange: Boolean, pcmEnabled: Boolean,
+        colour: ColourDescription?,
     ): ByteArray {
         val w = width.coerceIn(16, 4096)
         val h = height.coerceIn(16, 2160)
@@ -615,7 +663,7 @@ internal object MaliV61BitstreamEncoder {
         bw.writeBit(0) // strong_intra_smoothing_enabled_flag
         bw.writeBit(1) // vui_parameters_present_flag
         bw.writeBits(0, 2) // aspect_ratio_info_present_flag, overscan_info_present_flag
-        writeVideoSignalType(bw, fullRange)
+        writeVideoSignalType(bw, fullRange, colour)
         bw.writeBits(0, 5) // chroma location, neutral chroma, two field flags, display window
         bw.writeBit(1) // vui_timing_info_present_flag
         bw.writeBits(MaliV61VpuEngine.framePeriodTicksForFpsQ16(fpsQ16), 32)

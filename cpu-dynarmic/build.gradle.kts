@@ -6,7 +6,17 @@ dependencies { implementation(project(":component-api")) }
 
 fun isWindowsHost(): Boolean = System.getProperty("os.name").lowercase(Locale.ROOT).contains("win")
 
+fun Task.declareDynarmicInputs(windows: Boolean) {
+    val bridge = rootProject.layout.projectDirectory.dir("tools/native/dynarmic-bridge")
+    val manifest = bridge.file("bridge-inputs.txt")
+    inputs.files(project.providers.fileContents(manifest).asText.map { text ->
+        text.lineSequence().filter { it.isNotEmpty() }.map { bridge.file(it) }.toList()
+    }).withPathSensitivity(PathSensitivity.RELATIVE)
+    if (windows) inputs.file(bridge.file("mingw64-dynarmic-toolchain.cmake"))
+}
+
 tasks.register("buildDynarmicNative") {
+    declareDynarmicInputs(isWindowsHost())
     group = "build setup"
     description = "Build pinned ARMv7-A Dynarmic JIT native bridge (libfuji_dynarmic.so on Linux, fuji_dynarmic.dll on Windows)"
     doLast {
@@ -22,6 +32,7 @@ tasks.register("buildDynarmicNative") {
 }
 
 tasks.register("buildDynarmicNativeWindowsCross") {
+    declareDynarmicInputs(true)
     group = "build setup"
     description = "Cross-compile Windows x86_64 Dynarmic JIT bridge DLL (fuji_dynarmic.dll) on Linux using MinGW-w64"
     doLast {

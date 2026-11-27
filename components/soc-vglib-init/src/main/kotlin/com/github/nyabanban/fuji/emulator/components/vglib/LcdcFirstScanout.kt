@@ -1258,6 +1258,7 @@ internal class LcdcFirstScanout(
             backlightPortLookedUp = true
             context.ports.find(PanelBacklightPort.PORT_NAME, PanelBacklightPort::class.java).also { cachedBacklightPort = it }
         }
+        var compensateRearPanel = false
         if (blPort != null) {
             val bl = blPort.backlightState()
             if (displayPort == "display.evf") {
@@ -1268,14 +1269,8 @@ internal class LcdcFirstScanout(
                 gainR *= bl.lcdGain
                 gainG *= bl.lcdGain
                 gainB *= bl.lcdGain
-                // Physical BOE Rear LCD panel optical white-point (measured from GFX100S 2.13
-                // Boot #1 factory LCD COLOR=0 matrix row sums [875, 988, 863] / 1024, where
-                // R and B are attenuated ~13-18% below G for BOE LED primaries): restores
-                // neutral sRGB white point on host displays while keeping LCD COLOR and LCD
-                // COLOR ADJUSTMENT faithful. On Boot #2 (post-OOBE), firmware 0x0126c4e0
-                // programs an already-neutral white-point matrix (row sums [1025, 997, 1008]);
-                // only apply the BOE inverse white-point when the active 3x3 matrix exhibits
-                // BOE's green-dominant white-point attenuation (BUG-V3-8-5).
+                // Boot #1 LCD COLOR matrices drive the BOE panel primaries. Boot #2
+                // can program a nearly neutral matrix intended for direct display.
                 val rowSumR = m00 + m01 + m02
                 val rowSumG = m10 + m11 + m12
                 val rowSumB = m20 + m21 + m22
@@ -1284,11 +1279,7 @@ internal class LcdcFirstScanout(
                     rowSumB in 750..920 &&
                     (rowSumG - rowSumR) >= 64 &&
                     (rowSumG - rowSumB) >= 64
-                if (matrixWritten && bl.lcdUpdates > 0L && hasBoeGreenWhitePointBias) {
-                    gainR *= 1024.0f / 875.0f
-                    gainG *= 1024.0f / 988.0f
-                    gainB *= 1024.0f / 863.0f
-                }
+                compensateRearPanel = matrixWritten && bl.lcdUpdates > 0L && hasBoeGreenWhitePointBias
             }
         }
         val c00 = if (gainR == 1.0f) m00 else (m00 * gainR).roundToInt()
@@ -1301,13 +1292,25 @@ internal class LcdcFirstScanout(
         val c21 = if (gainB == 1.0f) m21 else (m21 * gainB).roundToInt()
         val c22 = if (gainB == 1.0f) m22 else (m22 * gainB).roundToInt()
 
-        val isDiagonal = (c01 or c02 or c10 or c12 or c20 or c21) == 0
-        if (isDiagonal && c00 == 1024 && c11 == 1024 && c22 == 1024) {
-            return 0
-        }
         outMatrix[0] = c00; outMatrix[1] = c01; outMatrix[2] = c02
         outMatrix[3] = c10; outMatrix[4] = c11; outMatrix[5] = c12
         outMatrix[6] = c20; outMatrix[7] = c21; outMatrix[8] = c22
+        if (compensateRearPanel) {
+            // Inverse of the factory LCD COLOR=0 sRGB -> BOE drive calibration
+            // [[772,87,16],[39,934,15],[39,88,736]] / 1024, in signed Q14.
+            // Compose only at scanout. User color and backlight gains remain in the matrix.
+            for (col in 0..2) {
+                val r = outMatrix[col]
+                val g = outMatrix[3 + col]
+                val b = outMatrix[6 + col]
+                outMatrix[col] = (21855 * r - 1995 * g - 434 * b + 8192) shr 14
+                outMatrix[3 + col] = (-896 * r + 18079 * g - 349 * b + 8192) shr 14
+                outMatrix[6 + col] = (-1051 * r - 2056 * g + 22860 * b + 8192) shr 14
+            }
+        }
+        val isDiagonal = (outMatrix[1] or outMatrix[2] or outMatrix[3] or
+            outMatrix[5] or outMatrix[6] or outMatrix[7]) == 0
+        if (isDiagonal && outMatrix[0] == 1024 && outMatrix[4] == 1024 && outMatrix[8] == 1024) return 0
         return if (isDiagonal) 1 else 2
     }
 

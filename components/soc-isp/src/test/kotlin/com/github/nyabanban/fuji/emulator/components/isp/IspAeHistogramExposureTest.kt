@@ -2,15 +2,19 @@ package com.github.nyabanban.fuji.emulator.components.isp
 
 import com.github.nyabanban.fuji.emulator.api.ComponentContext
 import com.github.nyabanban.fuji.emulator.api.ComponentEvent
+import com.github.nyabanban.fuji.emulator.api.CoupledEdgeInterruptSink
 import com.github.nyabanban.fuji.emulator.api.DmaMemory
+import com.github.nyabanban.fuji.emulator.api.EdgeInterruptState
 import com.github.nyabanban.fuji.emulator.api.EmulationClock
 import com.github.nyabanban.fuji.emulator.api.EventChannel
 import com.github.nyabanban.fuji.emulator.api.Exposure
 import com.github.nyabanban.fuji.emulator.api.Imx461ExposurePort
 import com.github.nyabanban.fuji.emulator.api.InterruptSink
+import com.github.nyabanban.fuji.emulator.api.IspInterruptPort
 import com.github.nyabanban.fuji.emulator.api.MmioDevice
 import com.github.nyabanban.fuji.emulator.api.Ports
 import com.github.nyabanban.fuji.emulator.api.SensorPort
+import com.github.nyabanban.fuji.emulator.api.StatefulComponent
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.nio.ByteBuffer
@@ -185,7 +189,10 @@ class IspAeHistogramExposureTest {
             }
             override fun dataPath(relative: String): Path = tempDir.resolve(relative)
         }
-        ports.register("soc-gic", "soc-gic.lines", InterruptSink::class.java, object : InterruptSink {
+        ports.register("soc-gic", "soc-gic.lines", InterruptSink::class.java, object : CoupledEdgeInterruptSink {
+            override fun lineEnabled(irq: Int) = irq == SocIspFactory.IRQ_106
+            override fun edgeState(irq: Int) = EdgeInterruptState(edge = true, high = false, pending = false)
+            override fun pulseWithDevice(irq: Int, targetMask: Int, latchDevice: () -> Unit) = latchDevice()
             override fun setLine(irq: Int, high: Boolean) = Unit
         })
         var lastDuration = 0L
@@ -204,7 +211,10 @@ class IspAeHistogramExposureTest {
         val yuvBuf = ByteArray(64 * 32 * 2)
         ports.register("cpu", "cpu.memory", DmaMemory::class.java, object : DmaMemory {
             override fun check(address: Long, size: Long, write: Boolean) = Unit
-            override fun read(address: Long, destination: ByteBuffer) = error("unused")
+            override fun read(address: Long, destination: ByteBuffer) {
+                check(address == 0x01871ad0L)
+                destination.putInt(0x011b7f14)
+            }
             override fun write(address: Long, source: ByteBuffer) {
                 source.get(yuvBuf, 0, source.remaining())
             }
@@ -236,6 +246,7 @@ class IspAeHistogramExposureTest {
         )
         comp.start()
 
+        val irq = checkNotNull(ports.find(SocIspFactory.PORT_INTERRUPT_CONTROL, IspInterruptPort::class.java))
         val core = ports.find(SocIspFactory.PORT_CORE, MmioDevice::class.java)!!
         val lv0 = ports.find(SocIspFactory.PORT_LIVE_VIEW_0, MmioDevice::class.java)!!
         val surf0 = ports.find(SocIspFactory.PORT_RESULT_SURFACE_V3, MmioDevice::class.java)!!
@@ -244,7 +255,19 @@ class IspAeHistogramExposureTest {
         val stats1 = ports.find(SocIspFactory.PORT_STATS_1, MmioDevice::class.java)!!
         val head0 = ports.find(SocIspFactory.PORT_STATS_HEAD_0_V3, MmioDevice::class.java)!!
 
+        fun selectDestination(base: Long) {
+            core.write(0x22c, 4, base)
+            core.write(0x254, 4, base + 0x1060)
+            core.write(0x2b4, 4, base + 0x6000)
+        }
+
+        fun completeFrame() {
+            irq.signalInterrupt(SocIspFactory.IRQ_106, withStatus = false, statusMask = 1)
+            core.write(0x00c, 4, 1)
+        }
+
         // Configure 16x16 AE grid and pump LiveView Ch0
+        selectDestination(0xfff10000L)
         core.write(0x05cL, 4, (15L shl 12) or 15L)
         core.write(0x060L, 4, (15L shl 12) or 15L)
         lv0.write(0x0c4L, 4, 0x4000_0000L)
@@ -254,9 +277,11 @@ class IspAeHistogramExposureTest {
 
         assertTrue(lastDuration in 900L..1000L, "Expected ~950ns for SHR=100/VMAX=2000, got $lastDuration")
         assertEquals(100, lastIso)
+        assertEquals(0L, surf0.read(0, 4))
+        completeFrame()
         val aeBright = surf0.read(0x0000L, 4)
         assertTrue(aeBright > 0L, "Bank 0 sel 6 AE grid must be populated")
-        assertEquals(aeBright, surf1.read(0x0000L, 4), "Bank 1 sel 6 AE grid must mirror Bank 0")
+        assertEquals(0L, surf1.read(0x0000L, 4), "The driver has only targeted bank 0")
         assertEquals(aeBright, head0.read(0x0000L, 4), "Bank 0 sel 0 head must mirror AE grid")
 
         var histSum0 = 0L
@@ -266,15 +291,28 @@ class IspAeHistogramExposureTest {
             histSum1 += stats1.read((bin * 4).toLong(), 4)
         }
         assertEquals(64L * 32L, histSum0, "Bank 0 sel 33 Luma histogram must sum to all frame pixels")
-        assertEquals(histSum0, histSum1, "Bank 1 sel 33 Luma histogram must mirror Bank 0")
+        assertEquals(0L, histSum1)
 
         // Increase SHR (100 -> 1500 = 1/4x integration time) -> darker AE sum
         mockShr = 1500
         nowTick += 10_000L
+        selectDestination(0xfff17000L)
         lv0.write(0x0d4L, 4, LiveViewDmaEngine.ENABLE_BIT_28)
         assertTrue(lastDuration in 200L..300L, "Expected ~250ns for SHR=1500/VMAX=2000, got $lastDuration")
-        val aeDark = surf0.read(0x0000L, 4)
+        completeFrame()
+        val aeDark = surf1.read(0x0000L, 4)
+        assertTrue(aeDark > 0)
         assertTrue(aeDark < aeBright, "Higher IMX461 SHR must reduce AE photometry: dark=$aeDark bright=$aeBright")
+        assertEquals(aeBright, surf0.read(0, 4))
+
+        val stateful = comp as StatefulComponent
+        val snapshot = stateful.saveSnapshot()
+        stateful.restoreSnapshot(snapshot - "statsSramBase64")
+        assertEquals(0L, surf0.read(0, 4))
+        assertEquals(0L, surf1.read(0, 4))
+        stateful.restoreSnapshot(snapshot)
+        assertEquals(aeBright, surf0.read(0, 4))
+        assertEquals(aeDark, surf1.read(0, 4))
 
         comp.close()
     }

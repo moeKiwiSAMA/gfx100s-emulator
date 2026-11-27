@@ -319,6 +319,25 @@ internal class LiveViewDmaEngine {
 
     internal var stillFusedFrames: Long = 0L
         private set
+    internal var stillStripCacheHits: Long = 0L
+        private set
+    private class StillStripCache(
+        val tick: Long,
+        val width: Int,
+        val height: Int,
+        val gainR1024: Int,
+        val gainG1024: Int,
+        val gainB1024: Int,
+        val durationNanos: Long,
+        val iso: Int,
+        val colorSignature: Long,
+        val bayerFingerprint: Long,
+        val srcW: Int,
+        val srcH: Int,
+        val srcStride: Int,
+        val srcUyvy: ByteArray,
+    )
+    private var stillStripCache: StillStripCache? = null
     private var lastAeRawGeneration: Long = -1L
     private var lastAeFusedKey: Long = -1L
     private var lastStatsConfig: StatsConfig? = null
@@ -1306,13 +1325,17 @@ internal class LiveViewDmaEngine {
         colorPipeline: IspColorPipeline? = null,
         cropFactor: Double = 1.0,
         stillReadout: IspStillReadout? = null,
+        firstRow: Int = 0,
+        frameHeight: Int = height,
     ): Boolean {
         if ((sensor == null && stillReadout == null) || memory == null) return false
         if (addr == 0L || width < 2 || (width and 1) != 0 || height < 1 || stride < width * 2) return false
+        if (firstRow < 0 || frameHeight < height || firstRow > frameHeight - height) return false
+        val stripAddr = addr + firstRow.toLong() * stride
         val byteCountLong = (height - 1).toLong() * stride.toLong() + width.toLong() * 2L
-        if (byteCountLong !in 1L..MAX_STILL_FRAME_BYTES || addr !in 0L..((1L shl 34) - byteCountLong)) return false
+        if (byteCountLong !in 1L..MAX_STILL_FRAME_BYTES || stripAddr !in 0L..((1L shl 34) - byteCountLong)) return false
         try {
-            memory.check(addr, byteCountLong, true)
+            memory.check(stripAddr, byteCountLong, true)
         } catch (_: IllegalArgumentException) {
             return false
         }
@@ -1320,7 +1343,7 @@ internal class LiveViewDmaEngine {
         // Fast GPU-resident fused still path (Optics -> CMOS Bayer -> ISP Demosaic + Aspect/35mm Crop -> UYVY422).
         // Skipped when a latched IspStillReadout is active so 102MP YC, RAW, and JPEG stay 100% consistent.
         if (stillReadout == null && sensor != null) {
-            val defaultCrop = computeStillCrop(DEFAULT_SENSOR_WIDTH, DEFAULT_SENSOR_HEIGHT, width, height, cropFactor)
+            val defaultCrop = computeStillCrop(DEFAULT_SENSOR_WIDTH, DEFAULT_SENSOR_HEIGHT, width, frameHeight, cropFactor)
             val fusedBaseReq = buildFusedIspRequest(
                 tick = tick,
                 dstW = width,
@@ -1333,7 +1356,7 @@ internal class LiveViewDmaEngine {
                 colorPipeline = colorPipeline,
             )
             val directStillLimitBytes = 16L * 1024L * 1024L
-            if (height >= 2 && byteCountLong <= directStillLimitBytes && height.toLong() * stride.toLong() <= directStillLimitBytes) {
+            if (height == frameHeight && height >= 2 && byteCountLong <= directStillLimitBytes && height.toLong() * stride.toLong() <= directStillLimitBytes) {
                 val directReq = LiveViewIspFusionRequest(
                     exposure = fusedBaseReq.exposure,
                     dstWidth = width,
@@ -1403,35 +1426,15 @@ internal class LiveViewDmaEngine {
                         height = height,
                         stride = stride,
                         memory = memory,
-                        addr = addr,
+                        addr = stripAddr,
+                        firstRow = firstRow,
+                        frameHeight = frameHeight,
                     )
                     stillFusedFrames++
                     return true
                 }
             }
         }
-
-        val rawCapacity = maxOf(
-            DEFAULT_SENSOR_WIDTH * DEFAULT_SENSOR_HEIGHT * 2,
-            stillReadout?.let { it.width * it.height * 2 } ?: 0,
-        )
-        val rawBytes = rawSensorScratch?.takeIf { it.size >= rawCapacity }
-            ?: ByteArray(rawCapacity).also { rawSensorScratch = it }
-        val rawBuf = ByteBuffer.wrap(rawBytes).order(ByteOrder.LITTLE_ENDIAN)
-        val exposedBytes = try {
-            stillReadout?.copyBayerTo(rawBuf) ?: checkNotNull(sensor).exposeStill(
-                Exposure(
-                    tick,
-                    exposure.durationNanos.coerceAtLeast(1L),
-                    exposure.iso.coerceAtLeast(1),
-                    lens ?: DEFAULT_LENS,
-                ),
-                rawBuf,
-            )
-        } catch (_: IllegalStateException) {
-            return false
-        }
-        if (exposedBytes <= 0) return false
 
         val effectiveExposure = if (stillReadout != null) {
             exposure.copy(
@@ -1442,74 +1445,132 @@ internal class LiveViewDmaEngine {
         } else {
             exposure
         }
+        val colorSignature = colorPipeline?.signature ?: 0L
+        val bayerFingerprint = if (stillReadout != null) fingerprintBayerBuffer(stillReadout.bayerSamples()) else 0L
+        val cachedStrip = if (stillReadout != null) {
+            stillStripCache?.takeIf {
+                it.tick == stillReadout.tick &&
+                    it.width == stillReadout.width &&
+                    it.height == stillReadout.height &&
+                    it.gainR1024 == effectiveExposure.gainR1024 &&
+                    it.gainG1024 == effectiveExposure.gainG1024 &&
+                    it.gainB1024 == effectiveExposure.gainB1024 &&
+                    it.durationNanos == effectiveExposure.durationNanos &&
+                    it.iso == effectiveExposure.iso &&
+                    it.colorSignature == colorSignature &&
+                    it.bayerFingerprint == bayerFingerprint
+            }
+        } else null
 
-        val (srcW, srcH, is16Bit) = when {
-            stillReadout != null && exposedBytes == stillReadout.width * stillReadout.height * 2 ->
-                Triple(stillReadout.width, stillReadout.height, true)
-            stillReadout != null && exposedBytes == stillReadout.width * stillReadout.height ->
-                Triple(stillReadout.width, stillReadout.height, false)
-            exposedBytes == DEFAULT_SENSOR_WIDTH * DEFAULT_SENSOR_HEIGHT * 2 ->
-                Triple(DEFAULT_SENSOR_WIDTH, DEFAULT_SENSOR_HEIGHT, true)
-            exposedBytes == DEFAULT_SENSOR_WIDTH * DEFAULT_SENSOR_HEIGHT ->
-                Triple(DEFAULT_SENSOR_WIDTH, DEFAULT_SENSOR_HEIGHT, false)
-            exposedBytes == width * height * 2 -> Triple(width, height, true)
-            exposedBytes == width * height -> Triple(width, height, false)
-            else -> return false
-        }
-
-        val srcStride = srcW * 2
-        val srcUyvy = ByteArray(srcH * srcStride)
-        if (tryNativeIspPipeline(
-                raw = rawBytes,
-                srcW = srcW,
-                srcH = srcH,
-                is16Bit = is16Bit,
-                yOrUyvyDst = srcUyvy,
-                uvDst = null,
-                dstW = srcW,
-                dstH = srcH,
-                stride = srcStride,
-                isSemiPlanar = false,
-                isNv12 = false,
-                exposure = effectiveExposure,
-                statsEngine = null,
-                colorPipeline = colorPipeline,
-                peaking = MfAssistPeakingFilter.DISABLED,
-            ) == NATIVE_ISP_NONE
-        ) {
-            demosaicBayerToUyvy(
-                raw = rawBytes,
-                srcW = srcW,
-                srcH = srcH,
-                is16Bit = is16Bit,
-                dst = srcUyvy,
-                dstW = srcW,
-                dstH = srcH,
-                stride = srcStride,
-                exposure = effectiveExposure,
-                colorPipeline = colorPipeline,
+        val srcW: Int
+        val srcH: Int
+        val srcStride: Int
+        val srcUyvy: ByteArray
+        if (cachedStrip != null) {
+            stillStripCacheHits++
+            srcW = cachedStrip.srcW
+            srcH = cachedStrip.srcH
+            srcStride = cachedStrip.srcStride
+            srcUyvy = cachedStrip.srcUyvy
+        } else {
+            val rawCapacity = maxOf(
+                DEFAULT_SENSOR_WIDTH * DEFAULT_SENSOR_HEIGHT * 2,
+                stillReadout?.let { it.width * it.height * 2 } ?: 0,
             )
+            val rawBytes = rawSensorScratch?.takeIf { it.size >= rawCapacity }
+                ?: ByteArray(rawCapacity).also { rawSensorScratch = it }
+            val rawBuf = ByteBuffer.wrap(rawBytes).order(ByteOrder.LITTLE_ENDIAN)
+            val exposedBytes = try {
+                stillReadout?.copyBayerTo(rawBuf) ?: checkNotNull(sensor).exposeStill(
+                    Exposure(
+                        tick,
+                        exposure.durationNanos.coerceAtLeast(1L),
+                        exposure.iso.coerceAtLeast(1),
+                        lens ?: DEFAULT_LENS,
+                    ),
+                    rawBuf,
+                )
+            } catch (_: IllegalStateException) {
+                return false
+            }
+            if (exposedBytes <= 0) return false
+
+            val dims = when {
+                stillReadout != null && exposedBytes == stillReadout.width * stillReadout.height * 2 ->
+                    Triple(stillReadout.width, stillReadout.height, true)
+                stillReadout != null && exposedBytes == stillReadout.width * stillReadout.height ->
+                    Triple(stillReadout.width, stillReadout.height, false)
+                exposedBytes == DEFAULT_SENSOR_WIDTH * DEFAULT_SENSOR_HEIGHT * 2 ->
+                    Triple(DEFAULT_SENSOR_WIDTH, DEFAULT_SENSOR_HEIGHT, true)
+                exposedBytes == DEFAULT_SENSOR_WIDTH * DEFAULT_SENSOR_HEIGHT ->
+                    Triple(DEFAULT_SENSOR_WIDTH, DEFAULT_SENSOR_HEIGHT, false)
+                exposedBytes == width * height * 2 -> Triple(width, height, true)
+                exposedBytes == width * height -> Triple(width, height, false)
+                else -> return false
+            }
+            srcW = dims.first
+            srcH = dims.second
+            val is16Bit = dims.third
+            srcStride = srcW * 2
+            srcUyvy = ByteArray(srcH * srcStride)
+            if (tryNativeIspPipeline(
+                    raw = rawBytes,
+                    srcW = srcW,
+                    srcH = srcH,
+                    is16Bit = is16Bit,
+                    yOrUyvyDst = srcUyvy,
+                    uvDst = null,
+                    dstW = srcW,
+                    dstH = srcH,
+                    stride = srcStride,
+                    isSemiPlanar = false,
+                    isNv12 = false,
+                    exposure = effectiveExposure,
+                    statsEngine = null,
+                    colorPipeline = colorPipeline,
+                    peaking = MfAssistPeakingFilter.DISABLED,
+                ) == NATIVE_ISP_NONE
+            ) {
+                demosaicBayerToUyvy(
+                    raw = rawBytes,
+                    srcW = srcW,
+                    srcH = srcH,
+                    is16Bit = is16Bit,
+                    dst = srcUyvy,
+                    dstW = srcW,
+                    dstH = srcH,
+                    stride = srcStride,
+                    exposure = effectiveExposure,
+                    colorPipeline = colorPipeline,
+                )
+            }
+        }
+        // Cache demosaiced UYVY across multi-strip RECC_S passes of the same still readout,
+        // and release immediately on the final strip so 0 bytes stay pinned after capture.
+        if (stillReadout != null && firstRow + height < frameHeight) {
+            stillStripCache = StillStripCache(
+                tick = stillReadout.tick,
+                width = stillReadout.width,
+                height = stillReadout.height,
+                gainR1024 = effectiveExposure.gainR1024,
+                gainG1024 = effectiveExposure.gainG1024,
+                gainB1024 = effectiveExposure.gainB1024,
+                durationNanos = effectiveExposure.durationNanos,
+                iso = effectiveExposure.iso,
+                colorSignature = colorSignature,
+                bayerFingerprint = bayerFingerprint,
+                srcW = srcW,
+                srcH = srcH,
+                srcStride = srcStride,
+                srcUyvy = srcUyvy,
+            )
+        } else {
+            stillStripCache = null
         }
 
         // Aspect-preserving center crop matching output aspect ratio (zero anamorphic stretch),
         // with optional 35mm format center-crop magnification when cropFactor > 1.0 (BUG-V3-2-3 / BUG-V3-2-5).
-        val srcAspect = srcW.toDouble() / srcH.toDouble()
-        val dstAspect = width.toDouble() / height.toDouble()
-        val baseCropW: Double
-        val baseCropH: Double
-        if (srcAspect > dstAspect) {
-            baseCropH = srcH.toDouble()
-            baseCropW = (srcH.toDouble() * dstAspect).coerceAtMost(srcW.toDouble())
-        } else {
-            baseCropW = srcW.toDouble()
-            baseCropH = (srcW.toDouble() / dstAspect).coerceAtMost(srcH.toDouble())
-        }
-        val effFactor = cropFactor.coerceIn(1.0, 4.0)
-        val cropW = ((baseCropW / effFactor).roundToInt().coerceIn(2, srcW)) and 1.inv()
-        val cropH = ((baseCropH / effFactor).roundToInt().coerceIn(2, srcH)) and 1.inv()
-        val cropOffX = ((srcW - cropW) / 2) and 1.inv()
-        val cropOffY = ((srcH - cropH) / 2) and 1.inv()
-
+        val (cropOffX, cropOffY, cropW, cropH) = computeStillCrop(srcW, srcH, width, frameHeight, cropFactor)
         upscaleUyvyToDma(
             srcUyvy = srcUyvy,
             srcW = srcW,
@@ -1523,9 +1584,28 @@ internal class LiveViewDmaEngine {
             height = height,
             stride = stride,
             memory = memory,
-            addr = addr,
+            addr = stripAddr,
+            firstRow = firstRow,
+            frameHeight = frameHeight,
         )
         return true
+    }
+
+    private fun fingerprintBayerBuffer(buf: ByteBuffer): Long {
+        val len = buf.remaining()
+        val pos = buf.position()
+        var h = 0xcbf29ce484222325uL.toLong() xor len.toLong()
+        if (len > 0) {
+            val samples = minOf(len, 16)
+            val step = maxOf(1, len / samples)
+            var i = 0
+            while (i < len) {
+                h = (h xor (buf.get(pos + i).toLong() and 0xFFL)) * 0x100000001b3L
+                i += step
+            }
+            h = (h xor (buf.get(pos + len - 1).toLong() and 0xFFL)) * 0x100000001b3L
+        }
+        return h
     }
 
     /**
@@ -1548,6 +1628,8 @@ internal class LiveViewDmaEngine {
         stride: Int,
         memory: DmaMemory,
         addr: Long,
+        firstRow: Int,
+        frameHeight: Int,
     ) {
         val pairCount = width ushr 1
         val cropPairCount = (cropW ushr 1).coerceAtLeast(1)
@@ -1581,7 +1663,7 @@ internal class LiveViewDmaEngine {
             var dstOffset = 0L
             val lastRowIdx = height - 1
             for (dstY in 0 until height) {
-                val sy = (cropOffY + ((dstY.toLong() * cropH) / height).toInt()).coerceIn(0, srcH - 1)
+                val sy = (cropOffY + (((firstRow + dstY).toLong() * cropH) / frameHeight).toInt()).coerceIn(0, srcH - 1)
                 if (sy != lastSy) {
                     expandSourceRow(sy)
                     lastSy = sy
@@ -1602,7 +1684,7 @@ internal class LiveViewDmaEngine {
             val rows = minOf(maxStripRows, height - y)
             for (r in 0 until rows) {
                 val dstY = y + r
-                val sy = (cropOffY + ((dstY.toLong() * cropH) / height).toInt()).coerceIn(0, srcH - 1)
+                val sy = (cropOffY + (((firstRow + dstY).toLong() * cropH) / frameHeight).toInt()).coerceIn(0, srcH - 1)
                 if (sy != lastSy) {
                     expandSourceRow(sy)
                     lastSy = sy

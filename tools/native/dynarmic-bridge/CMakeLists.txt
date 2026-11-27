@@ -51,24 +51,58 @@ find_package(Boost 1.57 REQUIRED)
 
 add_subdirectory("${DYNARMIC_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/dynarmic_sub" EXCLUDE_FROM_ALL)
 
-# The pinned x86 emitter implements per-size alignment checks only on its page-table
-# path. Select that path for checked widths and retain native fastmem for other loads
-# and stores. Build a private include overlay so both targets can share a clean checkout.
-set(memory_emitter "dynarmic/backend/x64/emit_x64_memory.cpp.inc")
-set(upstream_emitter "${DYNARMIC_SOURCE_DIR}/src/${memory_emitter}")
-set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${upstream_emitter}")
-file(READ "${upstream_emitter}" emitter_source)
-set(marker "const auto fastmem_marker = ShouldFastmem(ctx, inst);")
-string(REPLACE "${marker}"
-    "const bool checked_width = conf.page_table && (conf.detect_misaligned_access_via_page_table & bitsize);
-    const auto fastmem_marker = checked_width ? std::nullopt : ShouldFastmem(ctx, inst);"
-    checked_emitter "${emitter_source}")
-if(checked_emitter STREQUAL emitter_source)
-    message(FATAL_ERROR "Update the checked-memory overlay for the selected Dynarmic revision")
+# Build private patched copies of selected Dynarmic files. The vendor checkout remains shareable.
+get_target_property(dynarmic_sources dynarmic SOURCES)
+find_package(Git REQUIRED)
+set(overlay "${CMAKE_CURRENT_BINARY_DIR}/checked-memory")
+set(inputs "${CMAKE_CURRENT_BINARY_DIR}/checked-memory-inputs")
+set(patch "${CMAKE_CURRENT_SOURCE_DIR}/a32-checked-memory.patch")
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${patch}")
+
+set(patched_files
+    "backend/x64/a32_emit_x64_memory.cpp"
+    "backend/x64/emit_x64_memory.cpp.inc"
+    "backend/x64/a32_interface.cpp"
+    "ir/opt/passes.h"
+    "ir/opt/a32_get_set_elimination_pass.cpp"
+)
+foreach(file IN LISTS patched_files)
+    configure_file("${DYNARMIC_SOURCE_DIR}/src/dynarmic/${file}" "${inputs}/dynarmic/${file}" COPYONLY)
+endforeach()
+execute_process(COMMAND "${GIT_EXECUTABLE}" apply --no-index --whitespace=nowarn "${patch}"
+    WORKING_DIRECTORY "${inputs}" COMMAND_ERROR_IS_FATAL ANY)
+foreach(file IN LISTS patched_files)
+    configure_file("${inputs}/dynarmic/${file}" "${overlay}/dynarmic/${file}" COPYONLY)
+endforeach()
+target_include_directories(dynarmic BEFORE PRIVATE "${overlay}")
+
+set(patched_arm_emitter FALSE)
+set(patched_arm_interface FALSE)
+set(patched_gse_pass FALSE)
+foreach(source IN LISTS dynarmic_sources)
+    if(source MATCHES "(^|/)backend/x64/a32_emit_x64_memory\\.cpp$")
+        set_source_files_properties("${DYNARMIC_SOURCE_DIR}/src/dynarmic/backend/x64/a32_emit_x64_memory.cpp"
+            TARGET_DIRECTORY dynarmic PROPERTIES HEADER_FILE_ONLY TRUE)
+        target_sources(dynarmic PRIVATE "${overlay}/dynarmic/backend/x64/a32_emit_x64_memory.cpp")
+        set(patched_arm_emitter TRUE)
+    elseif(source MATCHES "(^|/)backend/x64/a32_interface\\.cpp$")
+        set_source_files_properties("${DYNARMIC_SOURCE_DIR}/src/dynarmic/backend/x64/a32_interface.cpp"
+            TARGET_DIRECTORY dynarmic PROPERTIES HEADER_FILE_ONLY TRUE)
+        target_sources(dynarmic PRIVATE "${overlay}/dynarmic/backend/x64/a32_interface.cpp")
+        set(patched_arm_interface TRUE)
+    elseif(source MATCHES "(^|/)ir/opt/a32_get_set_elimination_pass\\.cpp$")
+        set_source_files_properties("${DYNARMIC_SOURCE_DIR}/src/dynarmic/ir/opt/a32_get_set_elimination_pass.cpp"
+            TARGET_DIRECTORY dynarmic PROPERTIES HEADER_FILE_ONLY TRUE)
+        target_sources(dynarmic PRIVATE "${overlay}/dynarmic/ir/opt/a32_get_set_elimination_pass.cpp")
+        set(patched_gse_pass TRUE)
+    endif()
+endforeach()
+if(NOT patched_gse_pass)
+    message(FATAL_ERROR "No A32 GetSetElimination pass found in the pinned Dynarmic target")
 endif()
-file(CONFIGURE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/checked-memory/${memory_emitter}"
-    CONTENT "${checked_emitter}" @ONLY)
-target_include_directories(dynarmic BEFORE PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/checked-memory")
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64|amd64)$" AND (NOT patched_arm_emitter OR NOT patched_arm_interface))
+    message(FATAL_ERROR "No A32 x64 memory emitter/interface found in the pinned Dynarmic target")
+endif()
 
 add_library(fuji_dynarmic SHARED
     fuji_dynarmic.cpp

@@ -40,6 +40,9 @@ internal class MaliV61VpuEngine(
 ) {
     companion object {
         const val CLOCK_HZ = 54_000_000L
+        // Revisit the one-shot decoder independently of the streaming frame period.
+        private const val PLAYBACK_POLL_TICKS = CLOCK_HZ / 1_000L
+        private const val DRAIN_POLL_TICKS = CLOCK_HZ / 4_000L
         const val PORT_ID = "soc-isp.mali-v61"
         const val WINDOW_SIZE = 0x300L
         const val IRQ_LINE = 138
@@ -169,6 +172,7 @@ internal class MaliV61VpuEngine(
         var rateCredit = 0L
         var sawH264BitDepthOpt = false
         var hevcHeadersEmitted = false
+        var colour: MaliV61BitstreamEncoder.ColourDescription? = null
         var hevcPcmEnabled = false
         var fpsQ16 = 3928227L // 59.94 fps default
         var encodedFrames = 0
@@ -210,6 +214,7 @@ internal class MaliV61VpuEngine(
             rateCredit = 0L
             sawH264BitDepthOpt = false
             hevcHeadersEmitted = false
+            colour = null
             hevcPcmEnabled = false
             fpsQ16 = 3928227L
             encodedFrames = 0
@@ -597,6 +602,7 @@ internal class MaliV61VpuEngine(
                             session.targetBitrate = payload[2].toUInt().toLong()
                             session.rateCredit = 0L
                         }
+                        15 -> session.colour = MaliV61BitstreamEncoder.ColourDescription.fromMve(payload)
                         18 -> session.resetGop()
                     }
                 }
@@ -645,15 +651,24 @@ internal class MaliV61VpuEngine(
             val height = surface[16] ushr 16
             val validGeometry = width in 2..4096 && height in 2..2160 && (width or height) and 1 == 0
             val decoder = requireNotNull(session.decoder)
-            val decoded = if (validGeometry) decoder.takeNativeFrame(width, height, waitMillis = 1) else null
+            // After EOS the child has all its input, including for a single-picture movie poster.
+            // Service its output in short owner turns while the guest continues to execute and can reset the slot.
+            val draining = session.endOfStreamTag != null
+            val decoded = when {
+                !validGeometry -> null
+                draining -> decoder.takeNativeFrame(width, height, waitMillis = 4L)
+                else -> decoder.takeAnnouncedFrame(width, height)
+            }
             if (decoded == null && validGeometry && decoder.lastError == null) {
                 // Reordered pictures can need more input. Let the guest keep feeding its bitstream ring.
                 val now = clockProvider()
                 if (session.decodeWaitStartTick == 0L) session.decodeWaitStartTick = now
                 if (now - session.decodeWaitStartTick < 2L * CLOCK_HZ) {
-                    pendingTicks[lsid] = now + framePeriodTicksForFpsQ16(session.fpsQ16)
+                    val retryTicks = if (draining) DRAIN_POLL_TICKS else PLAYBACK_POLL_TICKS
+                    pendingTicks[lsid] = now + retryTicks
                     break
                 }
+                if (draining) decoder.abortDrain()
             }
             session.decodeWaitStartTick = 0L
             session.decodeSurfaces.removeFirst()
@@ -721,12 +736,13 @@ internal class MaliV61VpuEngine(
                     listOf(
                         MaliV61BitstreamEncoder.buildH265Vps(bitDepth10),
                         MaliV61BitstreamEncoder.buildH265Sps(width, height, bitDepth10, session.fpsQ16,
-                            fullRange = formatWord == 0x121, pcmEnabled = session.hevcPcmEnabled),
+                            fullRange = formatWord == 0x121, pcmEnabled = session.hevcPcmEnabled, colour = session.colour),
                         MaliV61BitstreamEncoder.buildH265Pps(),
                     )
                 } else {
                     listOf(
-                        MaliV61BitstreamEncoder.buildH264Sps(width, height, session.fpsQ16, fullRange = formatWord == 0x121),
+                        MaliV61BitstreamEncoder.buildH264Sps(width, height, session.fpsQ16,
+                            fullRange = formatWord == 0x121, colour = session.colour),
                         MaliV61BitstreamEncoder.buildH264Pps(),
                     )
                 }

@@ -67,7 +67,7 @@ class FfmpegPipeSceneSource internal constructor(
     private val reconnectDelayMs: Long = DEFAULT_RECONNECT_DELAY_MS,
     private val maxReconnectAttempts: Int = DEFAULT_MAX_RECONNECT_ATTEMPTS,
     override val virtualSubjectDistanceM: Double? = null,
-) : SceneSource2D, LiveStreamSceneSource {
+) : SceneSource2D, LiveStreamSceneSource, PackedReadoutSource {
     private val closed = AtomicBoolean(false)
     // A decoder can deliver the same RGB image for many consecutive video timestamps.
     private data class Delivery(val sequence: Long, val image: PackedRawFrame)
@@ -91,6 +91,10 @@ class FfmpegPipeSceneSource internal constructor(
     private var cachedLinearFrame: ConvertedFrame? = null
 
     private val readerThread: Thread
+
+    override fun acquirePackedFrame(): PackedRawFrame? = latestFrame.get()?.also {
+        consumedSeq.set(it.sequence)
+    }?.image
 
     override val latestFrameSequence: Long get() = latestFrame.get()?.sequence ?: 0L
     override val fusedFrameSequence: Long? get() = latestFrame.get()?.image?.sequence
@@ -135,13 +139,18 @@ class FfmpegPipeSceneSource internal constructor(
                 handle = streamOpener.open(targetWidth, targetHeight)
                 activeHandle.set(handle)
                 val input = handle.inputStream
-                attempts = 0
-                lastError = null
+                var deliveredFrame = false
 
                 var buf = ByteArray(frameByteCount)
                 while (!closed.get()) {
                     if (!readFully(input, buf)) {
+                        if (!deliveredFrame) throw EOFException("ffmpeg stream ended before the first complete frame")
                         break
+                    }
+                    if (!deliveredFrame) {
+                        deliveredFrame = true
+                        attempts = 0
+                        lastError = null
                     }
                     val seq = receivedCount.incrementAndGet()
                     val previous = latestFrame.get()
@@ -336,12 +345,13 @@ class FfmpegPipeSceneSource internal constructor(
             realTimePacing: Boolean = true,
         ): List<String> {
             val cmd = mutableListOf(ffmpegExecutable, "-nostdin", "-loglevel", "error")
+            val paceLoopedFrames = target is FfmpegInputTarget.LocalVideoFile && loop && realTimePacing
             when (target) {
                 is FfmpegInputTarget.LocalVideoFile -> {
                     if (loop) {
                         cmd += listOf("-stream_loop", "-1")
                     }
-                    if (realTimePacing) {
+                    if (realTimePacing && !loop) {
                         cmd += "-re"
                     }
                     cmd += listOf("-i", target.path.toAbsolutePath().normalize().toString())
@@ -376,8 +386,15 @@ class FfmpegPipeSceneSource internal constructor(
                     }
                 }
             }
-            val filter = "scale=$width:$height:force_original_aspect_ratio=decrease," +
+            val resize = "scale=$width:$height:force_original_aspect_ratio=decrease," +
                 "pad=$width:$height:(ow-iw)/2:(oh-ih)/2:color=black"
+            // Pace looped files by displayed PTS so decoding and B-frame reordering can run ahead of a seek.
+            // Keep long intervals in sparse videos (the filter normally resets its clock after two seconds).
+            val filter = if (paceLoopedFrames) "$resize,realtime=limit=${Long.MAX_VALUE}us" else resize
+            if (paceLoopedFrames) {
+                // Publish each paced RGB packet immediately, even when the next frame is seconds away.
+                cmd += listOf("-threads:v", "1")
+            }
             cmd += listOf(
                 "-an", "-sn", "-dn",
                 "-vf", filter,
@@ -405,7 +422,8 @@ class FfmpegPipeSceneSource internal constructor(
             )
             val process = try {
                 ProcessBuilder(command)
-                    .redirectErrorStream(false)
+                    // Only stdout carries pixels. A separate, unread stderr pipe can stall the decoder.
+                    .redirectError(ProcessBuilder.Redirect.DISCARD)
                     .start()
             } catch (err: IOException) {
                 throw IOException("Unable to start ffmpeg ($ffmpegExecutable): ${err.message}", err)
@@ -414,7 +432,6 @@ class FfmpegPipeSceneSource internal constructor(
                 override val inputStream: InputStream = process.inputStream
                 override fun close() {
                     runCatching { process.inputStream.close() }
-                    runCatching { process.errorStream.close() }
                     runCatching { process.outputStream.close() }
                     if (process.isAlive) {
                         process.destroyForcibly()

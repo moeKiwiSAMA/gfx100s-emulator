@@ -31,8 +31,8 @@ class InputBindingsTest {
         assertTrue(config.keyboardBindings.isEmpty())
         assertTrue(config.gamepadEnabled)
         assertEquals(0.28, config.stickDeadzone)
-        assertTrue(config.twoStageTriggerEnabled)
-        assertEquals(0.65, config.triggerFullThreshold)
+        assertFalse(config.twoStageTriggerEnabled)
+        assertEquals(0.50, config.triggerFullThreshold)
     }
 
     @Test fun defaultGamepadProfileIsComplete() {
@@ -110,7 +110,8 @@ class InputBindingsTest {
         val map = InputBindingStore.toYamlMap(InputBindingConfig.default())
         assertEquals(1, map["schema"])
         assertEquals(0.28, map["stickDeadzone"])
-        assertEquals(0.65, map["triggerFullThreshold"])
+        assertEquals(false, map["twoStageTriggerEnabled"])
+        assertEquals(0.50, map["triggerFullThreshold"])
         assertEquals(emptyMap<String, Any>(), map["keyboard"])
         assertTrue((map["gamepad"] as Map<*, *>).isNotEmpty())
     }
@@ -236,9 +237,25 @@ class InputBindingsTest {
 
     // ------------------------------------------------------------------ gamepad
 
-    @Test fun twoStageRightTriggerSequence() {
+    @Test fun defaultThresholdTriggerFiresFullShutterCleanlyAtThresholdWithHysteresis() {
         val sink = RecordingSink()
         val c = InputBindingController(InputBindingConfig.default(), sink)
+        // Below 50% threshold: idle (no conflicting SHUTTER_HALF hold).
+        c.handleGamepadFrame(pad(rt = 0.0)); assertEquals(emptyList(), sink.take())
+        c.handleGamepadFrame(pad(rt = 0.45)); assertEquals(emptyList(), sink.take(), "below 50% threshold stays idle")
+        // Crossing 50% fires SHUTTER_FULL directly (StudioShutter handles S1->AF->S2 cleanly).
+        c.handleGamepadFrame(pad(rt = 0.52)); assertEquals(listOf("+SHUTTER_FULL"), sink.take())
+        c.handleGamepadFrame(pad(rt = 0.47)); assertEquals(emptyList(), sink.take(), "within 5% hysteresis of 50%")
+        c.handleGamepadFrame(pad(rt = 0.44)); assertEquals(listOf("-SHUTTER_FULL"), sink.take())
+        // Default LT (bound only to LT_HALF -> DRIVE) also triggers cleanly at threshold.
+        c.handleGamepadFrame(pad(lt = 0.45)); assertEquals(emptyList(), sink.take())
+        c.handleGamepadFrame(pad(lt = 0.55)); assertEquals(listOf("+DRIVE"), sink.take())
+        c.handleGamepadFrame(pad(lt = 0.0)); assertEquals(listOf("-DRIVE"), sink.take())
+    }
+
+    @Test fun twoStageRightTriggerSequence() {
+        val sink = RecordingSink()
+        val c = InputBindingController(InputBindingConfig.default().copy(twoStageTriggerEnabled = true, triggerFullThreshold = 0.65), sink)
         c.handleGamepadFrame(pad(rt = 0.0)); assertEquals(emptyList(), sink.take())
         c.handleGamepadFrame(pad(rt = 0.4)); assertEquals(listOf("+SHUTTER_HALF"), sink.take(), "0 -> 0.4: S1 only")
         c.handleGamepadFrame(pad(rt = 0.9)); assertEquals(listOf("+SHUTTER_FULL"), sink.take(), "0.4 -> 0.9: S1 + S2")
@@ -251,7 +268,7 @@ class InputBindingsTest {
 
     @Test fun triggerHysteresisPreventsChatter() {
         val sink = RecordingSink()
-        val c = InputBindingController(InputBindingConfig.default(), sink)
+        val c = InputBindingController(InputBindingConfig.default().copy(twoStageTriggerEnabled = true, triggerFullThreshold = 0.65), sink)
         c.handleGamepadFrame(pad(rt = 0.67)); sink.take()
         c.handleGamepadFrame(pad(rt = 0.62)); assertEquals(emptyList(), sink.take(), "within hysteresis of 0.65")
         c.handleGamepadFrame(pad(rt = 0.59)); assertEquals(listOf("-SHUTTER_FULL"), sink.take())
@@ -261,30 +278,31 @@ class InputBindingsTest {
 
     @Test fun customTriggerFullThresholdSupportsShortTravelHallTriggers() {
         val sink = RecordingSink()
-        val c = InputBindingController(InputBindingConfig.default().copy(triggerFullThreshold = 0.50), sink)
-        c.handleGamepadFrame(pad(rt = 0.35)); assertEquals(listOf("+SHUTTER_HALF"), sink.take())
-        c.handleGamepadFrame(pad(rt = 0.52)); assertEquals(listOf("+SHUTTER_FULL"), sink.take(), "short-travel full press fires S2")
-        c.handleGamepadFrame(pad(rt = 0.0)); assertEquals(listOf("-SHUTTER_FULL", "-SHUTTER_HALF"), sink.take())
+        val c = InputBindingController(InputBindingConfig.default().copy(triggerFullThreshold = 0.35), sink)
+        c.handleGamepadFrame(pad(rt = 0.30)); assertEquals(emptyList(), sink.take())
+        c.handleGamepadFrame(pad(rt = 0.36)); assertEquals(listOf("+SHUTTER_FULL"), sink.take(), "short-travel threshold pull fires shutter")
+        c.handleGamepadFrame(pad(rt = 0.0)); assertEquals(listOf("-SHUTTER_FULL"), sink.take())
     }
 
-    @Test fun singleStageTriggerPressesBothStagesAndCapturesFullTrigger() {
+    @Test fun singleStageTriggerHonorsThresholdAndCapturesFullTrigger() {
         val sink = RecordingSink()
-        val c = InputBindingController(InputBindingConfig.default().copy(twoStageTriggerEnabled = false), sink)
-        c.handleGamepadFrame(pad(rt = 0.4)); assertEquals(listOf("+SHUTTER_HALF", "+SHUTTER_FULL"), sink.take())
+        val c = InputBindingController(InputBindingConfig.default().copy(twoStageTriggerEnabled = false, triggerFullThreshold = 0.45), sink)
+        c.handleGamepadFrame(pad(rt = 0.35)); assertEquals(emptyList(), sink.take())
+        c.handleGamepadFrame(pad(rt = 0.48)); assertEquals(listOf("+SHUTTER_FULL"), sink.take())
         c.handleGamepadFrame(pad(rt = 0.9)); assertEquals(emptyList(), sink.take())
-        c.handleGamepadFrame(pad(rt = 0.0)); assertEquals(listOf("-SHUTTER_FULL", "-SHUTTER_HALF"), sink.take())
+        c.handleGamepadFrame(pad(rt = 0.0)); assertEquals(listOf("-SHUTTER_FULL"), sink.take())
 
-        // Capturing RT in single-stage mode resolves directly to RT_FULL even on a 45% short-travel trigger pull.
+        // Capturing RT in single-stage mode resolves directly to RT_FULL at the configured threshold.
         val captured = mutableListOf<CapturedInput?>()
         c.beginCapture { captured += it }
-        c.handleGamepadFrame(pad(rt = 0.45))
+        c.handleGamepadFrame(pad(rt = 0.48))
         c.handleGamepadFrame(pad(rt = 0.0))
         assertEquals(listOf<CapturedInput?>(CapturedInput.Pad(GamepadBindingSpec(GamepadInput.RT_FULL))), captured)
     }
 
     @Test fun hotDisconnectReleasesEverything() {
         val sink = RecordingSink()
-        val c = InputBindingController(InputBindingConfig.default(), sink)
+        val c = InputBindingController(InputBindingConfig.default().copy(twoStageTriggerEnabled = true), sink)
         c.handleGamepadFrame(pad(buttons = GamepadFrame.B or GamepadFrame.RB or GamepadFrame.DPAD_UP, rt = 1.0))
         assertEquals(setOf("+MENU_OK", "+AF_ON", "+UP", "+SHUTTER_HALF", "+SHUTTER_FULL"), sink.take().toSet())
         assertTrue(c.status.connected)
@@ -365,6 +383,8 @@ class InputBindingsTest {
         c.handleGamepadFrame(pad(rt = 0.0))
         assertEquals(CapturedInput.Pad(GamepadBindingSpec(GamepadInput.RT_FULL)), captured.removeLast())
 
+        // In two-stage mode, a partial pull captures LT_HALF; in default single-stage mode, crossing threshold captures LT_FULL.
+        c.updateConfig(c.config.copy(twoStageTriggerEnabled = true, triggerFullThreshold = 0.70))
         c.beginCapture { captured += it }
         c.handleGamepadFrame(pad(lt = 0.6)); c.handleGamepadFrame(pad(lt = 0.0))
         assertEquals(CapturedInput.Pad(GamepadBindingSpec(GamepadInput.LT_HALF)), captured.removeLast())

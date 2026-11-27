@@ -346,28 +346,16 @@ class Armv7FullExceptionsSessionTest {
             .mapNotNull { name -> System.getenv(name)?.takeIf { it.isNotBlank() }?.let { name to Path.of(it) } }
             .ifEmpty { listOf("default" to nativeLibrary()) }
 
-        for ((label, lib) in libs) {
+        val cases = libs.flatMap { (label, lib) ->
+            listOf(Triple("$label/Normal", lib, false), Triple("$label/Device", lib, true))
+        }
+        for ((label, lib, devicePage) in cases) {
             val home = Files.createTempDirectory("hw-mmu-xn-align-session-")
             try {
-                // Synthetic 0x16000-byte image at PA 0x0 (within 128 KiB loader-low128-experimental-v1):
-                //   L1 @ 0x4000:
-                //     L1[0] -> 0x00008001 (L2 table @ 0x8000 covering 0x00000000..0x000FFFFF)
-                //     L1[4] -> 0x00010C12 (1 MiB section VA 0x00400000 -> PA 0x00010000? Wait: L1 sections are 1 MiB aligned!)
-                //   So we map VA 0x00000000..0x000FFFFF via L2 @ 0x8000:
-                //     L2[0..14]  (0x0000..0xEFFF): Normal Cacheable RWX (0x5B6)
-                //     L2[15]     (0xF000):         Normal Cacheable RW + XN=1 (0x5B7) -> target code at 0xF000!
-                //     L2[16]     (0x10000):        Normal Cacheable RW (0x5B7) -> 4B-aligned LDRD MUST SUCCEED when SCTLR.A=0
-                //     L2[17]     (0x11000):        Non-Cacheable (flags=11, 0x5B3) -> 4B-aligned LDRD/STRD MUST DABT!
-                //   Program at 0x0000 enables MMU (DACR=0x55555555, TTBR0=0x4000, VBAR=0x1000, SCTLR.M=1, SCTLR.A=0),
-                //   runs enough instructions to engage Fast-Step v2, then executes:
-                //     1) BLX 0xF000 (XN=1) -> PABT#1 (IFSR=0x0F, IFAR=0xF000) -> handler clears XN (0x5B6) + TLBIALLIS + ICIALLUIS -> retries & sets R4=0x42!
-                //     2) Relocks L2[15] to XN=1 (0x5B7) + TLBIALLIS + ICIALLUIS -> BLX 0xF000 -> PABT#2 (IFSR=0x0F, IFAR=0xF000) -> handler returns to next insn!
-                //     3) LDRD R0, R1, [0x10004] (Normal Cacheable, SCTLR.A=0) -> SUCCEEDS (R0=0x22222222, R1=0x33333333)
-                //     4) LDRD R2, R3, [0x11004] (Non-Cacheable flags=11) -> DABT#1 (DFAR=0x11004, DFSR=0x001)
-                //     5) STRD R0, R1, [0x11004] (Non-Cacheable flags=11) -> DABT#2 (DFAR=0x11004, DFSR=0x801)
-                //     6) LDRD R2, R3, [0x10002] (va & 3 == 2)            -> DABT#3 (DFAR=0x10002, DFSR=0x001)
-                //     7) Enable SCTLR.A=1 -> STRD R0, R1, [0x10004]      -> DABT#4 (DFAR=0x10004, DFSR=0x801)
-                //     8) B .
+                // ARMv7-A DDI 0406, A3.2.1: LDRD/STRD require word alignment.
+                // This image changes XN twice, then exercises a word-aligned pair on Normal
+                // or Device memory and an unaligned Normal load. The final store is word
+                // aligned with SCTLR.A set. Log each original FAR/FSR and check memory effects.
                 val image = ByteArray(0x16000)
                 fun putWords(offset: Int, vararg insns: Long) {
                     words(*insns).copyInto(image, offset)
@@ -401,16 +389,16 @@ class Armv7FullExceptionsSessionTest {
                     0xee07_9f11L, // 0x5C: MCR ICIALLUIS
                     0xe3a0_4000L, // 0x60: MOV R4, #0
                     0xe12f_ff38L, // 0x64: BLX R8 -> PABT#2 (relocked XN=1), handler returns to 0x68!
-                    0xe3a0_9801L, // 0x68: MOV R9, #0x10000 (Normal Cacheable page)
-                    0xe59f_a050L, // 0x6C: LDR R10, [PC, #0x50] (0x74+0x50=0xC4 -> 0x11000 Non-Cacheable)
-                    0xe1c9_00d4L, // 0x70: LDRD R0, R1, [R9, #4]  -> Normal Cacheable 4B aligned: MUST SUCCEED!
-                    0xe1ca_20d4L, // 0x74: LDRD R2, R3, [R10, #4] -> Non-Cacheable 4B aligned: DABT#1 (0x11004, 0x001)
-                    0xe1ca_00f4L, // 0x78: STRD R0, R1, [R10, #4] -> Non-Cacheable 4B aligned: DABT#2 (0x11004, 0x801)
-                    0xe1c9_20d2L, // 0x7C: LDRD R2, R3, [R9, #2]  -> va & 3 == 2: DABT#3 (0x10002, 0x001)
+                    0xe3a0_9801L, // 0x68: MOV R9, #0x10000 (Normal page)
+                    0xe59f_a050L, // 0x6C: LDR R10, [PC, #0x50] (0x74+0x50=0xC4 -> 0x11000 data page)
+                    0xe1c9_00d4L, // 0x70: LDRD R0, R1, [R9, #4]  -> word-aligned Normal load
+                    0xe1ca_20d4L, // 0x74: LDRD R2, R3, [R10, #4] -> word-aligned pair on the selected page
+                    0xe1ca_00f4L, // 0x78: STRD R0, R1, [R10, #4] -> word-aligned pair on the selected page
+                    0xe1c9_20d2L, // 0x7C: LDRD R2, R3, [R9, #2]  -> va & 3 == 2: alignment DABT (0x10002, 0x001)
                     0xee11_bf10L, // 0x80: MRC SCTLR -> R11
                     0xe38b_b002L, // 0x84: ORR R11, R11, #2 (SCTLR.A = 1)
                     0xee01_bf10L, // 0x88: MCR SCTLR
-                    0xe1c9_00f4L, // 0x8C: STRD R0, R1, [R9, #4]  -> Normal Cacheable SCTLR.A=1: DABT#4 (0x10004, 0x801)
+                    0xe1c9_00f4L, // 0x8C: STRD R0, R1, [R9, #4]  -> word-aligned Normal store, SCTLR.A=1
                     0xeaff_fffeL, // 0x90: B .
                     0xe1a0_0000L, // 0x94: NOP
                     0xe1a0_0000L, // 0x98: NOP
@@ -424,14 +412,14 @@ class Armv7FullExceptionsSessionTest {
                     0x0000_803cL, // 0xB8: &L2[15]
                     0xe1a0_0000L, // 0xBC: NOP
                     0xe1a0_0000L, // 0xC0: NOP
-                    0x0001_1000L, // 0xC4: Non-Cacheable buffer VA
+                    0x0001_1000L, // 0xC4: selected buffer VA
                 )
 
                 // Target code at 0xF000: MOV R4, #0x42; BX LR
                 putWords(0xf000, 0xe3a0_4042L, 0xe12f_ff1eL)
                 // Normal Cacheable buffer at 0x10000
                 putWords(0x10000, 0x1111_1111L, 0x2222_2222L, 0x3333_3333L, 0x4444_4444L)
-                // Non-Cacheable buffer at 0x11000
+                // RAM-backed data page with the memory type selected by its L2 descriptor.
                 putWords(0x11000, 0xaaaa_aaa1L, 0xbbbb_bbb2L, 0xcccc_ccc3L, 0xdddd_ddd4L)
 
                 // VBAR @ 0x1000:
@@ -481,7 +469,7 @@ class Armv7FullExceptionsSessionTest {
                     when (idx) {
                         15 -> pa or 0x5b7L // 0xF000: RW + XN=1
                         16 -> pa or 0x5b7L // 0x10000: Normal Cacheable RW
-                        17 -> pa or 0x5b3L // 0x11000: Non-Cacheable (flags=11) RW
+                        17 -> pa or (if (devicePage) 0x437L else 0x473L) // TEX/C/B = 000/0/1 Device or 001/0/0 Normal NC
                         else -> pa or 0x5b6L
                     }
                 }
@@ -524,10 +512,10 @@ class Armv7FullExceptionsSessionTest {
                             assertEquals(0x42L, regs["r12"], "$label unlocked 0xF000 call must return 0x42")
                             assertEquals(0L, regs["r4"], "$label relocked 0xF000 call must abort before executing")
                             assertEquals(2L, regs["r5"], "$label expected 2 prefetch aborts (XN=1 unlock + relock)")
-                            assertEquals(4L, regs["r6"], "$label expected 4 alignment data aborts")
+                            assertEquals(1L, regs["r6"], "$label alignment data aborts")
                             assertEquals(0x2222_2222L, regs["r0"], "$label Normal Cacheable 4B-aligned LDRD R0")
                             assertEquals(0x3333_3333L, regs["r1"], "$label Normal Cacheable 4B-aligned LDRD R1")
-                            assertEquals(0x7030L, regs["r7"], "$label fault log cursor must hold 6 (FAR,FSR) pairs")
+                            assertEquals(0x7018L, regs["r7"], "$label fault log cursor")
 
                             val dma = checkNotNull(host.ports.find("cpu.memory", com.github.nyabanban.fuji.emulator.api.DmaMemory::class.java))
                             fun readLe32(addr: Long): Long {
@@ -539,11 +527,10 @@ class Armv7FullExceptionsSessionTest {
                             val expectedLog = listOf(
                                 0x0000_f000L to 0x0000_000fL, // PABT#1 XN=1
                                 0x0000_f000L to 0x0000_000fL, // PABT#2 relocked XN=1
-                                0x0001_1004L to 0x0000_0001L, // DABT#1 Non-Cacheable LDRD
-                                0x0001_1004L to 0x0000_0801L, // DABT#2 Non-Cacheable STRD
-                                0x0001_0002L to 0x0000_0001L, // DABT#3 va&3==2 LDRD
-                                0x0001_0004L to 0x0000_0801L, // DABT#4 SCTLR.A=1 STRD
+                                0x0001_0002L to 0x0000_0001L, // non-word-aligned LDRD
                             )
+                            assertEquals(0x2222_2222L, readLe32(0x11004), "$label STRD low word")
+                            assertEquals(0x3333_3333L, readLe32(0x11008), "$label STRD high word")
                             expectedLog.forEachIndexed { idx, (expFar, expFsr) ->
                                 assertEquals(expFar, readLe32(0x7000L + idx * 8L), "$label log#${idx + 1} FAR")
                                 assertEquals(expFsr, readLe32(0x7004L + idx * 8L), "$label log#${idx + 1} FSR")

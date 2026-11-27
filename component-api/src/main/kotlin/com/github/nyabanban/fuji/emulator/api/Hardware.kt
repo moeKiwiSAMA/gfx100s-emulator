@@ -13,6 +13,9 @@ interface MmioDevice {
     /** True if read() may change nextDeadline()/nextInterestedTick() or requires schedule refresh. */
     fun readMayMutateSchedule(): Boolean = false
 }
+/** Reads and writes only access retained storage and never change any device's pending deadlines. */
+interface RetainedMmioBank : MmioDevice
+
 interface BatteryPort { fun chargePercent(): Double; fun voltageMillivolts(): Int; fun present(): Boolean }
 interface ButtonPort { fun pressed(key: String): Boolean }
 interface BlockStoragePort {
@@ -157,6 +160,12 @@ class LiveViewIspFusionRequest(
 
         const val STATS_OUTPUT_WORDS = 2320
     }
+}
+
+/** Optional sensor capability for DMA outputs derived from one scheduled physical readout. */
+interface LiveSensorReadout {
+    /** Scope one DMA request. Requests at the same sensor tick can share the captured source image. */
+    fun beginLiveReadout(tick: Long): AutoCloseable
 }
 
 /** Sensor-side packed sample bytes feed modeled electronics/DMA/ISP, never a host-made camera output file. */
@@ -317,8 +326,11 @@ interface DmaSourcePeer {
     /** Bytes per paced sample frame for request-timed audio DMA (4 for 16-bit packed stereo, 8 for 24/32-bit stereo). */
     fun pacedBytesPerFrame(): Int = 4
 }
+/** A legacy DMA provider has no bounds preflight for a transfer. */
+class DmaBoundsUnavailableException : IllegalStateException("DMA memory bounds not qualified")
+
 interface DmaMemory {
-    fun check(address: Long, size: Long, write: Boolean) { error("DMA memory bounds not qualified") }
+    fun check(address: Long, size: Long, write: Boolean) { throw DmaBoundsUnavailableException() }
     fun read(address: Long, destination: ByteBuffer)
     fun write(address: Long, source: ByteBuffer)
 }

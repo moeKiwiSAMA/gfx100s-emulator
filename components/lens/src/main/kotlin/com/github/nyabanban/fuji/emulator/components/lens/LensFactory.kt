@@ -131,6 +131,7 @@ class LensFactory : ComponentFactory {
 
         return object : ScalarComponent("lens", context, mergedConfig),
             LensPort,
+            FacePreviewScalerPort,
             ElectronicLensPort,
             LensControlPort,
             ModularLensPort,
@@ -253,6 +254,7 @@ class LensFactory : ComponentFactory {
                 values = values + ("focusTargetDistanceM" to focusTargetDistanceM)
                 syncOpticalFilter()
                 context.ports.register(id, "lens", LensPort::class.java, this)
+                context.ports.register(id, "lens.uniresz", FacePreviewScalerPort::class.java, this)
                 context.ports.register(id, SceneDepthPort.PORT_NAME, SceneDepthPort::class.java, this)
             }
 
@@ -801,6 +803,18 @@ class LensFactory : ComponentFactory {
             }
 
             override fun supportsGpuScene3d(): Boolean = opticalFilter.supportsGpuScene3d()
+
+            override val supportsFacePreviewResize: Boolean
+                get() = computeBackend?.supportsFacePreviewResize == true
+
+            override fun resizeFacePreview(source: java.lang.foreign.MemorySegment, destination: java.lang.foreign.MemorySegment, yyuv: Boolean): Boolean =
+                resizeFacePreview(source, 2048, destination, yyuv)
+
+            override fun resizeFacePreview(
+                source: java.lang.foreign.MemorySegment, sourceStrideBytes: Int,
+                destination: java.lang.foreign.MemorySegment, yyuv: Boolean,
+            ): Boolean =
+                computeBackend?.resizeFacePreview(source, sourceStrideBytes, destination, yyuv) == true
 
             override fun tryFilterGpuScene3dToIspYuv(
                 spec: GpuScene3dRenderSpec,

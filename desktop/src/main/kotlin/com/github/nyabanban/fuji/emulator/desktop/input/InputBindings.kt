@@ -218,7 +218,7 @@ sealed interface GamepadSelection {
 data class InputBindingConfig(
     val gamepadEnabled: Boolean = true,
     val stickDeadzone: Double = DEFAULT_STICK_DEADZONE,
-    val twoStageTriggerEnabled: Boolean = true,
+    val twoStageTriggerEnabled: Boolean = false,
     val triggerFullThreshold: Double = DEFAULT_TRIGGER_FULL_THRESHOLD,
     val keyboardBindings: Map<CameraInputAction, List<KeyBindingSpec>> = emptyMap(),
     val gamepadBindings: Map<CameraInputAction, List<GamepadBindingSpec>> = defaultGamepadBindings(),
@@ -288,8 +288,8 @@ data class InputBindingConfig(
         const val MAX_STICK_DEADZONE: Double = 0.50
         /** Stick direction stays active until it falls this far below the deadzone (anti-chatter). */
         const val STICK_HYSTERESIS: Double = 0.04
-        const val DEFAULT_TRIGGER_FULL_THRESHOLD: Double = 0.65
-        const val MIN_TRIGGER_FULL_THRESHOLD: Double = 0.40
+        const val DEFAULT_TRIGGER_FULL_THRESHOLD: Double = 0.50
+        const val MIN_TRIGGER_FULL_THRESHOLD: Double = 0.20
         const val MAX_TRIGGER_FULL_THRESHOLD: Double = 0.95
         const val RT_HALF_THRESHOLD: Double = 0.25
         const val RT_FULL_THRESHOLD: Double = DEFAULT_TRIGGER_FULL_THRESHOLD

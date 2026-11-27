@@ -238,10 +238,7 @@ class MilkFrogSceneSource internal constructor(
     private fun videoFrame(): Long {
         if (!motionEnabled) return 0L
         val nanos = (nanoClock() - startNanos).coerceAtLeast(0L)
-        // The 54 MHz -> ns conversion truncates fractional ns. Use the integer nanosecond
-        // containing each 60 Hz frame edge (e.g. camera tick 900,000 -> 16,666,666 ns).
-        val withinSecond = nanos % 1_000_000_000L
-        return nanos / 1_000_000_000L * 60L + ((withinSecond + 1L) * 60L - 1L) / 1_000_000_000L
+        return cameraAnimationFrame(nanos)
     }
 
     private fun phaseAtFrame(frame: Long): Double = wrapPhase(initialPhase + frame / (60.0 * periodSeconds))

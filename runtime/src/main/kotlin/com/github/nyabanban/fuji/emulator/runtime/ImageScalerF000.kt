@@ -1,6 +1,9 @@
 package com.github.nyabanban.fuji.emulator.runtime
 
+import com.github.nyabanban.fuji.emulator.api.DmaBoundsUnavailableException
 import com.github.nyabanban.fuji.emulator.api.DmaMemory
+import com.github.nyabanban.fuji.emulator.api.DirectGuestRamPort
+import com.github.nyabanban.fuji.emulator.api.FacePreviewScalerPort
 import org.slf4j.LoggerFactory
 import java.nio.ByteBuffer
 import java.util.Arrays
@@ -37,6 +40,11 @@ internal class ImageScalerF000 private constructor(
     private var sourceColumn = IntArray(0)
     private var horizontalWeight = DoubleArray(0)
 
+    private val sourceAddress: Long
+        get() = ((registerValues[F0C0_SLOT] and 3L) shl 32) or (registerValues[C4_SLOT] and 0xffff_ffffL)
+    private val destinationAddress: Long
+        get() = ((registerValues[F0CC_SLOT] and 3L) shl 32) or (registerValues[D0_SLOT] and 0xffff_ffffL)
+
     fun nextDeadline(): Long? = if (profile == IRQ133_PROFILE) pendingCompletionTick else null
     fun nextDeadlinePrimitive(): Long = if (profile == IRQ133_PROFILE) (pendingCompletionTick ?: Long.MAX_VALUE) else Long.MAX_VALUE
 
@@ -72,7 +80,7 @@ internal class ImageScalerF000 private constructor(
                     }
                     address == 0xfff7f004L -> {
                         registerValues[slot] = value
-                        if ((value and 1L) != 0L && (registerValues[C4_SLOT] != 0L || registerValues[D0_SLOT] != 0L)) {
+                        if ((value and 1L) != 0L && (sourceAddress != 0L || destinationAddress != 0L)) {
                             pendingCompletionTick = tick + COMPLETION_DELAY_TICKS
                         }
                     }
@@ -107,20 +115,28 @@ internal class ImageScalerF000 private constructor(
         dmaMemory: DmaMemory? = null,
         skipUnmappedDma: Boolean = false,
         assertIrq133: () -> Unit,
+    ) = beforeInstruction(tick, dmaMemory, skipUnmappedDma, null, assertIrq133)
+
+    fun beforeInstruction(
+        tick: Long,
+        dmaMemory: DmaMemory?,
+        skipUnmappedDma: Boolean,
+        scaler: FacePreviewScalerPort?,
+        assertIrq133: () -> Unit,
     ) {
         if (profile != IRQ133_PROFILE) return
         val due = pendingCompletionTick ?: return
         if (tick < due) return
         pendingCompletionTick = null
-        performPixelDma(dmaMemory, skipUnmappedDma)
+        performPixelDma(dmaMemory, skipUnmappedDma, scaler)
         irqAsserted = true
         registerValues[F004_SLOT] = registerValues[F004_SLOT] and 1L.inv()
         assertIrq133()
     }
 
-    private fun performPixelDma(dmaMemory: DmaMemory?, skipUnmappedDma: Boolean = false) {
-        val srcAddr = ((registerValues[F0C0_SLOT] and 3L) shl 32) or (registerValues[C4_SLOT] and 0xffffffffL)
-        val dstAddr = ((registerValues[F0CC_SLOT] and 3L) shl 32) or (registerValues[D0_SLOT] and 0xffffffffL)
+    private fun performPixelDma(dmaMemory: DmaMemory?, skipUnmappedDma: Boolean, scaler: FacePreviewScalerPort?) {
+        val srcAddr = sourceAddress
+        val dstAddr = destinationAddress
         val srcStrideBytes = (registerValues[F0C8_SLOT] and 0x3ffffL).toInt()
         val dstStrideBytes = (registerValues[F0D4_SLOT] and 0x3ffffL).toInt()
         if (srcAddr == 0L || dstAddr == 0L || srcStrideBytes == 0 || dstStrideBytes == 0) return
@@ -157,33 +173,40 @@ internal class ImageScalerF000 private constructor(
         require(srcSpan in 1L..MAX_PIXEL_DMA_BYTES && dstSpan in 1L..MAX_PIXEL_DMA_BYTES) {
             "UniResz DMA span out of bounds: srcSpan=$srcSpan dstSpan=$dstSpan max=$MAX_PIXEL_DMA_BYTES"
         }
-        if (srcAddr >= 0x1_0000_0000L || dstAddr >= 0x1_0000_0000L) {
-            require(srcAddr in 1L..0x3_FFFF_FFFFL && dstAddr in 1L..0x3_FFFF_FFFFL) {
-                "UniResz DMA address out of 34-bit AXI physical range: src=0x${srcAddr.toString(16)} dst=0x${dstAddr.toString(16)}"
+        require(srcAddr <= AXI_LIMIT - srcSpan && dstAddr <= AXI_LIMIT - dstSpan) {
+            "UniResz DMA span out of 34-bit physical range"
+        }
+        val highAxi = srcAddr + srcSpan > 0x1_0000_0000L || dstAddr + dstSpan > 0x1_0000_0000L
+        try {
+            memory.check(srcAddr, srcSpan, false)
+            memory.check(dstAddr, dstSpan, true)
+        } catch (ex: RuntimeException) {
+            val canSkip = when (ex) {
+                is IllegalArgumentException -> highAxi || skipUnmappedDma
+                // Legacy ports may omit bounds qualification or support only 32-bit RAM.
+                is DmaBoundsUnavailableException, is UnsupportedOperationException -> highAxi
+                else -> false
             }
-            if (!warnedHighAxiFallback) {
+            if (!canSkip) throw ex
+            if (highAxi && !warnedHighAxiFallback) {
                 warnedHighAxiFallback = true
-                LOGGER.warn(
-                    "[FALLBACK][ImageScalerF000] Skipping host pixel DMA for 34-bit high-AXI buffer (src=0x{}, dst=0x{}, {}x{}->{}x{}); IRQ 133 still completes cleanly",
-                    srcAddr.toString(16), dstAddr.toString(16), cropW, cropH, dstW, dstH,
-                )
+                LOGGER.warn("[FALLBACK][ImageScalerF000] Unmapped DMA span src=0x{} dst=0x{}; completing IRQ 133",
+                    srcAddr.toString(16), dstAddr.toString(16))
             }
             return
         }
-        require(srcAddr in 1L..(0x1_0000_0000L - srcSpan) && dstAddr in 1L..(0x1_0000_0000L - dstSpan)) {
-            "UniResz DMA address out of 32-bit physical range"
-        }
 
-        if (skipUnmappedDma) {
-            try {
-                memory.check(srcAddr, srcSpan, false)
-                memory.check(dstAddr, dstSpan, true)
-            } catch (_: IllegalArgumentException) {
+        val yyuv422Out = registerValues[F0D8_SLOT] == 0x88L
+        if (scaler?.supportsFacePreviewResize == true && memory is DirectGuestRamPort && srcW == 1024 && srcH == 576 &&
+            cropX == 0 && cropY == 0 && cropW == srcW && cropH == srcH && hDecim == 0 && vDecim == 0 &&
+            dstW == 640 && dstH == 360 && (srcStrideBytes == 2048 || srcStrideBytes == 2560) && dstStrideBytes == 1280) {
+            val source = memory.sliceDirect(srcAddr, srcSpan, false)
+            val target = memory.sliceDirect(dstAddr, dstSpan, true)
+            if (source != null && source.isNative && target != null && target.isNative &&
+                scaler.resizeFacePreview(source, srcStrideBytes, target, yyuv422Out)) {
+                memory.notifyDirectWrite(dstAddr, dstSpan)
                 return
             }
-        } else {
-            memory.check(srcAddr, srcSpan, false)
-            memory.check(dstAddr, dstSpan, true)
         }
 
         val srcSize = srcSpan.toInt()
@@ -201,6 +224,17 @@ internal class ImageScalerF000 private constructor(
         val dstSize = if (packedOutput) dstSpan.toInt() else rowBytes
         if (destinationScratch.capacity() < dstSize) destinationScratch = ByteBuffer.allocate(dstSize)
         val output = destinationScratch.array()
+
+        // Integer-exact fast path for the stock 1024x576 -> 640x360 face/eye-AF preview geometry.
+        // Uses the same odd-denominator rational arithmetic as the Vulkan UniResz shader so CPU and
+        // GPU outputs remain byte-identical while avoiding per-pixel closures and Double math.
+        if (srcW == 1024 && srcH == 576 && cropX == 0 && cropY == 0 && cropW == 1024 && cropH == 576 &&
+            dstW == 640 && dstH == 360 && stepX == 1 && stepY == 1 && packedOutput
+        ) {
+            scaleFacePreview1024x576To640x360(src, srcStrideBytes, output, yyuv422Out)
+            memory.write(dstAddr, destinationScratch.clear().limit(dstSize))
+            return
+        }
         val maxSrcX = cropX + cropW - 1
         val maxSrcY = cropY + cropH - 1
 
@@ -266,8 +300,6 @@ internal class ImageScalerF000 private constructor(
             return (luma shl 16) or (u shl 8) or v
         }
 
-        val yyuv422Out = registerValues[F0D8_SLOT] == 0x88L
-
         for (dy in 0 until dstH) {
             val sy = if (dstH == 1) cropY.toDouble() else cropY + (dy.toDouble() * (cropH - 1)) / (dstH - 1)
             val y0 = sy.toInt().coerceIn(cropY, maxSrcY)
@@ -317,9 +349,85 @@ internal class ImageScalerF000 private constructor(
         }
     }
 
+    private fun scaleFacePreview1024x576To640x360(
+        src: ByteArray,
+        srcStrideBytes: Int,
+        output: ByteArray,
+        yyuv422Out: Boolean,
+    ) {
+        val x0Y = FACE_X0_Y_OFF
+        val x1Y = FACE_X1_Y_OFF
+        val x0Uv = FACE_X0_UV_OFF
+        val x1Uv = FACE_X1_UV_OFF
+        val wxArr = FACE_WX
+        val cxArr = FACE_CX
+        val y0Arr = FACE_Y0
+        val y1Arr = FACE_Y1
+        val wyArr = FACE_WY
+        val cyArr = FACE_CY
+        for (dy in 0 until 360) {
+            val r0 = y0Arr[dy] * srcStrideBytes
+            val r1 = y1Arr[dy] * srcStrideBytes
+            val wy = wyArr[dy]
+            val cy = cyArr[dy]
+            var outPos = dy * 1280
+            var dx = 0
+            while (dx < 640) {
+                val wx0 = wxArr[dx]
+                val cx0 = cxArr[dx]
+                val aYOff0 = x0Y[dx]
+                val bYOff0 = x1Y[dx]
+                val aUvOff0 = x0Uv[dx]
+                val bUvOff0 = x1Uv[dx]
+                val topY0 = (src[r0 + aYOff0].toInt() and 0xff) * cx0 + (src[r0 + bYOff0].toInt() and 0xff) * wx0
+                val botY0 = (src[r1 + aYOff0].toInt() and 0xff) * cx0 + (src[r1 + bYOff0].toInt() and 0xff) * wx0
+                val outY0 = (topY0 * cy + botY0 * wy + FACE_HALF) / FACE_DENOM
+                val topU0 = (src[r0 + aUvOff0].toInt() and 0xff) * cx0 + (src[r0 + bUvOff0].toInt() and 0xff) * wx0
+                val botU0 = (src[r1 + aUvOff0].toInt() and 0xff) * cx0 + (src[r1 + bUvOff0].toInt() and 0xff) * wx0
+                val outU0 = (topU0 * cy + botU0 * wy + FACE_HALF) / FACE_DENOM
+                val topV0 = (src[r0 + aUvOff0 + 2].toInt() and 0xff) * cx0 + (src[r0 + bUvOff0 + 2].toInt() and 0xff) * wx0
+                val botV0 = (src[r1 + aUvOff0 + 2].toInt() and 0xff) * cx0 + (src[r1 + bUvOff0 + 2].toInt() and 0xff) * wx0
+                val outV0 = (topV0 * cy + botV0 * wy + FACE_HALF) / FACE_DENOM
+
+                val dx1 = dx + 1
+                val wx1 = wxArr[dx1]
+                val cx1 = cxArr[dx1]
+                val aYOff1 = x0Y[dx1]
+                val bYOff1 = x1Y[dx1]
+                val aUvOff1 = x0Uv[dx1]
+                val bUvOff1 = x1Uv[dx1]
+                val topY1 = (src[r0 + aYOff1].toInt() and 0xff) * cx1 + (src[r0 + bYOff1].toInt() and 0xff) * wx1
+                val botY1 = (src[r1 + aYOff1].toInt() and 0xff) * cx1 + (src[r1 + bYOff1].toInt() and 0xff) * wx1
+                val outY1 = (topY1 * cy + botY1 * wy + FACE_HALF) / FACE_DENOM
+                val topU1 = (src[r0 + aUvOff1].toInt() and 0xff) * cx1 + (src[r0 + bUvOff1].toInt() and 0xff) * wx1
+                val botU1 = (src[r1 + aUvOff1].toInt() and 0xff) * cx1 + (src[r1 + bUvOff1].toInt() and 0xff) * wx1
+                val outU1 = (topU1 * cy + botU1 * wy + FACE_HALF) / FACE_DENOM
+                val topV1 = (src[r0 + aUvOff1 + 2].toInt() and 0xff) * cx1 + (src[r0 + bUvOff1 + 2].toInt() and 0xff) * wx1
+                val botV1 = (src[r1 + aUvOff1 + 2].toInt() and 0xff) * cx1 + (src[r1 + bUvOff1 + 2].toInt() and 0xff) * wx1
+                val outV1 = (topV1 * cy + botV1 * wy + FACE_HALF) / FACE_DENOM
+
+                val u = (outU0 + outU1) ushr 1
+                val v = (outV0 + outV1) ushr 1
+                if (yyuv422Out) {
+                    output[outPos] = outY0.toByte()
+                    output[outPos + 1] = outY1.toByte()
+                    output[outPos + 2] = u.toByte()
+                    output[outPos + 3] = v.toByte()
+                } else {
+                    output[outPos] = u.toByte()
+                    output[outPos + 1] = outY0.toByte()
+                    output[outPos + 2] = v.toByte()
+                    output[outPos + 3] = outY1.toByte()
+                }
+                outPos += 4
+                dx += 2
+            }
+        }
+    }
+
     fun armPendingKickOnRestore(currentTick: Long) {
         if (profile != IRQ133_PROFILE || pendingCompletionTick != null || irqAsserted) return
-        if ((registerValues[F004_SLOT] and 1L) != 0L && (registerValues[C4_SLOT] != 0L || registerValues[D0_SLOT] != 0L)) {
+        if ((registerValues[F004_SLOT] and 1L) != 0L && (sourceAddress != 0L || destinationAddress != 0L)) {
             registerValues[E4_SLOT] = registerValues[E4_SLOT] and 1L.inv()
             pendingCompletionTick = currentTick + COMPLETION_DELAY_TICKS
         }
@@ -384,6 +492,7 @@ internal class ImageScalerF000 private constructor(
     }
 
     companion object {
+        private const val AXI_LIMIT = 1L shl 34
         private val LOGGER = LoggerFactory.getLogger(ImageScalerF000::class.java)
         const val KEY = "imageScalerF000"
         const val PROFILE = "fff7f000-reset-idle-v1"
@@ -502,5 +611,18 @@ internal class ImageScalerF000 private constructor(
             }
             return ImageScalerF000(restored, targetProfile, pendingTick, asserted, restoredF014Written)
         }
+
+        private const val FACE_DENOM = 639 * 359
+        private const val FACE_HALF = FACE_DENOM / 2
+        private val FACE_X0_Y_OFF = IntArray(640) { dx -> ((dx * 1023) / 639) * 2 + 1 }
+        private val FACE_X1_Y_OFF = IntArray(640) { dx -> minOf((dx * 1023) / 639 + 1, 1023) * 2 + 1 }
+        private val FACE_X0_UV_OFF = IntArray(640) { dx -> (((dx * 1023) / 639) and 1.inv()) * 2 }
+        private val FACE_X1_UV_OFF = IntArray(640) { dx -> (minOf((dx * 1023) / 639 + 1, 1023) and 1.inv()) * 2 }
+        private val FACE_WX = IntArray(640) { dx -> dx * 1023 - ((dx * 1023) / 639) * 639 }
+        private val FACE_CX = IntArray(640) { dx -> 639 - (dx * 1023 - ((dx * 1023) / 639) * 639) }
+        private val FACE_Y0 = IntArray(360) { dy -> (dy * 575) / 359 }
+        private val FACE_Y1 = IntArray(360) { dy -> minOf((dy * 575) / 359 + 1, 575) }
+        private val FACE_WY = IntArray(360) { dy -> dy * 575 - ((dy * 575) / 359) * 359 }
+        private val FACE_CY = IntArray(360) { dy -> 359 - (dy * 575 - ((dy * 575) / 359) * 359) }
     }
 }

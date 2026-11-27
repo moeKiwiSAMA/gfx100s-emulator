@@ -14,6 +14,8 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.file.Path
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import javax.sound.sampled.LineUnavailableException
 import kotlin.math.sin
 import kotlin.test.*
@@ -65,6 +67,43 @@ class HostAudioPlaybackTest {
         override fun dsp2ProgramWriteCount(): Int = 2560
         override fun dsp2DataWriteCount(): Int = 1570
         override fun dsp2CalibrationWriteCount(): Int = 0
+    }
+
+    @Test
+    fun queuedCodecAudioUsesTheSampleRouteAndLiveHostMuteAndVolume() {
+        val ports = StubPorts()
+        val audible = AudioOutputRoute(false, 0, true, 121, 115, false, true, true,
+            1f, 0.5f, AudioSinkKind.HEADPHONE_STEREO)
+        val boardCodec = StubCodec(audible.copy(activeSink = AudioSinkKind.MUTED, dacMuted = true))
+        val queue = ArrayDeque<RoutedAudioPcm>()
+        val i2s = object : RoutedI2sOutput, I2sAudioPort by StubI2sPort() {
+            override fun bindOutputCodec(codec: AudioCodecControlPort?) { assertSame(boardCodec, codec) }
+            override fun drainRoutedCodecPcm(maxFrames: Int): RoutedAudioPcm? = queue.removeFirstOrNull()
+        }
+        ports.register("test", "soc-isp-setup.i2s-audio", I2sAudioPort::class.java, i2s)
+        ports.register("test", "wm8962.codec", AudioCodecControlPort::class.java, boardCodec)
+        val rendered = ByteArrayOutputStream()
+        HostAudioPlayback({ ports }, AudioPlaybackConfig(enabled = false),
+            AudioLineProvider { _, _ -> error("offline test must not open an endpoint") },
+            { bytes, count -> rendered.write(bytes, 0, count) }).use { host ->
+            host.bindPorts(ports)
+            val pulse = AudioPcmChunk(0, 48_000, 16, shortArrayOf(4000, -4000), 1, 1, 1125)
+            repeat(3) { queue.addLast(RoutedAudioPcm(pulse, audible)) }
+            host.applyPatch(mapOf("bufferMs" to 10, "volume" to 0.5))
+            assertTrue(host.pumpOnce())
+            host.setMuted(true)
+            assertTrue(host.pumpOnce())
+            host.applyPatch(mapOf("bufferMs" to 120, "muted" to false, "volume" to 1.0))
+            assertTrue(host.pumpOnce())
+            queue.addLast(RoutedAudioPcm(pulse, boardCodec.route))
+            boardCodec.route = audible
+            assertTrue(host.pumpOnce())
+            assertFalse(host.pumpOnce())
+            val pcm = ByteBuffer.wrap(rendered.toByteArray()).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer()
+            val samples = ShortArray(pcm.remaining())
+            pcm.get(samples)
+            assertContentEquals(shortArrayOf(2000, -1000, 0, 0, 4000, -2000, 0, 0), samples)
+        }
     }
 
     @Test
@@ -124,6 +163,84 @@ class HostAudioPlaybackTest {
 
         val leaked = Thread.getAllStackTraces().keys.filter { it.name == "fuji-audio-playback" && it.isAlive }
         assertTrue(leaked.isEmpty(), "Expected zero leaked fuji-audio-playback threads")
+    }
+
+    @Test
+    fun shortOutputWritesDeliverEveryFrameAfterTemporaryBackpressure() {
+        val ports = StubPorts()
+        val i2s = StubI2sPort()
+        ports.register("test", "soc-isp-setup.i2s-audio", I2sAudioPort::class.java, i2s)
+        val received = ByteArrayOutputStream()
+        var attempts = 0
+        val output = object : AudioOutputLine {
+            override fun write(bytes: ByteArray, offset: Int, length: Int): Int {
+                attempts++
+                if (attempts == 2) return 0
+                val accepted = minOf(8, length)
+                received.write(bytes, offset, accepted)
+                return accepted
+            }
+            override fun close() = Unit
+        }
+        val samples = ShortArray(100) { (it * 103 - 3000).toShort() }
+        val expected = ByteBuffer.allocate(samples.size * 2).order(ByteOrder.LITTLE_ENDIAN)
+        samples.forEach { expected.putShort(it) }
+        HostAudioPlayback(
+            { ports }, AudioPlaybackConfig(enabled = true, volume = 1.0),
+            lineProvider = AudioLineProvider { _, _ -> output },
+        ).use { playback ->
+            playback.startIfEnabled()
+            i2s.pushTxSamples(0, samples, samples.size / 2)
+            awaitFramesPlayed(playback, (samples.size / 2).toLong())
+            assertContentEquals(expected.array(), received.toByteArray())
+        }
+    }
+
+    @Test
+    fun permanentlyStalledOutputDegradesAndReportsOnlyAcceptedFrames() {
+        val ports = StubPorts()
+        val i2s = StubI2sPort()
+        ports.register("test", "soc-isp-setup.i2s-audio", I2sAudioPort::class.java, i2s)
+        val output = object : AudioOutputLine {
+            override fun write(bytes: ByteArray, offset: Int, length: Int) = if (offset == 0) 4 else 0
+            override fun close() = Unit
+        }
+        HostAudioPlayback(
+            { ports }, AudioPlaybackConfig(enabled = true, bufferMs = 10),
+            lineProvider = AudioLineProvider { _, _ -> output },
+        ).use { playback ->
+            playback.startIfEnabled()
+            i2s.pushTxSamples(0, ShortArray(64), 32)
+            awaitFramesPlayed(playback, 1)
+            assertEquals(AudioBackendMode.HEADLESS_SILENT, playback.backendMode)
+            assertContains(playback.degradationReason.orEmpty(), "no progress")
+        }
+    }
+
+    @Test
+    fun stalledOutputCanBeStoppedWithoutCountingUnwrittenFrames() {
+        val ports = StubPorts()
+        val i2s = StubI2sPort()
+        ports.register("test", "soc-isp-setup.i2s-audio", I2sAudioPort::class.java, i2s)
+        val attempted = CountDownLatch(1)
+        val output = object : AudioOutputLine {
+            override fun write(bytes: ByteArray, offset: Int, length: Int): Int {
+                attempted.countDown()
+                return 0
+            }
+            override fun close() = Unit
+        }
+        HostAudioPlayback(
+            { ports }, AudioPlaybackConfig(enabled = true),
+            lineProvider = AudioLineProvider { _, _ -> output },
+        ).use { playback ->
+            playback.startIfEnabled()
+            i2s.pushTxSamples(0, ShortArray(64), 32)
+            assertTrue(attempted.await(3, TimeUnit.SECONDS))
+            playback.stop()
+            assertEquals(0L, playback.status()["framesPlayed"])
+            assertEquals(AudioBackendMode.DISABLED, playback.backendMode)
+        }
     }
 
     @Test

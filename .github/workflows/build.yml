@@ -97,35 +97,28 @@ jobs:
       - name: Build Dynarmic ARMv7-A JIT (Linux .so + Windows x86_64 .dll)
         run: |
           set -euo pipefail
-          DYN_SHA="$(sha256sum \
-            tools/native/dynarmic-bridge/fuji_dynarmic.h \
-            tools/native/dynarmic-bridge/fuji_mmu_tlb.hpp \
-            tools/native/dynarmic-bridge/fuji_dynarmic.cpp \
-            tools/native/dynarmic-bridge/CMakeLists.txt \
-            tools/native/dynarmic-bridge/build_dynarmic.sh \
-            tools/native/dynarmic-bridge/test_dynarmic_bridge.cpp \
-            tools/native/dynarmic-bridge/mingw64-dynarmic-toolchain.cmake \
-            | sha256sum | awk '{print $1}')"
+          DYN_LINUX_SHA="$(bash tools/native/dynarmic-bridge/build_dynarmic.sh hash-linux)"
+          DYN_WIN64_SHA="$(bash tools/native/dynarmic-bridge/build_dynarmic.sh hash-win64)"
 
           if [ -f ".tools/dynarmic-v1/build-linux/libfuji_dynarmic.so" ] && \
              [ -f ".tools/dynarmic-v1/build-linux/bridge.sha256" ] && \
-             [ "$(cat .tools/dynarmic-v1/build-linux/bridge.sha256)" = "$DYN_SHA" ]; then
+             [ "$(cat .tools/dynarmic-v1/build-linux/bridge.sha256)" = "$DYN_LINUX_SHA" ]; then
             echo "Reusing cached Linux Dynarmic JIT library (SHA matched)."
             .tools/dynarmic-v1/build-linux/test_dynarmic_bridge
           else
             rm -rf .tools/dynarmic-v1/build-linux
             bash tools/native/dynarmic-bridge/build_dynarmic.sh linux
-            printf '%s\n' "$DYN_SHA" > .tools/dynarmic-v1/build-linux/bridge.sha256
+            printf '%s\n' "$DYN_LINUX_SHA" > .tools/dynarmic-v1/build-linux/bridge.sha256
           fi
 
           if [ -f ".tools/dynarmic-v1/build-win64/fuji_dynarmic.dll" ] && \
              [ -f ".tools/dynarmic-v1/build-win64/bridge.sha256" ] && \
-             [ "$(cat .tools/dynarmic-v1/build-win64/bridge.sha256)" = "$DYN_SHA" ]; then
+             [ "$(cat .tools/dynarmic-v1/build-win64/bridge.sha256)" = "$DYN_WIN64_SHA" ]; then
             echo "Reusing cached Windows x86_64 Dynarmic JIT DLL (SHA matched)."
           else
             rm -rf .tools/dynarmic-v1/build-win64
             bash tools/native/dynarmic-bridge/build_dynarmic.sh win64
-            printf '%s\n' "$DYN_SHA" > .tools/dynarmic-v1/build-win64/bridge.sha256
+            printf '%s\n' "$DYN_WIN64_SHA" > .tools/dynarmic-v1/build-win64/bridge.sha256
           fi
 
       - name: Build native C/C++ bridges (Linux .so + Windows x86_64 .dll)

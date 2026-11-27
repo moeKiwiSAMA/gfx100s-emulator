@@ -5,13 +5,27 @@ plugins { kotlin("jvm") version "2.3.20" apply false }
 val fujiTestForks = providers.gradleProperty("fujiTestForks").orElse("2").get().let { raw ->
     raw.toIntOrNull()?.takeIf { it in 1..8 } ?: error("fujiTestForks must be an integer in 1..8")
 }
-val platformArtifacts = configurations.create("platformArtifacts") { isTransitive = false }
-dependencies {
-    listOf("win", "linux", "mac", "mac-aarch64").forEach { platform ->
+val javafxArtifactsByPlatform = listOf("win", "linux", "mac", "mac-aarch64").associateWith { platform ->
+    configurations.create("javafx-$platform") {
+        isTransitive = false
+    }.also { platformJars ->
         listOf("base", "graphics", "controls", "swing").forEach { module ->
-            add(platformArtifacts.name, "org.openjfx:javafx-$module:25.0.1:$platform")
+            dependencies.add(platformJars.name, "org.openjfx:javafx-$module:25.0.1:$platform")
         }
     }
+}
+val platformArtifacts = configurations.create("platformArtifacts") {
+    isTransitive = false
+    extendsFrom(*javafxArtifactsByPlatform.values.toTypedArray())
+}
+fun releaseLibraries(platform: String) = copySpec {
+    from(layout.buildDirectory.dir("emulator")) {
+        include("lib/**")
+        exclude("lib/desktop-*.jar")
+        // installDist contains native JavaFX jars for the build host.
+        javafxArtifactsByPlatform.keys.forEach { exclude("lib/javafx-*-$it.jar") }
+    }
+    from(javafxArtifactsByPlatform.getValue(platform)) { into("lib") }
 }
 tasks.register("verifyPlatformArtifacts") { doLast { platformArtifacts.files.sortedBy { it.name }.forEach { println(it.name) } } }
 allprojects { group = "com.github.nyabanban.fuji.emulator"; version = "0.3.0" }
@@ -1026,14 +1040,12 @@ val buildAudioNative = tasks.register("buildAudioNative") {
                     "-Werror",
                     "-DUNICODE",
                     "-D_UNICODE",
-                    "-DCOBJMACROS",
-                    "-DWIN32_LEAN_AND_MEAN",
                     "-DFUJI_AUDIO_BUILD_DLL",
                     audioBridgeSourceDir.file("fuji_audio_win32.c").asFile.absolutePath,
                     "-o",
                     outFile.absolutePath,
                     "-static-libgcc",
-                    "-Wl,--exclude-libs,ALL",
+                    "-Wl,--exclude-all-symbols",
                     "-lole32",
                     "-lavrt",
                     "-lksguid",
@@ -1285,27 +1297,30 @@ fun buildPlaybackFfmpeg(target: String, taskName: String) = tasks.register(taskN
     description = "Build the pinned AVC/HEVC playback decoder for $target"
     val script = rootProject.file("tools/native/playback-ffmpeg/build.sh")
     val packageDir = rootProject.file(".tools/playback-ffmpeg/build-$target")
-    val executableName = if (target == "win64") "ffmpeg.exe" else "ffmpeg"
     inputs.file(script)
     outputs.dir(packageDir)
-    onlyIf {
-        val stamp = packageDir.resolve("bridge.sha256")
-        val bin = packageDir.resolve("runtime/media/$executableName")
-        val license = packageDir.resolve("runtime/media/licenses/COPYING.LGPLv2.1")
-        val buildScriptCopy = packageDir.resolve("runtime/media/licenses/build.sh")
-        val sourceNotice = packageDir.resolve("runtime/media/licenses/SOURCE.txt")
-        if (!stamp.isFile || !bin.isFile || !license.isFile || !buildScriptCopy.isFile || !sourceNotice.isFile) {
-            true
-        } else {
-            val expectedSha = java.security.MessageDigest.getInstance("SHA-256")
-                .digest(script.readBytes())
-                .joinToString("") { "%02x".format(it) }
-            stamp.readText(Charsets.UTF_8).trim() != expectedSha
-        }
-    }
+    // A previously portable package can become eligible for assembly without any source change.
+    outputs.upToDateWhen { false }
     doLast {
+        // A machine staging a prebuilt package may have no shell or media toolchain installed.
+        val bash = if (File.separatorChar == '\\') "bash.exe" else "bash"
+        val hasBash = System.getenv("PATH").orEmpty().split(File.pathSeparatorChar)
+            .any { File(it.trim('"'), bash).let { file -> file.isFile && file.canExecute() } }
+        if (!hasBash) {
+            val media = packageDir.resolve("runtime/media")
+            val exe = if (target == "win64") "ffmpeg.exe" else "ffmpeg"
+            val required = listOf(exe, "licenses/COPYING.LGPLv2.1", "licenses/build.sh", "licenses/SOURCE.txt")
+            val stamp = packageDir.resolve("bridge.sha256")
+            val digest = java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(script.readBytes()))
+            if (required.all { media.resolve(it).let { file -> file.isFile && file.length() > 0 } } &&
+                stamp.isFile && stamp.readText().trim() == digest &&
+                media.resolve("licenses/SOURCE.txt").useLines { lines -> lines.any { it == "FFmpeg x86 assembly: enabled" || it == "FFmpeg x86 assembly: disabled" } }) {
+                logger.lifecycle("Reusing verified local $target playback FFmpeg without a build shell")
+                return@doLast
+            }
+        }
         runCheckedProcess(
-            listOf("bash", "tools/native/playback-ffmpeg/build.sh", target),
+            listOf("bash", "tools/native/playback-ffmpeg/build.sh", target, "--ensure"),
             workDir = rootProject.projectDir,
         )
     }
@@ -1370,10 +1385,7 @@ val stageReleaseLinux = tasks.register<Sync>("stageReleaseLinux") {
         include("bin/**")
         filePermissions { unix("0755") }
     }
-    from(layout.buildDirectory.dir("emulator")) {
-        include("lib/**")
-        exclude("lib/desktop-*.jar")
-    }
+    with(releaseLibraries("linux"))
     from(listOf(project(":desktop").tasks.named("releaseJar"), project(":desktop").tasks.named("artworkJar"))) {
         into("lib")
     }
@@ -2009,16 +2021,8 @@ val stageReleaseWindows = tasks.register<Sync>("stageReleaseWindows") {
     from(layout.buildDirectory.dir("emulator")) {
         include("bin/**")
     }
-    from(layout.buildDirectory.dir("emulator")) {
-        include("lib/**")
-        exclude("lib/desktop-*.jar", "lib/javafx-*-linux.jar", "lib/javafx-*-mac.jar", "lib/javafx-*-mac-aarch64.jar")
-    }
+    with(releaseLibraries("win"))
     from(listOf(project(":desktop").tasks.named("releaseJar"), project(":desktop").tasks.named("artworkJar"))) {
-        into("lib")
-    }
-    from({
-        platformArtifacts.files.filter { it.name.endsWith("-win.jar") }
-    }) {
         into("lib")
     }
     // Outermost configs/ directory

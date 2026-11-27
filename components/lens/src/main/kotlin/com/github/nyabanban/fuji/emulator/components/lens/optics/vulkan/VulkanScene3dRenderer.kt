@@ -60,6 +60,7 @@ class VulkanScene3dRenderer(
         if (spec.sceneKey == 0L || spec.width <= 0 || spec.height <= 0) return null
         val prevGrid = lastDepthGrid
         if (lastRenderedSceneKey == spec.sceneKey && prevGrid != null) {
+            lastScene3dMs = 0.0
             cacheHitsCounter.incrementAndGet()
             return prevGrid
         }

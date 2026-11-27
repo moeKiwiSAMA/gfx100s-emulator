@@ -499,6 +499,13 @@ FUJI_VK_EXPORT int32_t fuji_vk_render_optics_to_isp_yuv_with_stats(
     FujiVkIspStatsOutput* out_stats,
     double* out_gpu_ms);
 
+/* Optional ABI-1 F000 scaler for a full 1024x576 UYVY raster to tight 640x360.
+ * yyuv=1 stores [Y0,Y1,U,V], otherwise UYVY. Source is copied before destination
+ * is modified, including in-place DMA. Optional timings are upload, submit/wait and readback. */
+FUJI_VK_EXPORT int32_t fuji_vk_resize_1024_to_640_422(
+    FujiVkContext* ctx, const uint8_t* source, size_t source_bytes, uint32_t src_stride,
+    uint8_t* destination, size_t destination_bytes, uint32_t yyuv, double* timings_ms);
+
 /*
  * GPU-Resident VRAM Scene Cache (zero-upload focus sweeps / AF-ON):
  * Uploads (R, G, B, depthMeters) once into a DEVICE_LOCAL VRAM buffer keyed by scene_key.
@@ -561,6 +568,16 @@ FUJI_VK_EXPORT int32_t fuji_vk_render_cached_scene_to_isp_yuv(
  * Single-submit fused Pass 0..6 directly from VRAM-resident scene (2D cached or Vulkan 3D):
  * Filter -> Warp -> Bokeh -> CMOS Bayer -> ISP Demosaic [+ Peaking] + GPU ISP Stats Reduction.
  */
+/* Optional ABI-1 synchronous, tightly packed UYVY readback. The borrowed view is valid until
+ * the next operation on this context or its destruction. Callers serialize access and copy
+ * before reusing the context. dst_capacity checks the caller's strided destination size. */
+FUJI_VK_EXPORT int32_t fuji_vk_render_cached_scene_to_isp_uyvy_view(
+    FujiVkContext* ctx, uint64_t scene_key, const FujiVkFilterStackParams* filter,
+    const FujiVkOpticsParams* optics, const FujiVkCmosParams* cmos,
+    const int32_t* lut_r_4096, const int32_t* lut_g_4096, const int32_t* lut_b_4096,
+    const FujiVkIspDemosaicParams* isp_params, const FujiVkIspStatsParams* stats_params,
+    FujiVkIspStatsOutput* out_stats, const uint8_t** mapped_uyvy, size_t dst_capacity, double* out_gpu_ms);
+
 FUJI_VK_EXPORT int32_t fuji_vk_render_cached_scene_to_isp_yuv_with_stats(
     FujiVkContext* ctx,
     uint64_t scene_key,

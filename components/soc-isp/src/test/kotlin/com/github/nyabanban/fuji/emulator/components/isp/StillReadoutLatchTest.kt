@@ -1,6 +1,7 @@
 package com.github.nyabanban.fuji.emulator.components.isp
 
 import com.github.nyabanban.fuji.emulator.api.Exposure
+import com.github.nyabanban.fuji.emulator.api.IspStillReadout
 import com.github.nyabanban.fuji.emulator.api.LensParameters
 import com.github.nyabanban.fuji.emulator.api.SensorPort
 import org.junit.jupiter.api.Test
@@ -8,8 +9,32 @@ import java.nio.ByteBuffer
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 
 class StillReadoutLatchTest {
+    @Test
+    fun stillDevelopmentUsesItsOwnProgrammedWhiteBalanceAndTheSameBayerBuffer() {
+        val companion = ImagingCompanionEngines({ 0L }, { null })
+        val bank = companion.createIsp85000Device { false }
+        val samples = ByteBuffer.wrap(byteArrayOf(10, 20))
+        val shot = IspStillReadout(13, 2, 1, 603, 604, 603, samples)
+        assertSame(shot, companion.colorReadout(shot))
+
+        // GFX100S 2.13, M ISO100 f/2.8 1/160: daylight (Q8 461:257:487 -> unity ~1024), then incandescent.
+        bank.write(0xd4, 4, 0x01cd0101)
+        assertSame(shot, companion.colorReadout(shot))
+        bank.write(0xd8, 4, 0x01e7)
+        val daylight = companion.colorReadout(shot)
+        assertEquals(listOf(1027, 1028, 1026), listOf(daylight.gainR1024, daylight.gainG1024, daylight.gainB1024))
+        bank.write(0xd4, 4, 0x01250101)
+        bank.write(0xd8, 4, 0x02c1)
+        val incandescent = companion.colorReadout(shot)
+        assertEquals(listOf(652, 1028, 1485), listOf(incandescent.gainR1024, incandescent.gainG1024, incandescent.gainB1024))
+        assertEquals(shot.tick, incandescent.tick)
+        samples.put(0, 42)
+        assertEquals(42, incandescent.bayerSamples().get(0).toInt())
+    }
+
     @Test
     fun continuousReadoutKeepsProcessingItsOwnFrameAcrossTheNextCcdArmAndSnapshot() {
         val latch = StillReadoutLatch()

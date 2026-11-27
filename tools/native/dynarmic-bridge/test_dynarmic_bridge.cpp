@@ -2102,7 +2102,7 @@ static void test_64bit_alignment_normal_nc_device_and_strexd(FujiDynEngine* eng)
      *   (a) Word-aligned (va & 7 == 4) LDRD/STRD on Normal Non-Cacheable memory (TEX=001 C=0 B=0,
      *       TEX=100 C=0 B=0, and TRE=1 PRRR=Normal+NMRR=NC) MUST SUCCEED.
      *   (b) Word-aligned (va & 7 == 4) LDRD/STRD on Device / Strongly-Ordered memory (TEX=000 C=0 B=1,
-     *       TEX=000 C=0 B=0, TEX=010 C=0 B=0, and TRE=1 PRRR=Device) MUST FAULT (FAULT_ALIGNMENT).
+     *       TEX=000 C=0 B=0, TEX=010 C=0 B=0, and TRE=1 PRRR=Device) must succeed as two aligned word transfers.
      *   (c) 64-bit STREXD on word-aligned (va & 7 == 4) Normal memory MUST FAULT even with SCTLR.A == 0,
      *       while 8-byte aligned LDREXD+STREXD succeeds. */
     const uint32_t l1_base = 0x00090000u;
@@ -2134,6 +2134,12 @@ static void test_64bit_alignment_normal_nc_device_and_strexd(FujiDynEngine* eng)
     const uint32_t ldrd_code_pa = 0x0007B000u;
     const uint32_t strd_code_pa = 0x0007B040u;
     const uint32_t strexd_code_pa = 0x0007B080u;
+    const uint32_t thumb_pair_pa = 0x0007B0C0u;
+    const uint16_t thumb_pair[] = {
+        0xe9d0u, 0x2300u, // ldrd r2,r3,[r0]
+        0xe9c1u, 0x2300u, // strd r2,r3,[r1]
+        0xbf30u,          // wfi
+    };
     const uint32_t ldrd_code[] = {
         0xE1C020D0u, /* ldrd r2, r3, [r0] */
         0xE320F003u, /* wfi */
@@ -2150,6 +2156,7 @@ static void test_64bit_alignment_normal_nc_device_and_strexd(FujiDynEngine* eng)
     CHECK(fuji_dyn_mem_write(eng, ldrd_code_pa, ldrd_code, sizeof(ldrd_code)) == 0, "write ldrd code");
     CHECK(fuji_dyn_mem_write(eng, strd_code_pa, strd_code, sizeof(strd_code)) == 0, "write strd code");
     CHECK(fuji_dyn_mem_write(eng, strexd_code_pa, strexd_code, sizeof(strexd_code)) == 0, "write strexd code");
+    CHECK(fuji_dyn_mem_write(eng, thumb_pair_pa, thumb_pair, sizeof(thumb_pair)) == 0, "write Thumb-2 pair code");
     fuji_dyn_clear_cache(eng);
 
     auto setup_mmu_core = [&](bool enable_tre) {
@@ -2174,27 +2181,46 @@ static void test_64bit_alignment_normal_nc_device_and_strexd(FujiDynEngine* eng)
 
     FujiDynRunResult res{};
 
-    /* (a) Normal Non-Cacheable (TEX=001 C=0 B=0 and TEX=100 C=0 B=0): 4-byte-aligned LDRD & STRD succeed */
-    for (uint32_t va_base : {0x10000000u, 0x11000000u}) {
+    /* Word-aligned pairs are legal on Normal, Device and Strongly-Ordered pages. */
+    for (uint32_t va_base : {0x10000000u, 0x11000000u, 0x12000000u, 0x13000000u, 0x14000000u}) {
         write_u32(eng, data_pa + 0x04u, 0x22334455u);
         write_u32(eng, data_pa + 0x08u, 0x66778899u);
         setup_mmu_core(false);
         fuji_dyn_set_reg(eng, 0u, 0u, va_base + 4u);
         fuji_dyn_set_reg(eng, 0u, 15u, ldrd_code_pa);
-        CHECK(fuji_dyn_run_fast(eng, 0u, 1000u, 0u, 0u, &res) == 0, "run Normal NC LDRD");
-        CHECK(res.stop_reason == FUJI_DYN_STOP_WFI, "Normal NC 4B-aligned LDRD must succeed with SCTLR.A=0");
+        CHECK(fuji_dyn_run_fast(eng, 0u, 1000u, 0u, 0u, &res) == 0, "run word-aligned LDRD");
+        CHECK(res.stop_reason == FUJI_DYN_STOP_WFI, "word-aligned LDRD must succeed with SCTLR.A=0");
         CHECK(fuji_dyn_get_reg(eng, 0u, 2u) == 0x22334455u && fuji_dyn_get_reg(eng, 0u, 3u) == 0x66778899u,
-              "Normal NC 4B-aligned LDRD values");
+              "word-aligned LDRD values");
 
         setup_mmu_core(false);
         fuji_dyn_set_reg(eng, 0u, 0u, va_base + 4u);
         fuji_dyn_set_reg(eng, 0u, 2u, 0xCAFE0001u);
         fuji_dyn_set_reg(eng, 0u, 3u, 0xBEEF0002u);
         fuji_dyn_set_reg(eng, 0u, 15u, strd_code_pa);
-        CHECK(fuji_dyn_run_fast(eng, 0u, 1000u, 0u, 0u, &res) == 0, "run Normal NC STRD");
-        CHECK(res.stop_reason == FUJI_DYN_STOP_WFI, "Normal NC 4B-aligned STRD must succeed with SCTLR.A=0");
+        CHECK(fuji_dyn_run_fast(eng, 0u, 1000u, 0u, 0u, &res) == 0, "run word-aligned STRD");
+        CHECK(res.stop_reason == FUJI_DYN_STOP_WFI, "word-aligned STRD must succeed with SCTLR.A=0");
         CHECK(read_u32(eng, data_pa + 0x04u) == 0xCAFE0001u && read_u32(eng, data_pa + 0x08u) == 0xBEEF0002u,
-              "Normal NC 4B-aligned STRD values");
+              "word-aligned STRD values");
+    }
+
+    for (bool big_endian : {false, true}) {
+        write_u32(eng, data_pa + 4, 0x22334455u);
+        write_u32(eng, data_pa + 8, 0x66778899u);
+        write_u32(eng, data_pa + 12, 0u);
+        write_u32(eng, data_pa + 16, 0u);
+        setup_mmu_core(false);
+        fuji_dyn_set_cpsr(eng, 0, fuji_dyn_get_cpsr(eng, 0) | 0x20u | (big_endian ? 0x200u : 0u));
+        fuji_dyn_set_reg(eng, 0, 0, 0x12000004u);
+        fuji_dyn_set_reg(eng, 0, 1, 0x1200000cu);
+        fuji_dyn_set_reg(eng, 0, 15, thumb_pair_pa);
+        CHECK(fuji_dyn_run_fast(eng, 0, 1000, 0, 0, &res) == 0 && res.stop_reason == FUJI_DYN_STOP_WFI,
+              "Thumb-2 word-aligned Device pair");
+        CHECK(fuji_dyn_get_reg(eng, 0, 2) == (big_endian ? 0x55443322u : 0x22334455u) &&
+              fuji_dyn_get_reg(eng, 0, 3) == (big_endian ? 0x99887766u : 0x66778899u),
+              "Thumb-2 pair register ordering");
+        CHECK(read_u32(eng, data_pa + 12) == 0x22334455u && read_u32(eng, data_pa + 16) == 0x66778899u,
+              "Thumb-2 pair memory ordering");
     }
 
     /* (a2) TRE=1: idx=1 (VA 0x12000000: TEX0=0,C=0,B=1) remapped to Normal Non-Cacheable -> 4B-aligned LDRD succeeds */
@@ -2203,39 +2229,39 @@ static void test_64bit_alignment_normal_nc_device_and_strexd(FujiDynEngine* eng)
     setup_mmu_core(true);
     fuji_dyn_set_reg(eng, 0u, 0u, 0x12000004u);
     fuji_dyn_set_reg(eng, 0u, 15u, ldrd_code_pa);
-    CHECK(fuji_dyn_run_fast(eng, 0u, 1000u, 0u, 0u, &res) == 0, "run TRE=1 Normal NC LDRD");
-    CHECK(res.stop_reason == FUJI_DYN_STOP_WFI, "TRE=1 Normal NC 4B-aligned LDRD must succeed");
+    CHECK(fuji_dyn_run_fast(eng, 0u, 1000u, 0u, 0u, &res) == 0, "run TRE=1 word-aligned LDRD");
+    CHECK(res.stop_reason == FUJI_DYN_STOP_WFI, "TRE=1 word-aligned LDRD must succeed");
     CHECK(fuji_dyn_get_reg(eng, 0u, 2u) == 0x12345678u && fuji_dyn_get_reg(eng, 0u, 3u) == 0x9ABCDEF0u,
-          "TRE=1 Normal NC 4B-aligned LDRD values");
+          "TRE=1 word-aligned LDRD values");
 
     /* (b) Device & Strongly-Ordered (Shareable Device 0x12, Strongly-Ordered 0x13, Non-shareable Device 0x14):
-     *     4-byte-aligned LDRD & STRD MUST fault with FAULT_ALIGNMENT (0x01) even with SCTLR.A == 0 */
+     *     Non-word-aligned LDRD & STRD must fault with FAULT_ALIGNMENT (0x01) even with SCTLR.A == 0 */
     for (uint32_t va_base : {0x12000000u, 0x13000000u, 0x14000000u}) {
         setup_mmu_core(false);
-        fuji_dyn_set_reg(eng, 0u, 0u, va_base + 4u);
+        fuji_dyn_set_reg(eng, 0u, 0u, va_base + 2u);
         fuji_dyn_set_reg(eng, 0u, 15u, ldrd_code_pa);
         CHECK(fuji_dyn_run_fast(eng, 0u, 1000u, 0u, 0u, &res) == 0, "run Device/SO LDRD");
         CHECK(res.stop_reason == FUJI_DYN_STOP_FAULT_DABT && (res.fault_status & 0xFu) == 0x1u,
-              "Device/SO 4B-aligned LDRD must raise FAULT_ALIGNMENT");
+              "Device/SO non-word-aligned LDRD must raise FAULT_ALIGNMENT");
 
         setup_mmu_core(false);
-        fuji_dyn_set_reg(eng, 0u, 0u, va_base + 4u);
+        fuji_dyn_set_reg(eng, 0u, 0u, va_base + 2u);
         fuji_dyn_set_reg(eng, 0u, 2u, 0x11112222u);
         fuji_dyn_set_reg(eng, 0u, 3u, 0x33334444u);
         fuji_dyn_set_reg(eng, 0u, 15u, strd_code_pa);
         CHECK(fuji_dyn_run_fast(eng, 0u, 1000u, 0u, 0u, &res) == 0, "run Device/SO STRD");
         CHECK(res.stop_reason == FUJI_DYN_STOP_FAULT_DABT && (res.fault_status & 0xFu) == 0x1u &&
               (res.fault_status & (1u << 11)) != 0u,
-              "Device/SO 4B-aligned STRD must raise write FAULT_ALIGNMENT");
+              "Device/SO non-word-aligned STRD must raise write FAULT_ALIGNMENT");
     }
 
-    /* (b2) TRE=1: idx=0 (VA 0x13000000: TEX0=0,C=0,B=0) remapped to Device -> 4B-aligned LDRD faults */
+    /* (b2) TRE=1: idx=0 (VA 0x13000000: TEX0=0,C=0,B=0) remapped to Device -> non-word-aligned LDRD faults */
     setup_mmu_core(true);
-    fuji_dyn_set_reg(eng, 0u, 0u, 0x13000004u);
+    fuji_dyn_set_reg(eng, 0u, 0u, 0x13000002u);
     fuji_dyn_set_reg(eng, 0u, 15u, ldrd_code_pa);
     CHECK(fuji_dyn_run_fast(eng, 0u, 1000u, 0u, 0u, &res) == 0, "run TRE=1 Device LDRD");
     CHECK(res.stop_reason == FUJI_DYN_STOP_FAULT_DABT && (res.fault_status & 0xFu) == 0x1u,
-          "TRE=1 Device 4B-aligned LDRD must raise FAULT_ALIGNMENT");
+          "TRE=1 Device non-word-aligned LDRD must raise FAULT_ALIGNMENT");
 
     /* (c) 64-bit STREXD: 8-byte aligned succeeds; 4-byte aligned (va & 7 == 4) faults even with SCTLR.A == 0 */
     const uint32_t excl_pa = 0x0007C000u;
@@ -2267,7 +2293,7 @@ static void test_64bit_alignment_normal_nc_device_and_strexd(FujiDynEngine* eng)
           "faulting 4B-aligned STREXD must not modify memory");
 
     fuji_dyn_reset_core(eng, 0u);
-    std::printf("  [PASS] 23. 64-bit alignment: Normal NC allowed, Device/SO faults, STREXD 4B-aligned faults with SCTLR.A=0\n");
+    std::printf("  [PASS] 23. 64-bit alignment: word-aligned Normal/Device pairs, unaligned Device faults and strict STREXD\n");
 }
 
 int main() {

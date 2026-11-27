@@ -84,13 +84,34 @@
     -fx-border-color: #CBD5E1;
     -fx-text-fill: #1F2937;
 }
-.studio-header-btn-secondary:hover {
+.studio-header-btn-secondary:hover,
+.menu-button.studio-header-btn-secondary:showing {
     -fx-background-color: #F8FAFC;
     -fx-border-color: #2563EB;
     -fx-text-fill: #111827;
 }
 .studio-header-btn-secondary:pressed {
     -fx-background-color: #E2E8F0;
+}
+.menu-button.studio-header-btn > .label {
+    -fx-text-fill: #FFFFFF;
+}
+.menu-button.studio-header-btn > .arrow-button > .arrow {
+    -fx-background-color: #FFFFFF;
+}
+.menu-button.studio-header-btn-secondary > .label {
+    -fx-text-fill: #1F2937;
+}
+.menu-button.studio-header-btn-secondary:hover > .label,
+.menu-button.studio-header-btn-secondary:showing > .label {
+    -fx-text-fill: #111827;
+}
+.menu-button.studio-header-btn-secondary > .arrow-button > .arrow {
+    -fx-background-color: #374151;
+}
+.menu-button.studio-header-btn-secondary:hover > .arrow-button > .arrow,
+.menu-button.studio-header-btn-secondary:showing > .arrow-button > .arrow {
+    -fx-background-color: #2563EB;
 }
 
 .studio-header-combo {
@@ -278,6 +299,32 @@
 .combo-box-popup .list-view .list-cell:selected {
     -fx-background-color: #2563EB;
     -fx-text-fill: #FFFFFF;
+}
+.context-menu {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #CBD5E1;
+    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.14), 10, 0.0, 0, 3);
+}
+.context-menu .menu-item > .label {
+    -fx-text-fill: #111827;
+}
+.context-menu .menu-item:focused,
+.context-menu .menu-item:hover {
+    -fx-background-color: #2563EB;
+}
+.context-menu .menu-item:focused > .label,
+.context-menu .menu-item:hover > .label {
+    -fx-text-fill: #FFFFFF;
+}
+.context-menu .separator-menu-item .line {
+    -fx-border-color: #E5E7EB;
+}
+.context-menu .radio-menu-item:checked > .left-container > .radio {
+    -fx-background-color: #2563EB;
+}
+.context-menu .radio-menu-item:focused:checked > .left-container > .radio,
+.context-menu .radio-menu-item:hover:checked > .left-container > .radio {
+    -fx-background-color: #FFFFFF;
 }
 .studio-sidebar .check-box .box {
     -fx-background-color: #FFFFFF;

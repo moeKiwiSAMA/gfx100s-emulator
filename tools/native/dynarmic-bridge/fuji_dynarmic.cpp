@@ -918,7 +918,11 @@ struct FujiFastmemArena {
                                 uint8_t ep = FM_NONE;
                                 if (l2_type >= 2u) {
                                     /* 4 KiB Small Page */
-                                    if ((l2 & 0xFFFFF000u) == page_va) {
+                                    const uint32_t tex = (l2 >> 6) & 7u;
+                                    const bool c = (l2 & (1u << 3)) != 0u;
+                                    const bool b = (l2 & (1u << 2)) != 0u;
+                                    if ((l2 & 0xFFFFF000u) == page_va &&
+                                        !ArmMmuTlb::is_device_or_strongly_ordered(cp15, tex, c, b)) {
                                         if (dom_acc == 3u) {
                                             ep = FM_RW;
                                         } else {
@@ -933,7 +937,11 @@ struct FujiFastmemArena {
                                     }
                                 } else if (l2_type == 1u) {
                                     /* 64 KiB Large Page */
-                                    if ((l2 & 0xFFFF0000u) == (page_va & 0xFFFF0000u)) {
+                                    const uint32_t tex = (l2 >> 12) & 7u;
+                                    const bool c = (l2 & (1u << 3)) != 0u;
+                                    const bool b = (l2 & (1u << 2)) != 0u;
+                                    if ((l2 & 0xFFFF0000u) == (page_va & 0xFFFF0000u) &&
+                                        !ArmMmuTlb::is_device_or_strongly_ordered(cp15, tex, c, b)) {
                                         if (dom_acc == 3u) {
                                             ep = FM_RW;
                                         } else {
@@ -970,6 +978,12 @@ struct FujiFastmemArena {
                         if (pa_sec != static_cast<uint64_t>(va)) {
                             /* Non-identity or >4 GiB 40-bit Supersection virtual mapping (e.g. 4K/capture pool):
                              * keep FM_NONE so Dynarmic falls back cleanly to mmu.page_table! */
+                            continue;
+                        }
+                        const uint32_t sec_tex = (l1 >> 12) & 7u;
+                        const bool sec_c = (l1 & (1u << 3)) != 0u;
+                        const bool sec_b = (l1 & (1u << 2)) != 0u;
+                        if (ArmMmuTlb::is_device_or_strongly_ordered(cp15, sec_tex, sec_c, sec_b)) {
                             continue;
                         }
                         const uint32_t dom = is_super ? 0u : ((l1 >> 5) & 0xFu);
@@ -1744,7 +1758,12 @@ struct CoreState final : public Dynarmic::A32::UserCallbacks {
 
         static std::uint64_t tlb_va_local_cb(void* arg, std::uint32_t val, std::uint32_t) {
             auto* c = static_cast<CoreState*>(arg);
-            c->mmu.flush_va(val & ~0xFFFu);
+            const uint32_t va = val & ~0xFFFu;
+            c->mmu.flush_va(va);
+            c->invalidate_fastmem_local();
+            if (c->has_non_global_pages) {
+                c->request_jit_inval(va, 4096u);
+            }
             return 0;
         }
         static std::uint64_t tlb_va_all_cb(void* arg, std::uint32_t val, std::uint32_t) {
@@ -1752,17 +1771,25 @@ struct CoreState final : public Dynarmic::A32::UserCallbacks {
             const uint32_t va = val & ~0xFFFu;
             if (c->engine->mt_epoch_active.load(std::memory_order_acquire)) {
                 c->mmu.flush_va(va);
-                c->engine->broadcast_xcore_op_mt(c->core_id, XCORE_TLB_FLUSH_ALL | XCORE_FASTMEM_RESYNC);
+                c->invalidate_fastmem_local();
+                if (c->has_non_global_pages) c->request_jit_inval(va, 4096u);
+                c->engine->broadcast_xcore_op_mt(c->core_id, XCORE_TLB_FLUSH_ALL | XCORE_FASTMEM_RESYNC | XCORE_ICACHE_CLEAR);
                 return 0;
             }
             for (auto& cc : c->engine->cores) {
-                if (cc) cc->mmu.flush_va(va);
+                if (cc) {
+                    cc->mmu.flush_va(va);
+                    cc->invalidate_fastmem_local();
+                    if (cc->has_non_global_pages) cc->request_jit_inval(va, 4096u);
+                }
             }
             return 0;
         }
         static std::uint64_t tlb_asid_local_cb(void* arg, std::uint32_t val, std::uint32_t) {
             auto* c = static_cast<CoreState*>(arg);
             c->mmu.flush_asid(static_cast<uint8_t>(val & 0xFFu));
+            c->invalidate_fastmem_local();
+            if (c->has_non_global_pages) c->request_jit_clear();
             return 0;
         }
         static std::uint64_t tlb_asid_all_cb(void* arg, std::uint32_t val, std::uint32_t) {
@@ -1770,11 +1797,29 @@ struct CoreState final : public Dynarmic::A32::UserCallbacks {
             const uint8_t asid = static_cast<uint8_t>(val & 0xFFu);
             if (c->engine->mt_epoch_active.load(std::memory_order_acquire)) {
                 c->mmu.flush_asid(asid);
-                c->engine->broadcast_xcore_op_mt(c->core_id, XCORE_TLB_FLUSH_ALL | XCORE_FASTMEM_RESYNC);
+                c->invalidate_fastmem_local();
+                if (c->has_non_global_pages) c->request_jit_clear();
+                c->engine->broadcast_xcore_op_mt(c->core_id, XCORE_TLB_FLUSH_ALL | XCORE_FASTMEM_RESYNC | XCORE_ICACHE_CLEAR);
                 return 0;
             }
             for (auto& cc : c->engine->cores) {
-                if (cc) cc->mmu.flush_asid(asid);
+                if (cc) {
+                    cc->mmu.flush_asid(asid);
+                    cc->invalidate_fastmem_local();
+                    if (cc->has_non_global_pages) cc->request_jit_clear();
+                }
+            }
+            return 0;
+        }
+        static std::uint64_t ttbr0_write_cb(void* arg, std::uint32_t val, std::uint32_t) {
+            auto* c = static_cast<CoreState*>(arg);
+            if (c->cp15.ttbr0 == val) return 0;
+            c->cp15.ttbr0 = val;
+            c->mmu.flush();
+            c->invalidate_fastmem_local();
+            if (c->has_non_global_pages) {
+                c->engine->code_pages_dirty.store(true, std::memory_order_release);
+                c->request_jit_clear();
             }
             return 0;
         }
@@ -1787,6 +1832,9 @@ struct CoreState final : public Dynarmic::A32::UserCallbacks {
                 c->mmu.invalidate_mru();
                 if (c->has_non_global_pages) {
                     c->mmu.flush_asid(old_asid);
+                    c->invalidate_fastmem_local();
+                    c->engine->code_pages_dirty.store(true, std::memory_order_release);
+                    c->request_jit_clear();
                 }
             }
             return 0;
@@ -1829,6 +1877,10 @@ struct CoreState final : public Dynarmic::A32::UserCallbacks {
             if (opc1 == 0u && n == 1u && m == 0u && opc2 == 0u) {
                 /* SCTLR: only flush TLB/Fastmem when MMU-affecting bits (M/A/TRE/AFE) actually change */
                 return Callback{&sctlr_write_cb, owner};
+            }
+            if (opc1 == 0u && n == 2u && m == 0u && opc2 == 0u) {
+                /* TTBR0: switch user page table, invalidate fastmem and (for non-global OS) JIT cache */
+                return Callback{&ttbr0_write_cb, owner};
             }
             if (opc1 == 0u && n == 7u) {
                 /* Coherent-JIT architectural NOPs: D-cache maintenance (c6/c10/c14), CP15 ISB/BPIALL* */
@@ -1902,7 +1954,64 @@ struct CoreState final : public Dynarmic::A32::UserCallbacks {
         void write_64(std::uint32_t opc1, std::uint32_t crm, std::uint64_t val) { inner.write_64(opc1, crm, val); }
     };
 
+    /* CP14 (ThumbEE TEECR/TEEHBR + Debug RAZ/WI): Cortex-A7 ID_PFR0 advertises State3=1 (ThumbEE),
+     * so standard ARMv7 Linux kernels execute mcr/mrc p14, 6, ... in __errata_finish (proc-v7.S). */
+    class FujiCp14Coprocessor final : public Dynarmic::A32::Coprocessor {
+    public:
+        uint32_t teecr = 0u;
+        uint32_t teehbr = 0u;
+
+        std::optional<Callback> CompileInternalOperation(
+            bool, unsigned, Dynarmic::A32::CoprocReg, Dynarmic::A32::CoprocReg,
+            Dynarmic::A32::CoprocReg, unsigned) override {
+            return Callback{&nop_cb, nullptr};
+        }
+
+        CallbackOrAccessOneWord CompileSendOneWord(
+            bool two, unsigned opc1, Dynarmic::A32::CoprocReg crn,
+            Dynarmic::A32::CoprocReg crm, unsigned opc2) override {
+            if (!two && opc1 == 6u && static_cast<uint32_t>(crm) == 0u && opc2 == 0u) {
+                if (static_cast<uint32_t>(crn) == 0u) return &teecr;
+                if (static_cast<uint32_t>(crn) == 1u) return &teehbr;
+            }
+            return Callback{&nop_cb, nullptr};
+        }
+
+        CallbackOrAccessTwoWords CompileSendTwoWords(bool, unsigned, Dynarmic::A32::CoprocReg) override {
+            return Callback{&nop_cb, nullptr};
+        }
+
+        CallbackOrAccessOneWord CompileGetOneWord(
+            bool two, unsigned opc1, Dynarmic::A32::CoprocReg crn,
+            Dynarmic::A32::CoprocReg crm, unsigned opc2) override {
+            if (!two && opc1 == 6u && static_cast<uint32_t>(crm) == 0u && opc2 == 0u) {
+                if (static_cast<uint32_t>(crn) == 0u) return &teecr;
+                if (static_cast<uint32_t>(crn) == 1u) return &teehbr;
+            }
+            return Callback{&zero_cb, nullptr};
+        }
+
+        CallbackOrAccessTwoWords CompileGetTwoWords(bool, unsigned, Dynarmic::A32::CoprocReg) override {
+            return Callback{&zero_cb, nullptr};
+        }
+
+        std::optional<Callback> CompileLoadWords(
+            bool, bool, Dynarmic::A32::CoprocReg, std::optional<std::uint8_t>) override {
+            return std::nullopt;
+        }
+
+        std::optional<Callback> CompileStoreWords(
+            bool, bool, Dynarmic::A32::CoprocReg, std::optional<std::uint8_t>) override {
+            return std::nullopt;
+        }
+
+    private:
+        static std::uint64_t zero_cb(void*, std::uint32_t, std::uint32_t) { return 0; }
+        static std::uint64_t nop_cb(void*, std::uint32_t, std::uint32_t) { return 0; }
+    };
+
     std::shared_ptr<FujiCp15Coprocessor> cp15_coproc;
+    std::shared_ptr<FujiCp14Coprocessor> cp14_coproc;
     std::shared_ptr<ArmVfpSystemCoprocessor> cp10_coproc;
     std::unique_ptr<Dynarmic::A32::Jit> jit;
     PrivMemCallbacks priv_mem_cbs;
@@ -1942,6 +2051,57 @@ struct CoreState final : public Dynarmic::A32::UserCallbacks {
     uint32_t bypass_tp_pc = 0;
     bool in_mmio_callback = false;
     bool mmu_ctrl_changed = false;
+    bool pending_jit_clear = false;
+    uint32_t pending_jit_inval_va = 0;
+    uint32_t pending_jit_inval_sz = 0;
+
+    inline void invalidate_fastmem_local() {
+        if (!engine->fastmem.active()) return;
+        if (engine->mt_epoch_active.load(std::memory_order_acquire)) {
+            std::lock_guard<std::mutex> lk(engine->meta_lock);
+            engine->fastmem.invalidate_core(core_id);
+        } else {
+            engine->fastmem.invalidate_core(core_id);
+        }
+    }
+
+    inline void request_jit_clear() {
+        pending_jit_clear = true;
+        if (jit && jit->IsExecuting()) {
+            jit->HaltExecution(Dynarmic::HaltReason::CacheInvalidation);
+        }
+    }
+
+    inline void request_jit_inval(uint32_t va, uint32_t sz) {
+        if (pending_jit_inval_sz != 0u) {
+            pending_jit_clear = true;
+        } else {
+            pending_jit_inval_va = va;
+            pending_jit_inval_sz = sz;
+        }
+        if (jit && jit->IsExecuting()) {
+            jit->HaltExecution(Dynarmic::HaltReason::CacheInvalidation);
+        }
+    }
+
+    inline void drain_pending_jit_inval() {
+        if (pending_jit_clear) {
+            pending_jit_clear = false;
+            pending_jit_inval_sz = 0;
+            if (jit) {
+                jit->ClearCache();
+                jit->ClearHalt(Dynarmic::HaltReason::CacheInvalidation);
+            }
+        } else if (pending_jit_inval_sz != 0u) {
+            const uint32_t va = pending_jit_inval_va;
+            const uint32_t sz = pending_jit_inval_sz;
+            pending_jit_inval_sz = 0;
+            if (jit) {
+                jit->InvalidateCacheRange(va, sz);
+                jit->ClearHalt(Dynarmic::HaltReason::CacheInvalidation);
+            }
+        }
+    }
 
     inline uint32_t load_irq_pending() const {
         return std::atomic_ref<uint32_t>(const_cast<uint32_t&>(irq_pending)).load(std::memory_order_acquire);
@@ -2223,6 +2383,7 @@ struct CoreState final : public Dynarmic::A32::UserCallbacks {
         };
 
         cp15_coproc = std::make_shared<FujiCp15Coprocessor>(this, cp15, std::move(hooks));
+        cp14_coproc = std::make_shared<FujiCp14Coprocessor>();
         cp10_coproc = std::make_shared<ArmVfpSystemCoprocessor>(cp15);
         priv_mem_cbs.read32 = [this](uint32_t va, bool& faulted) -> uint32_t {
             uint32_t v = mem_read_impl<uint32_t>(va);
@@ -2260,6 +2421,7 @@ struct CoreState final : public Dynarmic::A32::UserCallbacks {
         conf.detect_misaligned_access_via_page_table = 64;
         conf.only_detect_misalignment_via_page_table_on_page_boundary = false;
         conf.coprocessors[10] = cp10_coproc;
+        conf.coprocessors[14] = cp14_coproc;
         conf.coprocessors[15] = cp15_coproc;
         conf.hook_hint_instructions = true;
         conf.hook_isb = false;
@@ -2285,6 +2447,7 @@ struct CoreState final : public Dynarmic::A32::UserCallbacks {
     void reset_arch_state() {
         cp15.reset(core_id, engine->cbar_base);
         if (cp15_coproc) cp15_coproc->mpidr_val = cp15.mpidr();
+        if (cp14_coproc) { cp14_coproc->teecr = 0u; cp14_coproc->teehbr = 0u; }
         banked.reset();
         mmu.flush();
         has_non_global_pages = false;
@@ -2788,7 +2951,7 @@ struct CoreState final : public Dynarmic::A32::UserCallbacks {
     }
 
     template <typename T>
-    T mem_read_impl(uint32_t va) {
+    T mem_read_impl(uint32_t va, bool force_user = false) {
         if (dabt_latched) return 0;
         constexpr uint32_t sz = sizeof(T);
         const bool strict_align = (cp15.sctlr & 2u) != 0u;
@@ -2799,7 +2962,7 @@ struct CoreState final : public Dynarmic::A32::UserCallbacks {
         if (sz > 1u && ((va & 0xFFFu) + sz) > 4096u) {
             uint8_t buf[8]{};
             for (uint32_t i = 0; i < sz; ++i) {
-                buf[i] = mem_read_impl<uint8_t>(va + i);
+                buf[i] = mem_read_impl<uint8_t>(va + i, force_user);
                 if (dabt_latched) return 0;
             }
             T val = 0;
@@ -2807,7 +2970,7 @@ struct CoreState final : public Dynarmic::A32::UserCallbacks {
             return val;
         }
 
-        const bool usr = is_user_mode();
+        const bool usr = force_user || is_user_mode();
         uint32_t fast_mmio_pa = 0u;
         if (mmu.try_translate_identity_mmio(engine->bus, cp15, va, FUJI_DYN_PERM_READ, usr, fast_mmio_pa)) {
             return dispatch_mmio_read<T>(va, fast_mmio_pa);
@@ -2837,7 +3000,7 @@ struct CoreState final : public Dynarmic::A32::UserCallbacks {
     }
 
     template <typename T>
-    void mem_write_impl(uint32_t va, T val) {
+    void mem_write_impl(uint32_t va, T val, bool force_user = false) {
         if (dabt_latched) return;
         constexpr uint32_t sz = sizeof(T);
         const bool strict_align = (cp15.sctlr & 2u) != 0u;
@@ -2849,13 +3012,13 @@ struct CoreState final : public Dynarmic::A32::UserCallbacks {
             uint8_t buf[8]{};
             std::memcpy(buf, &val, sz);
             for (uint32_t i = 0; i < sz; ++i) {
-                mem_write_impl<uint8_t>(va + i, buf[i]);
+                mem_write_impl<uint8_t>(va + i, buf[i], force_user);
                 if (dabt_latched) return;
             }
             return;
         }
 
-        const bool usr = is_user_mode();
+        const bool usr = force_user || is_user_mode();
         uint32_t fast_mmio_pa = 0u;
         if (mmu.try_translate_identity_mmio(engine->bus, cp15, va, FUJI_DYN_PERM_WRITE, usr, fast_mmio_pa)) {
             dispatch_mmio_write<T>(va, fast_mmio_pa, val);
@@ -3215,6 +3378,10 @@ struct CoreState final : public Dynarmic::A32::UserCallbacks {
             jit->Regs()[15] = pc;
             fault_addr = pc;
             fault_status = last_pabt_fsr ? last_pabt_fsr : FAULT_SECTION_TRANSLATION;
+            /* Evict the cached NoExecuteFault stub block at pc so once the guest OS demand-pages
+             * the code page and returns to pc, Dynarmic re-fetches the real instruction. */
+            engine->code_pages_dirty.store(true, std::memory_order_release);
+            request_jit_inval(pc & ~3u, 4u);
             if ((engine->auto_excp_mask & FUJI_DYN_AUTO_EXCP_PABT) != 0u) {
                 deliver_pabt_internal(fault_addr, fault_status);
                 return;
@@ -3229,6 +3396,10 @@ struct CoreState final : public Dynarmic::A32::UserCallbacks {
         case Exc::Breakpoint: {
             auto maybe_w = peek_code_u32(pc);
             stop_insn = maybe_w.value_or(0u);
+            if (exception == Exc::UndefinedInstruction && maybe_w.has_value() &&
+                try_emulate_arm_unpriv_ldst(pc, *maybe_w)) {
+                return;
+            }
             jit->Regs()[15] = pc;
             if ((engine->auto_excp_mask & FUJI_DYN_AUTO_EXCP_UNDEF) != 0u) {
                 deliver_undef_internal();
@@ -3238,6 +3409,131 @@ struct CoreState final : public Dynarmic::A32::UserCallbacks {
             break;
         }
         }
+    }
+
+    static bool arm_cond_passed(uint32_t cond, uint32_t cpsr) {
+        const bool N = ((cpsr >> 31) & 1u) != 0u;
+        const bool Z = ((cpsr >> 30) & 1u) != 0u;
+        const bool C = ((cpsr >> 29) & 1u) != 0u;
+        const bool V = ((cpsr >> 28) & 1u) != 0u;
+        switch (cond & 0xFu) {
+        case 0x0: return Z;
+        case 0x1: return !Z;
+        case 0x2: return C;
+        case 0x3: return !C;
+        case 0x4: return N;
+        case 0x5: return !N;
+        case 0x6: return V;
+        case 0x7: return !V;
+        case 0x8: return C && !Z;
+        case 0x9: return !C || Z;
+        case 0xA: return N == V;
+        case 0xB: return N != V;
+        case 0xC: return !Z && (N == V);
+        case 0xD: return Z || (N != V);
+        case 0xE: return true;
+        default:  return false;
+        }
+    }
+
+    /* Emulate ARMv7-A unprivileged load/store instructions (LDRT/STRT/LDRBT/STRBT/
+     * LDRHT/STRHT/LDRSBT/LDRSHT), which Dynarmic A32 frontend stubs as UndefinedInstruction.
+     * Used by Linux ARM __clear_user_std (strbtne) and uaccess helpers. */
+    bool try_emulate_arm_unpriv_ldst(uint32_t pc, uint32_t w) {
+        const uint32_t cpsr = jit->Cpsr();
+        if ((cpsr & (1u << 5)) != 0u) return false; /* Thumb state */
+        const uint32_t cond = (w >> 28) & 0xFu;
+        if (cond == 0xFu) return false;
+
+        const bool is_std_imm = (w & 0x0F200000u) == 0x04200000u; /* LDRT/STRT/LDRBT/STRBT A1 */
+        const bool is_std_reg = (w & 0x0F200010u) == 0x06200000u; /* LDRT/STRT/LDRBT/STRBT A2 */
+        const bool is_extra   = (w & 0x0F200090u) == 0x00200090u && ((w >> 5) & 3u) != 0u; /* LDRHT/STRHT/LDRSBT/LDRSHT */
+        if (!is_std_imm && !is_std_reg && !is_extra) return false;
+
+        if (!arm_cond_passed(cond, cpsr)) {
+            jit->Regs()[15] = pc + 4u;
+            return true;
+        }
+
+        const uint32_t rn = (w >> 16) & 0xFu;
+        const uint32_t rt = (w >> 12) & 0xFu;
+        if (rn == 15u || rt == 15u) return false;
+        const bool U = ((w >> 23) & 1u) != 0u;
+        const bool L = ((w >> 20) & 1u) != 0u;
+
+        uint32_t offset = 0u;
+        if (is_std_imm) {
+            offset = w & 0xFFFu;
+        } else if (is_std_reg) {
+            const uint32_t rm = w & 0xFu;
+            if (rm == 15u) return false;
+            const uint32_t val = jit->Regs()[rm];
+            const uint32_t stype = (w >> 5) & 3u;
+            const uint32_t shift_n = (w >> 7) & 0x1Fu;
+            switch (stype) {
+            case 0u: offset = val << shift_n; break;
+            case 1u: offset = (shift_n == 0u) ? 0u : (val >> shift_n); break;
+            case 2u: offset = (shift_n == 0u) ? static_cast<uint32_t>(static_cast<int32_t>(val) >> 31)
+                                              : static_cast<uint32_t>(static_cast<int32_t>(val) >> shift_n); break;
+            case 3u:
+                if (shift_n == 0u) {
+                    const uint32_t carry = (cpsr >> 29) & 1u;
+                    offset = (carry << 31) | (val >> 1);
+                } else {
+                    offset = (val >> shift_n) | (val << (32u - shift_n));
+                }
+                break;
+            }
+        } else {
+            /* Extra unprivileged halfword/signed-byte: bit22=1 imm8, bit22=0 reg Rm */
+            if (((w >> 22) & 1u) != 0u) {
+                offset = ((w >> 4) & 0xF0u) | (w & 0xFu);
+            } else {
+                const uint32_t rm = w & 0xFu;
+                if (rm == 15u) return false;
+                offset = jit->Regs()[rm];
+            }
+        }
+
+        const uint32_t addr = jit->Regs()[rn];
+        const uint32_t new_rn = U ? (addr + offset) : (addr - offset);
+        /* Point PC at the faulting instruction in case mem_*_impl latches a Data Abort. */
+        jit->Regs()[15] = pc;
+
+        uint32_t loaded = 0u;
+        if (is_std_imm || is_std_reg) {
+            const bool B = ((w >> 22) & 1u) != 0u;
+            if (L) {
+                loaded = B ? static_cast<uint32_t>(mem_read_impl<uint8_t>(addr, true))
+                           : mem_read_impl<uint32_t>(addr, true);
+            } else {
+                const uint32_t val = jit->Regs()[rt];
+                if (B) mem_write_impl<uint8_t>(addr, static_cast<uint8_t>(val & 0xFFu), true);
+                else   mem_write_impl<uint32_t>(addr, val, true);
+            }
+        } else {
+            const uint32_t op2 = (w >> 5) & 3u; /* 1=H, 2=SB, 3=SH */
+            if (!L) {
+                if (op2 != 1u) return false; /* Only STRHT exists for L=0 */
+                mem_write_impl<uint16_t>(addr, static_cast<uint16_t>(jit->Regs()[rt] & 0xFFFFu), true);
+            } else if (op2 == 1u) {
+                loaded = static_cast<uint32_t>(mem_read_impl<uint16_t>(addr, true));
+            } else if (op2 == 2u) {
+                loaded = static_cast<uint32_t>(static_cast<int32_t>(static_cast<int8_t>(mem_read_impl<uint8_t>(addr, true))));
+            } else {
+                loaded = static_cast<uint32_t>(static_cast<int32_t>(static_cast<int16_t>(mem_read_impl<uint16_t>(addr, true))));
+            }
+        }
+
+        if (dabt_latched || stop_latched) {
+            return true; /* Data Abort latched at PC=pc */
+        }
+        jit->Regs()[rn] = new_rn;
+        if (L && rt != rn) {
+            jit->Regs()[rt] = loaded;
+        }
+        jit->Regs()[15] = pc + 4u;
+        return true;
     }
 
     /* ---- Timing callbacks ---- */
@@ -3329,9 +3625,73 @@ struct CoreState final : public Dynarmic::A32::UserCallbacks {
         return 0;
     }
 
+    /* ARMv7-A Base Restored Data Abort Model (ARM DDI 0406C §B1.9.7):
+     * Dynarmic's A32 GetAddress() updates Rn before calling MemoryRead/MemoryWrite.
+     * When a writeback load/store faults (e.g. Linux demand paging in __clear_user_std),
+     * restore Rn to its pre-instruction value before delivering DABT so retrying the
+     * faulting instruction does not double-increment Rn. */
+    void rollback_base_reg_on_dabt(uint32_t fault_pc, uint32_t cpsr) {
+        if ((cpsr & CPSR_T_BIT) != 0u) return;
+        auto maybe_w = peek_code_u32(fault_pc);
+        if (!maybe_w.has_value()) return;
+        const uint32_t w = *maybe_w;
+        const uint32_t cond = (w >> 28) & 0xFu;
+        if (cond == 0xFu) return;
+
+        const bool P = ((w >> 24) & 1u) != 0u;
+        const bool U = ((w >> 23) & 1u) != 0u;
+        const bool W = ((w >> 21) & 1u) != 0u;
+        /* Only post-indexed (P=0, W=0) and pre-indexed writeback (P=1, W=1) go through
+         * Dynarmic GetAddress() writeback; (P=0, W=1) unprivileged *T is handled by
+         * try_emulate_arm_unpriv_ldst which defers Rn update until after memory access. */
+        if (P != W) return;
+
+        const uint32_t rn = (w >> 16) & 0xFu;
+        if (rn == 15u) return;
+
+        uint32_t offset = 0u;
+        if ((w & 0x0E000000u) == 0x04000000u) {
+            offset = w & 0xFFFu;
+        } else if ((w & 0x0E000010u) == 0x06000000u) {
+            const uint32_t rm = w & 0xFu;
+            if (rm == 15u || rm == rn) return;
+            const uint32_t val = jit->Regs()[rm];
+            const uint32_t stype = (w >> 5) & 3u;
+            const uint32_t shift_n = (w >> 7) & 0x1Fu;
+            switch (stype) {
+            case 0u: offset = val << shift_n; break;
+            case 1u: offset = (shift_n == 0u) ? 0u : (val >> shift_n); break;
+            case 2u: offset = (shift_n == 0u) ? static_cast<uint32_t>(static_cast<int32_t>(val) >> 31)
+                                              : static_cast<uint32_t>(static_cast<int32_t>(val) >> shift_n); break;
+            case 3u:
+                if (shift_n == 0u) {
+                    const uint32_t carry = (cpsr >> 29) & 1u;
+                    offset = (carry << 31) | (val >> 1);
+                } else {
+                    offset = (val >> shift_n) | (val << (32u - shift_n));
+                }
+                break;
+            }
+        } else if ((w & 0x0E000090u) == 0x00000090u && ((w >> 5) & 3u) != 0u) {
+            if (((w >> 22) & 1u) != 0u) {
+                offset = ((w >> 4) & 0xF0u) | (w & 0xFu);
+            } else {
+                const uint32_t rm = w & 0xFu;
+                if (rm == 15u || rm == rn) return;
+                offset = jit->Regs()[rm];
+            }
+        } else {
+            return;
+        }
+
+        auto& regs = jit->Regs();
+        regs[rn] = U ? (regs[rn] - offset) : (regs[rn] + offset);
+    }
+
     int32_t deliver_dabt_internal(uint32_t far, uint32_t fsr) {
         uint32_t cpsr = jit->Cpsr();
         bool was_user = (cpsr & CPSR_M_MASK) == FUJI_DYN_MODE_USR;
+        rollback_base_reg_on_dabt(jit->Regs()[15], cpsr);
         deliver_dabt(jit->Regs(), cpsr, banked, cp15, far, fsr);
         jit->SetCpsr(cpsr);
         jit->ClearExclusiveState();
@@ -3444,6 +3804,7 @@ static void execute_core_mt_epoch(FujiDynEngine* engine, CoreState* c,
         }
 
         Dynarmic::HaltReason hr = c->jit->Run();
+        c->drain_pending_jit_inval();
 
         if (c->core_id == 0u && engine->mt_mmio_pending_mask.load(std::memory_order_acquire) != 0u) {
             engine->drain_worker_mmio_requests();
@@ -4218,6 +4579,7 @@ FUJI_DYN_EXPORT int32_t fuji_dyn_run_fast(FujiDynEngine* engine, uint32_t core,
                           Dynarmic::HaltReason::UserDefined2 |
                           Dynarmic::HaltReason::MemoryAbort);
         Dynarmic::HaltReason hr = c->jit->Run();
+        c->drain_pending_jit_inval();
 
         if (c->stop_latched) {
             if (c->stop_reason == FUJI_DYN_STOP_FAULT_DABT &&

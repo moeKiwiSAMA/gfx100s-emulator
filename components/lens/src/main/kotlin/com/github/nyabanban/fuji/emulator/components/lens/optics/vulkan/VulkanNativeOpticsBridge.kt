@@ -30,6 +30,7 @@ import java.util.Locale
 class VulkanNativeOpticsBridge private constructor(
     val libraryPath: Path,
     private val libraryArena: Arena,
+    private val resizeFacePreviewFn: MethodHandle?,
     private val abiVersionFn: MethodHandle,
     private val enumerateDevicesFn: MethodHandle?,
     private val createForDeviceFn: MethodHandle?,
@@ -54,6 +55,7 @@ class VulkanNativeOpticsBridge private constructor(
     private val renderCachedSceneOpticsFn: MethodHandle?,
     private val renderCachedSceneToBayerFn: MethodHandle?,
     private val renderCachedSceneToIspYuvFn: MethodHandle?,
+    private val renderCachedSceneToIspUyvyViewFn: MethodHandle?,
     private val renderCachedSceneToIspYuvWithStatsFn: MethodHandle?,
     private val submitAsyncToBayerFn: MethodHandle?,
     private val collectAsyncBayerFn: MethodHandle?,
@@ -86,6 +88,7 @@ class VulkanNativeOpticsBridge private constructor(
     private val lutBStageSeg: MemorySegment = fixedStageArena.allocate(4096L * 4L, 16L)
     private val statsParamSeg: MemorySegment = fixedStageArena.allocate(STATS_PARAMS_BYTES, 16L)
     private val statsOutSeg: MemorySegment = fixedStageArena.allocate(STATS_OUTPUT_BYTES, 16L)
+    private val mappedUyvyAddress = fixedStageArena.allocate(ValueLayout.ADDRESS)
     private val outMsSeg: MemorySegment = fixedStageArena.allocate(ValueLayout.JAVA_DOUBLE, 8L)
     private val outTicketSeg: MemorySegment = fixedStageArena.allocate(ValueLayout.JAVA_LONG, 8L)
     private val pipelineStatsSeg: MemorySegment = fixedStageArena.allocate(PIPELINE_STATS_BYTES, 8L)
@@ -205,6 +208,16 @@ class VulkanNativeOpticsBridge private constructor(
         val deviceInfo: NativeDeviceInfo?,
         val errorMessage: String,
     )
+
+    val supportsFacePreviewResize: Boolean get() = resizeFacePreviewFn != null
+
+    fun resizeFacePreview(ctx: MemorySegment, source: MemorySegment, sourceStrideBytes: Int, destination: MemorySegment, yyuv: Boolean): Boolean {
+        val fn = resizeFacePreviewFn ?: return false
+        if (!source.isNative || !destination.isNative || destination.isReadOnly) return false
+        val rc = fn.invokeExact(ctx, source, source.byteSize(), sourceStrideBytes, destination,
+            destination.byteSize(), if (yyuv) 1 else 0, MemorySegment.NULL) as Int
+        return rc == FUJI_VK_OK
+    }
 
     fun abiVersion(): Int = abiVersionFn.invokeExact() as Int
 
@@ -839,8 +852,9 @@ class VulkanNativeOpticsBridge private constructor(
             return FUJI_VK_ERR_INVALID_ARG to 0.0
         }
         val wantStats = statsRequest != null && outStatsWords != null && outStatsWords.size >= LiveViewIspFusionRequest.STATS_OUTPUT_WORDS
+        val mappedFn = if (ispParams.outputFormat == ISP_FMT_UYVY422) renderCachedSceneToIspUyvyViewFn else null
         val fnStats = if (wantStats) renderCachedSceneToIspYuvWithStatsFn else null
-        val fn = if (fnStats != null) null else (renderCachedSceneToIspYuvFn ?: return -6 to 0.0)
+        val fn = if (mappedFn != null || fnStats != null) null else (renderCachedSceneToIspYuvFn ?: return -6 to 0.0)
         synchronized(stagingLock) {
             val fSeg = if (filterParams != null) {
                 writeFilterParams(filterParamSeg, filterParams)
@@ -862,12 +876,17 @@ class VulkanNativeOpticsBridge private constructor(
                 MemorySegment.copy(lutB, 0, lutBStageSeg, ValueLayout.JAVA_INT, 0L, 4096)
                 lutBStageSeg
             } else MemorySegment.NULL
-            val ySeg = ensureOutStage(outYByteCount.toLong())
-            val uvSeg = if (outUvPlane != null && outUvByteCount > 0) ensureUvStage(outUvByteCount.toLong()) else MemorySegment.NULL
+            val ySeg = if (mappedFn == null) ensureOutStage(outYByteCount.toLong()) else MemorySegment.NULL
+            val uvSeg = if (mappedFn == null && outUvPlane != null && outUvByteCount > 0) ensureUvStage(outUvByteCount.toLong()) else MemorySegment.NULL
             writeIspParams(ispParamSeg, ispParams)
             outMsSeg.set(ValueLayout.JAVA_DOUBLE, 0L, 0.0)
-            val rc = if (fnStats != null && statsRequest != null) {
-                writeStatsParams(statsParamSeg, cmosParams.width, cmosParams.height, statsRequest)
+            if (wantStats && (mappedFn != null || fnStats != null)) writeStatsParams(statsParamSeg, cmosParams.width, cmosParams.height, statsRequest)
+            val rc = if (mappedFn != null) {
+                val statsIn = if (wantStats) statsParamSeg else MemorySegment.NULL
+                val statsOut = if (wantStats) statsOutSeg else MemorySegment.NULL
+                mappedFn.invokeExact(ctx, sceneKey, fSeg, opticsParamSeg, cmosParamSeg, lutRSeg, lutGSeg, lutBSeg,
+                    ispParamSeg, statsIn, statsOut, mappedUyvyAddress, outYByteCount.toLong(), outMsSeg) as Int
+            } else if (fnStats != null && statsRequest != null) {
                 fnStats.invokeExact(
                     ctx,
                     sceneKey,
@@ -907,8 +926,15 @@ class VulkanNativeOpticsBridge private constructor(
                 -6
             }
             if (rc == FUJI_VK_OK) {
-                copyIspReadback(ispParams, ySeg, outYOrPacked, uvSeg, outUvPlane)
-                if (fnStats != null && outStatsWords != null) {
+                if (mappedFn == null) {
+                    copyIspReadback(ispParams, ySeg, outYOrPacked, uvSeg, outUvPlane)
+                } else {
+                    // Consume the completed context-owned mapping under the same submission lock.
+                    val bytes = ispParams.dstWidth.toLong() * 2 * ispParams.dstHeight
+                    val view = mappedUyvyAddress.get(ValueLayout.ADDRESS, 0L).reinterpret(bytes)
+                    copyIspReadback(ispParams, view, outYOrPacked, MemorySegment.NULL, null, tightlyPacked = true)
+                }
+                if (wantStats && (mappedFn != null || fnStats != null)) {
                     MemorySegment.copy(statsOutSeg, ValueLayout.JAVA_INT, 0L, outStatsWords, 0, LiveViewIspFusionRequest.STATS_OUTPUT_WORDS)
                 }
             }
@@ -1311,7 +1337,7 @@ class VulkanNativeOpticsBridge private constructor(
 
         private fun copyIspReadback(
             params: IspDemosaicParamsStruct, y: MemorySegment, yOutput: ByteArray,
-            uv: MemorySegment, uvOutput: ByteArray?,
+            uv: MemorySegment, uvOutput: ByteArray?, tightlyPacked: Boolean = false,
         ) {
             val semiPlanar = params.outputFormat == ISP_FMT_NV16 || params.outputFormat == ISP_FMT_NV12
             val rowBytes = if (semiPlanar) params.dstWidth else params.dstWidth * 2
@@ -1322,7 +1348,8 @@ class VulkanNativeOpticsBridge private constructor(
                 } else {
                     for (row in 0 until rows) {
                         val offset = row * stride
-                        MemorySegment.copy(from, ValueLayout.JAVA_BYTE, offset.toLong(), to, offset, rowBytes)
+                        val sourceOffset = if (tightlyPacked) row.toLong() * rowBytes else offset.toLong()
+                        MemorySegment.copy(from, ValueLayout.JAVA_BYTE, sourceOffset, to, offset, rowBytes)
                     }
                 }
             }
@@ -1717,6 +1744,22 @@ class VulkanNativeOpticsBridge private constructor(
                                 ValueLayout.ADDRESS,
                             ),
                         )
+                    }.orElse(null),
+                    resizeFacePreviewFn = sym.find("fuji_vk_resize_1024_to_640_422").map { addr ->
+                        linker.downcallHandle(addr, FunctionDescriptor.of(
+                            ValueLayout.JAVA_INT, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.JAVA_LONG,
+                            ValueLayout.JAVA_INT, ValueLayout.ADDRESS, ValueLayout.JAVA_LONG, ValueLayout.JAVA_INT,
+                            ValueLayout.ADDRESS,
+                        ))
+                    }.orElse(null),
+                    renderCachedSceneToIspUyvyViewFn = sym.find("fuji_vk_render_cached_scene_to_isp_uyvy_view").map { addr ->
+                        linker.downcallHandle(addr, FunctionDescriptor.of(
+                            ValueLayout.JAVA_INT, ValueLayout.ADDRESS, ValueLayout.JAVA_LONG,
+                            ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS,
+                            ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS,
+                            ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS,
+                            ValueLayout.JAVA_LONG, ValueLayout.ADDRESS,
+                        ))
                     }.orElse(null),
                     renderCachedSceneToIspYuvWithStatsFn = sym.find("fuji_vk_render_cached_scene_to_isp_yuv_with_stats").map { addr ->
                         linker.downcallHandle(

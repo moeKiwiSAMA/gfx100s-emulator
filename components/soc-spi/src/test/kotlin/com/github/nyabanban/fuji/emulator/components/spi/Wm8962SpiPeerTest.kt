@@ -76,6 +76,23 @@ class Wm8962SpiPeerTest {
     }
 
     @Test
+    fun delayedSpiObservationPreservesRouteAtScheduledWordCompletion() {
+        val codec = Wm8962SpiPeer { 1000L }
+        fun write(reg: Int, value: Int, dataTick: Long) {
+            codec.exchange(16, reg, dataTick - 2)
+            codec.exchange(16, value, dataTick)
+        }
+        write(0x1a, 0x60, 18)
+        write(0x48, 1, 31)
+        write(0x05, 8, 64)
+        assertEquals(AudioSinkKind.HEADPHONE_STEREO, codec.outputRouteAt(31).route.activeSink)
+        assertEquals(64L, codec.outputRouteAt(63).untilExclusive)
+        assertEquals(AudioSinkKind.MUTED, codec.outputRouteAt(64).route.activeSink)
+        codec.restore(null)
+        assertEquals(AudioSinkKind.MUTED, codec.outputRouteAt(31).route.activeSink)
+    }
+
+    @Test
     fun spi4Wm8962HandlesHeaderInitFullDsp2DownloadBank14CalibrationAndReadback() {
         val (ctx, comp, spi4) = createSpi4WithWm8962()
         val codec = assertIs<AudioCodecControlPort>(ctx.ports.find(Wm8962SpiPeer.CODEC_PORT, AudioCodecControlPort::class.java))

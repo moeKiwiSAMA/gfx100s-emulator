@@ -16,6 +16,93 @@ import kotlin.test.assertNull
 
 class ImageDmaMemoryTest {
     @Test
+    fun packed102MpFrameWritesBankOneWithoutAliasingCpuFlash() {
+        // S5 @ 0x02733450: base low, base high and size are at +8, +12 and +24.
+        val base = 0xf300_0000L
+        val poolBytes = 0x0c8f_7440L
+        val flash = byteArrayOf(0x42)
+        val cpu = object : DirectGuestRamPort {
+            override fun check(address: Long, size: Long, write: Boolean) {
+                require(!write && address == base && size == 1L) { "Outside CPU flash test aperture" }
+            }
+            override fun sliceDirect(address: Long, size: Long, write: Boolean): MemorySegment {
+                check(address, size, write)
+                return MemorySegment.ofArray(flash)
+            }
+            override fun read(address: Long, destination: ByteBuffer) {
+                destination.put(sliceDirect(address, destination.remaining().toLong(), false).asByteBuffer())
+            }
+            override fun write(address: Long, source: ByteBuffer) = error("Unexpected CPU flash write")
+            override fun notifyDirectWrite(address: Long, size: Long) = error("Unexpected CPU invalidation")
+        }
+        val image = ImageDmaMemory(cpu) {}
+
+        // Captured 0x490100 packed output. The last row ends after the active samples, before its padding.
+        val stride = 23_744L
+        val span = 8_763 * stride + 11_664 * 2
+        assertEquals(0xff67_3b60L, base + span)
+        image.check(base, span, true)
+        val direct = assertNotNull(image.sliceDirect(base, span, true))
+        val pair = byteArrayOf(0x62, 0x13, 0x8c.toByte(), 0x57)
+        val offsets = listOf(0L, 4_382L * stride, span - pair.size)
+        for (offset in offsets) direct.asSlice(offset, pair.size.toLong()).asByteBuffer().put(pair)
+        image.notifyDirectWrite(base, span)
+        for (offset in offsets) {
+            val sample = ByteArray(pair.size)
+            image.read(base + offset, ByteBuffer.wrap(sample))
+            assertContentEquals(pair, sample)
+        }
+        val last = base + poolBytes - 1
+        image.write(last, ByteBuffer.wrap(byteArrayOf(17)))
+        assertFailsWith<IllegalArgumentException> { image.write(last, ByteBuffer.wrap(pair)) }
+        assertEquals(17, assertNotNull(image.sliceDirect(last, 1, false)).get(ValueLayout.JAVA_BYTE, 0).toInt())
+        assertFailsWith<IllegalArgumentException> { image.check(base - 1, 2, true) }
+        assertEquals(0x42, cpu.sliceDirect(base, 1, false).get(ValueLayout.JAVA_BYTE, 0).toInt())
+        image.close()
+        // Re-allocating after close starts cleanly zeroed rather than exposing freed memory.
+        assertEquals(0, assertNotNull(image.sliceDirect(last, 1, false)).get(ValueLayout.JAVA_BYTE, 0).toInt())
+        image.close()
+    }
+
+    @Test
+    fun splitsAStillScanlineBetweenCpuAndHighPhysicalMemory() {
+        val edge = 0x1_0000_0000L
+        val bytes = ByteArray(8)
+        val notified = mutableListOf<Long>()
+        val cpu = object : DirectGuestRamPort {
+            override fun check(address: Long, size: Long, write: Boolean) {
+                require(address >= edge - 4 && address + size <= edge + 4)
+                require(address >= edge || address + size <= edge)
+            }
+            override fun sliceDirect(address: Long, size: Long, write: Boolean): MemorySegment {
+                check(address, size, write)
+                return MemorySegment.ofArray(bytes).asSlice(address - edge + 4, size)
+            }
+            override fun read(address: Long, destination: ByteBuffer) {
+                destination.put(sliceDirect(address, destination.remaining().toLong(), false).asByteBuffer())
+            }
+            override fun write(address: Long, source: ByteBuffer) {
+                sliceDirect(address, source.remaining().toLong(), true).asByteBuffer().put(source)
+            }
+            override fun notifyDirectWrite(address: Long, size: Long) {
+                check(address, size, true)
+                notified += address
+            }
+        }
+        val image = ImageDmaMemory(cpu) {}
+        val expected = byteArrayOf(12, 34, 56, 78, 90, 98)
+        image.write(edge - 3, ByteBuffer.wrap(expected))
+        val result = ByteArray(expected.size)
+        image.read(edge - 3, ByteBuffer.wrap(result))
+        assertContentEquals(expected, result)
+        assertEquals(0, bytes.first().toInt())
+        assertEquals(0, bytes.last().toInt())
+        assertNull(image.sliceDirect(edge - 3, 6, false))
+        image.notifyDirectWrite(edge - 3, 6)
+        assertEquals(listOf(edge - 3, edge), notified)
+    }
+
+    @Test
     fun splitsImageRowAtFlashBoundaryAndKeepsBothScratchBanksIndependent(@TempDir snapshots: Path) {
         val edge = 0xf000_0000L
         val ddr = ByteArray(16)

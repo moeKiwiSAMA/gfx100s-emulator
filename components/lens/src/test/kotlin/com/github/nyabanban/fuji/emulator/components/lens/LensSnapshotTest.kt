@@ -8,6 +8,7 @@ import kotlin.test.*
 class LensSnapshotTest {
     private class LensTestHarness {
         var nowTick: Long = 0L
+        lateinit var facePreviewScaler: FacePreviewScalerPort
         lateinit var lensPort: LensPort
         var depthPort: SceneDepthPort? = null
         val context = object : ComponentContext {
@@ -20,6 +21,10 @@ class LensSnapshotTest {
                         "lens" -> {
                             assertEquals<Class<*>>(LensPort::class.java, type)
                             lensPort = port as LensPort
+                        }
+                        "lens.uniresz" -> {
+                            assertEquals<Class<*>>(FacePreviewScalerPort::class.java, type)
+                            facePreviewScaler = assertIs<FacePreviewScalerPort>(port)
                         }
                         SceneDepthPort.PORT_NAME -> {
                             assertEquals<Class<*>>(SceneDepthPort::class.java, type)
@@ -60,6 +65,7 @@ class LensSnapshotTest {
 
         val harnessOne = LensTestHarness()
         val lensOne = factory.create(harnessOne.context, defaultConfig) as StatefulComponent
+        assertSame<Any>(lensOne, harnessOne.facePreviewScaler)
         lensOne.applySettings(
             mapOf(
                 "model" to "gf-80mm-f1.7",

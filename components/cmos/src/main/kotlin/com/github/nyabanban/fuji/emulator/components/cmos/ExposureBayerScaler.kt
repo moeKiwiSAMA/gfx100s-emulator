@@ -11,12 +11,39 @@ internal class ExposureBayerScaler {
     private var lastRatio = Double.NaN
     private var lastBlack = -1
     private var lastDepth = -1
+    private var cachedScaled = ByteArray(0)
+    private var cachedGen = -1L
+    private var cachedSize = -1
+    private var cachedRatio = Double.NaN
+    private var cachedBlack = -1
+    private var cachedDepth = -1
 
-    fun copy(src: ByteArray, dst: ByteBuffer, ratio: Double, blackLevel: Int, bitDepth: Int) {
+    fun copy(
+        src: ByteArray,
+        dst: ByteBuffer,
+        ratio: Double,
+        blackLevel: Int,
+        bitDepth: Int,
+        sourceGeneration: Long = -1L,
+    ) {
         if (dst.remaining() < src.size) throw BufferOverflowException()
         val depth = bitDepth.coerceIn(8, 16)
         val maxAdu = (1 shl depth) - 1
         val black = blackLevel.coerceIn(0, maxAdu)
+        if (ratio == 1.0 && depth == 16 && black == 0) {
+            dst.put(src)
+            return
+        }
+        if (sourceGeneration >= 0L &&
+            sourceGeneration == cachedGen &&
+            src.size == cachedSize &&
+            ratio == cachedRatio &&
+            black == cachedBlack &&
+            depth == cachedDepth
+        ) {
+            dst.put(cachedScaled, 0, src.size)
+            return
+        }
         if (ratio != lastRatio || black != lastBlack || depth != lastDepth) {
             val sampleCount = if (depth == 8) 256 else table.size
             if (ratio in 0.0..256.0) {
@@ -34,6 +61,28 @@ internal class ExposureBayerScaler {
             lastRatio = ratio
             lastBlack = black
             lastDepth = depth
+        }
+
+        if (sourceGeneration >= 0L) {
+            if (cachedScaled.size < src.size) cachedScaled = ByteArray(src.size)
+            val out = cachedScaled
+            if (depth == 8) {
+                for (i in src.indices) out[i] = table[src[i].toInt() and 0xff].toByte()
+            } else {
+                var index = 0
+                while (index < src.size) {
+                    val sample = ARRAY_SHORT.get(src, index) as Short
+                    ARRAY_SHORT.set(out, index, table[sample.toInt() and 0xffff])
+                    index += 2
+                }
+            }
+            cachedGen = sourceGeneration
+            cachedSize = src.size
+            cachedRatio = ratio
+            cachedBlack = black
+            cachedDepth = depth
+            dst.put(out, 0, src.size)
+            return
         }
 
         if (depth == 8) {

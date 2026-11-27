@@ -23,6 +23,7 @@ compute_source_sha() {
         "${SCRIPT_DIR}/fuji_vulkan_optics.h" \
         "${SCRIPT_DIR}/fuji_vulkan_pipeline_cache.h" \
         "${SCRIPT_DIR}/fuji_vulkan_shaders_spirv.h" \
+        "${SCRIPT_DIR}/fuji_vulkan_uniresz_spirv.h" \
         "${SCRIPT_DIR}/fuji_vulkan_pipeline_cache.cpp" \
         "${SCRIPT_DIR}/fuji_vulkan_optics.cpp" \
         "${SCRIPT_DIR}/fuji_vulkan_stats.h" \

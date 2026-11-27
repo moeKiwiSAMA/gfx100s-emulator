@@ -86,4 +86,30 @@ class ExposureBayerScalerTest {
             }
         }
     }
+
+    @Test
+    fun sourceGenerationCacheMatchesDirectScalingAndInvalidatesOnChange() {
+        val scaler = ExposureBayerScaler()
+        val srcA = ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN)
+            .putShort(100).putShort(500).putShort(1000).putShort(2000).array()
+        val srcB = ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN)
+            .putShort(200).putShort(600).putShort(1200).putShort(3000).array()
+        val direct = ByteBuffer.allocate(8)
+        scaler.copy(srcA, direct, 1.5, 64, 14)
+
+        val cached1 = ByteBuffer.allocate(8)
+        scaler.copy(srcA, cached1, 1.5, 64, 14, sourceGeneration = 7L)
+        val cached2 = ByteBuffer.allocateDirect(8)
+        scaler.copy(srcA, cached2, 1.5, 64, 14, sourceGeneration = 7L)
+        val cached2Bytes = ByteArray(8)
+        cached2.flip().get(cached2Bytes)
+        assertContentEquals(direct.array(), cached1.array())
+        assertContentEquals(direct.array(), cached2Bytes)
+
+        val directB = ByteBuffer.allocate(8)
+        scaler.copy(srcB, directB, 1.5, 64, 14)
+        val cachedB = ByteBuffer.allocate(8)
+        scaler.copy(srcB, cachedB, 1.5, 64, 14, sourceGeneration = 8L)
+        assertContentEquals(directB.array(), cachedB.array())
+    }
 }

@@ -21,8 +21,10 @@ import java.nio.ByteBuffer
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.locks.ReentrantLock
 import java.util.logging.Level
 import java.util.logging.Logger
+import kotlin.concurrent.withLock
 import kotlin.math.cos
 import kotlin.math.pow
 import kotlin.math.sin
@@ -44,7 +46,7 @@ class VulkanOpticalBackend(
     private val logger: Logger = Logger.getLogger(VulkanOpticalBackend::class.java.name)
     private val closed = AtomicBoolean(false)
     private val framesRendered = AtomicLong(0L)
-    private val renderLock = Any()
+    private val renderLock = ReentrantLock()
     private val cpuFallbackLock = Any()
     private var packInScratch: FloatArray = FloatArray(0)
     private var packOutScratch: FloatArray = FloatArray(0)
@@ -230,7 +232,7 @@ class VulkanOpticalBackend(
     override fun validateCustomSpirvPasses(passes: List<CustomSpirvPassSpec>): String? {
         if (passes.isEmpty()) return null
         ensureOpen()
-        synchronized(renderLock) {
+        renderLock.withLock {
             val br = bridge
             val ctx = vkContext
             if (active != ActiveOpticsBackend.VULKAN || br == null || ctx == MemorySegment.NULL || !br.supportsCustomSpirv) {
@@ -251,7 +253,7 @@ class VulkanOpticalBackend(
 
     override fun customSpirvCacheStats(): CustomSpirvCacheStats? {
         ensureOpen()
-        synchronized(renderLock) {
+        renderLock.withLock {
             val br = bridge
             val ctx = vkContext
             if (active != ActiveOpticsBackend.VULKAN || br == null || ctx == MemorySegment.NULL) return null
@@ -382,7 +384,7 @@ class VulkanOpticalBackend(
         frameIndex: Long,
     ): LinearRgbImage {
         ensureOpen()
-        synchronized(renderLock) {
+        renderLock.withLock {
             val br = bridge
             val ctx = vkContext
             if (active == ActiveOpticsBackend.VULKAN && br != null && ctx != MemorySegment.NULL &&
@@ -469,7 +471,7 @@ class VulkanOpticalBackend(
     ): Int {
         ensureOpen()
         CmosNoiseModel.validateGeometryAndExposure(geometry, exposure, noiseConfig)
-        synchronized(renderLock) {
+        renderLock.withLock {
             val br = bridge
             val ctx = vkContext
             if (active == ActiveOpticsBackend.VULKAN && br != null && ctx != MemorySegment.NULL &&
@@ -624,7 +626,7 @@ class VulkanOpticalBackend(
         require(destination.remaining() >= requiredBytes) {
             "Destination buffer too small: need $requiredBytes, remaining ${destination.remaining()}"
         }
-        synchronized(renderLock) {
+        renderLock.withLock {
             val br = bridge
             val ctx = vkContext
             if (active == ActiveOpticsBackend.VULKAN && br != null && ctx != MemorySegment.NULL) {
@@ -716,7 +718,7 @@ class VulkanOpticalBackend(
         outStatsWords: IntArray?,
     ): Boolean {
         ensureOpen()
-        synchronized(renderLock) {
+        renderLock.withLock {
             val br = bridge
             val ctx = vkContext
             if (active != ActiveOpticsBackend.VULKAN || br == null || ctx == MemorySegment.NULL ||
@@ -799,6 +801,24 @@ class VulkanOpticalBackend(
         }
     }
 
+    val supportsFacePreviewResize: Boolean
+        get() = active == ActiveOpticsBackend.VULKAN &&
+            bridge?.supportsFacePreviewResize == true &&
+            deviceInfo?.deviceTypeName() != "CPU"
+
+    fun resizeFacePreview(source: MemorySegment, sourceStrideBytes: Int, destination: MemorySegment, yyuv: Boolean): Boolean {
+        // Non-blocking tryLock ensures the main ARM emulation thread never stalls behind an
+        // in-flight AsyncOpticsWorker GPU frame; ImageScalerF000's integer CPU fast path is
+        // byte-identical and completes in <1 ms when the GPU worker holds renderLock.
+        if (!renderLock.tryLock()) return false
+        return try {
+            active == ActiveOpticsBackend.VULKAN && vkContext != MemorySegment.NULL &&
+                bridge?.resizeFacePreview(vkContext, source, sourceStrideBytes, destination, yyuv) == true
+        } finally {
+            renderLock.unlock()
+        }
+    }
+
     override fun supportsGpuScene3d(): Boolean =
         active == ActiveOpticsBackend.VULKAN &&
             bridge?.supportsSceneCache == true &&
@@ -817,7 +837,7 @@ class VulkanOpticalBackend(
         spec: GpuScene3dRenderSpec,
     ): Pair<FloatArray, VulkanScene3dRenderer.DepthGridSnapshot>? {
         ensureOpen()
-        synchronized(renderLock) {
+        renderLock.withLock {
             val renderer = scene3dRenderer ?: return null
             val ctx = vkContext
             if (active != ActiveOpticsBackend.VULKAN || ctx == MemorySegment.NULL) return null
@@ -851,7 +871,7 @@ class VulkanOpticalBackend(
         outStatsWords: IntArray?,
     ): VulkanScene3dRenderer.DepthGridSnapshot? {
         ensureOpen()
-        synchronized(renderLock) {
+        renderLock.withLock {
             val br = bridge
             val renderer = scene3dRenderer
             val ctx = vkContext
@@ -934,7 +954,7 @@ class VulkanOpticalBackend(
     ): Pair<Int, VulkanScene3dRenderer.DepthGridSnapshot>? {
         ensureOpen()
         CmosNoiseModel.validateGeometryAndExposure(geometry, exposure, noiseConfig)
-        synchronized(renderLock) {
+        renderLock.withLock {
             val br = bridge
             val renderer = scene3dRenderer
             val ctx = vkContext
@@ -1119,7 +1139,7 @@ class VulkanOpticalBackend(
 
     override fun close() {
         if (closed.compareAndSet(false, true)) {
-            synchronized(renderLock) {
+            renderLock.withLock {
                 val s3d = scene3dRenderer
                 scene3dRenderer = null
                 runCatching { s3d?.close() }

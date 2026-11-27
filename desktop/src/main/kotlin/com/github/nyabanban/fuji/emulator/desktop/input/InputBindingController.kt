@@ -92,6 +92,14 @@ class InputBindingController(
 
     private val heldKeys = LinkedHashMap<String, CameraInputAction>()
     private val activePad = LinkedHashSet<GamepadInput>()
+    private var lastGamepadFrame = GamepadFrame.DISCONNECTED
+    internal val rightTriggerStage: GamepadInput?
+        get() = when {
+            GamepadInput.RT_FULL in activePad -> GamepadInput.RT_FULL
+            GamepadInput.RT_HALF in activePad -> GamepadInput.RT_HALF
+            else -> null
+        }
+
     private val heldPad = LinkedHashMap<GamepadInput, CameraInputAction>()
     private data class Repeat(val action: CameraInputAction, var nextDueNanos: Long)
     private val repeats = LinkedHashMap<String, Repeat>()
@@ -131,10 +139,13 @@ class InputBindingController(
 
     /** Applies [next]; held inputs whose action changed or was unbound are released first (no stuck buttons). */
     fun updateConfig(next: InputBindingConfig) {
+        val recalibrate = next.gamepadEnabled && config.gamepadEnabled &&
+            (next.triggerFullThreshold != config.triggerFullThreshold || next.twoStageTriggerEnabled != config.twoStageTriggerEnabled)
         if (next.selectedGamepad != config.selectedGamepad) {
             // A different controller takes over: release everything the previous one held.
             releaseAllGamepad()
             activePad.clear()
+            lastGamepadFrame = GamepadFrame.DISCONNECTED
         }
         heldKeys.entries.toList().forEach { (code, action) ->
             if (next.keyboardBindings[action].orEmpty().none { it.keyCode == code }) releaseKeyEntry(code, action)
@@ -146,6 +157,9 @@ class InputBindingController(
         if (!next.gamepadEnabled) {
             publishTriggerLevels(0.0, 0.0)
             publishStatus(status)
+        } else if (recalibrate && lastGamepadFrame.connected && !isCapturing) {
+            // The poller only delivers changed frames. A stationary trigger must follow live calibration too.
+            handleGamepadFrame(lastGamepadFrame)
         }
     }
 
@@ -199,6 +213,7 @@ class InputBindingController(
     // ---------------------------------------------------------------- gamepad
 
     fun handleGamepadFrame(frame: GamepadFrame) {
+        lastGamepadFrame = frame
         val nextStatus = if (frame.connected) {
             GamepadStatus(true, frame.name, frame.slot, backendName, status.devices)
         } else {
@@ -207,18 +222,17 @@ class InputBindingController(
         if (nextStatus != status) publishStatus(nextStatus)
         val nextLt = if (frame.connected && config.gamepadEnabled) frame.lt else 0.0
         val nextRt = if (frame.connected && config.gamepadEnabled) frame.rt else 0.0
-        publishTriggerLevels(nextLt, nextRt)
         val next = if (frame.connected) activeInputs(frame) else emptySet()
-        if (isCapturing) {
-            captureFromPad(next)
-            activePad.clear(); activePad += next
-            return
+        when {
+            isCapturing -> captureFromPad(next)
+            !config.gamepadEnabled || !frame.connected -> releaseAllGamepad()
+            else -> dispatchPadChanges(next)
         }
-        if (!config.gamepadEnabled || !frame.connected) {
-            releaseAllGamepad()
-            activePad.clear(); activePad += next
-            return
-        }
+        activePad.clear(); activePad += next
+        publishTriggerLevels(nextLt, nextRt)
+    }
+
+    private fun dispatchPadChanges(next: Set<GamepadInput>) {
         GamepadInput.entries.reversed().forEach { input ->
             if (input in activePad && input !in next) heldPad[input]?.let { releasePadEntry(input, it) }
         }
@@ -231,7 +245,6 @@ class InputBindingController(
                 }
             }
         }
-        activePad.clear(); activePad += next
     }
 
     fun releaseAllGamepad() {
@@ -266,9 +279,10 @@ class InputBindingController(
         axis(frame.ry, GamepadInput.RS_UP, GamepadInput.RS_DOWN)
         axis(frame.rx, GamepadInput.RS_RIGHT, GamepadInput.RS_LEFT)
         val fullAt = config.triggerFullThreshold
-        val ltHalfAt = minOf(InputBindingConfig.LT_HALF_THRESHOLD, fullAt - 0.10)
+        val ltHalfAt = minOf(InputBindingConfig.LT_HALF_THRESHOLD, (fullAt - 0.10).coerceAtLeast(0.10))
+        val rtHalfAt = minOf(InputBindingConfig.RT_HALF_THRESHOLD, (fullAt - 0.10).coerceAtLeast(0.10))
         trigger(frame.lt, GamepadInput.LT_HALF, GamepadInput.LT_FULL, ltHalfAt, fullAt, out)
-        trigger(frame.rt, GamepadInput.RT_HALF, GamepadInput.RT_FULL, InputBindingConfig.RT_HALF_THRESHOLD, fullAt, out)
+        trigger(frame.rt, GamepadInput.RT_HALF, GamepadInput.RT_FULL, rtHalfAt, fullAt, out)
         return out
     }
 
@@ -278,11 +292,14 @@ class InputBindingController(
         if (config.twoStageTriggerEnabled) {
             if (stage(half, halfAt)) out += half
             if (stage(full, fullAt)) out += full
-        } else if (stage(half, halfAt)) {
-            // Single-stage: one pull past the half threshold presses both stages together (S1 + S2)
-            // and resolves trigger capture directly to the full trigger (RT/LT) instead of RT ½ / LT ½.
-            out += half
-            out += full
+        } else {
+            // Threshold-triggered single-stage mode (default): crossing triggerFullThreshold emits
+            // the primary trigger input cleanly without an independent RT_HALF press fighting
+            // StudioShutter's S1->AF->S2 contact sequencer. When only the half-stage input is bound
+            // (e.g. default LT -> DRIVE), emit that half input at the threshold.
+            val emitFull = isCapturing || config.actionForGamepad(full) != null || config.actionForGamepad(half) == null
+            val primary = if (emitFull) full else half
+            if (stage(primary, fullAt)) out += primary
         }
     }
 

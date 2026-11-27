@@ -431,13 +431,6 @@ FUJI_RENDER_EXPORT void fuji_render_decode_rgba(
 /* ------------------------------------------------------------------------- */
 
 #if FUJI_X86_64
-__attribute__((target("avx2")))
-static inline __m256i div255_rounded_epi32_avx2(__m256i x) {
-    const __m256i c128 = _mm256_set1_epi32(128);
-    __m256i t = _mm256_add_epi32(x, c128);
-    return _mm256_srli_epi32(_mm256_add_epi32(t, _mm256_srli_epi32(t, 8)), 8);
-}
-
 /* Exact Blinn div255Rounded for 16 unsigned 16-bit lanes in 0..65025 (zero overflow: max intermediate = 65407 <= 65535). */
 __attribute__((target("avx2")))
 static inline __m256i div255_rounded_epu16_avx2(__m256i x) {

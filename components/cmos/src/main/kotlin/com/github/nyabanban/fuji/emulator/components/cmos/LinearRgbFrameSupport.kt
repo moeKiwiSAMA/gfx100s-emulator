@@ -95,6 +95,11 @@ internal interface SceneSourceTelemetry {
     val framesDropped: Long
 }
 
+/** Built-in asynchronous producers publish immutable complete images independently of the camera clock. */
+internal interface PackedReadoutSource {
+    fun acquirePackedFrame(): PackedRawFrame?
+}
+
 /**
  * Marker implemented by live asynchronously-updating streaming [SceneSource] backends
  * (`ffmpeg-pipe`, `screen-capture`, `stream-ingest`) so [CmosFactory] can offload optical

@@ -90,6 +90,17 @@ interface CameraOrientationControlPort : CameraOrientationPort {
     fun applyOrientationPatch(settings: Map<String, Any>)
 }
 
+/** Mechanical captures send a signed APEX Tv in 1/16 EV before the corresponding still readout. */
+interface IbisMechanicalShutterPort : IbisShiftPort {
+    fun takeMechanicalShutterTv16(): Int?
+}
+
+/** Optional BIS port for the APEX shutter value (1/16 EV) commanded in electronic front-curtain mode. */
+interface IbisEfcsShutterPort : IbisShiftPort {
+    /** Consumes the most recent electronic front-curtain command once at the start of a still readout. */
+    fun takeEfcsShutterTv16(): Int?
+}
+
 /**
  * Live 5-axis IBIS + 16-shot 400MP Pixel Shift sensor-stage telemetry exposed by the `biscom`
  * (SPI2) sub-MCU at `"soc-spi.biscom.ibis"` and consumed by `components/lens` (`CpuOpticalPipeline`)

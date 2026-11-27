@@ -52,7 +52,7 @@ class LcdcColorMatrixAndBacklightTest {
                 "profile" to VglibInitFactory.FUNCTIONAL_PROFILE,
                 "inputFile" to "bank",
                 LcdcFirstScanout.SETTING to LcdcFirstScanout.PIC_YUV_OSD0,
-                LcdcFirstScanout.LIMIT_SETTING to 8L,
+                LcdcFirstScanout.LIMIT_SETTING to 16L,
                 "continuousScanout" to true,
             ),
         )
@@ -156,6 +156,37 @@ class LcdcColorMatrixAndBacklightTest {
         val gG = (px[0] ushr 8) and 0xFF
         val gB = px[0] and 0xFF
         assertTrue(gR in 127..129 && gG in 127..129 && gB in 127..129, "Expected neutral gray (128,128,128), got ($gR,$gG,$gB)")
+
+        assertEquals(0xFFC85050.toInt(), px[1], "Neutral BOE calibration must preserve saturated sRGB patches too")
+
+        // Per-channel LCD COLOR ADJUSTMENT operates independently of the neutral panel calibration.
+        bank1.write(0x500, 4, 0x0000_0440L)
+        bank1.write(0x504, 4, 0x0400_0000L)
+        bank1.write(0x508, 4, 0x0000_03C0L)
+        bank1.write(0x600, 4, 1L)
+        assertTrue(main.copyArgb(px))
+        val warmGray = px[0]
+        assertTrue(((warmGray ushr 16) and 255) > ((warmGray ushr 8) and 255))
+        assertTrue(((warmGray ushr 8) and 255) > (warmGray and 255))
+        bank1.write(0x500, 4, 0x0000_0400L)
+        bank1.write(0x508, 4, 0x0000_0400L)
+        // User color and brightness settings still operate through the physical panel transfer.
+        bank1.write(0x4E8, 4, 0x1F50_0415L)
+        bank1.write(0x4EC, 4, 0x0000_1FE4L)
+        bank1.write(0x4F0, 4, 0x0460_1FB2L)
+        bank1.write(0x4F4, 4, 0x0000_1FE3L)
+        bank1.write(0x4F8, 4, 0x1F51_1FB3L)
+        bank1.write(0x4FC, 4, 0x0000_0433L)
+        bank1.write(0x600, 4, 1L)
+        assertTrue(main.copyArgb(px))
+        val vividRed = (px[1] ushr 16) and 255
+        val vividGreen = (px[1] ushr 8) and 255
+        assertTrue(vividRed - vividGreen > 120, "LCD COLOR +5 should increase red-green separation")
+        blHolder.add(nominal.copy(lcdUpdates = 2L, lcdGain = 0.5f))
+        bank1.write(0x600, 4, 1L)
+        assertTrue(main.copyArgb(px))
+        assertTrue(kotlin.math.abs(((px[1] ushr 16) and 255) * 2 - vividRed) <= 2)
+        assertTrue(kotlin.math.abs(((px[1] ushr 8) and 255) * 2 - vividGreen) <= 2)
 
         // BUG-V3-8-5: Boot #2 post-OOBE neutral white-point matrix (firmware 0x0126c4e0:
         // R=[1024,0,1], G=[0,997,0], B=[0,1,1007], row sums [1025, 997, 1008]) must NOT

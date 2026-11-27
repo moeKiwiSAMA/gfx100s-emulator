@@ -5,9 +5,219 @@ import org.junit.jupiter.api.Test
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.file.Path
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 import kotlin.test.*
 
 class DualI2sAudioTest {
+    @Test
+    fun txArrivalWakesForCompleteFramesAndHandlesAnArrivalBeforeTheWait() {
+        val engine = DualI2sAudioEngine({ 1125L })
+        engine.onLowRegisterWrite(0, 4, 23)
+        val executor = Executors.newSingleThreadExecutor()
+        try {
+            val entered = CountDownLatch(1)
+            val wake = executor.submit {
+                entered.countDown()
+                engine.awaitTxData(TimeUnit.SECONDS.toNanos(10))
+            }
+            assertTrue(entered.await(2, TimeUnit.SECONDS))
+            engine.pushTxFifoWord(0, 0x123400)
+            assertFailsWith<TimeoutException> { wake.get(30, TimeUnit.MILLISECONDS) }
+            engine.pushTxFifoWord(0, 0x567800)
+            wake.get(2, TimeUnit.SECONDS)
+            assertContentEquals(shortArrayOf(0x1234, 0x5678), assertNotNull(engine.drainMonitorPcm(1)).samples)
+
+            // Producer wins the race between the caller's empty read and its next wait.
+            assertNull(engine.drainMonitorPcm(1))
+            engine.pushTxSamples(0, shortArrayOf(17, -21), 1)
+            executor.submit { engine.awaitTxData(TimeUnit.SECONDS.toNanos(10)) }.get(2, TimeUnit.SECONDS)
+            assertContentEquals(shortArrayOf(17, -21), assertNotNull(engine.drainMonitorPcm(1)).samples)
+            assertNull(engine.drainMonitorPcm(1))
+        } finally {
+            executor.shutdownNow()
+        }
+    }
+
+    @Test
+    fun nonCodecTx1BurstDoesNotSpuriouslyWakeCodecWaiter() {
+        val engine = DualI2sAudioEngine({ 100_000L })
+        val route = AudioOutputRoute(false, 0, true, 0x39, 0x39, false, true, true, 1f, 1f, AudioSinkKind.HEADPHONE_STEREO)
+        engine.bindOutputCodec(object : AudioCodecControlPort {
+            override fun exchange16(mosi: Int): Int = 0
+            override fun readRegister(address: Int): Int = 0
+            override fun outputRoute(): AudioOutputRoute = route
+            override fun resetCount(): Long = 0
+            override fun dsp2ProgramWriteCount(): Int = 0
+            override fun dsp2DataWriteCount(): Int = 0
+            override fun dsp2CalibrationWriteCount(): Int = 0
+        })
+        // Both transports TX-DMA-only -> TX1 is tagged GENERIC_MONITOR_ONLY (excluded from codec playback).
+        engine.onLowRegisterWrite(0, 0x10L, DualI2sAudioEngine.TX_START_BIT)
+        engine.onHighRegisterWrite(0, 0x08L, DualI2sAudioEngine.TX_DMA_ENABLE_BIT)
+        engine.onLowRegisterWrite(1, 0x10L, DualI2sAudioEngine.TX_START_BIT)
+        engine.onHighRegisterWrite(1, 0x08L, DualI2sAudioEngine.TX_DMA_ENABLE_BIT)
+
+        val executor = Executors.newSingleThreadExecutor()
+        try {
+            val entered = CountDownLatch(1)
+            val wake = executor.submit {
+                entered.countDown()
+                engine.awaitTxData(TimeUnit.SECONDS.toNanos(10))
+            }
+            assertTrue(entered.await(2, TimeUnit.SECONDS))
+            val payload = ByteArray(16) { (it + 1).toByte() }
+            engine.pushTxFifoBytes(1, payload, payload.size, 104_500L)
+            assertFailsWith<TimeoutException> { wake.get(30, TimeUnit.MILLISECONDS) }
+
+            // Real TX0 audio wakes the waiter immediately.
+            engine.pushTxFifoBytes(0, payload, payload.size, 109_000L)
+            wake.get(2, TimeUnit.SECONDS)
+            assertNotNull(engine.drainRoutedCodecPcm(16))
+        } finally {
+            executor.shutdownNow()
+        }
+    }
+
+    @Test
+    fun pacedDmaCapturesRouteChangesWithinABurstBeforeHostDrain() {
+        val muted = AudioOutputRoute(false, 0, false, 0, 0, true, true, true, 0f, 0f, AudioSinkKind.MUTED)
+        val headphones = muted.copy(headphoneEnabled = true, dacMuted = false, effectiveLeftGain = 1f,
+            effectiveRightGain = 0.5f, activeSink = AudioSinkKind.HEADPHONE_STEREO)
+        val speaker = muted.copy(speakerEnabled = true, dacMuted = false, effectiveLeftGain = 0.25f,
+            effectiveRightGain = 0.25f, activeSink = AudioSinkKind.SPEAKER_MONO)
+        val history = AudioRouteHistory(headphones)
+        val engine = DualI2sAudioEngine({ 100_000L }, ringCapacityFrames = 64)
+        engine.bindOutputCodec(object : CameraTimedAudioCodec {
+            override fun outputRouteAt(tick: Long) = history.at(tick)
+            override fun outputRoute() = history.at(Long.MAX_VALUE).route
+            override fun exchange16(mosi: Int): Int = error("unused")
+            override fun readRegister(address: Int): Int = error("unused")
+            override fun resetCount(): Long = 0
+            override fun dsp2ProgramWriteCount(): Int = 0
+            override fun dsp2DataWriteCount(): Int = 0
+            override fun dsp2CalibrationWriteCount(): Int = 0
+        })
+        val period = 1125L
+        val bytes = ByteBuffer.allocate(80 * 4).order(ByteOrder.LITTLE_ENDIAN)
+        repeat(80) { bytes.putShort(it.toShort()).putShort((-it).toShort()) }
+        history.record(19 * period, muted)
+        history.record(30 * period + 1, speaker)
+        history.record(69 * period, headphones)
+        engine.pushTxFifoBytes(0, bytes.array(), bytes.capacity(), 80 * period)
+        history.record(80 * period, muted)
+        assertEquals(16L, engine.playbackStats().droppedFrames)
+        fun drain(first: Int, end: Int, expected: AudioOutputRoute) {
+            val (chunk, actual) = assertNotNull(engine.drainRoutedCodecPcm(64))
+            assertEquals(expected, actual)
+            assertEquals(end - first, chunk.frames)
+            repeat(chunk.frames) {
+                assertEquals((first + it).toShort(), chunk.samples[it * 2])
+                assertEquals((-(first + it)).toShort(), chunk.samples[it * 2 + 1])
+            }
+        }
+        drain(16, 19, headphones)
+        drain(19, 31, muted)
+        drain(31, 69, speaker)
+        drain(69, 80, headphones)
+        assertNull(engine.drainRoutedCodecPcm(64))
+    }
+
+    @Test
+    fun codecPlaybackStartsOnceWhenTheIndependentTransmitterLeads() {
+        val engine = DualI2sAudioEngine({ 0L })
+        for (channel in 0..1) {
+            engine.onLowRegisterWrite(channel, 0x10, DualI2sAudioEngine.TX_START_BIT)
+            engine.onHighRegisterWrite(channel, 0x08, DualI2sAudioEngine.TX_DMA_ENABLE_BIT)
+        }
+        val first = byteArrayOf(1, 0, 2, 0)
+        val second = byteArrayOf(3, 0, 4, 0)
+        engine.pushTxFifoBytes(1, first, first.size, 1125L)
+        engine.pushTxFifoBytes(1, second, second.size, 2250L)
+        assertNull(engine.drainCodecPlaybackPcm(4))
+
+        engine.pushTxFifoBytes(0, first, first.size, 3375L)
+        engine.pushTxFifoBytes(1, first, first.size, 4500L)
+        engine.pushTxFifoBytes(0, second, second.size, 5625L)
+        assertContentEquals(shortArrayOf(1, 2, 3, 4), assertNotNull(engine.drainCodecPlaybackPcm(4)).samples)
+        assertNull(engine.drainCodecPlaybackPcm(4))
+
+        engine.pushTxFifoBytes(1, first, first.size, 6750L)
+        assertContentEquals(shortArrayOf(1, 2), assertNotNull(engine.drainMonitorPcm(4)).samples)
+        engine.pushTxFifoWord(1, 0x00060005, 7875L)
+        assertContentEquals(shortArrayOf(5, 6), assertNotNull(engine.drainCodecPlaybackPcm(4)).samples)
+
+        engine.onLowRegisterWrite(0, 0x10, DualI2sAudioEngine.TX_START_BIT or DualI2sAudioEngine.RX_START_BIT)
+        engine.onHighRegisterWrite(0, 0x08, DualI2sAudioEngine.TX_DMA_ENABLE_BIT or DualI2sAudioEngine.RX_DMA_ENABLE_BIT)
+        engine.pushTxFifoBytes(1, second, second.size, 9000L)
+        engine.onLowRegisterWrite(0, 0x10, DualI2sAudioEngine.TX_START_BIT)
+        engine.onHighRegisterWrite(0, 0x08, DualI2sAudioEngine.TX_DMA_ENABLE_BIT)
+        assertContentEquals(shortArrayOf(3, 4), assertNotNull(engine.drainCodecPlaybackPcm(4)).samples)
+        engine.onSoftReset(0)
+        engine.pushTxFifoWord(1, 0x00060005, 10125L)
+        assertContentEquals(shortArrayOf(5, 6), assertNotNull(engine.drainMonitorPcm(4)).samples)
+    }
+
+    @Test
+    fun resetAndRearmPreserveFirstPioFrameOnTheOnlyTransmittingLink() {
+        val engine = DualI2sAudioEngine({ 0L })
+        val primary = engine.createDmaTxPeer(0) as com.github.nyabanban.fuji.emulator.api.DmaDestinationActivityListener
+        engine.onLowRegisterWrite(0, 0x10, DualI2sAudioEngine.TX_START_BIT)
+        primary.setTransferActive(7, true)
+        engine.pushTxFifoWord(1, 0x12341234, 1000)
+        engine.pushTxFifoWord(0, 0x00030004, 1000)
+        assertContentEquals(shortArrayOf(4, 3), assertNotNull(engine.drainMonitorPcm(64)).samples)
+        engine.onSoftReset(0)
+        engine.pushTxFifoWord(1, 0x00050006, 2000)
+        assertContentEquals(shortArrayOf(6, 5), assertNotNull(engine.drainMonitorPcm(64)).samples)
+        primary.setTransferActive(7, false)
+        engine.onLowRegisterWrite(0, 0x10, DualI2sAudioEngine.TX_START_BIT)
+        engine.pushTxFifoWord(1, 0x00070008, 3000)
+        assertContentEquals(shortArrayOf(8, 7), assertNotNull(engine.drainMonitorPcm(64)).samples)
+    }
+
+    @Test
+    fun concurrentDmaTransmittersKeepOneMonitorClockAndRetainBothRawStreams() {
+        fun payload(left: Int, right: Int) = ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN)
+            .putShort(left.toShort()).putShort(right.toShort()).putShort(left.toShort()).putShort(right.toShort()).array()
+        val first = payload(1000, -700)
+        val second = payload(-2500, 430)
+        for (secondaryFirst in listOf(true, false)) {
+            val engine = DualI2sAudioEngine({ 0L })
+            val primaryDma = engine.createDmaTxPeer(0) as com.github.nyabanban.fuji.emulator.api.DmaDestinationActivityListener
+            engine.onLowRegisterWrite(0, 0x10, DualI2sAudioEngine.TX_START_BIT)
+            engine.onLowRegisterWrite(1, 0x10, DualI2sAudioEngine.TX_START_BIT)
+            primaryDma.setTransferActive(7, true)
+            fun both(tick: Long) {
+                for (channel in if (secondaryFirst) listOf(1, 0) else listOf(0, 1)) {
+                    val data = if (channel == 0) first else second
+                    engine.pushTxFifoBytes(channel, data, data.size, tick)
+                }
+            }
+            both(3000)
+            val monitor = assertNotNull(engine.drainMonitorPcm(64))
+            assertEquals(0, monitor.channel)
+            assertEquals(2, monitor.frames)
+            assertContentEquals(shortArrayOf(1000, -700, 1000, -700), monitor.samples)
+            assertNull(engine.drainMonitorPcm(64))
+            both(6000)
+            assertEquals(4, assertNotNull(engine.drainPlaybackPcm(64)).frames)
+            primaryDma.setTransferActive(7, false)
+            engine.pushTxFifoBytes(1, ByteArray(8), 8, 9000)
+            engine.pushTxFifoBytes(1, second, second.size, 12000)
+            val tail = assertNotNull(engine.drainMonitorPcm(64))
+            assertEquals(1, tail.channel)
+            assertEquals(4, tail.frames)
+            assertContentEquals(shortArrayOf(0, 0, 0, 0, -2500, 430, -2500, 430), tail.samples)
+            primaryDma.setTransferActive(7, true)
+            engine.pushTxFifoBytes(1, ByteArray(8), 8, 15000)
+            engine.pushTxFifoBytes(0, first, first.size, 15000)
+            assertEquals(0, assertNotNull(engine.drainMonitorPcm(64)).channel)
+        }
+    }
+
     private class TestContext : ComponentContext {
         var currentTick = 1000L
         val claims = linkedMapOf<String, Any>()

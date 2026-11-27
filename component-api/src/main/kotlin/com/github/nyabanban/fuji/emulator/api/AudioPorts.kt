@@ -142,6 +142,13 @@ interface I2sAudioPort {
     /** Drain up to [maxFrames] queued TX stereo frames for host playback or inspection. */
     fun drainPlaybackPcm(maxFrames: Int = 4096): AudioPcmChunk?
 
+    /** Drain the shared TX queue for one monitor clock. Raw observers can use [drainPlaybackPcm] instead. */
+    fun drainMonitorPcm(maxFrames: Int): AudioPcmChunk? = drainPlaybackPcm(maxFrames)
+
+    /** Drain the board's analogue codec feed. Single-output implementations share their monitor stream. */
+    fun drainCodecPlaybackPcm(maxFrames: Int): AudioPcmChunk? = drainMonitorPcm(maxFrames)
+
+
     /** Read current deterministic I2S TX/RX capture statistics. */
     fun playbackStats(): AudioPlaybackStats
 
@@ -162,6 +169,14 @@ interface I2sAudioPort {
     fun setRxFallbackProvider(
         provider: ((channel: Int, pcmStereoInterleaved: ShortArray, frames: Int) -> Int)?,
     ) {}
+}
+
+/** Optional wait for a shared TX ring. Already queued PCM must return immediately.
+ * The timeout lets the host continue servicing other sources, including input monitoring.
+ */
+interface WaitableI2sTx {
+    @Throws(InterruptedException::class)
+    fun awaitTxData(timeoutNanos: Long)
 }
 
 /** Camera-clocked microphone inputs can be synthesized directly at the guest's I2S read timestamp. */

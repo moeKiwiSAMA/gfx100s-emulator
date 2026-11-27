@@ -107,10 +107,10 @@ class GamepadPollerTest {
         val poller = GamepadPoller(backend, dispatch = { it() }, onFrame = controller::handleGamepadFrame)
         backend.script.add(listOf(frame(0, buttons = GamepadFrame.RB, rt = 1.0)))
         poller.pollOnce()
-        assertEquals(listOf("+SHUTTER_HALF", "+SHUTTER_FULL", "+AF_ON").sorted(), sink.sorted())
+        assertEquals(listOf("+SHUTTER_FULL", "+AF_ON").sorted(), sink.sorted())
         sink.clear()
         poller.close()
-        assertEquals(listOf("-AF_ON", "-SHUTTER_FULL", "-SHUTTER_HALF").sorted(), sink.sorted())
+        assertEquals(listOf("-AF_ON", "-SHUTTER_FULL").sorted(), sink.sorted())
         assertTrue(backend.closed)
     }
 

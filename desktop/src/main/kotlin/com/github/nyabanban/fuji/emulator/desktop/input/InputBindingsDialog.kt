@@ -450,7 +450,7 @@ class InputBindingsDialog(
             triggerFullValue.text = "${(config.triggerFullThreshold * 100.0).roundToInt()}%"
             deadzone.isDisable = !config.gamepadEnabled
             twoStage.isDisable = !config.gamepadEnabled
-            triggerFull.isDisable = !config.gamepadEnabled || !config.twoStageTriggerEnabled
+            triggerFull.isDisable = !config.gamepadEnabled
             deviceSelector.isDisable = !config.gamepadEnabled || !gamepadAvailable()
         } finally {
             syncing = false
@@ -469,10 +469,10 @@ class InputBindingsDialog(
         val lt = if (active) controller.lastLt else 0.0
         val rt = if (active) controller.lastRt else 0.0
         val peak = if (active) maxOf(peakRt, rt) else 0.0
-        val stageKey = when {
-            !active || rt < InputBindingConfig.RT_HALF_THRESHOLD -> "input.trigger.stage.idle"
-            !config.twoStageTriggerEnabled || rt >= config.triggerFullThreshold -> "input.trigger.stage.full"
-            else -> "input.trigger.stage.half"
+        val stageKey = when (if (active) controller.rightTriggerStage else null) {
+            GamepadInput.RT_FULL -> "input.trigger.stage.full"
+            GamepadInput.RT_HALF -> "input.trigger.stage.half"
+            else -> "input.trigger.stage.idle"
         }
         triggerLiveLabel.text = I18n.t(
             "input.settings.trigger_live",

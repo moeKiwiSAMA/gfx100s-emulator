@@ -4,6 +4,8 @@ inputFile: "sequence.yaml"
 controlWordInputFile: "mode-word.yaml"
 irq118Tick: 315113473
 irq117Tick: 446113473
+# Rear LCDC1 phase clock: 54 MHz × 1001 / 60000, independent of the movie frame rate.
+irq117PeriodTicks: 900900
 frameSyncStartTick: 427113473
 firstScanout: "lcdc1-pic-yuv-osd0-nearest-v1"
 scanoutFrameLimit: 256

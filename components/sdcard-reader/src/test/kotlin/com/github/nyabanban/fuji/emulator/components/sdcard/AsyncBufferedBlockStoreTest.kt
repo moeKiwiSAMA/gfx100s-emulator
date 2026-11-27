@@ -42,6 +42,30 @@ class AsyncBufferedBlockStoreTest {
     }
 
     @Test
+    fun readAheadDuringWritebackPreservesNewerSectorAfterDrain() {
+        val image = tempRoot.resolve("prefetch-during-write.img")
+        createZeroImage(image, 16L * SECTOR_BYTES)
+        val raw = RawBlockStore(image, readOnly = false)
+        lateinit var store: AsyncBufferedBlockStore
+        val backend = object : SdBlockStore by raw {
+            override fun write(offset: Long, source: ByteBuffer): Int {
+                // Reenter the read path before the backing image has received sector 1.
+                // The read of sector 0 also prefetches the still-old sector 1.
+                assertContentEquals(ByteArray(SECTOR_BYTES), store.readSector(0))
+                return raw.write(offset, source)
+            }
+        }
+        val expected = ByteArray(SECTOR_BYTES) { 0x5a }
+        store = AsyncBufferedBlockStore(backend, slot = 1)
+        store.use {
+            it.writeSector(1, expected)
+            it.flush()
+            assertContentEquals(expected, raw.readSector(1))
+            assertContentEquals(expected, it.readSector(1))
+        }
+    }
+
+    @Test
     fun interleavedSequentialRandomAndUnalignedReadAfterWriteRemains100PercentCoherent() {
         val img = tempRoot.resolve("coherence.img")
         val sizeBytes = 2 * 1024 * 1024 // 2 MiB

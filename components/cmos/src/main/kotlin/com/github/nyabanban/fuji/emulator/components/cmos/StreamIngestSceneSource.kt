@@ -81,7 +81,7 @@ class StreamIngestSceneSource internal constructor(
     val endpoint: StreamIngestEndpoint,
     private val fallback: FallbackSceneSource,
     override val virtualSubjectDistanceM: Double? = null,
-) : SceneSource2D, LiveStreamSceneSource {
+) : SceneSource2D, LiveStreamSceneSource, PackedReadoutSource {
     private val closed = AtomicBoolean(false)
     private val latestFrame = AtomicReference<PackedRawFrame?>(null)
     private val receivedCount = AtomicLong(0L)
@@ -89,6 +89,10 @@ class StreamIngestSceneSource internal constructor(
     private val fallbackCount = AtomicLong(0L)
     private val consumedSeq = AtomicLong(-1L)
     private val bayerCache = CachedPackedBayerConverter()
+
+    override fun acquirePackedFrame(): PackedRawFrame? = latestFrame.get()?.also {
+        consumedSeq.set(it.sequence)
+    }
 
     override val latestFrameSequence: Long get() = latestFrame.get()?.sequence ?: 0L
 

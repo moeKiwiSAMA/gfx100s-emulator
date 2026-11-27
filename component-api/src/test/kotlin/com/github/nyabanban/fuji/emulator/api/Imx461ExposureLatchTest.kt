@@ -330,6 +330,18 @@ class Imx461ExposureLatchTest {
             override val stillShutterTiming = timing
         }
 
+        // Original firmware lengths when front and rear pulses are armed at different times.
+        for ((front, tv16, duration) in listOf(
+            Triple(1_627_468L, 101, 3145L), Triple(743_429L, 69, 12582L),
+            Triple(738_866L, 16, 125000L), Triple(756_104L, 0, 250000L),
+        )) {
+            val port = portWith(StillShutterHardwareTiming(0x40, 3, 0, 706, false, 8900, 720_614L, front))
+            assertEquals(1L, Imx461ExposurePort.computeEffectiveStillExposure(port)?.durationNanos)
+            assertEquals(duration, Imx461ExposurePort.computeEffectiveStillExposure(port, 1000L, 100, tv16)?.durationNanos)
+        }
+        val validPulses = portWith(StillShutterHardwareTiming(0x40, 3, 0, 706, false, 8900, 449_200L, 2702L))
+        assertEquals(1550L, Imx461ExposurePort.computeEffectiveStillExposure(validPulses, 1000L, 100, 0)?.durationNanos)
+
         // 1. Mechanical Shutter (MS): 14-bit 0x40 at 1/640 s, 1/160 s, 1/40 s (72 MHz TGCLK ticks)
         val ms640 = assertNotNull(
             Imx461ExposurePort.computeEffectiveStillExposure(

@@ -1,6 +1,7 @@
 package com.github.nyabanban.fuji.emulator.components.spi
 
-import com.github.nyabanban.fuji.emulator.api.AudioCodecControlPort
+import com.github.nyabanban.fuji.emulator.api.AudioRouteHistory
+import com.github.nyabanban.fuji.emulator.api.CameraTimedAudioCodec
 import com.github.nyabanban.fuji.emulator.api.AudioOutputRoute
 import com.github.nyabanban.fuji.emulator.api.AudioSinkKind
 import com.github.nyabanban.fuji.emulator.api.SpiPeer
@@ -18,7 +19,7 @@ import kotlin.math.pow
  * - Stores core registers (`0x0000..0x04FF`), DSP2 Program RAM (`0x2000..0x29FF`),
  *   DSP2 Data/Coefficient RAM (`0x3000..0x3FFF`), and Bank 14 calibration space (`0x4200..0x46FF`).
  */
-internal class Wm8962SpiPeer : SpiPeer, AudioCodecControlPort {
+internal class Wm8962SpiPeer(private val clock: () -> Long = { 0L }) : SpiPeer, CameraTimedAudioCodec {
     companion object {
         const val PEER_PORT = "soc-spi.wm8962"
         const val CODEC_PORT = "soc-spi.wm8962.codec"
@@ -88,6 +89,10 @@ internal class Wm8962SpiPeer : SpiPeer, AudioCodecControlPort {
     private var readCount = 0L
     private var resetCount = 0L
     private val registers = TreeMap<Int, Int>()
+    private val routes = AudioRouteHistory(outputRoute())
+
+    @Synchronized
+    override fun outputRouteAt(tick: Long) = routes.at(tick)
 
     fun isInitial(): Boolean =
         !expectingValue && latchedAddress == 0 && !latchedRead &&
@@ -97,11 +102,14 @@ internal class Wm8962SpiPeer : SpiPeer, AudioCodecControlPort {
     override fun exchange(bits: Int, tx: Int, tick: Long): Int {
         require(bits == 16) { "WM8962 SPI4 peer requires 16-bit transfers, got $bits" }
         require(tx in 0..0xFFFF) { "WM8962 SPI4 word outside 16-bit range: $tx" }
-        return exchange16(tx)
+        return exchangeAt(tx, tick)
     }
 
     @Synchronized
-    override fun exchange16(mosi: Int): Int {
+    override fun exchange16(mosi: Int): Int = exchangeAt(mosi, clock())
+
+    @Synchronized
+    private fun exchangeAt(mosi: Int, tick: Long): Int {
         val word = mosi and 0xFFFF
         wordCount++
         if (!expectingValue) {
@@ -120,23 +128,26 @@ internal class Wm8962SpiPeer : SpiPeer, AudioCodecControlPort {
             readRegister(addr)
         } else {
             writeCount++
-            writeRegister(addr, word)
+            writeRegister(addr, word, tick)
             0
         }
     }
 
-    private fun writeRegister(address: Int, value: Int) {
+    private fun writeRegister(address: Int, value: Int, tick: Long) {
         val maskedAddr = address and 0x7FFF
         val maskedVal = value and 0xFFFF
         if (maskedAddr == REG_SOFTWARE_RESET) {
             registers.clear()
             resetCount++
-            return
-        }
-        if (maskedVal == 0) {
+        } else if (maskedVal == 0) {
             registers.remove(maskedAddr)
         } else {
             registers[maskedAddr] = maskedVal
+        }
+        when (maskedAddr) {
+            REG_SOFTWARE_RESET, REG_HPOUTL_VOL, REG_HPOUTR_VOL, REG_SPKOUTL_VOL, REG_ADC_DAC_CTRL_1,
+            REG_PWR_MGMT_2, REG_CLASS_D_CTRL_1, REG_CHARGE_PUMP_1, REG_CLOCKING_2, REG_DSP2_PWR_MGMT ->
+                routes.record(tick, outputRoute())
         }
     }
 
@@ -321,5 +332,6 @@ internal class Wm8962SpiPeer : SpiPeer, AudioCodecControlPort {
             resetCount = parsed.resetCount
             registers.putAll(parsed.registers)
         }
+        routes.reset(outputRoute())
     }
 }

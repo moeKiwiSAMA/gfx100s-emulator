@@ -663,6 +663,43 @@ class SocIspMovieCaptureV3Test {
     }
 
     @Test
+    fun movieFrameClockDeliversEdgesWithBasicInterruptSink() = withMveMemory { ctx ->
+        val frames = mutableListOf<Long>()
+        ctx.ports.register("ccd", CcdMovieFrameInput.PORT_ID, CcdMovieFrameInput::class.java,
+            CcdMovieFrameInput { frames.add(it) })
+        val component = factory.create(ctx, v3Config())
+        try {
+            component.start()
+            val core = assertIs<TickAwareMmioDevice>(ctx.ports.find(SocIspFactory.PORT_CORE, MmioDevice::class.java))
+            val vpu = assertIs<TickAwareMmioDevice>(ctx.ports.find(MaliV61VpuEngine.PORT_ID, MmioDevice::class.java))
+            val clock = assertNotNull(ctx.ports.find(CcdFrameClockPort.PORT_ID, CcdFrameClockPort::class.java))
+            vpu.write(0x204, 4, mmuEntry(l1Pa).toUInt().toLong())
+            vpu.write(0x04, 4, 1L)
+            fun sendControl(code: Int) {
+                pushHost(msgInPa, code, IntArray(0))
+                vpu.write(0x220, 4, 1L)
+                ctx.tick += 64
+                vpu.beforeInstruction(ctx.tick)
+            }
+            fun advanceFrame() {
+                ctx.tick = assertNotNull(core.nextDeadline())
+                core.beforeInstruction(ctx.tick)
+            }
+
+            sendControl(1001) // MVE GO
+            assertTrue(clock.movieFrameClockActive)
+            advanceFrame()
+            assertEquals(listOf(ctx.tick), frames)
+            sendControl(1002) // MVE STOP
+            assertFalse(clock.movieFrameClockActive)
+            advanceFrame()
+            assertEquals(1, frames.size)
+        } finally {
+            component.close()
+        }
+    }
+
+    @Test
     fun maliV61RascMveV24EncodesH264AndH265HeadersAndIdrFramesThroughL1L2Mmu() = withMveMemory { ctx ->
         val comp = factory.create(ctx, v3Config())
         comp.start()

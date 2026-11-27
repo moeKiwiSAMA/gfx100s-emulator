@@ -15,6 +15,8 @@ import com.github.nyabanban.fuji.emulator.api.ExternalGpuMemoryHandleType
 import com.github.nyabanban.fuji.emulator.api.LensParameters
 import com.github.nyabanban.fuji.emulator.api.Ports
 import com.github.nyabanban.fuji.emulator.api.SensorGeometry
+import com.github.nyabanban.fuji.emulator.api.LiveViewIspFusionRequest
+import com.github.nyabanban.fuji.emulator.api.LiveViewIspStatsRequest
 import com.github.nyabanban.fuji.emulator.components.lens.LensFactory
 import com.github.nyabanban.fuji.emulator.components.lens.optics.BorderMode
 import com.github.nyabanban.fuji.emulator.components.lens.optics.CmosNoiseConfig
@@ -156,6 +158,75 @@ class VulkanOpticalBackendTest {
         }
         val closed = Arena.ofConfined().use { it.allocate(16) }
         assertEquals(VulkanNativeOpticsBridge.FUJI_VK_ERR_INVALID_ARG, render(closed, 16))
+    }
+
+    @Test
+    fun fusedCachedOutputTracksMutableLutAndPreservesStridedPlanesAndStats() = withVulkanContext { bridge, ctx ->
+        val optics = VulkanNativeOpticsBridge.OpticsParamsStruct(
+            srcWidth = 32, srcHeight = 16, dstWidth = 32, dstHeight = 16,
+            k1 = 0f, k2 = 0f, p1 = 0f, p2 = 0f, caRedScale = 1f, caBlueScale = 1f,
+            cos4Power = 0f, mechVignetting = 0f, focalLengthMm = 45f, sensorWidthMm = 44f,
+            focusDistanceM = 2f, fNumber = 4f, invZoom = 1f, ibisShiftX = 0f,
+            ibisShiftY = 0f, ibisCosRoll = 1f, ibisSinRoll = 0f, maxBokehPx = 0f,
+            bladeRoundness = 1f, catsEye = 0f, onionRing = 0f, rimHighlight = 0f,
+            planarDepthM = 2f, imageCircleMm = 55f, pupilShape = 0,
+            bladeCount = 9, borderClamp = 1, flags = 0,
+        )
+        val source = FloatArray(32 * 16 * 4) { i -> if (i % 4 == 3) 2f else ((i * 23) % 257) / 300f }
+        val cmos = VulkanNativeOpticsBridge.CmosParamsStruct(
+            32, 16, 0, 14, 16383, 256, 0, 100, 100f, 51000f, 0.6f, 0f, 0f, 0, 0, 0,
+        )
+        val key = 107L
+        assertEquals(0, bridge.uploadScene(ctx, key, source, 32 * 16).first)
+        val baseIsp = VulkanNativeOpticsBridge.IspDemosaicParamsStruct(32, 16, 32, 16)
+        val lut = IntArray(4096) { it / 16 }
+        fun packed(table: IntArray?): ByteArray = ByteArray(32 * 16 * 2).also { out ->
+            assertEquals(0, bridge.renderCachedSceneToIspYuv(
+                ctx, key, null, optics, cmos, table, table, table, out, ispParams = baseIsp,
+            ).first)
+        }
+        val stats = LiveViewIspStatsRequest(gridCols = 5, gridRows = 3)
+        for (format in listOf(VulkanNativeOpticsBridge.ISP_FMT_UYVY422, VulkanNativeOpticsBridge.ISP_FMT_YYUV422,
+            VulkanNativeOpticsBridge.ISP_FMT_NV16, VulkanNativeOpticsBridge.ISP_FMT_NV12)) {
+            val planar = format == VulkanNativeOpticsBridge.ISP_FMT_NV16 || format == VulkanNativeOpticsBridge.ISP_FMT_NV12
+            for (width in listOf(18, 32)) {
+                val height = if (width == 18) 9 else 16
+                val rowBytes = if (planar) width else 2 * width
+                val stride = rowBytes + if (width == 18) 7 else 0
+                val yBytes = stride * (height - 1) + rowBytes
+                val uvHeight = if (format == VulkanNativeOpticsBridge.ISP_FMT_NV12) (height + 1) / 2 else height
+                val uvBytes = if (planar) stride * (uvHeight - 1) + rowBytes else 0
+                val isp = baseIsp.copy(dstWidth = width, dstHeight = height, dstStrideBytes = stride, outputFormat = format)
+                val sensor = cmos.copy(opticalExposureScale = if (width == 18) 0.28f else 1.1f)
+                val y = ByteArray(yBytes + 9) { 0x55 }
+                val uv = ByteArray(uvBytes + 9) { 0x55 }
+                val refY = y.clone()
+                val refUv = uv.clone()
+                val refStats = IntArray(LiveViewIspFusionRequest.STATS_OUTPUT_WORDS)
+                val actualStats = IntArray(refStats.size)
+                assertEquals(0, bridge.renderOpticsToIspYuv(ctx, source, source.size, null, optics, sensor,
+                    lut, lut, lut, refY, yBytes, refUv, uvBytes, isp, stats, refStats).first)
+                fun cached(capacity: Int) = bridge.renderCachedSceneToIspYuv(ctx, key, null, optics, sensor,
+                    lut, lut, lut, y, capacity, uv, uvBytes, isp, stats, actualStats).first
+                assertEquals(VulkanNativeOpticsBridge.FUJI_VK_ERR_INVALID_ARG, cached(yBytes - 1))
+                assertTrue(y.all { it == 0x55.toByte() } && uv.all { it == 0x55.toByte() })
+                assertEquals(0, cached(yBytes))
+                assertTrue(y.contentEquals(refY) && uv.contentEquals(refUv), "format=$format w=$width stride=$stride")
+                assertTrue(actualStats.contentEquals(refStats) && refStats.any { it != 0 })
+                for (row in 0 until height - 1) {
+                    assertTrue((row * stride + rowBytes until (row + 1) * stride).all { y[it] == 0x55.toByte() })
+                }
+                assertTrue(y.drop(yBytes).all { it == 0x55.toByte() } && uv.drop(uvBytes).all { it == 0x55.toByte() })
+            }
+        }
+        lut.fill(32)
+        val before = packed(lut)
+        // Keep both ends of each 16-entry group intact while changing its interior.
+        for (i in lut.indices) if (i % 16 in 1..14) lut[i] = 223
+        val after = packed(lut)
+        packed(null)
+        assertTrue(after.contentEquals(packed(lut)), "An in-place edit must match a fresh LUT upload")
+        assertFalse(before.contentEquals(after), "Edited tone curve must change the rendered frame")
     }
 
     @Test

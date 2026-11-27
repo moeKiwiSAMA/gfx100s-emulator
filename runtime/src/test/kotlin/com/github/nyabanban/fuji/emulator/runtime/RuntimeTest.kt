@@ -163,6 +163,51 @@ class RuntimeTest {
         owner.close()
         assertFalse(owner.isRunning)
     }
+    @Test fun retainedIspWritesPreserveSiblingDeadlinesAndBusValidation() {
+        var deadline = 17L
+        val fired = mutableListOf<Long>()
+        val engine = object : TickAwareMmioDevice {
+            override fun nextDeadline(): Long? = deadline.takeUnless { it == Long.MAX_VALUE }
+            override fun nextInterestedTick() = deadline
+            override fun beforeInstruction(tick: Long) {
+                if (tick >= deadline) {
+                    fired += tick
+                    deadline = Long.MAX_VALUE
+                }
+            }
+            override fun read(offset: Long, size: Int) = 0L
+            override fun write(offset: Long, size: Int, value: Long) { deadline = value }
+        }
+        var writes = 0
+        var retained = 0L
+        val bank = object : RetainedMmioBank {
+            override fun read(offset: Long, size: Int) = retained
+            override fun write(offset: Long, size: Int, value: Long) {
+                require(size == 4 && offset == 0L)
+                retained = value
+                writes++
+            }
+        }
+        val router = MmioRouter(listOf(
+            MmioWindow("soc-isp", 0x100, 4, engine),
+            MmioWindow("soc-isp", 0x200, 4, bank),
+        ))
+        assertFalse(router.hasAlwaysTickDevices(), "RetainedMmioBank must never register as an always-tick device")
+        assertEquals(17L, router.refreshNextScheduledTick())
+        repeat(32) { router.write(0x200, 4, 42) }
+        assertEquals(32, writes)
+        assertEquals(42L, router.read(0x200, 4))
+        assertEquals(33L, router.accessSequenceCount())
+        assertEquals(17L, router.nextScheduledTickIfClean())
+        router.write(0x100, 4, 12)
+        assertEquals(12L, router.refreshNextScheduledTick())
+        router.beforeInstruction(12)
+        assertEquals(listOf(12L), fired)
+        assertFailsWith<IllegalArgumentException> { router.write(0x200, 1, 8) }
+        assertEquals(0L, router.nextScheduledTickIfClean())
+        assertEquals(32, writes)
+    }
+
     @Test fun pureMmioReadsKeepScheduleCleanWhileWriteAndMutatingReadDirtyIt() {
         var interestedQueries = 0
         val pureScheduled = object : TickAwareMmioDevice {

@@ -104,6 +104,7 @@ class VulkanScene3dUnitTest {
             assertEquals(2L, vkBackend.gpuScene3dStaticUploads, "Restoring the frame must reuse both mesh and stage")
             vkBackend.renderGpuScene3dForReadback(mfSpec)
             assertEquals(2L, vkBackend.gpuScene3dFramesRendered, "Consecutive users must share the resident frame")
+            assertEquals(0.0, vkBackend.gpuScene3dLastMs, "A resident 3D scene must charge no rasterization time to this request")
 
             // B. QR-Ball analytic 6-DoF raytracer
             val qrRows = IntArray(32) { r -> if ((r and 1) == 0) 0x00AAAAAA else 0x01555555 }

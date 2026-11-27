@@ -108,7 +108,7 @@ class SpiFactory : ComponentFactory {
                 context.ports.register(id, IbisShiftPort.PORT_NAME, IbisShiftPort::class.java, peerInstance)
             }
             if (values["peerPort"] == Wm8962SpiPeer.PEER_PORT || extra.any { it.peerPort == Wm8962SpiPeer.PEER_PORT }) {
-                val peerInstance = Wm8962SpiPeer()
+                val peerInstance = Wm8962SpiPeer { context.clock.ticks() }
                 wm8962Peer = peerInstance
                 context.ports.register(id, Wm8962SpiPeer.PEER_PORT, SpiPeer::class.java, peerInstance)
                 context.ports.register(id, Wm8962SpiPeer.CODEC_PORT, AudioCodecControlPort::class.java, peerInstance)

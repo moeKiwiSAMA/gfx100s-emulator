@@ -73,7 +73,8 @@ class InputBindingsDialogTest {
             assertEquals(0.10, slider.min); assertEquals(0.50, slider.max); assertEquals(0.28, slider.value)
             assertNotNull(scene.lookup("#input-bindings-two-stage") as? CheckBox)
             val triggerSlider = assertNotNull(scene.lookup("#input-bindings-trigger-full") as? Slider)
-            assertEquals(0.40, triggerSlider.min); assertEquals(0.95, triggerSlider.max); assertEquals(0.65, triggerSlider.value)
+            assertEquals(0.20, triggerSlider.min); assertEquals(0.95, triggerSlider.max); assertEquals(0.50, triggerSlider.value)
+            assertFalse(triggerSlider.isDisable, "threshold slider must stay enabled in default single-stage mode")
             val triggerLive = assertNotNull(scene.lookup("#input-bindings-trigger-live") as? Label)
             assertTrue(triggerLive.text.contains("0%"))
 
@@ -151,23 +152,43 @@ class InputBindingsDialogTest {
             dialog.selectDevice("auto")
             assertEquals("auto", store.load().selectedGamepad)
 
-            // Live trigger readout tracks current RT and peak RT; threshold slider applies live and persists.
+            // Live trigger readout tracks current RT and peak RT; threshold slider applies live in default single-stage mode.
+            controller.handleGamepadFrame(GamepadFrame(connected = true, slot = 0, name = "Pad", rt = 0.40))
+            assertTrue(triggerLive.text.contains("40%"), triggerLive.text)
+            assertTrue(triggerLive.text.contains(I18n.t("input.trigger.stage.idle")), triggerLive.text)
             controller.handleGamepadFrame(GamepadFrame(connected = true, slot = 0, name = "Pad", rt = 0.55))
-            assertTrue(triggerLive.text.contains("55%"), triggerLive.text)
-            assertTrue(triggerLive.text.contains(I18n.t("input.trigger.stage.half")), triggerLive.text)
-            triggerSlider.value = 0.50
-            assertEquals(0.50, controller.config.triggerFullThreshold)
-            assertEquals(0.50, store.load().triggerFullThreshold)
+            assertEquals("+SHUTTER_FULL", sink.events.last())
             assertTrue(triggerLive.text.contains(I18n.t("input.trigger.stage.full")), triggerLive.text)
+            controller.handleGamepadFrame(GamepadFrame(connected = true, slot = 0, name = "Pad", rt = 0.42))
+            assertEquals("-SHUTTER_FULL", sink.events.last())
+            triggerSlider.value = 0.40
+            assertEquals(0.40, controller.config.triggerFullThreshold)
+            assertEquals(0.40, store.load().triggerFullThreshold)
+            assertTrue(triggerLive.text.contains(I18n.t("input.trigger.stage.full")), triggerLive.text)
+            assertEquals("+SHUTTER_FULL", sink.events.last(), "Threshold change must agree with displayed stage")
+            controller.handleGamepadFrame(GamepadFrame(connected = true, slot = 0, name = "Pad", rt = 0.0))
+            assertEquals("-SHUTTER_FULL", sink.events.last())
+            assertTrue(triggerLive.text.contains(I18n.t("input.trigger.stage.idle")), triggerLive.text)
+
+            // Enabling two-stage mode adds the half-press stage while keeping threshold slider enabled.
+            (scene.lookup("#input-bindings-two-stage") as CheckBox).isSelected = true
+            assertTrue(controller.config.twoStageTriggerEnabled)
+            assertFalse(triggerSlider.isDisable)
+            triggerSlider.value = 0.65
+            controller.handleGamepadFrame(GamepadFrame(connected = true, slot = 0, name = "Pad", rt = 0.40))
+            assertTrue(triggerLive.text.contains(I18n.t("input.trigger.stage.half")), triggerLive.text)
+            controller.handleGamepadFrame(GamepadFrame(connected = true, slot = 0, name = "Pad", rt = 0.0))
+            assertTrue(triggerLive.text.contains(I18n.t("input.trigger.stage.idle")), triggerLive.text)
 
             // Settings toggles apply live and persist.
             (scene.lookup("#input-bindings-two-stage") as CheckBox).isSelected = false
             assertFalse(controller.config.twoStageTriggerEnabled)
-            assertTrue(triggerSlider.isDisable, "single-stage mode disables full-press threshold slider")
+            assertFalse(triggerSlider.isDisable, "single-stage threshold mode keeps threshold slider enabled")
             slider.value = 0.4
             assertEquals(0.4, controller.config.stickDeadzone)
             assertEquals(0.4, store.load().stickDeadzone)
             (scene.lookup("#input-bindings-gamepad-enabled") as CheckBox).isSelected = false
+            assertTrue(triggerSlider.isDisable, "disabling gamepad disables threshold slider")
             assertEquals(I18n.t("input.status.disabled"), dialog.statusText)
             assertFalse(store.load().gamepadEnabled)
 

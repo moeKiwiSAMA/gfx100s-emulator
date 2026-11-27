@@ -1,5 +1,6 @@
 package com.github.nyabanban.fuji.emulator.runtime
 
+import com.github.nyabanban.fuji.emulator.api.DirectGuestRamPort
 import com.github.nyabanban.fuji.emulator.api.DmaMemory
 import com.github.nyabanban.fuji.emulator.api.Exposure
 import com.github.nyabanban.fuji.emulator.api.Imx461ExposurePort
@@ -172,23 +173,39 @@ internal class ImageScalerE000 private constructor(
                 dstAddr, dstStrideBytes, dstW, dstH)
             return
         }
-        if (srcAddr >= 0x1_0000_0000L || dstAddr >= 0x1_0000_0000L) {
-            require(srcAddr in 1L..0x3_FFFF_FFFFL && dstAddr in 1L..0x3_FFFF_FFFFL) {
-                "RESZ DMA address out of 34-bit AXI physical range: src=0x${srcAddr.toString(16)} dst=0x${dstAddr.toString(16)}"
-            }
-            // BUG-A2-3: STILL capture writes full-res YUV via RECC_S to 34-bit AXI high-DDR
-            // (e.g. 0x1_7300_0000) and invokes RESZ (0xFFF7E000) to downscale it into a 32-bit
-            // DRAM review/post-view buffer (e.g. 0x39F81000 -> 0x3946A000 PIC0, dstFmt=0).
-            // Because 34-bit AXI high-DDR lies above the 32-bit ARMv7 DmaMemory aperture,
-            // synthesize the optical CMOS frame directly into the 32-bit packed UYVY422 target
-            // (mirroring SocJpegFactory's 34-bit AXI CMOS synthesis).
-            // Live recording: LV0 writes a strided 4:2:2 source ring. RESZ produces
-            // the single-plane 2x2-tiled surface submitted to the MVE as format 0x121.
-            if (e008 == 0x131L && dstAddr >= 0x1_0000_0000L) {
-                writeMovieTiles(memory, srcAddr, srcStrideBytes, cropX, cropY, cropW, cropH,
-                    dstAddr, dstStrideBytes, dstW, dstH)
-                return
-            }
+        if (e008 == 0x131L && dstAddr >= 0x1_0000_0000L) {
+            writeMovieTiles(memory, srcAddr, srcStrideBytes, cropX, cropY, cropW, cropH,
+                dstAddr, dstStrideBytes, dstW, dstH)
+            return
+        }
+        val maxStridePixels = srcStrideBytes / 2
+        require(srcStrideBytes >= 2 && cropX < maxStridePixels && dstStrideBytes >= dstW * 2) {
+            "RESZ stride too small: srcStride=$srcStrideBytes dstStride=$dstStrideBytes"
+        }
+        val effectiveCropW = minOf(cropW, maxStridePixels - cropX)
+        val maxSrcX = cropX + effectiveCropW - 1
+        val maxSrcY = cropY + cropH - 1
+        val lastRowBytes = minOf(srcStrideBytes.toLong(), ((maxSrcX + 2) and 1.inv()).toLong() * 2L)
+        val srcSpan = ((cropY + cropH - 1).toLong() * srcStrideBytes) + lastRowBytes
+        val dstSpan = ((dstH - 1).toLong() * dstStrideBytes) + dstW.toLong() * 2L
+        require(srcSpan in 1L..MAX_PIXEL_DMA_BYTES && dstSpan in 1L..MAX_PIXEL_DMA_BYTES) {
+            "RESZ DMA span out of bounds: srcSpan=$srcSpan dstSpan=$dstSpan max=$MAX_PIXEL_DMA_BYTES"
+        }
+        require(srcAddr in 1L..(0x4_0000_0000L - srcSpan) && dstAddr in 1L..(0x4_0000_0000L - dstSpan)) {
+            "RESZ DMA address out of 34-bit physical range: " +
+                "srcAddr=0x${srcAddr.toString(16)}(e0c0=0x${registerValues[E0C0_SLOT].toString(16)},e0c4=0x${registerValues[E0C4_SLOT].toString(16)},span=0x${srcSpan.toString(16)}) " +
+                "dstAddr=0x${dstAddr.toString(16)}(e0d4=0x${registerValues[E0D4_SLOT].toString(16)},e0d8=0x${registerValues[E0D8_SLOT].toString(16)},span=0x${dstSpan.toString(16)}) " +
+                "e0e8=0x${registerValues[E0EC_SLOT - 1].toString(16)} e0ec=0x${registerValues[E0EC_SLOT].toString(16)} " +
+                "src=${srcW}x${srcH}(stride=$srcStrideBytes) crop=($cropX,$cropY,${cropW}x$cropH) dst=${dstW}x${dstH}(stride=$dstStrideBytes) e008=0x${e008.toString(16)}"
+        }
+
+        val highTransfer = srcAddr + srcSpan > 0x1_0000_0000L || dstAddr + dstSpan > 0x1_0000_0000L
+        fun checkPhysicalBuffers() {
+            memory.check(srcAddr, srcSpan, false)
+            memory.check(dstAddr, dstSpan, true)
+        }
+        val packedUyvy = srcFmt == 0 && dstFmt == 0
+        if (highTransfer && (!packedUyvy || runCatching { checkPhysicalBuffers() }.isFailure)) {
             if (srcAddr >= 0x1_0000_0000L && dstAddr < 0x1_0000_0000L && dstFmt == 0 && sensor != null) {
                 synthesizeHighAxiSourceToUyvyDst(
                     tick = tick,
@@ -210,33 +227,12 @@ internal class ImageScalerE000 private constructor(
             }
             return
         }
-        require(srcFmt == 0 && dstFmt == 0) {
-            "Unsupported RESZ pixel format: E008=0x${e008.toString(16)} srcFmt=$srcFmt dstFmt=$dstFmt"
+        if (!highTransfer) {
+            require(packedUyvy) {
+                "Unsupported RESZ pixel format: E008=0x${e008.toString(16)} srcFmt=$srcFmt dstFmt=$dstFmt"
+            }
+            checkPhysicalBuffers()
         }
-
-        val maxStridePixels = srcStrideBytes / 2
-        require(srcStrideBytes >= 2 && cropX < maxStridePixels && dstStrideBytes >= dstW * 2) {
-            "RESZ stride too small: srcStride=$srcStrideBytes dstStride=$dstStrideBytes"
-        }
-        val effectiveCropW = minOf(cropW, maxStridePixels - cropX)
-        val maxSrcX = cropX + effectiveCropW - 1
-        val maxSrcY = cropY + cropH - 1
-        val lastRowBytes = minOf(srcStrideBytes.toLong(), ((maxSrcX + 2) and 1.inv()).toLong() * 2L)
-        val srcSpan = ((cropY + cropH - 1).toLong() * srcStrideBytes) + lastRowBytes
-        val dstSpan = ((dstH - 1).toLong() * dstStrideBytes) + dstW.toLong() * 2L
-        require(srcSpan in 1L..MAX_PIXEL_DMA_BYTES && dstSpan in 1L..MAX_PIXEL_DMA_BYTES) {
-            "RESZ DMA span out of bounds: srcSpan=$srcSpan dstSpan=$dstSpan max=$MAX_PIXEL_DMA_BYTES"
-        }
-        require(srcAddr in 1L..(0x1_0000_0000L - srcSpan) && dstAddr in 1L..(0x1_0000_0000L - dstSpan)) {
-            "RESZ DMA address out of 32-bit physical range: " +
-                "srcAddr=0x${srcAddr.toString(16)}(e0c0=0x${registerValues[E0C0_SLOT].toString(16)},e0c4=0x${registerValues[E0C4_SLOT].toString(16)},span=0x${srcSpan.toString(16)}) " +
-                "dstAddr=0x${dstAddr.toString(16)}(e0d4=0x${registerValues[E0D4_SLOT].toString(16)},e0d8=0x${registerValues[E0D8_SLOT].toString(16)},span=0x${dstSpan.toString(16)}) " +
-                "e0e8=0x${registerValues[E0EC_SLOT - 1].toString(16)} e0ec=0x${registerValues[E0EC_SLOT].toString(16)} " +
-                "src=${srcW}x${srcH}(stride=$srcStrideBytes) crop=($cropX,$cropY,${cropW}x$cropH) dst=${dstW}x${dstH}(stride=$dstStrideBytes) e008=0x${e008.toString(16)}"
-        }
-
-        memory.check(srcAddr, srcSpan, false)
-        memory.check(dstAddr, dstSpan, true)
 
         val stepX = 1 shl hDecim
         val stepY = 1 shl vDecim
@@ -258,6 +254,45 @@ internal class ImageScalerE000 private constructor(
             return
         }
 
+        fun sourceColumns() = IntArray(dstW) { x ->
+            if (dstW == 1) cropX else cropX + (x.toLong() * (effectiveCropW - 1) / (dstW - 1)).toInt()
+        }
+        fun sourceY(y: Int) = if (dstH == 1) cropY else cropY + (y.toLong() * (cropH - 1) / (dstH - 1)).toInt()
+
+        // Two 102 MP stills can be queued at once. Stream disjoint large surfaces by row so
+        // 102 MP still thumbnails/crops never allocate a 204 MiB full-source JVM ByteArray;
+        // overlapping crops below retain the source before writing the first destination row.
+        val largeDst = dstW.toLong() * dstH > FAST_SCALE_PIXEL_THRESHOLD
+        val largeSource = srcSpan > FAST_SCALE_SRC_BYTES && stepX == 1 && stepY == 1
+        val large = largeDst || largeSource
+        val disjoint = srcAddr + srcSpan <= dstAddr || dstAddr + dstSpan <= srcAddr
+        if (large && disjoint && (highTransfer || largeSource)) {
+            val sourceRow = ByteArray(lastRowBytes.toInt())
+            val outputRow = ByteArray(dstW * 2)
+            val input = ByteBuffer.wrap(sourceRow)
+            val output = ByteBuffer.wrap(outputRow)
+            val xMap = sourceColumns()
+            var previousY = -1
+            for (dy in 0 until dstH) {
+                val sy = sourceY(dy)
+                if (sy != previousY) {
+                    input.clear()
+                    memory.read(srcAddr + sy.toLong() * srcStrideBytes, input)
+                    check(!input.hasRemaining()) { "Incomplete RESZ source row" }
+                    normalizeMilbeautBlackMarginWords(sourceRow)
+                    if (effectiveCropW == dstW && cropX % 2 == 0) {
+                        sourceRow.copyInto(outputRow, 0, cropX * 2, (cropX + dstW) * 2)
+                    } else {
+                        scaleNearestUyvyRow(sourceRow, 0, xMap, outputRow, 0)
+                    }
+                    previousY = sy
+                }
+                output.clear()
+                memory.write(dstAddr + dy.toLong() * dstStrideBytes, output)
+                check(!output.hasRemaining()) { "Incomplete RESZ destination row" }
+            }
+            return
+        }
         val src = ByteArray(srcSpan.toInt())
         var readDone = 0
         while (readDone < src.size) {
@@ -269,42 +304,12 @@ internal class ImageScalerE000 private constructor(
         }
         normalizeMilbeautBlackMarginWords(src)
         val rowBytes = dstW * 2
-        if (dstW.toLong() * dstH.toLong() > FAST_SCALE_PIXEL_THRESHOLD) {
+        if (large) {
             val dstFull = ByteArray(dstSpan.toInt())
-            val sxMap = IntArray(dstW) { dx ->
-                if (dstW == 1) cropX
-                else (cropX + ((dx.toLong() * (effectiveCropW - 1)) / (dstW - 1)).toInt()).coerceIn(cropX, maxSrcX)
-            }
+            val xMap = sourceColumns()
             for (dy in 0 until dstH) {
-                val sy = if (dstH == 1) cropY
-                else (cropY + ((dy.toLong() * (cropH - 1)) / (dstH - 1)).toInt()).coerceIn(cropY, maxSrcY)
-                val srcRowOff = sy * srcStrideBytes
-                val dstRowOff = dy * dstStrideBytes
-                var dx = 0
-                while (dx < dstW) {
-                    val x0 = sxMap[dx]
-                    val pair0 = srcRowOff + (x0 and 1.inv()) * 2
-                    val u0 = if (pair0 < src.size) src[pair0] else 128.toByte()
-                    val y0Off = pair0 + if ((x0 and 1) != 0) 3 else 1
-                    val y0 = if (y0Off < src.size) src[y0Off] else 0
-                    val p = dstRowOff + dx * 2
-                    if (dx + 1 < dstW) {
-                        val x1 = sxMap[dx + 1]
-                        val pair1 = srcRowOff + (x1 and 1.inv()) * 2
-                        val vOff = pair0 + 2
-                        val v0 = if (vOff < src.size) src[vOff] else 128.toByte()
-                        val y1Off = pair1 + if ((x1 and 1) != 0) 3 else 1
-                        val y1 = if (y1Off < src.size) src[y1Off] else 0
-                        dstFull[p] = u0
-                        dstFull[p + 1] = y0
-                        dstFull[p + 2] = v0
-                        dstFull[p + 3] = y1
-                    } else {
-                        dstFull[p] = u0
-                        dstFull[p + 1] = y0
-                    }
-                    dx += 2
-                }
+                val srcRowOff = sourceY(dy) * srcStrideBytes
+                scaleNearestUyvyRow(src, srcRowOff, xMap, dstFull, dy * dstStrideBytes)
             }
             var writeDone = 0
             while (writeDone < dstFull.size) {
@@ -443,6 +448,37 @@ internal class ImageScalerE000 private constructor(
         }
     }
 
+    private fun scaleNearestUyvyRow(
+        src: ByteArray, srcRowOff: Int, sxMap: IntArray, output: ByteArray, dstRowOff: Int,
+    ) {
+        val dstW = sxMap.size
+        var dx = 0
+        while (dx < dstW) {
+            val x0 = sxMap[dx]
+            val pair0 = srcRowOff + (x0 and 1.inv()) * 2
+            val u0 = if (pair0 < src.size) src[pair0] else 128.toByte()
+            val y0Off = pair0 + if ((x0 and 1) != 0) 3 else 1
+            val y0 = if (y0Off < src.size) src[y0Off] else 0
+            val p = dstRowOff + dx * 2
+            if (dx + 1 < dstW) {
+                val x1 = sxMap[dx + 1]
+                val pair1 = srcRowOff + (x1 and 1.inv()) * 2
+                val vOff = pair0 + 2
+                val v0 = if (vOff < src.size) src[vOff] else 128.toByte()
+                val y1Off = pair1 + if ((x1 and 1) != 0) 3 else 1
+                val y1 = if (y1Off < src.size) src[y1Off] else 0
+                output[p] = u0
+                output[p + 1] = y0
+                output[p + 2] = v0
+                output[p + 3] = y1
+            } else {
+                output[p] = u0
+                output[p + 1] = y0
+            }
+            dx += 2
+        }
+    }
+
     private var movieSource = ByteArray(0)
     private var movieTileRow = ByteArray(0)
 
@@ -524,10 +560,23 @@ internal class ImageScalerE000 private constructor(
         val base = srcAddr + firstTileRow.toLong() * srcStride
         memory.check(base, srcSpan, false)
         memory.check(dstAddr, dstSpan, true)
-        if (movieSource.size < srcSpan) movieSource = ByteArray(srcSpan.toInt())
+        val direct = (memory as? DirectGuestRamPort)?.sliceDirect(base, srcSpan, write = false)
+        val tileWords = direct?.asByteBuffer() ?: run {
+            if (movieSource.size < srcSpan) movieSource = ByteArray(srcSpan.toInt())
+            val bytes = ByteBuffer.wrap(movieSource, 0, srcSpan.toInt())
+            val bandBytes = (DMA_CHUNK_BYTES / srcStride) * srcStride
+            var offset = 0
+            while (offset < srcSpan) {
+                val count = minOf(bandBytes, srcSpan.toInt() - offset)
+                val band = bytes.slice(offset, count)
+                memory.read(base + offset, band)
+                check(!band.hasRemaining()) { "Incomplete playback tile DMA read" }
+                offset += count
+            }
+            bytes
+        }
+        tileWords.order(ByteOrder.LITTLE_ENDIAN)
         if (playbackUyvy.size < rowBytes * height) playbackUyvy = ByteArray(rowBytes * height)
-        memory.read(base, ByteBuffer.wrap(movieSource, 0, srcSpan.toInt()))
-        val tileWords = ByteBuffer.wrap(movieSource).order(ByteOrder.LITTLE_ENDIAN)
         val xSamples = IntArray((width + 1) and -2) { x ->
             cropX + (minOf(x, width - 1).toLong() * cropW / width).toInt()
         }
@@ -554,12 +603,14 @@ internal class ImageScalerE000 private constructor(
                 playbackUyvy[dst++] = y1.toByte()
             }
         }
-        if (dstStride == rowBytes) {
-            memory.write(dstAddr, ByteBuffer.wrap(playbackUyvy, 0, dst))
-        } else {
-            for (y in 0 until height) {
-                memory.write(dstAddr + y.toLong() * dstStride, ByteBuffer.wrap(playbackUyvy, y * rowBytes, rowBytes))
-            }
+        val rowsPerWrite = if (dstStride == rowBytes) DMA_CHUNK_BYTES / rowBytes else 1
+        var y = 0
+        while (y < height) {
+            val rows = minOf(rowsPerWrite, height - y)
+            val band = ByteBuffer.wrap(playbackUyvy, y * rowBytes, rows * rowBytes)
+            memory.write(dstAddr + y.toLong() * dstStride, band)
+            check(!band.hasRemaining()) { "Incomplete playback UYVY DMA write" }
+            y += rows
         }
     }
 
@@ -793,6 +844,7 @@ internal class ImageScalerE000 private constructor(
         private const val MAX_PIXEL_DMA_BYTES = 512L * 1024L * 1024L
         private const val DMA_CHUNK_BYTES = 8 * 1024 * 1024
         private const val FAST_SCALE_PIXEL_THRESHOLD = 4_000_000L
+        private const val FAST_SCALE_SRC_BYTES = 16L * 1024L * 1024L
         private const val MAX_SYNTH_SENSOR_BYTES = 1920 * 1080 * 2
         private const val NOMINAL_DURATION_NANOS = 1000L
         private const val NOMINAL_ISO = 100

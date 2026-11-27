@@ -8,9 +8,11 @@ internal class LcdcIrq117(
     val deadline: Long,
     val followups: List<Long>,
     val continuous: Boolean = false,
+    private val periodTicks: Long = LcdcIrq118.PERIOD,
 ) : TickAwareMmioDevice, MmioDevice by bank {
     companion object {
         const val SETTING = "irq117Tick"
+        const val PERIOD_SETTING = "irq117PeriodTicks"
         const val FOLLOWUPS = "irq117FollowupTicks"
         const val LIMIT = 32
         fun parseTicks(text: String, first: Long): List<Long> {
@@ -29,6 +31,10 @@ internal class LcdcIrq117(
         const val SINK = "soc-gic.lines"
     }
 
+    init {
+        require(periodTicks in 1L..0xffffffffL) { "IRQ117 period must be positive u32" }
+    }
+
     private val target by lazy {
         requireNotNull(context.ports.find(SINK, InterruptSink::class.java) as? EnabledEdgeInterruptSink) {
             "LCD IRQ117 requires GIC edge and enable inspection"
@@ -36,7 +42,7 @@ internal class LcdcIrq117(
     }
     private val deadlines = listOf(deadline) + followups
     private val history = mutableListOf<Long>()
-    private var nextAutoTick: Long? = if (continuous) minOf(deadline, LcdcIrq118.PERIOD) else deadline
+    private var nextAutoTick: Long? = if (continuous) minOf(deadline, periodTicks) else deadline
 
     fun bind() { target }
 
@@ -56,7 +62,7 @@ internal class LcdcIrq117(
                 val line = target.edgeState(LINE)
                 val ready = target.lineEnabled(LINE) && line.edge && !line.high && !line.pending
                 if (!ready) {
-                    nextAutoTick = tick + LcdcIrq118.PERIOD
+                    nextAutoTick = tick + periodTicks
                     false
                 } else {
                     true
@@ -70,8 +76,8 @@ internal class LcdcIrq117(
                 target.setLine(LINE, false)
                 if (history.size >= 64) history.removeAt(1)
                 history.add(tick)
-                nextAutoTick = deadlines.getOrNull(history.size)?.let { maxOf(it, tick + LcdcIrq118.PERIOD) }
-                    ?: (tick + LcdcIrq118.PERIOD)
+                nextAutoTick = deadlines.getOrNull(history.size)?.let { maxOf(it, tick + periodTicks) }
+                    ?: (tick + periodTicks)
             }
             return
         }
@@ -134,9 +140,9 @@ internal class LcdcIrq117(
             val now = context.clock.ticks()
             val scheduled = deadlines.getOrNull(history.size)
             nextAutoTick = when {
-                history.isEmpty() -> if (now == 0L) minOf(deadline, LcdcIrq118.PERIOD) else now + LcdcIrq118.PERIOD
+                history.isEmpty() -> if (now == 0L) minOf(deadline, periodTicks) else now + periodTicks
                 scheduled != null && scheduled > now -> scheduled
-                else -> now + LcdcIrq118.PERIOD
+                else -> now + periodTicks
             }
         }
     }

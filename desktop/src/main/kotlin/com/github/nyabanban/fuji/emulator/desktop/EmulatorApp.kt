@@ -162,7 +162,7 @@ class EmulatorApp : Application() {
             submitOwner = { action -> runtime.owner.submit(action) },
             applyBatchOnOwner = { batch, persistToDisk ->
                 runtime.telemetry.recordButtonEvent(batch.entries.joinToString(",") { "${it.key}=${it.value}" })
-                val state = runtime.host.patchLatestDirect("buttons", batch, persistToDisk = false)
+                val state = patchStudioButtons(batch, persistToDisk = false)
                 if (persistToDisk) {
                     // Persist only latching body switches (power, movieMode) to buttons.yaml so
                     // transiently held momentary keys (e.g. back/shutterHalf/menu) are never frozen
@@ -182,11 +182,18 @@ class EmulatorApp : Application() {
             onError = ::error,
         )
     }
+    private fun patchStudioButtons(changes: Map<String, Any>, persistToDisk: Boolean): Map<String, Any?> {
+        val movie = changes["movieMode"] as? Boolean
+        val previous = if (movie != null) runtime.host.ports.find("buttons", ButtonPort::class.java)?.pressed("movieMode") else null
+        val result = runtime.host.patchLatestDirect("buttons", changes, persistToDisk)
+        if (movie != null && previous != null && previous != movie) runtime.session.studioModeSwitchChanged(movie)
+        return result
+    }
     private fun patchLatest(id: String, changes: Map<String, Any>): CompletableFuture<Map<String, Any?>> = runtime.owner.submit {
         if (id == "buttons") {
             runtime.telemetry.recordButtonEvent(changes.entries.joinToString(",") { "${it.key}=${it.value}" })
-        }
-        runtime.host.patchLatestDirect(id, changes, persistToDisk = true)
+            patchStudioButtons(changes, persistToDisk = true)
+        } else runtime.host.patchLatestDirect(id, changes, persistToDisk = true)
     }.whenComplete { _, problem -> if (problem != null) error(problem) }
     private fun showControls(on: Boolean) { if(on && ::entryStage.isInitialized) { entryStage.show(); controlsToggle.isSelected=true } }
     private fun configure(id: String) {
@@ -1175,7 +1182,7 @@ class EmulatorApp : Application() {
                     includeAllConfigs = configChanged,
                 )
             }
-            hostSnap + mapOf("machine" to machine)
+            hostSnap + mapOf("machine" to machine, "switchingToStill" to runtime.session.studioSwitchingToStill())
         }.thenApplyAsync({ snapshot ->
             val formattedDiagnostics = if (fetchDiagnostics) {
                 diagnosticsController.formatDiagnosticsJson(snapshot)
@@ -1232,7 +1239,9 @@ class EmulatorApp : Application() {
                 studio.paintFromBridge(runtime.displayBridge)
                 @Suppress("UNCHECKED_CAST") val machine = snapshot["machine"] as Map<String, Any?>
                 val labelStatus = if (interactiveStarted && paused.get()) "paused" else machine["status"].toString()
-                val nextStatus = lastProblem ?: (labelStatus + " · " + machine["attempts"] + " attempts")
+                val nextStatus = lastProblem ?: if (studio.showingStillModeTransition) {
+                    I18n.t("studio.mode.switching_to_still")
+                } else labelStatus + " · " + machine["attempts"] + " attempts"
                 if (status.text != nextStatus) status.text = nextStatus
                 val formatted = payload.formattedDiagnostics
                 if (formatted != null && diagnosticsController.acceptFormattedIfChanged(formatted)) {

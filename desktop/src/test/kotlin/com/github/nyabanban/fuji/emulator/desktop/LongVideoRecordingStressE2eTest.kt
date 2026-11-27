@@ -31,14 +31,14 @@ import kotlin.test.assertTrue
  *
  * Opt-in gate: `FUJI_RUN_LONG_VIDEO_STRESS=1` (or `-Dfuji.runLongVideoStress=1`).
  *
- * Exercises a genuinely long, uninterrupted `≥65 vSec` MOVIE recording (`>= 600` Mali-V61
+ * Exercises a genuinely long, uninterrupted `≥75 vSec` MOVIE recording (`>= 600` Mali-V61
  * frames, `>= 30+ MB` `.MOV` on SD1 FAT32) on live `GXUP0004.DAT` (Dynarmic JIT) with animated
  * `scene://milk-frog` + live 48 kHz `SCENE_AUDIO` + mid-recording six-stop ND exposure & focus shifts:
  * 1. Continuous recording health: zero hangs, zero deadlocks, bounded JVM heap, zero SD stalls,
  *    zero `0x0508` errors, zero kernel exceptions, continuous Mali-V61 & display cadence.
  * 2. Deep streaming QuickTime `.MOV` ISO-BMFF audit (`ftyp`/`moov`/`mdat`, `mdhd`/`stsd`/`stts`/
  *    `stsz`/`stsc`/`stco`/`co64`):
- *    - Exact video sample count (`>= 600`), valid AVCC/HVCC NAL units at start/middle/ND8/end,
+ *    - Exact video sample count (`>= 600`), valid AVCC/HVCC NAL units at start/middle/ND/end,
  *      varying frame digests (non-frozen!) and live preview-vs-recording consistency;
  *    - Exact 48 kHz `lpcm`/`sowt`/`twos`/`in24` audio track with `< 0.15s` A/V duration drift
  *      and continuous non-silent PCM across start, middle, and end chunks.
@@ -305,6 +305,31 @@ class LongVideoRecordingStressE2eTest {
     private fun decoderFrameCount(rt: EmulatorRuntime): Long {
         val vpu = compState(rt, "soc-isp")["maliV61"] as Map<*, *>
         return (vpu["framesDecodedCount"] as Number).toLong()
+    }
+
+    private fun transmittedAudioFrames(rt: EmulatorRuntime): Long = rt.owner.submit {
+        requireNotNull(rt.host.ports.find("soc-isp-setup.i2s-audio", I2sAudioPort::class.java))
+            .playbackStats().totalTxFrames
+    }.join()
+
+    private fun openRecordedMovie(rt: EmulatorRuntime, movie: Path, evidence: Path, tag: String) {
+        val before = decoderFrameCount(rt)
+        tapButton(rt, "play", 95L, 500L)
+        for (poll in 0 until 32) {
+            // The firmware briefly blanks the LCD while loading the file. Wait for its actual decoder and poster.
+            if (readU32(rt, 0x01CC6424L) in 0x0300..0x03ff && decoderFrameCount(rt) > before) {
+                stepVirtualMs(rt, 250L)
+                val (_, visiblePixels, _) = captureMainStats(rt)
+                if (visiblePixels > 80_000) {
+                    val poster = savePlaybackFrame(rt, evidence, "$tag-poster")
+                    assertPosterMatchesFile(poster, movie, evidence)
+                    return
+                }
+            }
+            stepVirtualMs(rt, 250L)
+        }
+        captureMainStats(rt, evidence.resolve("$tag-play-timeout.png"))
+        fail("Movie poster did not appear for ${movie.fileName} on screen 0x${readU32(rt, 0x01CC6424L).toString(16)}")
     }
 
     private fun savePlaybackFrame(rt: EmulatorRuntime, evidence: Path, name: String): IntArray = rt.owner.submit {
@@ -733,7 +758,7 @@ class LongVideoRecordingStressE2eTest {
                 }
             }
 
-            // Probe video NAL framing & payload digests at start, ND8 segment, middle, and end
+            // Probe video NAL framing & payload digests at start, ND segment, middle, and end
             val vt = videoTrack
             if (vt != null && vt.sampleCount >= 6) {
                 val md = MessageDigest.getInstance("SHA-256")
@@ -925,7 +950,7 @@ class LongVideoRecordingStressE2eTest {
             val maliStart = (compState(rt, "soc-isp")["maliV61"] as? Map<*, *>)
             val framesStart = (maliStart?.get("framesEncodedCount") as? Number)?.toLong() ?: 0L
 
-            // 3. Record for 65 virtual seconds, including ND and focus changes.
+            // 3. Record for 75 virtual seconds, including ND and focus changes.
             pressMovieShutter("start")
             var recordingConfirmed = false
             for (attempt in 0 until 12) {
@@ -948,7 +973,7 @@ class LongVideoRecordingStressE2eTest {
             }
             val recStartTick = rt.telemetry.virtualTick
 
-            val targetSlices = 65
+            val targetSlices = 75
             var sawRecScr = false
             var lastFrames = framesStart
             var lastSeq = seqPre
@@ -958,13 +983,13 @@ class LongVideoRecordingStressE2eTest {
             var peakHeapMb = heapStartMb
             var baselineLumaSum = 0.0
             var baselineLumaN = 0
-            var nd8LumaSum = 0.0
-            var nd8LumaN = 0
+            var filteredLumaSum = 0.0
+            var filteredLumaN = 0
 
             // Absolute PTS boundaries in a 60000/1001 stream. The first encoded frame may arrive
             // well after the REC button press; align controls to accepted frames instead of that button.
             val cadence = PreviewCadence(evidenceDir.resolve("preview-cadence.tsv"))
-            val transitions = ArrayDeque(listOf(8, 20, 28))
+            val transitions = ArrayDeque(listOf(15, 35, 45))
             val framePeriodTicks = 900_900L
             for (slice in 1..targetSlices) {
                 val sliceWall0 = System.currentTimeMillis()
@@ -977,15 +1002,9 @@ class LongVideoRecordingStressE2eTest {
                     } else Long.MAX_VALUE
                     if (targetSecond != null && framesUntilChange <= 0L) {
                         when (targetSecond) {
-                            8 -> {
-                                patchComp(rt, "optical-filter", mapOf("ndStops" to 6.0))
-                                patchComp(rt, "lens", mapOf("focusDistanceM" to 3.2))
-                            }
-                            20 -> {
-                                patchComp(rt, "optical-filter", mapOf("ndStops" to 0.0))
-                                patchComp(rt, "lens", mapOf("focusDistanceM" to 1.55))
-                            }
-                            28 -> patchComp(rt, "lens", mapOf("focusDistanceM" to 2.2))
+                            15 -> patchComp(rt, "optical-filter", mapOf("ndStops" to 6.0))
+                            35 -> patchComp(rt, "lens", mapOf("focusDistanceM" to 1.55))
+                            45 -> patchComp(rt, "optical-filter", mapOf("ndStops" to 0.0))
                         }
                         println("[LONG-VIDEO][CONTROL] targetSec=$targetSecond encoded=$encoded " +
                             "tick=${rt.telemetry.virtualTick} deltaFrames=${-framesUntilChange}")
@@ -1008,7 +1027,7 @@ class LongVideoRecordingStressE2eTest {
 
                 val scr = readU32(rt, 0x01CC6424L)
                 if (scr == 0x0208) sawRecScr = true
-                val png = if (slice in listOf(4, 12, 24, 34, 64)) evidenceDir.resolve("preview-$slice.png") else null
+                val png = if (slice in listOf(4, 14, 16, 34, 36, 46, 75)) evidenceDir.resolve("preview-$slice.png") else null
                 val (seqNow, nbNow, lumaNow) = captureMainStats(rt, png)
                 if (seqNow > lastSeq) {
                     seqAdvances++
@@ -1017,9 +1036,9 @@ class LongVideoRecordingStressE2eTest {
                 if (slice in 2..7) {
                     baselineLumaSum += lumaNow
                     baselineLumaN++
-                } else if (slice in 9..19) {
-                    nd8LumaSum += lumaNow
-                    nd8LumaN++
+                } else if (slice in 16..34) {
+                    filteredLumaSum += lumaNow
+                    filteredLumaN++
                 }
                 val maliNow = compState(rt, "soc-isp")["maliV61"] as? Map<*, *>
                 val framesNow = (maliNow?.get("framesEncodedCount") as? Number)?.toLong() ?: 0L
@@ -1096,12 +1115,12 @@ class LongVideoRecordingStressE2eTest {
                     "maliFrames=$totalMaliFrames maliEncMB=${"%.2f".format(totalMaliBytes / 1_048_576.0)} " +
                     "seqAdv=$seqAdvances/$targetSlices zeroFrameSlices=$zeroFrameSlices maxSliceWall=${maxSliceWallMs}ms " +
                     "heap=${"%.1f".format(heapStartMb)}->${"%.1f".format(heapEndMb)}MB (peak=${"%.1f".format(peakHeapMb)}MB) " +
-                    "luma(base=${"%.1f".format(baselineLumaSum / maxOf(1, baselineLumaN))},nd8=${"%.1f".format(nd8LumaSum / maxOf(1, nd8LumaN))},pre=${"%.1f".format(lumaPre)}) " +
+                    "luma(base=${"%.1f".format(baselineLumaSum / maxOf(1, baselineLumaN))},nd=${"%.1f".format(filteredLumaSum / maxOf(1, filteredLumaN))},pre=${"%.1f".format(lumaPre)}) " +
                     "i2sRx=$i2sRx dcim=$dcimAfterStop sd=$sdState mov=${movFile?.fileName}",
             )
 
             assertTrue(sawRecScr, "Expected Movie REC screen 0x0208 during long recording")
-            assertTrue(recDurationVSec > 60.0, "Expected > 60.0 vSec recording, got $recDurationVSec")
+            assertTrue(recDurationVSec >= targetSlices, "Expected $targetSlices virtual recording seconds, got $recDurationVSec")
             assertTrue(totalMaliFrames >= 600L, "Expected >= 600 Mali-V61 encoded frames, got $totalMaliFrames")
             assertEquals(0, zeroFrameSlices, "Detected $zeroFrameSlices stalled 1-vSec slices with 0 encoded frames")
             assertTrue(seqAdvances >= targetSlices - 2, "Display stalled during long video recording (seqAdv=$seqAdvances/$targetSlices)")
@@ -1127,8 +1146,8 @@ class LongVideoRecordingStressE2eTest {
             assertTrue(mov.hasFtyp && mov.hasMoov && mov.hasMdat, "Invalid .MOV top-level boxes: ${mov.topBoxes}")
             assertTrue(mov.sizeBytes >= 30L * 1024L * 1024L, "Expected >= 30 MiB .MOV file, got ${mov.sizeBytes} B (${"%.2f".format(mov.sizeBytes / 1_048_576.0)} MiB)")
             assertTrue(vt.sampleCount >= 600, "Expected >= 600 video samples in .MOV stsz, got ${vt.sampleCount}")
-            assertTrue(vt.durationSec > 60.0, "Expected > 60.0s video track duration, got ${vt.durationSec}s")
-            assertTrue(at.durationSec > 60.0, "Expected > 60.0s audio track duration, got ${at.durationSec}s")
+            assertTrue(vt.durationSec >= targetSlices, "Expected at least $targetSlices video seconds, got ${vt.durationSec}")
+            assertTrue(at.durationSec >= targetSlices, "Expected at least $targetSlices audio seconds, got ${at.durationSec}")
             assertTrue(avDriftSec < 0.15, "A/V duration drift exceeded 0.15s: video=${vt.durationSec}s audio=${at.durationSec}s drift=${avDriftSec}s")
             assertTrue(mov.videoProbes.isNotEmpty() && mov.videoProbes.all { it.validFraming && it.sizeBytes > 64 }, "Invalid video NAL framing in probes: ${mov.videoProbes}")
             assertTrue(distinctDigests.size >= 4, "Video frames appear frozen/static (only ${distinctDigests.size} distinct frame digests): ${mov.videoProbes}")
@@ -1138,24 +1157,9 @@ class LongVideoRecordingStressE2eTest {
             )
 
             // 6. In-camera playback of the MOV just recorded on this card.
-            val firstPlaybackFrame = decoderFrameCount(rt)
             println("[LONG-VIDEO][PLAY_FILE] name=${recordedMov.fileName} bytes=${Files.size(recordedMov)}")
-
-            tapButton(rt, "play", 95L, 700L)
-            for (pw in 0 until 16) {
-                val s = readU32(rt, 0x01CC6424L)
-                val (_, nb, _) = captureMainStats(rt)
-                if (s in 0x0300..0x03FF && nb > 80_000) break
-                stepVirtualMs(rt, 300L)
-            }
-            val scrPlay = readU32(rt, 0x01CC6424L)
-            val (_, nbPlay, _) = captureMainStats(rt)
+            openRecordedMovie(rt, recordedMov, evidenceDir, "movie")
             assertHealthyCamera(rt, "PLAYBACK_ENTER")
-            assertTrue(scrPlay in 0x0300..0x03FF && nbPlay > 80_000, "Playback failed to render recorded .MOV: scr=0x${scrPlay.toString(16)} nb=$nbPlay")
-
-            val poster = savePlaybackFrame(rt, evidenceDir, "movie-poster")
-            assertTrue(decoderFrameCount(rt) > firstPlaybackFrame, "The VPU did not return a decoded movie frame")
-            assertPosterMatchesFile(poster, recordedMov, evidenceDir)
 
             tapButton(rt, "down", 95L, 500L)
             val playingCount = decoderFrameCount(rt)
@@ -1288,7 +1292,7 @@ class LongVideoRecordingStressE2eTest {
             checkMovieHud("second-movie-ready")
             captureMainStats(rt, evidenceDir.resolve("second-movie-ready.png"))
             pressMovieShutter("second-start")
-            stepVirtualMs(rt, 2_500L)
+            stepVirtualMs(rt, 6_000L)
             assertEquals(0x0208, readU32(rt, 0x01CC6424L), "Second recording did not reach REC")
             pressMovieShutter("second-stop")
             var secondMovie: Path? = null
@@ -1305,12 +1309,22 @@ class LongVideoRecordingStressE2eTest {
                 observedSize = size
             }
             val finalized = assertNotNull(secondMovie, "Second MOV did not finalize")
+            val secondReport = inspectMovDeep(finalized, tempRoot)
+            assertTrue(assertNotNull(secondReport.videoTrack).durationSec >= 5.0, "Second video track is too short")
+            assertTrue(assertNotNull(secondReport.audioTrack).durationSec >= 5.0, "Second audio track is too short")
             assertDecodedFramesChange(finalized, tempRoot, System.getenv("FUJI_FFMPEG") ?: "ffmpeg")
             val thumbnailErrors = listOf(recordedMov, finalized).associate { it.fileName to movieThumbnailError(it, evidenceDir) }
             assertHealthyCamera(rt, "SECOND_RECORDING_FINALIZED")
             assertTrue(thumbnailErrors.values.all { it < 18.0 }, "Embedded thumbnails differ from decoded video: $thumbnailErrors")
             println("[LONG-VIDEO][SECOND_MOV] name=${finalized.fileName} bytes=${Files.size(finalized)}")
-
+            openRecordedMovie(rt, finalized, Files.createDirectories(evidenceDir.resolve("second-movie")), "second-movie")
+            val beforeSecondPlay = decoderFrameCount(rt)
+            val beforeSecondAudio = transmittedAudioFrames(rt)
+            tapButton(rt, "down", 95L, 500L)
+            stepVirtualMs(rt, 1_250L)
+            assertTrue(decoderFrameCount(rt) > beforeSecondPlay + 3, "Second movie failed to advance during playback")
+            assertTrue(transmittedAudioFrames(rt) > beforeSecondAudio, "Second movie produced no I2S playback frames")
+            assertHealthyCamera(rt, "SECOND_MOVIE_PLAYBACK")
 
             // Container headers and IDR picture IDs can change while every decoded pixel stays gray.
             assertDecodedFramesChange(recordedMov, tempRoot, System.getenv("FUJI_FFMPEG") ?: "ffmpeg")

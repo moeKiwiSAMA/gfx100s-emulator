@@ -48,9 +48,17 @@ internal class AvcReferenceFrame(
         }
 
         fun hasFineDetail(pixels: ShortArray, coarse: ByteArray, first: Int, stride: Int): Boolean {
-            for (y in 0 until 16) for (x in 0 until 16) {
-                val estimate = coarse[first + (y / 4) * stride + x / 4].toUByte().toInt()
-                if (kotlin.math.abs((pixels[y * 16 + x].toInt() ushr 2) - estimate) >= 4) return true
+            for (blockY in 0 until 4) for (blockX in 0 until 4) {
+                // The seven acceptable 8-bit values (estimate ± 3) span 28 consecutive 10-bit values.
+                val estimate = coarse[first + blockY * stride + blockX].toInt() and 255
+                val lower = (estimate - 3) * 4
+                for (row in 0 until 4) {
+                    val offset = (blockY * 4 + row) * 16 + blockX * 4
+                    for (x in 0 until 4) {
+                        val delta = (pixels[offset + x].toInt() and 0xffff) - lower
+                        if (delta !in 0 until 28) return true
+                    }
+                }
             }
             return false
         }

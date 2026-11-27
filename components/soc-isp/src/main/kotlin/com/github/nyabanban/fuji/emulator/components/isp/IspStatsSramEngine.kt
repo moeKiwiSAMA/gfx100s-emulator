@@ -6,7 +6,7 @@ import kotlin.math.abs
 import kotlin.math.roundToLong
 
 /**
- * Real-silicon 28 KiB ISP On-Chip Stats SRAM model (mirrored across double-buffered
+ * Computes the selector data for the two 28 KiB ISP statistics SRAM banks,
  * Bank 0 `0xFFF10000..0xFFF16FFF` and Bank 1 `0xFFF17000..0xFFF1DFFF` per GFX100S 2.13 `section5.bin`
  * `0x02370170` / `0x024B9364` / `0x0251C05C`):
  *
@@ -20,6 +20,12 @@ import kotlin.math.roundToLong
  */
 internal class IspStatsSramEngine {
     private val bank = ByteArray(BANK_SIZE)
+    private val computed = MemorySegment.ofArray(bank)
+    val completedBanks = IspStatsBanks()
+
+    fun publishCompletedFrame(coreWords: LongArray) {
+        completedBanks.publish(computed, coreWords, aeFramesUpdated > 0, histFramesUpdated > 0)
+    }
     private val blackReferenceSums = LongArray(BLACK_REFERENCE_WINDOWS)
     private val cellSumR = LongArray(GRID_CELLS)
     private val cellSumG1 = LongArray(GRID_CELLS)
@@ -107,6 +113,7 @@ internal class IspStatsSramEngine {
 
     fun clear() {
         bank.fill(0)
+        completedBanks.restore(null)
         blackReferenceSums.fill(0L)
         aeFramesUpdated = 0L
         histFramesUpdated = 0L
@@ -1001,20 +1008,23 @@ internal class IspStatsSramEngine {
     }
 
     /** Reads 1/2/4 bytes from Stats Head (`0x0000..0x105F`, `sel 0..5`). */
-    fun readHead(offset: Int, size: Int): Long {
+    fun readHead(offset: Int, size: Int, physicalBank: Int? = null): Long {
         headReadCount++
+        if (physicalBank != null) return completedBanks.read(physicalBank, offset, size)
         return readLittle(offset, size)
     }
 
     /** Reads an aligned 32-bit word from Result Surface (`0x1060 + offset`, `sel 6..32`). */
-    fun readResultSurfaceWord(surfaceOffset: Int): Long {
+    fun readResultSurfaceWord(surfaceOffset: Int, physicalBank: Int? = null): Long {
         surfaceReadCount++
+        if (physicalBank != null) return completedBanks.read(physicalBank, RESULT_SURFACE_BASE_OFF + surfaceOffset, 4)
         return readLittle(RESULT_SURFACE_BASE_OFF + surfaceOffset, 4)
     }
 
     /** Reads 1/2/4 bytes from Histogram SRAM (`0x6000 + offset`, `sel 33..36`). */
-    fun readHistogram(histOffset: Int, size: Int): Long {
+    fun readHistogram(histOffset: Int, size: Int, physicalBank: Int? = null): Long {
         histReadCount++
+        if (physicalBank != null) return completedBanks.read(physicalBank, SEL33_HIST_Y_OFF + histOffset, size)
         return readLittle(SEL33_HIST_Y_OFF + histOffset, size)
     }
 
@@ -1031,7 +1041,7 @@ internal class IspStatsSramEngine {
         "headReadCount" to headReadCount,
         "surfaceReadCount" to surfaceReadCount,
         "histReadCount" to histReadCount,
-        "nativeShadowBound" to (nativeShadow != null),
+        "nativeShadowBound" to (nativeShadow != null || completedBanks.nativeBound),
     )
 
     private fun readU16(bytes: ByteArray, pixelIndex: Int): Int {

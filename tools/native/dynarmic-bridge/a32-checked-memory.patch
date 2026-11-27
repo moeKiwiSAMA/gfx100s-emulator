@@ -1,0 +1,308 @@
+--- a/dynarmic/backend/x64/a32_emit_x64_memory.cpp
++++ b/dynarmic/backend/x64/a32_emit_x64_memory.cpp
+@@ -27,19 +27,43 @@
+ 
+ using namespace Xbyak::util;
+ 
++// ARM DDI 0406C, LDRD/STRD: a doubleword-aligned access may use a single transfer.
++// At address 4 mod 8 these instructions perform two individually aligned word transfers.
++// Keep the ordinary 64-bit callback for other addresses, including alignment faults.
++constexpr size_t word_pair_fallback = 65;  // A separate callback-table key, not a transfer width.
++
++static u64 ReadWordPair(A32::UserCallbacks* memory, u32 address) {
++    if ((address & 7) != 4)
++        return memory->MemoryRead64(address);
++    const u32 first = memory->MemoryRead32(address);
++    const u32 second = memory->MemoryRead32(address + 4);
++    return static_cast<u64>(first) | (static_cast<u64>(second) << 32);
++}
++
++static void WriteWordPair(A32::UserCallbacks* memory, u32 address, u64 value) {
++    if ((address & 7) != 4) {
++        memory->MemoryWrite64(address, value);
++        return;
++    }
++    memory->MemoryWrite32(address, static_cast<u32>(value));
++    memory->MemoryWrite32(address + 4, static_cast<u32>(value >> 32));
++}
++
+ void A32EmitX64::GenFastmemFallbacks() {
+     const std::initializer_list<int> idxes{0, 1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14};
+-    const std::array<std::pair<size_t, ArgCallback>, 4> read_callbacks{{
++    const std::array<std::pair<size_t, ArgCallback>, 5> read_callbacks{{
+         {8, Devirtualize<&A32::UserCallbacks::MemoryRead8>(conf.callbacks)},
+         {16, Devirtualize<&A32::UserCallbacks::MemoryRead16>(conf.callbacks)},
+         {32, Devirtualize<&A32::UserCallbacks::MemoryRead32>(conf.callbacks)},
+         {64, Devirtualize<&A32::UserCallbacks::MemoryRead64>(conf.callbacks)},
++        {word_pair_fallback, ArgCallback(&ReadWordPair, reinterpret_cast<u64>(conf.callbacks))},
+     }};
+-    const std::array<std::pair<size_t, ArgCallback>, 4> write_callbacks{{
++    const std::array<std::pair<size_t, ArgCallback>, 5> write_callbacks{{
+         {8, Devirtualize<&A32::UserCallbacks::MemoryWrite8>(conf.callbacks)},
+         {16, Devirtualize<&A32::UserCallbacks::MemoryWrite16>(conf.callbacks)},
+         {32, Devirtualize<&A32::UserCallbacks::MemoryWrite32>(conf.callbacks)},
+         {64, Devirtualize<&A32::UserCallbacks::MemoryWrite64>(conf.callbacks)},
++        {word_pair_fallback, ArgCallback(&WriteWordPair, reinterpret_cast<u64>(conf.callbacks))},
+     }};
+     const std::array<std::pair<size_t, ArgCallback>, 4> exclusive_write_callbacks{{
+         {8, Devirtualize<&A32::UserCallbacks::MemoryWriteExclusive8>(conf.callbacks)},
+@@ -51,9 +75,12 @@
+     for (bool ordered : {false, true}) {
+         for (int vaddr_idx : idxes) {
+             for (int value_idx : idxes) {
+-                for (const auto& [bitsize, callback] : read_callbacks) {
++                for (const auto& [key, callback] : read_callbacks) {
++                    if (ordered && key == word_pair_fallback)
++                        continue;
++                    const size_t bitsize = key == word_pair_fallback ? 64 : key;
+                     code.align();
+-                    read_fallbacks[std::make_tuple(ordered, bitsize, vaddr_idx, value_idx)] = code.getCurr<void (*)()>();
++                    read_fallbacks[std::make_tuple(ordered, key, vaddr_idx, value_idx)] = code.getCurr<void (*)()>();
+                     ABI_PushCallerSaveRegistersAndAdjustStackExcept(code, HostLocRegIdx(value_idx));
+                     if (vaddr_idx != code.ABI_PARAM2.getIdx()) {
+                         code.mov(code.ABI_PARAM2, Xbyak::Reg64{vaddr_idx});
+@@ -68,11 +95,11 @@
+                     ABI_PopCallerSaveRegistersAndAdjustStackExcept(code, HostLocRegIdx(value_idx));
+                     code.ZeroExtendFrom(bitsize, Xbyak::Reg64{value_idx});
+                     code.ret();
+-                    PerfMapRegister(read_fallbacks[std::make_tuple(ordered, bitsize, vaddr_idx, value_idx)], code.getCurr(), fmt::format("a32_read_fallback_{}", bitsize));
++                    PerfMapRegister(read_fallbacks[std::make_tuple(ordered, key, vaddr_idx, value_idx)], code.getCurr(), fmt::format("a32_read_fallback_{}", bitsize));
+ 
+                     if (!ordered) {
+                         code.align();
+-                        read_fallbacks_no_xmm[std::make_tuple(bitsize, vaddr_idx, value_idx)] = code.getCurr<void (*)()>();
++                        read_fallbacks_no_xmm[std::make_tuple(key, vaddr_idx, value_idx)] = code.getCurr<void (*)()>();
+                         ABI_PushCallerSaveGprsAndAdjustStackExcept(code, HostLocRegIdx(value_idx));
+                         if (vaddr_idx != code.ABI_PARAM2.getIdx()) {
+                             code.mov(code.ABI_PARAM2, Xbyak::Reg64{vaddr_idx});
+@@ -84,13 +111,16 @@
+                         ABI_PopCallerSaveGprsAndAdjustStackExcept(code, HostLocRegIdx(value_idx));
+                         code.ZeroExtendFrom(bitsize, Xbyak::Reg64{value_idx});
+                         code.ret();
+-                        PerfMapRegister(read_fallbacks_no_xmm[std::make_tuple(bitsize, vaddr_idx, value_idx)], code.getCurr(), fmt::format("a32_read_fallback_no_xmm_{}", bitsize));
++                        PerfMapRegister(read_fallbacks_no_xmm[std::make_tuple(key, vaddr_idx, value_idx)], code.getCurr(), fmt::format("a32_read_fallback_no_xmm_{}", bitsize));
+                     }
+                 }
+ 
+-                for (const auto& [bitsize, callback] : write_callbacks) {
++                for (const auto& [key, callback] : write_callbacks) {
++                    if (ordered && key == word_pair_fallback)
++                        continue;
++                    const size_t bitsize = key == word_pair_fallback ? 64 : key;
+                     code.align();
+-                    write_fallbacks[std::make_tuple(ordered, bitsize, vaddr_idx, value_idx)] = code.getCurr<void (*)()>();
++                    write_fallbacks[std::make_tuple(ordered, key, vaddr_idx, value_idx)] = code.getCurr<void (*)()>();
+                     ABI_PushCallerSaveRegistersAndAdjustStack(code);
+                     if (vaddr_idx == code.ABI_PARAM3.getIdx() && value_idx == code.ABI_PARAM2.getIdx()) {
+                         code.xchg(code.ABI_PARAM2, code.ABI_PARAM3);
+@@ -114,11 +144,11 @@
+                     }
+                     ABI_PopCallerSaveRegistersAndAdjustStack(code);
+                     code.ret();
+-                    PerfMapRegister(write_fallbacks[std::make_tuple(ordered, bitsize, vaddr_idx, value_idx)], code.getCurr(), fmt::format("a32_write_fallback_{}", bitsize));
++                    PerfMapRegister(write_fallbacks[std::make_tuple(ordered, key, vaddr_idx, value_idx)], code.getCurr(), fmt::format("a32_write_fallback_{}", bitsize));
+ 
+                     if (!ordered) {
+                         code.align();
+-                        write_fallbacks_no_xmm[std::make_tuple(bitsize, vaddr_idx, value_idx)] = code.getCurr<void (*)()>();
++                        write_fallbacks_no_xmm[std::make_tuple(key, vaddr_idx, value_idx)] = code.getCurr<void (*)()>();
+                         ABI_PushCallerSaveGprsAndAdjustStack(code);
+                         if (vaddr_idx == code.ABI_PARAM3.getIdx() && value_idx == code.ABI_PARAM2.getIdx()) {
+                             code.xchg(code.ABI_PARAM2, code.ABI_PARAM3);
+@@ -139,7 +169,7 @@
+                         callback.EmitCall(code);
+                         ABI_PopCallerSaveGprsAndAdjustStack(code);
+                         code.ret();
+-                        PerfMapRegister(write_fallbacks_no_xmm[std::make_tuple(bitsize, vaddr_idx, value_idx)], code.getCurr(), fmt::format("a32_write_fallback_no_xmm_{}", bitsize));
++                        PerfMapRegister(write_fallbacks_no_xmm[std::make_tuple(key, vaddr_idx, value_idx)], code.getCurr(), fmt::format("a32_write_fallback_no_xmm_{}", bitsize));
+                     }
+                 }
+ 
+@@ -175,6 +205,7 @@
+     }
+ }
+ 
++#define Axx_HAS_WORD_PAIR_FALLBACK
+ #define Axx A32
+ #define Axx_HAS_NO_XMM_FALLBACKS 1
+ #include "dynarmic/backend/x64/emit_x64_memory.cpp.inc"
+--- a/dynarmic/backend/x64/emit_x64_memory.cpp.inc
++++ b/dynarmic/backend/x64/emit_x64_memory.cpp.inc
+@@ -90,20 +90,33 @@
+     const int value_idx = bitsize == 128 ? ctx.reg_alloc.ScratchXmm().getIdx() : ctx.reg_alloc.ScratchGpr().getIdx();
+ 
+     const auto wrapped_fn = [&] {
++        size_t key = bitsize;
++#ifdef Axx_HAS_WORD_PAIR_FALLBACK
++        if constexpr (bitsize == 64) {
++            if (args[2].GetImmediateAccType() == IR::AccType::ATOMIC)
++                key = word_pair_fallback;
++        }
++#endif
+ #ifdef Axx_HAS_NO_XMM_FALLBACKS
+         if constexpr (bitsize != 128) {
+             if (!ordered && !ctx.reg_alloc.HasLiveXmms()) {
+-                return read_fallbacks_no_xmm[std::make_tuple(bitsize, vaddr.getIdx(), value_idx)];
++                return read_fallbacks_no_xmm[std::make_tuple(key, vaddr.getIdx(), value_idx)];
+             }
+         }
+ #endif
+-        return read_fallbacks[std::make_tuple(ordered, bitsize, vaddr.getIdx(), value_idx)];
++        return read_fallbacks[std::make_tuple(ordered, key, vaddr.getIdx(), value_idx)];
+     }();
+ 
+     SharedLabel abort = GenSharedLabel(), end = GenSharedLabel();
+ 
+     if (fastmem_marker) {
+         // Use fastmem
++        if constexpr (bitsize == 64) {
++            if (conf.detect_misaligned_access_via_page_table & 64) {
++                code.test(vaddr.cvt32(), 3);
++                code.jnz(*abort, code.T_NEAR);
++            }
++        }
+         bool require_abort_handling;
+         const auto src_ptr = EmitFastmemVAddr(code, ctx, *abort, vaddr, require_abort_handling);
+ 
+@@ -186,20 +199,33 @@
+                             : (ordered ? ctx.reg_alloc.UseScratchGpr(args[2]).getIdx() : ctx.reg_alloc.UseGpr(args[2]).getIdx());
+ 
+     const auto wrapped_fn = [&] {
++        size_t key = bitsize;
++#ifdef Axx_HAS_WORD_PAIR_FALLBACK
++        if constexpr (bitsize == 64) {
++            if (args[3].GetImmediateAccType() == IR::AccType::ATOMIC)
++                key = word_pair_fallback;
++        }
++#endif
+ #ifdef Axx_HAS_NO_XMM_FALLBACKS
+         if constexpr (bitsize != 128) {
+             if (!ordered && !ctx.reg_alloc.HasLiveXmms()) {
+-                return write_fallbacks_no_xmm[std::make_tuple(bitsize, vaddr.getIdx(), value_idx)];
++                return write_fallbacks_no_xmm[std::make_tuple(key, vaddr.getIdx(), value_idx)];
+             }
+         }
+ #endif
+-        return write_fallbacks[std::make_tuple(ordered, bitsize, vaddr.getIdx(), value_idx)];
++        return write_fallbacks[std::make_tuple(ordered, key, vaddr.getIdx(), value_idx)];
+     }();
+ 
+     SharedLabel abort = GenSharedLabel(), end = GenSharedLabel();
+ 
+     if (fastmem_marker) {
+         // Use fastmem
++        if constexpr (bitsize == 64) {
++            if (conf.detect_misaligned_access_via_page_table & 64) {
++                code.test(vaddr.cvt32(), 3);
++                code.jnz(*abort, code.T_NEAR);
++            }
++        }
+         bool require_abort_handling;
+         const auto dest_ptr = EmitFastmemVAddr(code, ctx, *abort, vaddr, require_abort_handling);
+ 
+@@ -380,7 +406,8 @@
+     code.mov(tmp, mcl::bit_cast<u64>(GetExclusiveMonitorAddressPointer(conf.global_monitor, conf.processor_id)));
+     code.mov(qword[tmp], vaddr);
+ 
+-    const auto fastmem_marker = ShouldFastmem(ctx, inst);
++    const bool checked_width = conf.page_table && (conf.detect_misaligned_access_via_page_table & bitsize);
++    const auto fastmem_marker = checked_width ? std::nullopt : ShouldFastmem(ctx, inst);
+     if (fastmem_marker) {
+         SharedLabel abort = GenSharedLabel(), end = GenSharedLabel();
+         bool require_abort_handling = false;
+@@ -486,7 +513,8 @@
+         EmitReadMemoryMov<bitsize>(code, rax.getIdx(), tmp, false);
+     }
+ 
+-    const auto fastmem_marker = ShouldFastmem(ctx, inst);
++    const bool checked_width = conf.page_table && (conf.detect_misaligned_access_via_page_table & bitsize);
++    const auto fastmem_marker = checked_width ? std::nullopt : ShouldFastmem(ctx, inst);
+     if (fastmem_marker) {
+         SharedLabel abort = GenSharedLabel();
+         bool require_abort_handling = false;
+--- a/dynarmic/ir/opt/passes.h
++++ b/dynarmic/ir/opt/passes.h
+@@ -30,6 +30,7 @@
+ struct A32GetSetEliminationOptions {
+     bool convert_nzc_to_nz = false;
+     bool convert_nz_to_nzc = false;
++    bool preserve_state_across_memory_access = false;
+ };
+ 
+ void PolyfillPass(IR::Block& block, const PolyfillOptions& opt);
+--- a/dynarmic/ir/opt/a32_get_set_elimination_pass.cpp
++++ b/dynarmic/ir/opt/a32_get_set_elimination_pass.cpp
+@@ -21,7 +21,7 @@
+ 
+ namespace {
+ 
+-void FlagsPass(IR::Block& block) {
++void FlagsPass(IR::Block& block, bool preserve_state_across_memory_access) {
+     using Iterator = std::reverse_iterator<IR::Block::iterator>;
+ 
+     struct FlagInfo {
+@@ -173,6 +173,12 @@
+                 nz = {};
+                 c_flag = {};
+                 ge = {};
++            } else if (preserve_state_across_memory_access && inst->IsMemoryReadOrWrite()) {
++                nzcvq.set_not_required = false;
++                nzcv.set_not_required = false;
++                nz.set_not_required = false;
++                c_flag.set_not_required = false;
++                ge.set_not_required = false;
+             }
+             break;
+         }
+@@ -180,7 +186,7 @@
+     }
+ }
+ 
+-void RegisterPass(IR::Block& block) {
++void RegisterPass(IR::Block& block, bool preserve_state_across_memory_access) {
+     using Iterator = IR::Block::iterator;
+ 
+     struct RegInfo {
+@@ -360,6 +366,13 @@
+             if (inst->ReadsFromCoreRegister() || inst->WritesToCoreRegister()) {
+                 reg_info = {};
+                 ext_reg_info = {};
++            } else if (preserve_state_across_memory_access && inst->IsMemoryReadOrWrite()) {
++                for (auto& info : reg_info) {
++                    info.last_set_instruction = std::nullopt;
++                }
++                for (auto& info : ext_reg_info) {
++                    info.last_set_instruction = std::nullopt;
++                }
+             }
+             break;
+         }
+@@ -369,9 +382,9 @@
+ 
+ }  // namespace
+ 
+-void A32GetSetElimination(IR::Block& block, A32GetSetEliminationOptions) {
+-    FlagsPass(block);
+-    RegisterPass(block);
++void A32GetSetElimination(IR::Block& block, A32GetSetEliminationOptions opt) {
++    FlagsPass(block, opt.preserve_state_across_memory_access);
++    RegisterPass(block, opt.preserve_state_across_memory_access);
+ }
+ 
+ }  // namespace Dynarmic::Optimization
+--- a/dynarmic/backend/x64/a32_interface.cpp
++++ b/dynarmic/backend/x64/a32_interface.cpp
+@@ -218,8 +218,11 @@
+         IR::Block ir_block = A32::Translate(A32::LocationDescriptor{descriptor}, conf.callbacks, {conf.arch_version, conf.define_unpredictable_behaviour, conf.hook_hint_instructions, conf.enable_system_mode});
+         Optimization::PolyfillPass(ir_block, polyfill_options);
+         Optimization::NamingPass(ir_block);
+-        if (conf.HasOptimization(OptimizationFlag::GetSetElimination) && !conf.check_halt_on_memory_access) {
+-            Optimization::A32GetSetElimination(ir_block, {.convert_nz_to_nzc = true});
++        if (conf.HasOptimization(OptimizationFlag::GetSetElimination)) {
++            Optimization::A32GetSetElimination(ir_block, {
++                .convert_nz_to_nzc = true,
++                .preserve_state_across_memory_access = conf.check_halt_on_memory_access,
++            });
+             Optimization::DeadCodeElimination(ir_block);
+         }
+         if (conf.HasOptimization(OptimizationFlag::ConstProp)) {

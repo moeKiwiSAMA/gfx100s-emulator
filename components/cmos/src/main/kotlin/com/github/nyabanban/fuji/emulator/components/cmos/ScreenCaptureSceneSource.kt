@@ -98,7 +98,7 @@ class ScreenCaptureSceneSource internal constructor(
     private val reconnectDelayMs: Long = DEFAULT_RECONNECT_DELAY_MS,
     private val maxReconnectAttempts: Int = DEFAULT_MAX_RECONNECT_ATTEMPTS,
     override val virtualSubjectDistanceM: Double? = null,
-) : SceneSource2D, LiveStreamSceneSource {
+) : SceneSource2D, LiveStreamSceneSource, PackedReadoutSource {
     private val closed = AtomicBoolean(false)
     private val latestFrame = AtomicReference<PackedRawFrame?>(null)
     private val activeStreamHandle = AtomicReference<FfmpegStreamHandle?>(null)
@@ -119,6 +119,10 @@ class ScreenCaptureSceneSource internal constructor(
     private var cachedLinearFrame: LinearRgbFrame? = null
 
     private val captureThread: Thread
+
+    override fun acquirePackedFrame(): PackedRawFrame? = latestFrame.get()?.also {
+        consumedSeq.set(it.sequence)
+    }
 
     override val latestFrameSequence: Long get() = latestFrame.get()?.sequence ?: 0L
 

@@ -6,6 +6,7 @@ import java.awt.image.BufferedImage
 import java.lang.management.ManagementFactory
 import java.net.InetAddress
 import java.net.Socket
+import java.net.ServerSocket
 import java.nio.ByteBuffer
 import java.nio.file.Files
 import java.nio.file.Path
@@ -62,11 +63,11 @@ class LiveStreamOpticsCachingTest {
 
     @Test
     fun movingFusedKeysTrackTheCameraClockAndExposure() {
-        checkMovingFusedKey("milk-frog", 900_000L)
-        checkMovingFusedKey("qr-ball", 900_001L)
+        for (sceneName in listOf("milk-frog", "qr-ball")) checkMovingFusedKey(sceneName)
     }
 
-    private fun checkMovingFusedKey(sceneName: String, firstBoundary: Long) {
+    private fun checkMovingFusedKey(sceneName: String) {
+        val firstBoundary = 900_000L
         val dir = Files.createTempDirectory("moving-scene-fused")
         val lens = object : LensPort, OpticalSceneFilter {
             override val enabled = true
@@ -107,6 +108,116 @@ class LiveStreamOpticsCachingTest {
             out[i++] = b.toByte()
         }
         return out
+    }
+
+    @Test
+    fun hardwareReadoutKeepsTheDeliveredImageAcrossDmaChannels() {
+        val dir = Files.createTempDirectory("sensor-readout")
+        var useOptics = false
+        val optics = object : LensPort, OpticalSceneFilter {
+            override val enabled: Boolean get() = useOptics
+            override fun parameters() = defaultExposure.lens
+            override fun opticalStateVersion() = 1L
+            override fun filterLinearRgbToBayer(
+                srcWidth: Int, srcHeight: Int, red: FloatArray, green: FloatArray, blue: FloatArray, depthMeters: FloatArray?,
+                exposure: Exposure, geometry: SensorGeometry, destination: ByteBuffer, frameIndex: Long,
+            ) = error("This test requests fused optical output")
+            override fun tryFilterRadianceToIspYuv(
+                frame: LinearRadianceFrame, geometry: SensorGeometry, request: LiveViewIspFusionRequest,
+                outYOrPacked: ByteArray, outUvPlane: ByteArray?, frameIndex: Long,
+            ): Boolean {
+                outYOrPacked[0] = if (frame.red[0] > frame.blue[0]) 1 else 2
+                return true
+            }
+        }
+        val harness = Harness(dir, optics)
+        val fixedPort = ServerSocket(0, 1, InetAddress.getLoopbackAddress()).use { it.localPort }
+        val cmos = CmosFactory().create(harness.context, mapOf(
+            "sourceKind" to "stream-ingest", "sourceFile" to "tcp://127.0.0.1:$fixedPort", "loop" to true,
+        ))
+        try {
+            val sensor = harness.sensorPort
+            fun read(tick: Long, iso: Int = 100): ByteArray {
+                val output = ByteBuffer.allocate(1024 * 576 * 2)
+                (sensor as? LiveSensorReadout)?.beginLiveReadout(tick).use {
+                    sensor.expose(defaultExposure.copy(startTick = tick, iso = iso), output)
+                }
+                return output.array()
+            }
+            fun opticalRead(tick: Long): Pair<Long, Byte> {
+                val exposure = defaultExposure.copy(startTick = tick)
+                val result = ByteArray(16)
+                val sampling = sensor as LiveSensorReadout
+                return sampling.beginLiveReadout(tick).use {
+                    val key = sensor.fusedFrameStateKey(exposure)
+                    val request = LiveViewIspFusionRequest(
+                        exposure, 4, 2, 8, LiveViewIspFusionRequest.FMT_UYVY422,
+                        flags = 0, offX = 0, offY = 0, fitW = 4, fitH = 2,
+                        gainR1024 = 1024, gainG1024 = 1024, gainB1024 = 1024, yuvShift = 10,
+                    )
+                    assertTrue(sensor.tryExposeFusedIspYuv(request, result, null))
+                    key to result[0]
+                }
+            }
+            Socket(InetAddress.getLoopbackAddress(), cmos.state()["streamIngestPort"] as Int).use { socket ->
+                val output = socket.getOutputStream()
+                var delivery = 0L
+                fun publish(red: Int, blue: Int) {
+                    val image = solidRgb24(16, 16, red, 40, blue)
+                    output.write(StreamIngestSceneSource.encodeFscmHeader(16, 16, RawPixelFormat.RGB24, image.size))
+                    output.write(image)
+                    output.flush()
+                    delivery++
+                    val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(3)
+                    while (cmos.state()["framesReceived"] != delivery && System.nanoTime() < deadline) Thread.sleep(1)
+                    assertEquals(delivery, cmos.state()["framesReceived"])
+                }
+                val fallback = read(41)
+                publish(255, 0)
+                val movie = read(41)
+                assertTrue(!fallback.contentEquals(movie))
+                publish(0, 255)
+                assertTrue(movie.contentEquals(read(41)), "A newer host image arrived between the two DMA requests")
+                useOptics = true
+                val (redKey, redMarker) = opticalRead(41)
+                assertEquals(1.toByte(), redMarker)
+                val (blueKey, blueMarker) = opticalRead(42)
+                assertEquals(2.toByte(), blueMarker)
+                assertTrue(redKey >= 0 && blueKey >= 0 && blueKey != redKey)
+                useOptics = false
+                val next = read(42)
+                assertTrue(!movie.contentEquals(next))
+                publish(255, 0)
+                assertTrue(next.contentEquals(read(42)))
+                assertTrue(!next.contentEquals(read(42, 200)))
+                useOptics = true
+                assertEquals(1.toByte(), opticalRead(43).second)
+                publish(0, 255)
+                assertEquals(1.toByte(), opticalRead(43).second)
+                // Restore keeps the fixed listening endpoint, but discards the previous readout.
+                val state = cmos as StatefulComponent
+                state.restoreSnapshot(state.saveSnapshot())
+                assertEquals(2.toByte(), opticalRead(43).second)
+                // A replacement producer can restart at the same sequence and camera tick.
+                cmos.applySettings(mapOf("sourceFile" to "tcp://127.0.0.1:0"))
+                val freshPort = cmos.state()["streamIngestPort"] as Int
+                Socket(InetAddress.getLoopbackAddress(), freshPort).use { fresh ->
+                    val red = solidRgb24(16, 16, 255, 40, 0)
+                    fresh.getOutputStream().apply {
+                        write(StreamIngestSceneSource.encodeFscmHeader(16, 16, RawPixelFormat.RGB24, red.size))
+                        write(red)
+                        flush()
+                    }
+                    val until = System.nanoTime() + TimeUnit.SECONDS.toNanos(3)
+                    while (cmos.state()["framesReceived"] != 1L && System.nanoTime() < until) Thread.sleep(1)
+                    assertEquals(1L, cmos.state()["framesReceived"])
+                    assertEquals(1.toByte(), opticalRead(43).second)
+                }
+            }
+        } finally {
+            cmos.close()
+            dir.toFile().deleteRecursively()
+        }
     }
 
     @Test

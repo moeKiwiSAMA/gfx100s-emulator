@@ -35,6 +35,65 @@ class BiscomIbisAndPixelShiftTest {
     }
 
     @Test
+    fun efcsShutterValueIsSignedSingleUseAndSurvivesSnapshot() {
+        var powerCycle = 1L
+        val peer = Frame32SpiPeer(powerOnSequence = java.util.function.LongSupplier { powerCycle })
+        runCommand(peer, 0x0a9, 0x24)
+        assertNull(peer.takeEfcsShutterTv16())
+        runCommand(peer, 0x0a9, 0x2553)
+        runCommand(peer, 0x0a9, 0x24)
+        val saved = peer.snapshot()
+        assertEquals(149, peer.takeEfcsShutterTv16())
+        assertNull(peer.takeEfcsShutterTv16())
+        peer.restore(peer.parse(saved))
+        assertEquals(149, peer.takeEfcsShutterTv16())
+        peer.restore(peer.parse(saved - "efcsShutterTv16"))
+        assertNull(peer.takeEfcsShutterTv16())
+        runCommand(peer, 0x0a9, 0xfc13)
+        assertEquals(-16, peer.takeEfcsShutterTv16())
+        runCommand(peer, 0x0a9, 0x1d53)
+        runCommand(peer, 0x0a9, 0x1d63) // electronic supersedes EFCS
+        assertNull(peer.takeEfcsShutterTv16())
+        runCommand(peer, 0x0a9, 0x1d53)
+        runCommand(peer, 0x0a9, 0x1d43) // mechanical supersedes EFCS
+        assertNull(peer.takeEfcsShutterTv16())
+        runCommand(peer, 0x0a9, 0x1d53)
+        powerCycle++
+        assertNull(peer.takeEfcsShutterTv16()) // No SPI exchange after the power edge yet.
+        sendWord(peer, 0xa55a3cc3)
+        assertNull(peer.takeEfcsShutterTv16())
+    }
+
+    @Test
+    fun mechanicalShutterCommandBelongsToOneExposureAndMode() {
+        var powerCycle = 1L
+        val peer = Frame32SpiPeer(powerOnSequence = java.util.function.LongSupplier { powerCycle })
+        assertNull(peer.takeMechanicalShutterTv16())
+        runCommand(peer, 0x0a9, 0x1943)
+        runCommand(peer, 0x0a9, 0x24) // Non-capture gain update before readout.
+        val saved = peer.snapshot()
+        assertEquals(101, peer.takeMechanicalShutterTv16())
+        assertNull(peer.takeMechanicalShutterTv16())
+        peer.restore(peer.parse(saved))
+        assertEquals(101, peer.takeMechanicalShutterTv16())
+        peer.restore(peer.parse(saved - "mechanicalShutterTv16"))
+        assertNull(peer.takeMechanicalShutterTv16())
+        runCommand(peer, 0x0a9, 0x1943)
+        runCommand(peer, 0x0a9, 0x1143)
+        assertEquals(69, peer.takeMechanicalShutterTv16())
+        runCommand(peer, 0x0a9, 0x1943)
+        runCommand(peer, 0x0a9, 0x1d53)
+        assertNull(peer.takeMechanicalShutterTv16())
+        assertEquals(117, peer.takeEfcsShutterTv16())
+        runCommand(peer, 0x0a9, 0x1943)
+        runCommand(peer, 0x0a9, 0x2563)
+        assertNull(peer.takeMechanicalShutterTv16())
+        runCommand(peer, 0x0a9, 0x1943)
+        powerCycle++
+        assertNull(peer.takeMechanicalShutterTv16())
+    }
+
+    @Test
     fun powerCycleBetweenTransfersDropsStaleDataAndRestartsAcknowledgementSequence() {
         var powerEdges = 4L
         var powered = true

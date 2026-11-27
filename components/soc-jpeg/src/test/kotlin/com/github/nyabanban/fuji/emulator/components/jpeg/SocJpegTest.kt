@@ -838,6 +838,55 @@ class SocJpegTest {
     }
 
     @Test
+    fun encoderReadsMapped34BitUyvyInsteadOfItsLowAlias() {
+        assertPhysicalSourceMatchesLowRam(0x1_b000_0f80L)
+    }
+
+    @Test
+    fun encoderReadsUyvyAcrossFourGiBWithoutWrapping() {
+        assertPhysicalSourceMatchesLowRam(0xffff_ff80L)
+    }
+
+    private fun assertPhysicalSourceMatchesLowRam(source: Long) {
+        val width = 64
+        val height = 48
+        val image = makePatternImage(width, height)
+        val decoded = JpegUyvyCodec.decodeToMemYc(encodeJpeg(image), 0L, 0, false, 0, 0, 0, 0)
+        val uyvy = assertIs<JpegUyvyCodec.DecodeResult.Success>(decoded).uyvyBytes
+        fun from(address: Long): ByteArray {
+            val h = Harness(profile = SocJpegFactory.CODEC_PROFILE, delayTicks = 4L)
+            val enc = assertNotNull(h.encoderMmio)
+            val low = address and 0xffff_ffffL
+            h.ports.register("soc-isp", "soc-isp.axi-high34", MmioDevice::class.java, object : MmioDevice {
+                override fun read(offset: Long, size: Int) = if (offset == 0x40L) address ushr 32 else 0L
+                override fun write(offset: Long, size: Int, value: Long) = Unit
+            })
+            h.dma.map(address, uyvy.size)
+            h.dma.writeBytes(address, uyvy)
+            if (low != address) {
+                h.dma.map(low, uyvy.size)
+                h.dma.writeBytes(low, ByteArray(uyvy.size) { 0x80.toByte() })
+            }
+            val output = 0x6a00_0000L
+            h.dma.map(output, 65536)
+            enc.write(0x024L, 4, 0xffff_ffffL)
+            enc.write(0x044L, 4, (height.toLong() shl 16) or width.toLong())
+            enc.write(0x100L, 4, low)
+            enc.write(0x10cL, 4, output)
+            enc.write(0x110L, 4, 65536L)
+            enc.write(0x130L, 4, width.toLong())
+            enc.write(0x048L, 4, 1L)
+            enc.write(0x000L, 4, 1L)
+            h.tick += 4L
+            enc.beforeInstruction(h.tick)
+            val length = enc.read(0x094L, 4).toInt()
+            assertTrue(length > 0, "Expected a JPEG from mapped source 0x${address.toString(16)}")
+            return h.dma.readBytes(output, length)
+        }
+        assertContentEquals(from(0x8800_0000L), from(source))
+    }
+
+    @Test
     fun codecV2EncoderRoutes34BitAxiHighDestinationToHighPhysicalRam() {
         val h = Harness(profile = SocJpegFactory.CODEC_PROFILE, delayTicks = 4L)
         val enc = assertNotNull(h.encoderMmio)
@@ -954,6 +1003,64 @@ class SocJpegTest {
         val tB = tRgb and 0xFF
         assertTrue(tR > 80 && tG > 80 && tB > 80 && kotlin.math.abs(tG - tR) < 30,
             "Synthesized 160x120 EXIF thumbnail must be bright neutral optical scene, not solid green (got $tR,$tG,$tB)")
+    }
+
+    @Test
+    fun stockRafPreviewUsesProducerPixelPitchBeyondTwiceTheEncodeWidth() {
+        assertWidePreviewStride(stockRecc = true)
+    }
+
+    @Test
+    fun legacyPaddedBytePitchStillReadsTheBottomOfThePreview() {
+        assertWidePreviewStride(stockRecc = false)
+    }
+
+    private fun assertWidePreviewStride(stockRecc: Boolean) {
+        val h = Harness(profile = SocJpegFactory.CODEC_PROFILE, delayTicks = 4L)
+        val enc = assertNotNull(h.encoderMmio)
+        val width = 4000
+        val height = 32
+        val programmedPitch = 11664
+        val bytePitch = if (stockRecc) programmedPitch * 2 else programmedPitch
+        val source = ByteArray((height - 1) * bytePitch + width * 2)
+        for (row in 0 until height) {
+            val luma = if (row < height / 2) 40 else 210
+            for (x in 0 until width) {
+                val offset = row * bytePitch + x * 2
+                source[offset] = 128.toByte()
+                source[offset + 1] = luma.toByte()
+            }
+        }
+        val src = 0x4000_0000L
+        val dst = 0x5000_0000L
+        h.dma.map(src, source.size)
+        h.dma.map(dst, 64 * 1024)
+        h.dma.writeBytes(src, source)
+        val size = (height.toLong() shl 16) or width.toLong()
+        enc.write(0x044L, 4, size)
+        if (stockRecc) {
+            enc.write(0x00cL, 4, 0x000a_0003L)
+            enc.write(0x040L, 4, 1L)
+            enc.write(0x11cL, 4, 1L)
+        } else {
+            enc.write(0x00cL, 4, 0x000a_0000L)
+            enc.write(0x12cL, 4, size)
+        }
+        enc.write(0x100L, 4, src)
+        enc.write(0x10cL, 4, dst)
+        enc.write(0x110L, 4, 65536L)
+        enc.write(0x130L, 4, programmedPitch.toLong())
+        enc.write(0x000L, 4, 1L)
+        h.tick += 4
+        enc.beforeInstruction(h.tick)
+
+        assertEquals(0x10L, enc.read(0x024L, 4))
+        val decoded = ImageIO.read(h.dma.readBytes(dst, enc.read(0x094L, 4).toInt()).inputStream())
+        for (x in listOf(0, width / 2, width - 1)) {
+            assertTrue(Color(decoded.getRGB(x, 0)).green < 70)
+            assertTrue(Color(decoded.getRGB(x, height - 1)).green > 180, "lost lower source row at column $x")
+        }
+        assertEquals(source.size.toLong(), h.component.state()["lastSourceBytes"])
     }
 
     @Test

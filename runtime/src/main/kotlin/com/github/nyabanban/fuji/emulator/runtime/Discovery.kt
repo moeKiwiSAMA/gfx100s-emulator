@@ -222,6 +222,7 @@ interface DiscoveryContext {
     fun imageIrq106LineActive(): Boolean = imageIrq106Active()
     fun interruptSink(): InterruptSink? = null
     fun sensorPort(): SensorPort? = null
+    fun facePreviewScaler(): com.github.nyabanban.fuji.emulator.api.FacePreviewScalerPort? = null
     fun dmaMemory(): DmaMemory? = null
     fun lensParameters(): LensParameters? = null
     fun exposurePort(): com.github.nyabanban.fuji.emulator.api.Imx461ExposurePort? = null
@@ -1302,7 +1303,10 @@ class DiscoveryBus(
     fun beforeInstruction(tick: Long) {
         scalerF000?.let { s ->
             if (tick >= s.nextDeadlinePrimitive()) {
-                s.beforeInstruction(tick, context.dmaMemory(), skipUnmappedDma = relaxedContinuous, assertIrq133 = assertScalerF000Irq)
+                s.beforeInstruction(
+                    tick, context.dmaMemory(), skipUnmappedDma = relaxedContinuous,
+                    scaler = context.facePreviewScaler(), assertIrq133 = assertScalerF000Irq,
+                )
             }
         }
         face7c000?.let { f ->

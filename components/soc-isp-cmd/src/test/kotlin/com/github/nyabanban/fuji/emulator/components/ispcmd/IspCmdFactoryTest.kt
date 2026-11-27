@@ -671,6 +671,56 @@ class IspCmdFactoryTest {
     }
 
     @Test
+    fun channelTwoFollowsMovieReadoutEdgesUntilMaskedOrReturnedToFreeRunning() {
+        val ctx = TestContext()
+        var recording = false
+        ctx.ports.register("isp", CcdFrameClockPort.PORT_ID, CcdFrameClockPort::class.java,
+            object : CcdFrameClockPort {
+                override fun resumeLiveView() {}
+                override val movieFrameClockActive get() = recording
+            })
+        val component = IspCmdFactory().create(ctx, defaultConfig(mapOf("channelIrqsEnabled" to true)))
+        val regs = ctx.ports.find(IspCmdFactory.PORT_C000, MmioDevice::class.java) as TickAwareMmioDevice
+        val input = requireNotNull(ctx.ports.find(CcdMovieFrameInput.PORT_ID, CcdMovieFrameInput::class.java))
+        regs.write(0x60, 4, 0xd)
+        regs.write(0x40, 4, 1)
+        val standby = requireNotNull(regs.nextDeadline())
+        recording = true
+        ctx.currentTick = standby
+        regs.beforeInstruction(standby)
+        assertEquals(0L, regs.read(0x64, 4))
+
+        for (period in listOf(1_801_800L, 2_252_250L, 2_160_000L)) {
+            ctx.currentTick += period
+            input.onFrameSync(ctx.currentTick)
+            assertEquals(1L, regs.read(0x64, 4))
+            regs.write(0x64, 4, 0xd)
+        }
+
+        regs.write(0x40, 4, 0)
+        ctx.currentTick += 1L
+        input.onFrameSync(ctx.currentTick)
+        assertEquals(1L, regs.read(0x64, 4))
+        regs.write(0x64, 4, 0xd)
+        ctx.currentTick += 1L
+        input.onFrameSync(ctx.currentTick)
+        assertEquals(0L, regs.read(0x64, 4))
+        assertNull(regs.nextDeadline())
+
+        regs.write(0x40, 4, 1)
+        regs.write(0x60, 4, 0)
+        ctx.currentTick += 1L
+        input.onFrameSync(ctx.currentTick)
+        assertNull(regs.nextDeadline())
+        assertEquals(0L, regs.read(0x64, 4))
+        regs.write(0x60, 4, 0xd)
+        recording = false
+        regs.beforeInstruction(requireNotNull(regs.nextDeadline()))
+        assertEquals(1L, regs.read(0x64, 4))
+        component.close()
+    }
+
+    @Test
     fun configBanks0To5ClearActiveBitOnMode4StopCommit() {
         val ctx = TestContext()
         val comp = factory.create(ctx, defaultConfig())

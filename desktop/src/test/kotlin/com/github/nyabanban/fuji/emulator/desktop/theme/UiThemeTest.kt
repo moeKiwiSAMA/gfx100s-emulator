@@ -43,6 +43,25 @@ class UiThemeTest {
     }
 
     @Test
+    fun allBuiltInUiThemesStyleMenuButtonAndContextMenuPopupsConsistently() {
+        val resourcePaths = listOf(
+            "/panel.css",
+            "/themes/ui/daylight-studio.css",
+            "/themes/ui/nordic-minimal.css",
+            "/themes/ui/olive-field.css",
+            "/themes/ui/vintage-brass.css",
+        )
+        for (path in resourcePaths) {
+            val css = requireNotNull(UiThemeRegistry::class.java.getResourceAsStream(path)) { "Missing $path" }
+                .bufferedReader().use { it.readText() }
+            assertTrue(css.contains(".menu-button.studio-header-btn-secondary > .label"), "$path must style MenuButton label")
+            assertTrue(css.contains(".menu-button.studio-header-btn-secondary > .arrow-button > .arrow"), "$path must style MenuButton arrow")
+            assertTrue(css.contains(".context-menu {"), "$path must style .context-menu popup")
+            assertTrue(css.contains(".context-menu .menu-item:hover"), "$path must style .context-menu .menu-item:hover")
+        }
+    }
+
+    @Test
     fun externalUserCssDiscoveredAndUnsafeCssRejectedWithWarn(@TempDir home: Path) {
         val uiDir = Files.createDirectories(home.resolve("themes/ui"))
         Files.writeString(

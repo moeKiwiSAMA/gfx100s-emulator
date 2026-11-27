@@ -191,6 +191,18 @@ internal class AsyncBufferedBlockStore(
                     if (failure != null) {
                         if (asyncFailure == null) asyncFailure = failure
                     } else {
+                        // A neighboring read may have prefetched these sectors before writeback.
+                        // Publish the committed bytes while retiring the in-flight overlay.
+                        val overlapStart = maxOf(batchStartLba, readCacheStartLba)
+                        val overlapEnd = minOf(batchStartLba + batchSectorCount, readCacheStartLba + readCacheSectorCount)
+                        if (overlapStart < overlapEnd) {
+                            batchBuffer.copyInto(
+                                readCacheBytes,
+                                ((overlapStart - readCacheStartLba) * SECTOR_BYTES).toInt(),
+                                ((overlapStart - batchStartLba) * SECTOR_BYTES).toInt(),
+                                ((overlapEnd - batchStartLba) * SECTOR_BYTES).toInt(),
+                            )
+                        }
                         coalescedWrites++
                         coalescedSectors += batchSectorCount
                         bytesFlushed += batchBuffer.size.toLong()
