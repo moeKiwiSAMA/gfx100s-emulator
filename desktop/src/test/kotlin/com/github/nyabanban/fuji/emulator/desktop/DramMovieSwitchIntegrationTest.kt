@@ -113,11 +113,11 @@ class DramMovieSwitchIntegrationTest {
 
         val workRoot = tempRoot.resolve("release-dram-movie")
         copyDirectory(stagedRoot, workRoot)
-        val builtDramJar = repo.resolve("components/soc-dram/build/libs/soc-dram-0.3.0.jar")
+        val builtDramJar = repo.resolve("components/soc-dram/build/libs/soc-dram-0.3.1.jar")
         if (Files.isRegularFile(builtDramJar)) {
             Files.copy(
                 builtDramJar,
-                workRoot.resolve("runtime/compoments/soc-dram-0.3.0.jar"),
+                workRoot.resolve("runtime/compoments/soc-dram-0.3.1.jar"),
                 StandardCopyOption.REPLACE_EXISTING,
             )
         }

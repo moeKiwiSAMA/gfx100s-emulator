@@ -119,7 +119,7 @@ class InputBindingsDialogTest {
             controller.handleGamepadFrame(GamepadFrame(connected = true, slot = 0, name = "Pad", buttons = GamepadFrame.B))
             controller.handleGamepadFrame(GamepadFrame(connected = true, slot = 0, name = "Pad"))
             assertEquals("B", dialog.cellText(CameraInputAction.PLAY, gamepad = true))
-            assertEquals(I18n.t("input.binding.unbound"), dialog.cellText(CameraInputAction.MENU_OK, gamepad = true), "B moved off MENU_OK")
+            assertEquals(I18n.t("input.binding.unbound"), dialog.cellText(CameraInputAction.AF_ON, gamepad = true), "B moved off AF_ON")
             assertEquals(I18n.t("input.status.connected", "Pad", 1), dialog.statusText)
 
             // × clears one binding.
@@ -129,7 +129,10 @@ class InputBindingsDialogTest {
             // Reset Gamepad Default / Clear All Keyboard.
             button("input-bindings-reset-gamepad").fire()
             assertEquals(InputBindingConfig.defaultGamepadBindings(), controller.config.gamepadBindings)
-            assertEquals("B", dialog.cellText(CameraInputAction.MENU_OK, gamepad = true))
+            assertEquals("Menu", dialog.cellText(CameraInputAction.MENU_OK, gamepad = true))
+            assertEquals("Start", dialog.cellText(CameraInputAction.PLAY, gamepad = true))
+            assertEquals("Y", dialog.cellText(CameraInputAction.AE_L, gamepad = true))
+            assertEquals("B", dialog.cellText(CameraInputAction.AF_ON, gamepad = true))
             assertEquals("A", dialog.cellText(CameraInputAction.DISP_BACK, gamepad = true))
             assertEquals(1, controller.config.keyboardBindings.size)
             button("input-bindings-clear-keyboard").fire()
@@ -261,10 +264,10 @@ class InputBindingsDialogTest {
                 commands.toList(),
             )
             commands.clear()
-            // Hot disconnect while holding RB (AF-ON) releases it.
-            runtime.controller.handleGamepadFrame(GamepadFrame(connected = true, slot = 0, name = "Pad", buttons = GamepadFrame.RB))
+            // Hot disconnect while holding B (AF-ON) releases it, and GUIDE triggers MENU_OK.
+            runtime.controller.handleGamepadFrame(GamepadFrame(connected = true, slot = 0, name = "Pad", buttons = GamepadFrame.B or GamepadFrame.GUIDE))
             runtime.controller.handleGamepadFrame(GamepadFrame.DISCONNECTED)
-            assertEquals(listOf("afOn" to true, "afOn" to false), commands.toList())
+            assertEquals(setOf("afOn" to true, "menu" to true, "afOn" to false, "menu" to false), commands.toSet())
 
             val dialog = runtime.showDialog()
             assertTrue(dialog.isShowing)

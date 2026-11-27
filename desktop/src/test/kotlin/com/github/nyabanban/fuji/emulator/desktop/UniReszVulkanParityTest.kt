@@ -21,7 +21,7 @@ class UniReszVulkanParityTest {
     fun stockFacePreviewMatchesCpuForBoth422OrdersAndSignalsIrqAfterTheWrite(@TempDir root: Path) {
         val repo = Path.of(System.getProperty("componentProjectRoot"))
         val modules = Files.createDirectories(root.resolve("compoments"))
-        Files.copy(repo.resolve("components/lens/build/libs/lens-0.3.0.jar"), modules.resolve("lens-0.3.0.jar"))
+        Files.copy(repo.resolve("components/lens/build/libs/lens-0.3.1.jar"), modules.resolve("lens-0.3.1.jar"))
         val config = Files.createDirectories(modules.resolve("lens")).resolve("lens.yaml")
         Files.copy(repo.resolve("tools/release/component-configs/lens/lens.yaml"), config)
         var gpuAvailable = false

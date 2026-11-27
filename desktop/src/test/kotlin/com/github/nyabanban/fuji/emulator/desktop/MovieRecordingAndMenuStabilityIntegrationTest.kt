@@ -108,11 +108,11 @@ class MovieRecordingAndMenuStabilityIntegrationTest {
         val workRoot = tempRoot.resolve("release-movie-rec")
         copyDirectory(stagedRoot, workRoot)
         for (compId in listOf("soc-dram", "soc-vglib-init", "soc-isp")) {
-            val builtJar = repo.resolve("components/$compId/build/libs/$compId-0.3.0.jar")
+            val builtJar = repo.resolve("components/$compId/build/libs/$compId-0.3.1.jar")
             if (Files.isRegularFile(builtJar)) {
                 Files.copy(
                     builtJar,
-                    workRoot.resolve("runtime/compoments/$compId-0.3.0.jar"),
+                    workRoot.resolve("runtime/compoments/$compId-0.3.1.jar"),
                     StandardCopyOption.REPLACE_EXISTING,
                 )
             }

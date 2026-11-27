@@ -80,8 +80,8 @@ class SdCardThreeModeIntegrationTest {
         Files.createDirectories(compDir)
         for (id in listOf("sdcard-reader", "soc-gic", "soc-sd-host")) {
             Files.copy(
-                projectRoot.resolve("build/emulator/compoments/$id-0.3.0.jar"),
-                compDir.resolve("$id-0.3.0.jar"),
+                projectRoot.resolve("build/emulator/compoments/$id-0.3.1.jar"),
+                compDir.resolve("$id-0.3.1.jar"),
             )
         }
     }

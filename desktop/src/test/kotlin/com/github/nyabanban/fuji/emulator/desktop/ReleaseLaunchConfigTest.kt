@@ -651,8 +651,8 @@ class ReleaseLaunchConfigTest {
         // Load real cmos + lens JARs with release configs and verify 3D scene://qr-ball looping,
         // thin-lens DoF sharpness inversion (0.85m sphere <-> 5.5m QR wall), and scannable 3D wall QR
         val componentsDir = Files.createDirectories(tempRoot.resolve("compoments"))
-        Files.copy(repo.resolve("components/cmos/build/libs/cmos-0.3.0.jar"), componentsDir.resolve("cmos-0.3.0.jar"))
-        Files.copy(repo.resolve("components/lens/build/libs/lens-0.3.0.jar"), componentsDir.resolve("lens-0.3.0.jar"))
+        Files.copy(repo.resolve("components/cmos/build/libs/cmos-0.3.1.jar"), componentsDir.resolve("cmos-0.3.1.jar"))
+        Files.copy(repo.resolve("components/lens/build/libs/lens-0.3.1.jar"), componentsDir.resolve("lens-0.3.1.jar"))
         val cmosDir = Files.createDirectories(componentsDir.resolve("cmos"))
         Files.copy(yamlPath, cmosDir.resolve("cmos.yaml"))
         Files.copy(qrPath, cmosDir.resolve("test-qr.jpg"))
@@ -797,8 +797,8 @@ class ReleaseLaunchConfigTest {
         // Load real shoulder-display JAR with release config and verify 180-degree upright mapping
         val componentsDir = Files.createDirectories(tempRoot.resolve("compoments"))
         Files.copy(
-            repo.resolve("components/shoulder-display/build/libs/shoulder-display-0.3.0.jar"),
-            componentsDir.resolve("shoulder-display-0.3.0.jar"),
+            repo.resolve("components/shoulder-display/build/libs/shoulder-display-0.3.1.jar"),
+            componentsDir.resolve("shoulder-display-0.3.1.jar"),
         )
         val shDir = Files.createDirectories(componentsDir.resolve("shoulder-display"))
         Files.copy(yamlPath, shDir.resolve("shoulder-display.yaml"))
@@ -1138,7 +1138,7 @@ class ReleaseLaunchConfigTest {
         assertTrue(!ci.contains("cpu-unicorn") && !ci.contains("buildArmFastNative"), "CI must not reference pruned Unicorn tasks")
 
         // 4. When :desktop:releaseJar has been built, verify it stays slim (<3 MiB) and keeps required runtime helpers
-        val slimJar = repo.resolve("desktop/build/release-libs/desktop-0.3.0.jar")
+        val slimJar = repo.resolve("desktop/build/release-libs/desktop-0.3.1.jar")
         if (Files.isRegularFile(slimJar)) {
             val size = Files.size(slimJar)
             assertTrue(size in 1L..3_000_000L, "Expected slim desktop releaseJar < 3 MiB, got $size B")

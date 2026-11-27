@@ -33,7 +33,7 @@ class SerialEngineFactoryTest {
  private fun device(c:Context,index:Int)=checkNotNull(c.ports.find(SerialEngineFactory.port(index),MmioDevice::class.java))
  private fun create(c:Context,f:ComponentFactory=SerialEngineFactory())=f.create(c,settings()).also{it.start()}
  private fun isolated(action:(ComponentFactory,ClassLoader)->Unit) {
-  val jar=project.resolve("components/soc-serial-engine/build/libs/soc-serial-engine-0.3.0.jar");val prefix="com.github.nyabanban.fuji.emulator.components.serialengine."
+  val jar=project.resolve("components/soc-serial-engine/build/libs/soc-serial-engine-0.3.1.jar");val prefix="com.github.nyabanban.fuji.emulator.components.serialengine."
   val loader=object:URLClassLoader(arrayOf(jar.toUri().toURL()),ComponentFactory::class.java.classLoader){override fun loadClass(name:String,resolve:Boolean):Class<*> = synchronized(getClassLoadingLock(name)){if(name.startsWith(prefix)){val type=findLoadedClass(name)?:findClass(name);if(resolve)resolveClass(type);type}else super.loadClass(name,resolve)}}
   loader.use{val factories=ServiceLoader.load(ComponentFactory::class.java,it).toList();assertEquals(1,factories.size);action(factories.single(),it)}
  }
@@ -70,7 +70,7 @@ class SerialEngineFactoryTest {
   val large=context();large.disk=true;Files.writeString(large.directory.resolve("input.yaml"),(" ".repeat(65536)+"\n"));assertFails{create(large)};assertTrue(large.ports.entries.isEmpty())
  }
  @Test fun actualIsolatedJarHasParentApiJava25ClassesAndOnlyExplicitWordPorts() {
-  val jar=project.resolve("components/soc-serial-engine/build/libs/soc-serial-engine-0.3.0.jar");ZipFile(jar.toFile()).use{z->val entries=z.entries().asSequence().map{it.name}.toList();assertFalse(entries.any{it.startsWith("com/github/nyabanban/fuji/emulator/api/")});val raw=z.getInputStream(z.getEntry("com/github/nyabanban/fuji/emulator/components/serialengine/SerialEngineFactory.class")).readAllBytes();assertEquals(69,((raw[6].toInt()and 255)shl 8)or(raw[7].toInt()and 255))}
+  val jar=project.resolve("components/soc-serial-engine/build/libs/soc-serial-engine-0.3.1.jar");ZipFile(jar.toFile()).use{z->val entries=z.entries().asSequence().map{it.name}.toList();assertFalse(entries.any{it.startsWith("com/github/nyabanban/fuji/emulator/api/")});val raw=z.getInputStream(z.getEntry("com/github/nyabanban/fuji/emulator/components/serialengine/SerialEngineFactory.class")).readAllBytes();assertEquals(69,((raw[6].toInt()and 255)shl 8)or(raw[7].toInt()and 255))}
   isolated{f,loader->assertSame(loader,f.javaClass.classLoader);val c=context(document(mapOf("0" to 0)));val h=create(c,f);val p=device(c,0);assertSame(loader,p.javaClass.classLoader);assertNotSame(loader,MmioDevice::class.java.classLoader);p.write(0,4,64);assertEquals(64L,p.read(0,4));h.close();assertFails{p.read(0,4)}}
  }
 }

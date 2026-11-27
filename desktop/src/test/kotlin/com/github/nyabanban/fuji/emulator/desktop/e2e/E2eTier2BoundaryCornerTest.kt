@@ -1634,10 +1634,10 @@ class E2eTier2BoundaryCornerTest {
     fun f9T2_componentJarRejectsMissingDescriptorWrongAbiAndDuplicateId(@TempDir tempRoot: Path) {
         val home1 = tempRoot.resolve("missing-catalog-json")
         Files.createDirectories(home1.resolve("compoments"))
-        val srcJar = E2eHarness.stagedComponents.resolve("battery-0.3.0.jar")
-        E2eGates.requireAssets("battery-0.3.0.jar", Files.isRegularFile(srcJar), "Missing $srcJar")
+        val srcJar = E2eHarness.stagedComponents.resolve("battery-0.3.1.jar")
+        E2eGates.requireAssets("battery-0.3.1.jar", Files.isRegularFile(srcJar), "Missing $srcJar")
         JarFile(srcJar.toFile()).use { source ->
-            JarOutputStream(Files.newOutputStream(home1.resolve("compoments/battery-0.3.0.jar"))).use { out ->
+            JarOutputStream(Files.newOutputStream(home1.resolve("compoments/battery-0.3.1.jar"))).use { out ->
                 source.entries().asSequence().forEach { entry ->
                     if (entry.name == "META-INF/fuji/catalog.json") return@forEach
                     out.putNextEntry(JarEntry(entry.name))
@@ -1649,7 +1649,7 @@ class E2eTier2BoundaryCornerTest {
         assertFails { E2eHarness.withComponentHost(home1, AddressCatalog.bundled()) { _, _ -> } }
 
         val home2 = E2eHarness.stageComponentHome(tempRoot.resolve("dup-id"))
-        Files.copy(home2.resolve("compoments/battery-0.3.0.jar"), home2.resolve("compoments/battery-dup.jar"))
+        Files.copy(home2.resolve("compoments/battery-0.3.1.jar"), home2.resolve("compoments/battery-dup.jar"))
         assertFails { E2eHarness.withComponentHost(home2) { _, _ -> } }
     }
 

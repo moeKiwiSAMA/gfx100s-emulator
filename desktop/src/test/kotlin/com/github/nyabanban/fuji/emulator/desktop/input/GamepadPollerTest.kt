@@ -105,7 +105,7 @@ class GamepadPollerTest {
             override fun step(action: CameraInputAction) { sink += "step:$action" }
         })
         val poller = GamepadPoller(backend, dispatch = { it() }, onFrame = controller::handleGamepadFrame)
-        backend.script.add(listOf(frame(0, buttons = GamepadFrame.RB, rt = 1.0)))
+        backend.script.add(listOf(frame(0, buttons = GamepadFrame.B, rt = 1.0)))
         poller.pollOnce()
         assertEquals(listOf("+SHUTTER_FULL", "+AF_ON").sorted(), sink.sorted())
         sink.clear()
@@ -167,7 +167,7 @@ class GamepadPollerTest {
         })
         val poller = GamepadPoller(backend, dispatch = { it() }, onFrame = controller::handleGamepadFrame,
             selection = { controller.config.gamepadSelection }, onDevices = controller::updateDevices)
-        backend.script.add(listOf(frame(0, buttons = GamepadFrame.Y, name = "Virtual Pad"), frame(1, buttons = GamepadFrame.RB, name = "Xbox")))
+        backend.script.add(listOf(frame(0, buttons = GamepadFrame.Y, name = "Virtual Pad"), frame(1, buttons = GamepadFrame.B, name = "Xbox")))
         poller.pollOnce()
         assertEquals(listOf("+AF_ON"), sink.toList(), "only the pinned Xbox pad drives the camera")
         assertEquals(2, controller.status.devices.size)
@@ -175,7 +175,7 @@ class GamepadPollerTest {
         poller.pollOnce()
         assertEquals(listOf("+AF_ON", "-AF_ON"), sink.toList(), "selected pad unplugged: everything released")
         assertFalse(controller.status.connected)
-        backend.script.add(listOf(frame(0, buttons = GamepadFrame.Y, name = "Virtual Pad"), frame(2, buttons = GamepadFrame.B, name = "Xbox")))
+        backend.script.add(listOf(frame(0, buttons = GamepadFrame.Y, name = "Virtual Pad"), frame(2, buttons = GamepadFrame.GUIDE, name = "Xbox")))
         poller.pollOnce()
         assertEquals(listOf("+AF_ON", "-AF_ON", "+MENU_OK"), sink.toList(), "re-plugged into slot 2: re-bound automatically")
         assertEquals(2, controller.status.slot)
@@ -183,7 +183,7 @@ class GamepadPollerTest {
         controller.updateConfig(controller.config.copy(selectedGamepad = "slot:0"))
         assertEquals(listOf("-MENU_OK"), sink.toList(), "changing the selection releases the previous pad")
         poller.pollOnce()
-        assertEquals(listOf("-MENU_OK", "+DELETE"), sink.toList())
+        assertEquals(listOf("-MENU_OK", "+AE_L"), sink.toList())
     }
 
     @Test fun selectionParsingAndValidation() {

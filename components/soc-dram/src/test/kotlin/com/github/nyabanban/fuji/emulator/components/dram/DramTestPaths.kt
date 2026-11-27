@@ -11,7 +11,7 @@ internal object DramTestPaths {
  fun value(name:String):String = when(name) {
   "fujiRepo"->root.toString()
   "studyOutput"->output.toString()
-  "candidateJar"->module.resolve("build/libs/soc-dram-0.3.0.jar").toString()
+  "candidateJar"->module.resolve("build/libs/soc-dram-0.3.1.jar").toString()
   else->error("Unknown DRAM test path: "+name)
  }
  private val sourceIdentities=mutableMapOf<String,Map<String,Any>>()

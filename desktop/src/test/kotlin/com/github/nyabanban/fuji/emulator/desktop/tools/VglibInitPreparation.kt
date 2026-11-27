@@ -8,7 +8,7 @@ import java.nio.file.Path
 
 /** Selected extra component inputs come from the central SOURCE declaration, never a new execution plan. */
 object VglibInitPreparation {
-    val additions=listOf("compoments/soc-vglib-init-0.3.0.jar","compoments/soc-vglib-init/soc-vglib-init.yaml","compoments/soc-vglib-init/sequence.yaml")
+    val additions=listOf("compoments/soc-vglib-init-0.3.1.jar","compoments/soc-vglib-init/soc-vglib-init.yaml","compoments/soc-vglib-init/sequence.yaml")
     const val MODE_INPUT="compoments/soc-vglib-init/mode-word.yaml"
     const val SNAPSHOT_INPUT="compoments/soc-vglib-init/lcdc-snapshot.yaml"
     fun additions(modeProfile:String?,snapshotProfile:String?=null)=additions+(if(modeProfile==null)emptyList()else listOf(MODE_INPUT))+(if(snapshotProfile==null)emptyList()else listOf(SNAPSHOT_INPUT))

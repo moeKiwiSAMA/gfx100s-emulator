@@ -270,7 +270,7 @@ class CmosLiveViewQrTest {
         val catalog = AddressCatalog.load(projectRoot.resolve("catalog/compiled/catalog.json"))
         val componentsDir = Files.createDirectories(tempRoot.resolve("compoments"))
         for (id in listOf("display", VglibInitAdmission.ID, "cmos")) {
-            val jar = "$id-0.3.0.jar"
+            val jar = "$id-0.3.1.jar"
             Files.copy(projectRoot.resolve("build/emulator/compoments/$jar"), componentsDir.resolve(jar))
         }
         val vglibDir = Files.createDirectory(componentsDir.resolve(VglibInitAdmission.ID))
@@ -438,7 +438,7 @@ class CmosLiveViewQrTest {
             val runDir = tempRoot.resolve("t80_${dstW}x${dstH}")
             val componentsDir = Files.createDirectories(runDir.resolve("compoments"))
             for (id in listOf("display", VglibInitAdmission.ID, "cmos")) {
-                val jar = "$id-0.3.0.jar"
+                val jar = "$id-0.3.1.jar"
                 Files.copy(projectRoot.resolve("build/emulator/compoments/$jar"), componentsDir.resolve(jar))
             }
             val vglibDir = Files.createDirectory(componentsDir.resolve(VglibInitAdmission.ID))
@@ -525,7 +525,7 @@ class CmosLiveViewQrTest {
         val catalog = AddressCatalog.load(projectRoot.resolve("catalog/compiled/catalog.json"))
         val componentsDir = Files.createDirectories(tempRoot.resolve("compoments"))
         for (id in listOf("display", VglibInitAdmission.ID, "cmos")) {
-            val jar = "$id-0.3.0.jar"
+            val jar = "$id-0.3.1.jar"
             Files.copy(projectRoot.resolve("build/emulator/compoments/$jar"), componentsDir.resolve(jar))
         }
         val vglibDir = Files.createDirectory(componentsDir.resolve(VglibInitAdmission.ID))

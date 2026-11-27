@@ -28,7 +28,7 @@ fun releaseLibraries(platform: String) = copySpec {
     from(javafxArtifactsByPlatform.getValue(platform)) { into("lib") }
 }
 tasks.register("verifyPlatformArtifacts") { doLast { platformArtifacts.files.sortedBy { it.name }.forEach { println(it.name) } } }
-allprojects { group = "com.github.nyabanban.fuji.emulator"; version = "0.3.0" }
+allprojects { group = "com.github.nyabanban.fuji.emulator"; version = "0.3.1" }
 subprojects {
     apply(plugin = "org.jetbrains.kotlin.jvm")
     apply(plugin = "java-library")

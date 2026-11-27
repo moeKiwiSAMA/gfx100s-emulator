@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+    tags:
+      - "v*"
   pull_request:
     branches:
       - main
@@ -244,7 +246,7 @@ jobs:
           if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
             RELEASE_VER="${GITHUB_REF_NAME#v}"
           else
-            RELEASE_VER="0.3.0-${SHORT_SHA}"
+            RELEASE_VER="0.3.1-${SHORT_SHA}"
           fi
 
           ./gradlew --no-daemon --build-cache \

@@ -165,7 +165,7 @@ class IntegrationTest {
     fun duplicateJarFailsAndReleasesAllRegisteredPorts() {
         val root = fixture()
         try {
-            Files.copy(root.resolve("compoments/battery-0.3.0.jar"), root.resolve("compoments/z-duplicate.jar"))
+            Files.copy(root.resolve("compoments/battery-0.3.1.jar"), root.resolve("compoments/z-duplicate.jar"))
             OwnerLoop().use { owner ->
                 val host = ComponentHost(owner, root.resolve("compoments"))
                 assertFails { owner.submit { host.load() }.join() }

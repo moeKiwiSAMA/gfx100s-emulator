@@ -364,23 +364,32 @@ class FfmpegPipeSceneSource internal constructor(
                 }
                 is FfmpegInputTarget.WebcamDevice -> {
                     val lowerOs = osName.lowercase()
+                    val resolvedDevice = if (target.device.equals("default", ignoreCase = true) &&
+                        osName.equals(System.getProperty("os.name").orEmpty(), ignoreCase = true)
+                    ) {
+                        com.github.nyabanban.fuji.emulator.api.WebcamDeviceDiscovery
+                            .discoverDefaultDeviceId(osName, ffmpegExecutable)
+                            ?: target.device
+                    } else {
+                        target.device
+                    }
                     when {
                         "win" in lowerOs -> {
-                            val dev = if (target.device.equals("default", ignoreCase = true)) {
+                            val dev = if (resolvedDevice.equals("default", ignoreCase = true)) {
                                 "video=Integrated Camera"
-                            } else if (target.device.startsWith("video=", ignoreCase = true)) {
-                                target.device
+                            } else if (resolvedDevice.startsWith("video=", ignoreCase = true)) {
+                                resolvedDevice
                             } else {
-                                "video=${target.device}"
+                                "video=$resolvedDevice"
                             }
                             cmd += listOf("-f", "dshow", "-i", dev)
                         }
                         "mac" in lowerOs || "darwin" in lowerOs -> {
-                            val dev = if (target.device.equals("default", ignoreCase = true)) "0" else target.device
+                            val dev = if (resolvedDevice.equals("default", ignoreCase = true)) "0" else resolvedDevice
                             cmd += listOf("-f", "avfoundation", "-i", dev)
                         }
                         else -> {
-                            val dev = if (target.device.equals("default", ignoreCase = true)) "/dev/video0" else target.device
+                            val dev = if (resolvedDevice.equals("default", ignoreCase = true)) "/dev/video0" else resolvedDevice
                             cmd += listOf("-f", "v4l2", "-i", dev)
                         }
                     }

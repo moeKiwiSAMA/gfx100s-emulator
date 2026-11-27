@@ -139,7 +139,7 @@ data class KeyBindingSpec(
 /** Physical gamepad inputs. Declaration order is also press order (HALF before FULL) and reversed for releases. */
 enum class GamepadInput(val label: String) {
     A("A"), B("B"), X("X"), Y("Y"),
-    LB("LB"), RB("RB"), BACK("Back"), START("Start"), L3("L3"), R3("R3"),
+    LB("LB"), RB("RB"), BACK("Back"), START("Start"), GUIDE("Menu"), L3("L3"), R3("R3"),
     DPAD_UP("D-Pad \u2191"), DPAD_DOWN("D-Pad \u2193"), DPAD_LEFT("D-Pad \u2190"), DPAD_RIGHT("D-Pad \u2192"),
     LS_UP("LS \u2191"), LS_DOWN("LS \u2193"), LS_LEFT("LS \u2190"), LS_RIGHT("LS \u2192"),
     RS_UP("RS \u2191"), RS_DOWN("RS \u2193"), RS_LEFT("RS \u2190"), RS_RIGHT("RS \u2192"),
@@ -306,7 +306,8 @@ data class InputBindingConfig(
             return linkedMapOf(
                 CameraInputAction.SHUTTER_HALF to pads(GamepadInput.RT_HALF),
                 CameraInputAction.SHUTTER_FULL to pads(GamepadInput.RT_FULL),
-                CameraInputAction.AF_ON to pads(GamepadInput.RB),
+                CameraInputAction.AF_ON to pads(GamepadInput.B),
+                CameraInputAction.AE_L to pads(GamepadInput.Y),
                 CameraInputAction.Q_MENU to pads(GamepadInput.LB),
                 CameraInputAction.DRIVE to pads(GamepadInput.LT_HALF),
                 CameraInputAction.UP to pads(GamepadInput.DPAD_UP, GamepadInput.LS_UP),
@@ -319,12 +320,12 @@ data class InputBindingConfig(
                 CameraInputAction.FRONT_DIAL_CW to pads(GamepadInput.RS_UP),
                 CameraInputAction.FRONT_DIAL_CCW to pads(GamepadInput.RS_DOWN),
                 CameraInputAction.REAR_DIAL_PRESS to pads(GamepadInput.R3),
-                CameraInputAction.MENU_OK to pads(GamepadInput.B),
+                CameraInputAction.MENU_OK to pads(GamepadInput.GUIDE),
                 CameraInputAction.DISP_BACK to pads(GamepadInput.A),
-                CameraInputAction.PLAY to pads(GamepadInput.X),
-                CameraInputAction.DELETE to pads(GamepadInput.Y),
+                CameraInputAction.PLAY to pads(GamepadInput.START),
+                CameraInputAction.DELETE to pads(GamepadInput.X),
                 CameraInputAction.VIEW_MODE to pads(GamepadInput.BACK),
-                CameraInputAction.FN1 to pads(GamepadInput.START),
+                CameraInputAction.FN1 to pads(GamepadInput.RB),
             )
         }
     }

@@ -47,7 +47,7 @@ data class GamepadFrame(
         val BUTTON_BITS: Map<GamepadInput, Int> = linkedMapOf(
             GamepadInput.A to A, GamepadInput.B to B, GamepadInput.X to X, GamepadInput.Y to Y,
             GamepadInput.LB to LB, GamepadInput.RB to RB, GamepadInput.BACK to BACK, GamepadInput.START to START,
-            GamepadInput.L3 to L3, GamepadInput.R3 to R3,
+            GamepadInput.GUIDE to GUIDE, GamepadInput.L3 to L3, GamepadInput.R3 to R3,
             GamepadInput.DPAD_UP to DPAD_UP, GamepadInput.DPAD_DOWN to DPAD_DOWN,
             GamepadInput.DPAD_LEFT to DPAD_LEFT, GamepadInput.DPAD_RIGHT to DPAD_RIGHT,
         )

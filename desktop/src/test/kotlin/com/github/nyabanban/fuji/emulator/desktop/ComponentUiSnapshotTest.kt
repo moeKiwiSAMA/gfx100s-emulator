@@ -16,12 +16,12 @@ class ComponentUiSnapshotTest {
         val workDir = tempDir.resolve("compoments")
         Files.createDirectories(workDir)
         val selectedJars = listOf(
-            "battery-0.3.0.jar",
-            "buttons-0.3.0.jar",
-            "lens-0.3.0.jar",
-            "mount-0.3.0.jar",
-            "soc-gic-0.3.0.jar",
-            "soc-timer-0.3.0.jar",
+            "battery-0.3.1.jar",
+            "buttons-0.3.1.jar",
+            "lens-0.3.1.jar",
+            "mount-0.3.1.jar",
+            "soc-gic-0.3.1.jar",
+            "soc-timer-0.3.1.jar",
         )
         for (jar in selectedJars) {
             Files.copy(stagedDir.resolve(jar), workDir.resolve(jar))

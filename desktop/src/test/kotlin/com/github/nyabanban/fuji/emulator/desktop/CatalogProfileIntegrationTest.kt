@@ -28,7 +28,7 @@ class CatalogProfileIntegrationTest {
     private fun home(profile:String,config:Map<String,Any> = emptyMap()):Path {
         val home=Files.createTempDirectory("catalog-profile")
         Files.createDirectories(home.resolve("compoments/soc-sd-host"))
-        Files.copy(root.resolve("build/emulator/compoments/soc-sd-host-0.3.0.jar"),home.resolve("compoments/soc-sd-host-0.3.0.jar"))
+        Files.copy(root.resolve("build/emulator/compoments/soc-sd-host-0.3.1.jar"),home.resolve("compoments/soc-sd-host-0.3.1.jar"))
         Formats.atomicYaml(home.resolve("compoments/soc-sd-host/soc-sd-host.yaml"),mapOf("profile" to profile,"inputFile" to "input.yaml")+config)
         Formats.atomicYaml(home.resolve("compoments/soc-sd-host/input.yaml"),input(profile))
         return home
@@ -149,8 +149,8 @@ class CatalogProfileIntegrationTest {
         val catalog=CatalogIO.readCompiled(CatalogIO.canonical(mapOf("schema" to 1,"payloadSha256" to CatalogIO.sha256(CatalogIO.canonical(data)),"data" to data)))
         val home=home(v4)
         try {
-            val target=home.resolve("compoments/soc-sd-host-0.3.0.jar")
-            JarFile(root.resolve("build/emulator/compoments/soc-sd-host-0.3.0.jar").toFile()).use { source -> JarOutputStream(Files.newOutputStream(target)).use { output ->
+            val target=home.resolve("compoments/soc-sd-host-0.3.1.jar")
+            JarFile(root.resolve("build/emulator/compoments/soc-sd-host-0.3.1.jar").toFile()).use { source -> JarOutputStream(Files.newOutputStream(target)).use { output ->
                 source.entries().asSequence().forEach {entry ->
                     output.putNextEntry(JarEntry(entry.name))
                     if(entry.name=="META-INF/fuji/catalog.json")output.write(Formats.jsonBytes(catalog.componentDescriptor("soc-sd-host")))

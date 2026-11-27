@@ -53,11 +53,7 @@ class SourceSelectorPaneTest {
         assertTrue(presets3d.all { it.dimension == SourceSceneDimension.DIM_3D })
 
         val presets2d = CmosSourceStatus.presetsFor(SourceSceneDimension.DIM_2D)
-        assertEquals(
-            listOf("test-qr.jpg", "screen://primary", "webcam:default", "tcp://127.0.0.1:9555"),
-            presets2d.map { it.sourceFile },
-        )
-        assertTrue(presets2d.all { it.dimension == SourceSceneDimension.DIM_2D })
+        assertTrue(presets2d.isEmpty(), "2D panel must not ship redundant quick-preset chips under category selector")
     }
 
     @Test
@@ -99,12 +95,20 @@ class SourceSelectorPaneTest {
             val holder = StackPane()
             val owner = Stage().apply { scene = Scene(holder) }
             val patches = mutableListOf<Map<String, Any>>()
+            val scannedWebcams = mutableListOf(
+                com.github.nyabanban.fuji.emulator.api.WebcamDevice("/dev/video0", "Integrated Camera (/dev/video0)"),
+                com.github.nyabanban.fuji.emulator.api.WebcamDevice("/dev/video2", "USB Capture (/dev/video2)"),
+            )
+            val errors = mutableListOf<Throwable>()
             val pane = SourceSelectorPane(
                 ownerWindow = { owner },
                 patchCmos = { patch ->
                     patches += patch
                     CompletableFuture.completedFuture(Unit)
                 },
+                onError = { errors += it },
+                discoverWebcams = { scannedWebcams.toList() },
+                asyncWebcamDiscovery = false,
             )
             holder.children += pane.root
             holder.applyCss()
@@ -112,10 +116,13 @@ class SourceSelectorPaneTest {
             fun toggle(id: String) = holder.lookup("#$id") as ToggleButton
             fun btn(id: String) = holder.lookup("#$id") as Button
             fun vbox(id: String) = holder.lookup("#$id") as VBox
+            fun hbox(id: String) = holder.lookup("#$id") as javafx.scene.layout.HBox
             fun label(id: String) = holder.lookup("#$id") as Label
             fun field(id: String) = holder.lookup("#$id") as TextField
             @Suppress("UNCHECKED_CAST")
             fun combo(id: String) = holder.lookup("#$id") as ComboBox<InputSourceCategory>
+            @Suppress("UNCHECKED_CAST")
+            fun webcamCombo() = holder.lookup("#source-webcam-combo") as ComboBox<com.github.nyabanban.fuji.emulator.api.WebcamDevice>
 
             I18n.resetToDefault()
             // Default: Level 1 = 3D optical scene
@@ -125,6 +132,7 @@ class SourceSelectorPaneTest {
             assertTrue(vbox("source-panel-3d").isVisible && vbox("source-panel-3d").isManaged)
             assertFalse(vbox("source-panel-2d").isVisible || vbox("source-panel-2d").isManaged)
             assertTrue(label("source-3d-depth-badge").text.contains("True 3D depth map"))
+            assertEquals(null, holder.lookup("#source-2d-presets"), "Redundant 4-chip 2D preset row must be removed")
 
             // Clicking a 3D scene card dispatches the exact optical-scene patch
             for (slug in listOf("mona-lisa", "star-bokeh", "bokeh-city")) {
@@ -143,8 +151,10 @@ class SourceSelectorPaneTest {
             assertEquals(InputSourceCategory.TWO_D_CATEGORIES, combo("source-category-combo").items.toList())
             assertTrue(label("source-2d-distance-hint").text.contains("2D planar input"))
 
-            // Contextual fields: STATIC_IMAGE shows FileChooser, hides screen region
+            // Contextual fields: STATIC_IMAGE shows FileChooser + text field, hides webcam picker and screen region
+            assertTrue(hbox("source-input-row").isVisible && hbox("source-input-row").isManaged)
             assertTrue(btn("source-browse-btn").isVisible && btn("source-browse-btn").isManaged)
+            assertFalse(hbox("source-webcam-picker-box").isVisible || hbox("source-webcam-picker-box").isManaged)
             assertFalse(vbox("source-screen-region-box").isVisible || vbox("source-screen-region-box").isManaged)
 
             // Switch 2D Level-2 category -> GAME_SCREEN hides FileChooser, shows screen region
@@ -154,14 +164,37 @@ class SourceSelectorPaneTest {
             assertTrue(vbox("source-screen-region-box").isVisible && vbox("source-screen-region-box").isManaged)
             assertEquals("screen://primary", field("source-ref-field").text)
 
-            // Clicking 2D preset chip dispatches patch cleanly
-            btn("source-2d-chip-jpeg").fire()
+            // Switch 2D Level-2 category -> WEBCAM replaces manual text field with enumerated dropdown + refresh button
+            combo("source-category-combo").value = InputSourceCategory.WEBCAM
+            combo("source-category-combo").fireEvent(javafx.event.ActionEvent())
+            assertTrue(hbox("source-webcam-picker-box").isVisible && hbox("source-webcam-picker-box").isManaged)
+            assertFalse(hbox("source-input-row").isVisible || hbox("source-input-row").isManaged)
+            assertEquals(2, webcamCombo().items.size)
+            assertEquals("/dev/video0", webcamCombo().value?.id)
+            assertEquals("webcam:/dev/video0", field("source-ref-field").text)
+
+            // Selecting second camera and clicking Apply dispatches exact webcam:<id> patch
+            webcamCombo().value = webcamCombo().items[1]
+            webcamCombo().fireEvent(javafx.event.ActionEvent())
+            btn("source-apply-btn").fire()
             assertEquals(
-                mapOf("sourceKind" to "JPEG", "sourceFile" to "test-qr.jpg", "loop" to true),
+                mapOf("sourceKind" to "ffmpeg-pipe", "sourceFile" to "webcam:/dev/video2", "loop" to true),
                 patches.last(),
             )
-            assertEquals(InputSourceCategory.STATIC_IMAGE, pane.active2DCategory)
-            assertTrue(btn("source-browse-btn").isVisible)
+
+            // Refresh discovers hot-plugged camera cleanly
+            scannedWebcams += com.github.nyabanban.fuji.emulator.api.WebcamDevice("/dev/video4", "Logitech BRIO (/dev/video4)")
+            btn("source-webcam-refresh-btn").fire()
+            assertEquals(3, webcamCombo().items.size)
+            assertEquals("/dev/video2", webcamCombo().value?.id, "Refresh preserves currently selected camera")
+
+            // Empty webcam list surfaces clear error instead of sending broken webcam:default
+            scannedWebcams.clear()
+            btn("source-webcam-refresh-btn").fire()
+            assertTrue(webcamCombo().items.isEmpty())
+            assertEquals(null, webcamCombo().value)
+            btn("source-apply-btn").fire()
+            assertTrue(errors.isNotEmpty(), "Applying with zero webcams must report a user-facing error")
 
             // Telemetry detail starts collapsed, auto-expands on source error
             pane.observeSnapshot(

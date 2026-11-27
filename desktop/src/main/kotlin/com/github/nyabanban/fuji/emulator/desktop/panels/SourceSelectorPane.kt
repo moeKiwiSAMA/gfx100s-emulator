@@ -1,18 +1,21 @@
 package com.github.nyabanban.fuji.emulator.desktop.panels
 
+import com.github.nyabanban.fuji.emulator.api.WebcamDevice
+import com.github.nyabanban.fuji.emulator.api.WebcamDeviceDiscovery
 import com.github.nyabanban.fuji.emulator.desktop.i18n.I18n
+import javafx.application.Platform
 import javafx.geometry.Pos
 import javafx.scene.control.Button
 import javafx.scene.control.CheckBox
 import javafx.scene.control.ComboBox
 import javafx.scene.control.Label
 import javafx.scene.control.ListCell
+import javafx.scene.control.OverrunStyle
 import javafx.scene.control.TextField
 import javafx.scene.control.ToggleButton
 import javafx.scene.control.ToggleGroup
 import javafx.scene.control.Tooltip
 import javafx.scene.layout.ColumnConstraints
-import javafx.scene.layout.FlowPane
 import javafx.scene.layout.GridPane
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
@@ -53,6 +56,7 @@ enum class InputSourceCategory(
     val supportsFileChooser: Boolean,
     val supportsScreenRegion: Boolean,
     val dimension: SourceSceneDimension,
+    val supportsWebcamPicker: Boolean = false,
 ) {
     STATIC_IMAGE(
         "source.cat.static_image.label",
@@ -85,6 +89,7 @@ enum class InputSourceCategory(
         false,
         false,
         SourceSceneDimension.DIM_2D,
+        supportsWebcamPicker = true,
     ),
     NETWORK_STREAM(
         "source.cat.network_stream.label",
@@ -272,14 +277,9 @@ data class CmosSourceStatus(
             ),
         )
 
-        val PRESET_CHIPS_2D: List<SourcePresetChip> = listOf(
-            SourcePresetChip("source.preset.test_qr.label", InputSourceCategory.STATIC_IMAGE, "JPEG", "test-qr.jpg", true, "source.preset.test_qr.subtitle"),
-            SourcePresetChip("source.preset.primary_screen.label", InputSourceCategory.GAME_SCREEN, "screen-capture", "screen://primary", true, "source.preset.primary_screen.subtitle"),
-            SourcePresetChip("source.preset.webcam.label", InputSourceCategory.WEBCAM, "ffmpeg-pipe", "webcam:default", true, "source.preset.webcam.subtitle"),
-            SourcePresetChip("source.preset.tcp_stream.label", InputSourceCategory.NETWORK_STREAM, "stream-ingest", "tcp://127.0.0.1:9555", true, "source.preset.tcp_stream.subtitle"),
-        )
+        val PRESET_CHIPS_2D: List<SourcePresetChip> = emptyList()
 
-        val PRESET_CHIPS: List<SourcePresetChip> = PRESET_CHIPS_3D + PRESET_CHIPS_2D
+        val PRESET_CHIPS: List<SourcePresetChip> = PRESET_CHIPS_3D
 
         fun presetsFor(dimension: SourceSceneDimension): List<SourcePresetChip> = when (dimension) {
             SourceSceneDimension.DIM_3D -> PRESET_CHIPS_3D
@@ -407,6 +407,8 @@ class SourceSelectorPane(
     private val onOpenLensProfile: (() -> Unit)? = null,
     private val onStatus: (String) -> Unit = {},
     private val onError: (Throwable) -> Unit = {},
+    private val discoverWebcams: () -> List<WebcamDevice> = { WebcamDeviceDiscovery.discover() },
+    private val asyncWebcamDiscovery: Boolean = true,
 ) {
     private var syncing = false
     private var observedOnce = false
@@ -414,6 +416,8 @@ class SourceSelectorPane(
     private var lastStatus: CmosSourceStatus? = null
     private var telemetryExpanded = false
     private var custom3dExpanded = false
+    private var webcamScannedOnce = false
+    private var webcamScanning = false
 
     var activeDimension: SourceSceneDimension = SourceSceneDimension.DIM_3D
         private set
@@ -566,23 +570,48 @@ class SourceSelectorPane(
         value = InputSourceCategory.STATIC_IMAGE
     }
 
-    private val preset2dButtons = LinkedHashMap<String, Button>()
+    private val webcamPlaceholderLabel = Label(I18n.t("source.webcam.empty")).apply {
+        styleClass += "studio-hint-text"
+    }
 
-    private val preset2dChipsPane = FlowPane(5.0, 5.0).apply {
-        id = "source-2d-presets"
-        CmosSourceStatus.PRESET_CHIPS_2D.forEach { chip ->
-            val btn = Button().apply {
-                id = "source-2d-chip-${chip.sourceKind.lowercase(Locale.ROOT)}"
-                textProperty().bind(I18n.bind(chip.labelKey))
-                styleClass += "studio-chip-btn"
-                tooltip = Tooltip("${chip.sourceKind}: ${chip.sourceFile}")
-                setOnAction {
-                    select2dPreset(chip)
-                }
-            }
-            preset2dButtons[chip.sourceFile.lowercase(Locale.ROOT)] = btn
-            children += btn
+    private val webcamCombo = ComboBox<WebcamDevice>().apply {
+        id = "source-webcam-combo"
+        minWidth = 0.0
+        maxWidth = Double.MAX_VALUE
+        promptText = I18n.t("source.webcam.select.prompt")
+        placeholder = webcamPlaceholderLabel
+        HBox.setHgrow(this, Priority.ALWAYS)
+        converter = object : StringConverter<WebcamDevice>() {
+            override fun toString(item: WebcamDevice?): String = item?.displayName.orEmpty()
+            override fun fromString(string: String?): WebcamDevice? = items.firstOrNull { it.displayName == string }
         }
+        fun webcamCell() = object : ListCell<WebcamDevice>() {
+            init {
+                minWidth = 0.0
+                textOverrun = OverrunStyle.ELLIPSIS
+            }
+            override fun updateItem(item: WebcamDevice?, empty: Boolean) {
+                super.updateItem(item, empty)
+                text = if (empty || item == null) null else item.displayName
+                tooltip = if (empty || item == null) null else Tooltip("${item.displayName}\n${item.sourceRef}")
+            }
+        }
+        setCellFactory { webcamCell() }
+        buttonCell = webcamCell()
+    }
+
+    private val refreshWebcamButton = Button("\u21BB").apply {
+        id = "source-webcam-refresh-btn"
+        styleClass += "studio-chip-btn"
+        minWidth = Region.USE_PREF_SIZE
+        tooltip = Tooltip().apply { textProperty().bind(I18n.bind("source.webcam.refresh.tooltip")) }
+    }
+
+    private val webcamPickerBox = HBox(5.0, webcamCombo, refreshWebcamButton).apply {
+        id = "source-webcam-picker-box"
+        alignment = Pos.CENTER_LEFT
+        isVisible = false
+        isManaged = false
     }
 
     private val sourceField = TextField("test-qr.jpg").apply {
@@ -595,6 +624,11 @@ class SourceSelectorPane(
         id = "source-browse-btn"
         textProperty().bind(I18n.bind("source.browse.button"))
         minWidth = Region.USE_PREF_SIZE
+    }
+
+    private val sourceInputRow = HBox(5.0, sourceField, browseButton).apply {
+        id = "source-input-row"
+        alignment = Pos.CENTER_LEFT
     }
 
     private val regionXField = TextField("0").apply { prefColumnCount = 3; promptText = "X" }
@@ -657,8 +691,8 @@ class SourceSelectorPane(
     private val panel2d = VBox(
         6.0,
         categoryCombo,
-        preset2dChipsPane,
-        HBox(5.0, sourceField, browseButton).apply { alignment = Pos.CENTER_LEFT },
+        webcamPickerBox,
+        sourceInputRow,
         screenRegionBox,
         distance2dHint,
         HBox(
@@ -756,8 +790,14 @@ class SourceSelectorPane(
             if (!syncing) {
                 val cat = active2DCategory
                 sourceField.promptText = cat.promptText
-                if (cat == InputSourceCategory.WEBCAM && !sourceField.text.startsWith("webcam:")) {
-                    sourceField.text = "webcam:default"
+                if (cat == InputSourceCategory.WEBCAM) {
+                    val selected = webcamCombo.value
+                    if (selected != null) {
+                        sourceField.text = selected.sourceRef
+                    } else if (!sourceField.text.startsWith("webcam:", ignoreCase = true)) {
+                        sourceField.text = ""
+                    }
+                    refreshWebcamDevices(force = !webcamScannedOnce)
                 } else if (cat == InputSourceCategory.GAME_SCREEN &&
                     !sourceField.text.startsWith("screen://") &&
                     !sourceField.text.startsWith("tcp://")
@@ -774,6 +814,18 @@ class SourceSelectorPane(
                 }
             }
             updateContextVisibility()
+        }
+
+        webcamCombo.setOnAction {
+            if (!syncing) {
+                webcamCombo.value?.let { device ->
+                    sourceField.text = device.sourceRef
+                }
+            }
+        }
+
+        refreshWebcamButton.setOnAction {
+            refreshWebcamDevices(force = true)
         }
 
         browseButton.setOnAction {
@@ -813,7 +865,19 @@ class SourceSelectorPane(
 
         applyButton.setOnAction {
             val cat = active2DCategory
-            CmosSourceStatus.resolveSourcePatch(cat, sourceField.text, loopCheck.isSelected)
+            val effectiveRef = if (cat == InputSourceCategory.WEBCAM) {
+                val chosen = webcamCombo.value?.sourceRef
+                if (chosen != null) {
+                    sourceField.text = chosen
+                    chosen
+                } else {
+                    onError(IllegalStateException(I18n.t("source.webcam.empty")))
+                    return@setOnAction
+                }
+            } else {
+                sourceField.text
+            }
+            CmosSourceStatus.resolveSourcePatch(cat, effectiveRef, loopCheck.isSelected)
                 .onSuccess { patch ->
                     applySourcePatch(patch, I18n.t("source.status.switched_source", patch["sourceKind"], patch["sourceFile"]))
                 }
@@ -829,6 +893,50 @@ class SourceSelectorPane(
         updateTelemetryVisibility()
     }
 
+    fun refreshWebcamDevices(force: Boolean = true) {
+        if (webcamScanning || (!force && webcamScannedOnce)) return
+        webcamScanning = true
+        refreshWebcamButton.isDisable = true
+        webcamCombo.promptText = I18n.t("source.webcam.scanning")
+        webcamPlaceholderLabel.text = I18n.t("source.webcam.scanning")
+
+        fun applyDiscovered(devices: List<WebcamDevice>) {
+            webcamScanning = false
+            webcamScannedOnce = true
+            refreshWebcamButton.isDisable = false
+            webcamCombo.promptText = I18n.t(
+                if (devices.isEmpty()) "source.webcam.empty" else "source.webcam.select.prompt",
+            )
+            webcamPlaceholderLabel.text = I18n.t("source.webcam.empty")
+
+            val previousRef = webcamCombo.value?.sourceRef
+                ?: sourceField.text.takeIf { it.startsWith("webcam:", ignoreCase = true) }
+            syncing = true
+            try {
+                webcamCombo.items.setAll(devices)
+                val matched = previousRef?.let { ref ->
+                    devices.firstOrNull { it.sourceRef.equals(ref, ignoreCase = true) }
+                } ?: devices.firstOrNull()
+                webcamCombo.value = matched
+                if (active2DCategory == InputSourceCategory.WEBCAM && matched != null) {
+                    sourceField.text = matched.sourceRef
+                }
+            } finally {
+                syncing = false
+            }
+        }
+
+        if (!asyncWebcamDiscovery) {
+            val found = runCatching { discoverWebcams() }.getOrDefault(emptyList())
+            applyDiscovered(found)
+            return
+        }
+        Thread.ofVirtual().name("webcam-discovery").start {
+            val found = runCatching { discoverWebcams() }.getOrDefault(emptyList())
+            Platform.runLater { applyDiscovered(found) }
+        }
+    }
+
     private fun refreshLocalizedDynamicText() {
         syncing = true
         try {
@@ -836,6 +944,14 @@ class SourceSelectorPane(
             categoryCombo.items.setAll(InputSourceCategory.TWO_D_CATEGORIES)
             categoryCombo.value = currentCat
             sourceField.promptText = currentCat.promptText
+            webcamPlaceholderLabel.text = I18n.t(if (webcamScanning) "source.webcam.scanning" else "source.webcam.empty")
+            webcamCombo.promptText = I18n.t(
+                when {
+                    webcamScanning -> "source.webcam.scanning"
+                    webcamCombo.items.isEmpty() -> "source.webcam.empty"
+                    else -> "source.webcam.select.prompt"
+                },
+            )
         } finally {
             syncing = false
         }
@@ -882,29 +998,6 @@ class SourceSelectorPane(
         )
     }
 
-    private fun select2dPreset(chip: SourcePresetChip) {
-        syncing = true
-        try {
-            setActiveDimension(SourceSceneDimension.DIM_2D)
-            categoryCombo.value = chip.category
-            sourceField.text = chip.sourceFile
-            sourceField.promptText = chip.category.promptText
-            loopCheck.isSelected = chip.loop
-            updateContextVisibility()
-            updateActivePresetHighlight(chip.sourceFile)
-        } finally {
-            syncing = false
-        }
-        applySourcePatch(
-            linkedMapOf(
-                "sourceKind" to chip.sourceKind,
-                "sourceFile" to chip.sourceFile,
-                "loop" to chip.loop,
-            ),
-            I18n.t("source.status.preset_2d", chip.label, chip.sourceKind),
-        )
-    }
-
     private fun setStyleClassPresent(node: javafx.scene.Node, className: String, present: Boolean) {
         if (present) {
             if (className !in node.styleClass) node.styleClass += className
@@ -927,19 +1020,21 @@ class SourceSelectorPane(
             val active = norm == ref || norm.startsWith("$ref?")
             setStyleClassPresent(btn, "source-card-3d-active", active)
         }
-
-        preset2dButtons.forEach { (ref, btn) ->
-            val active = norm == ref || norm.startsWith("$ref?")
-            setStyleClassPresent(btn, "source-chip-2d-active", active)
-        }
     }
 
     private fun updateContextVisibility() {
         val cat = active2DCategory
+        val isWebcam = cat.supportsWebcamPicker
+        webcamPickerBox.isVisible = isWebcam
+        webcamPickerBox.isManaged = isWebcam
+        sourceInputRow.isVisible = !isWebcam
+        sourceInputRow.isManaged = !isWebcam
         browseButton.isVisible = cat.supportsFileChooser
         browseButton.isManaged = cat.supportsFileChooser
         screenRegionBox.isVisible = cat.supportsScreenRegion
         screenRegionBox.isManaged = cat.supportsScreenRegion
+        loopCheck.isVisible = !isWebcam
+        loopCheck.isManaged = !isWebcam
     }
 
     private fun updateCustom3dVisibility() {
@@ -1006,6 +1101,19 @@ class SourceSelectorPane(
                     sourceField.promptText = inferred.promptText
                     if (!sourceField.isFocused && status.sourceFile.isNotBlank()) {
                         sourceField.text = status.sourceFile
+                    }
+                    if (inferred == InputSourceCategory.WEBCAM && status.sourceFile.startsWith("webcam:", ignoreCase = true)) {
+                        val existing = webcamCombo.items.firstOrNull { it.sourceRef.equals(status.sourceFile, ignoreCase = true) }
+                        if (existing != null) {
+                            webcamCombo.value = existing
+                        } else {
+                            val devId = status.sourceFile.substringAfter(':').trim()
+                            if (devId.isNotEmpty() && !devId.equals("default", ignoreCase = true)) {
+                                val synthetic = WebcamDevice(devId, devId)
+                                webcamCombo.items.add(synthetic)
+                                webcamCombo.value = synthetic
+                            }
+                        }
                     }
                     loopCheck.isSelected = status.loop
                     updateContextVisibility()

@@ -35,15 +35,15 @@ class VulkanScene3dRasterizerParityTest {
         val repo = Path.of(System.getProperty("componentProjectRoot"))
         val hostRoot = tempRoot.resolve(name)
         val componentsDir = Files.createDirectories(hostRoot.resolve("compoments"))
-        Files.copy(repo.resolve("components/cmos/build/libs/cmos-0.3.0.jar"), componentsDir.resolve("cmos-0.3.0.jar"))
-        Files.copy(repo.resolve("components/lens/build/libs/lens-0.3.0.jar"), componentsDir.resolve("lens-0.3.0.jar"))
+        Files.copy(repo.resolve("components/cmos/build/libs/cmos-0.3.1.jar"), componentsDir.resolve("cmos-0.3.1.jar"))
+        Files.copy(repo.resolve("components/lens/build/libs/lens-0.3.1.jar"), componentsDir.resolve("lens-0.3.1.jar"))
         val cmosDir = Files.createDirectories(componentsDir.resolve("cmos"))
         Files.copy(repo.resolve("tools/release/component-configs/cmos/cmos.yaml"), cmosDir.resolve("cmos.yaml"))
         val lensDir = Files.createDirectories(componentsDir.resolve("lens"))
         Files.copy(repo.resolve("tools/release/component-configs/lens/lens.yaml"), lensDir.resolve("lens.yaml"))
         if (withFilterRack) {
             val rack = "optical-filter"
-            Files.copy(repo.resolve("components/$rack/build/libs/$rack-0.3.0.jar"), componentsDir.resolve("$rack-0.3.0.jar"))
+            Files.copy(repo.resolve("components/$rack/build/libs/$rack-0.3.1.jar"), componentsDir.resolve("$rack-0.3.1.jar"))
             val rackConfig = Files.createDirectories(componentsDir.resolve(rack)).resolve("$rack.yaml")
             Files.copy(repo.resolve("tools/release/component-configs/$rack/$rack.yaml"), rackConfig)
         }

@@ -13,7 +13,7 @@ class ImageIrq106Test {
     @Test fun registeredEnabledQuietEdgeLatchesOnePendingInterrupt(@TempDir home: Path) {
         val components = Files.createDirectories(home.resolve("compoments"))
         val staged = Path.of(System.getProperty("componentProjectRoot"), "build/emulator/compoments")
-        val jar = "soc-gic-0.3.0.jar"
+        val jar = "soc-gic-0.3.1.jar"
         Files.copy(staged.resolve(jar), components.resolve(jar))
         val settings = Files.createDirectories(components.resolve("soc-gic")).resolve("soc-gic.yaml")
         Files.writeString(settings, "coreProfile: four-context-functional-experimental-v1\n")

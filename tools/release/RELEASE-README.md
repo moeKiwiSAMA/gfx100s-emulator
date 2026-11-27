@@ -29,7 +29,7 @@
 - **全局偏好（`profile.yaml`）、机身/UI 双解耦主题与英文默认多语言（i18n）**：
   - 运行目录下自动读写 **`<run-dir>/profile.yaml`**，保存界面语言、机身主题、UI 主题、缩放比例与 EVF 窗口状态（硬件配置与界面偏好完全分离）。
   - **默认英文（`en`）实时切换 `zh_CN`**：点击窗口右上角 `EN | 中文`、在控制台执行 **`/lang en`** / **`/lang zh_CN`**，或调用 **`GET/POST /api/lang`** 均可即时无重启切换并自动保存到 `profile.yaml`。
-  - **机身外形主题（Body Theme）**：内置 **`origin`**（写实 GFX100S 六面机身，含 G-mount CMOS 与镁合金/荔枝纹混合 PNG+SVG 贴图）、**`hasselblad-x2d2`**（Hasselblad X2D II 100C，含 XCD-mount 与阳极钛金材质）、**`hasselblad-907x`**（Hasselblad 907X & CFV 100C，含镀铬/皮革材质）、**`compact-rangefinder`**；全部内置 PNG+SVG 资源均已直接打入 `lib/desktop-0.3.0.jar`（`2.53 MB`，`.tar.gz`/`.zip` 与 `jpackage` app-image 均自包含开箱即用），支持真实旋转顶板 **模式拨盘（`P/S/A/M/C1..C6`，`-36°/档`）**、**`S/C/M` 对焦拨杆指针**与 **`650 ms` 轻点快门 `S2` 脉冲**；同时支持在运行目录创建 **`./themes/body/<id>/`** 放入自定义 `body-theme.json` + PNG/SVG 面板。
+  - **机身外形主题（Body Theme）**：内置 **`origin`**（写实 GFX100S 六面机身，含 G-mount CMOS 与镁合金/荔枝纹混合 PNG+SVG 贴图）、**`hasselblad-x2d2`**（Hasselblad X2D II 100C，含 XCD-mount 与阳极钛金材质）、**`hasselblad-907x`**（Hasselblad 907X & CFV 100C，含镀铬/皮革材质）、**`compact-rangefinder`**；全部内置 PNG+SVG 资源均已直接打入 `lib/desktop-0.3.1.jar`（`2.53 MB`，`.tar.gz`/`.zip` 与 `jpackage` app-image 均自包含开箱即用），支持真实旋转顶板 **模式拨盘（`P/S/A/M/C1..C6`，`-36°/档`）**、**`S/C/M` 对焦拨杆指针**与 **`650 ms` 轻点快门 `S2` 脉冲**；同时支持在运行目录创建 **`./themes/body/<id>/`** 放入自定义 `body-theme.json` + PNG/SVG 面板。
   - **界面配色主题（UI Theme）**：内置 **`origin`**（经典曜石黑）、**`nordic-minimal`**、**`daylight-studio`**、**`vintage-brass`**、**`olive-field`**；支持在运行目录创建 **`./themes/ui/<id>.css`** 覆盖界面配色，可与任意机身主题自由混搭。
 
 - **统一 64 MiB QSPI NOR Flash 持久化与宿主机烧录器（CLI + 控制台 + 桌面 UI + HTTP API）**：

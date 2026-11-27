@@ -32,7 +32,7 @@ class DotLcdBindingTest {
     private fun setup(events:Boolean=false,binding:Boolean=false,sizes:List<Int> = listOf(19488),onlyShoulder:Boolean=false,width:Int=if(binding)304 else 320,height:Int=if(binding)240 else 160):Setup {
         val home=Files.createTempDirectory(temporary,"components-")
         for(id in listOf("shoulder-display")+if(onlyShoulder)emptyList()else listOf("soc-serial-engine")) {
-            Files.copy(project.resolve("components/"+id+"/build/libs/"+id+"-0.3.0.jar"),home.resolve(id+"-0.3.0.jar"))
+            Files.copy(project.resolve("components/"+id+"/build/libs/"+id+"-0.3.1.jar"),home.resolve(id+"-0.3.1.jar"))
             Files.createDirectories(home.resolve(id))
         }
         Formats.atomicYaml(home.resolve("shoulder-display/shoulder-display.yaml"),mapOf("width" to width,"height" to height,"brightness" to 1.0,"profile" to if(binding)sinkProfile else "unbound"))

@@ -40,7 +40,8 @@ class InputBindingsTest {
         val expected = mapOf(
             CameraInputAction.SHUTTER_HALF to listOf(GamepadInput.RT_HALF),
             CameraInputAction.SHUTTER_FULL to listOf(GamepadInput.RT_FULL),
-            CameraInputAction.AF_ON to listOf(GamepadInput.RB),
+            CameraInputAction.AF_ON to listOf(GamepadInput.B),
+            CameraInputAction.AE_L to listOf(GamepadInput.Y),
             CameraInputAction.Q_MENU to listOf(GamepadInput.LB),
             CameraInputAction.DRIVE to listOf(GamepadInput.LT_HALF),
             CameraInputAction.UP to listOf(GamepadInput.DPAD_UP, GamepadInput.LS_UP),
@@ -53,12 +54,12 @@ class InputBindingsTest {
             CameraInputAction.FRONT_DIAL_CW to listOf(GamepadInput.RS_UP),
             CameraInputAction.FRONT_DIAL_CCW to listOf(GamepadInput.RS_DOWN),
             CameraInputAction.REAR_DIAL_PRESS to listOf(GamepadInput.R3),
-            CameraInputAction.MENU_OK to listOf(GamepadInput.B),
+            CameraInputAction.MENU_OK to listOf(GamepadInput.GUIDE),
             CameraInputAction.DISP_BACK to listOf(GamepadInput.A),
-            CameraInputAction.PLAY to listOf(GamepadInput.X),
-            CameraInputAction.DELETE to listOf(GamepadInput.Y),
+            CameraInputAction.PLAY to listOf(GamepadInput.START),
+            CameraInputAction.DELETE to listOf(GamepadInput.X),
             CameraInputAction.VIEW_MODE to listOf(GamepadInput.BACK),
-            CameraInputAction.FN1 to listOf(GamepadInput.START),
+            CameraInputAction.FN1 to listOf(GamepadInput.RB),
         )
         assertEquals(expected, g)
         assertNull(InputBindingConfig.default().actionForGamepad(GamepadInput.LT_FULL), "LT full stage is left free")
@@ -154,10 +155,10 @@ class InputBindingsTest {
     @Test fun rebindMovesInputAndReportsDisplacedAction() {
         val base = InputBindingConfig.default()
         val moved = base.withGamepadBinding(CameraInputAction.PLAY, GamepadBindingSpec(GamepadInput.B))
-        assertEquals(CameraInputAction.MENU_OK, moved.displaced)
+        assertEquals(CameraInputAction.AF_ON, moved.displaced)
         assertEquals(CameraInputAction.PLAY, moved.config.actionForGamepad(GamepadInput.B))
-        assertNull(moved.config.gamepadBindings[CameraInputAction.MENU_OK], "MENU_OK lost its only input")
-        assertNull(moved.config.actionForGamepad(GamepadInput.X), "PLAY's previous input is replaced")
+        assertNull(moved.config.gamepadBindings[CameraInputAction.AF_ON], "AF_ON lost its only input")
+        assertNull(moved.config.actionForGamepad(GamepadInput.START), "PLAY's previous input is replaced")
 
         val k1 = base.withKeyboardBinding(CameraInputAction.UP, KeyBindingSpec("W"))
         assertNull(k1.displaced)
@@ -230,7 +231,7 @@ class InputBindingsTest {
         val sink = RecordingSink()
         val c = InputBindingController(InputBindingConfig.default().withKeyboardBinding(CameraInputAction.UP, KeyBindingSpec("W")).config, sink)
         c.handleKey("W", true)
-        c.handleGamepadFrame(pad(buttons = GamepadFrame.B))
+        c.handleGamepadFrame(pad(buttons = GamepadFrame.GUIDE))
         c.updateConfig(c.config.clearKeyboard(CameraInputAction.UP).clearGamepad(CameraInputAction.MENU_OK))
         assertEquals(listOf("+UP", "+MENU_OK", "-UP", "-MENU_OK"), sink.take())
     }
@@ -303,7 +304,7 @@ class InputBindingsTest {
     @Test fun hotDisconnectReleasesEverything() {
         val sink = RecordingSink()
         val c = InputBindingController(InputBindingConfig.default().copy(twoStageTriggerEnabled = true), sink)
-        c.handleGamepadFrame(pad(buttons = GamepadFrame.B or GamepadFrame.RB or GamepadFrame.DPAD_UP, rt = 1.0))
+        c.handleGamepadFrame(pad(buttons = GamepadFrame.GUIDE or GamepadFrame.B or GamepadFrame.DPAD_UP, rt = 1.0))
         assertEquals(setOf("+MENU_OK", "+AF_ON", "+UP", "+SHUTTER_HALF", "+SHUTTER_FULL"), sink.take().toSet())
         assertTrue(c.status.connected)
         c.handleGamepadFrame(GamepadFrame.DISCONNECTED)
@@ -397,7 +398,7 @@ class InputBindingsTest {
         c.handleGamepadFrame(pad(buttons = GamepadFrame.B))
         val captured = mutableListOf<CapturedInput?>()
         c.beginCapture { captured += it }
-        assertEquals(listOf("+MENU_OK", "-MENU_OK"), sink.take(), "capture releases held actions")
+        assertEquals(listOf("+AF_ON", "-AF_ON"), sink.take(), "capture releases held actions")
         c.handleGamepadFrame(pad(buttons = GamepadFrame.B))
         assertTrue(captured.isEmpty())
         c.handleGamepadFrame(pad(buttons = GamepadFrame.B or GamepadFrame.X))
