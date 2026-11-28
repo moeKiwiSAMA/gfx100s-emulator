@@ -2,12 +2,17 @@ package com.github.nyabanban.fuji.emulator.desktop.console
 
 import com.github.nyabanban.fuji.emulator.api.BokehMaskShape
 import com.github.nyabanban.fuji.emulator.api.DisplayPort
+import com.github.nyabanban.fuji.emulator.api.HostNetworkInterfaceInfo
 import com.github.nyabanban.fuji.emulator.api.NdFilterPreset
 import com.github.nyabanban.fuji.emulator.api.NdFilterSpec
 import com.github.nyabanban.fuji.emulator.api.OpticalFilterSlotCodec
 import com.github.nyabanban.fuji.emulator.api.UvFilterPreset
+import com.github.nyabanban.fuji.emulator.api.WifiNetworkConfig
+import com.github.nyabanban.fuji.emulator.api.WifiNetworkMode
+import com.github.nyabanban.fuji.emulator.api.WifiNetworkStatus
 import com.github.nyabanban.fuji.emulator.desktop.EmulatorRuntime
 import com.github.nyabanban.fuji.emulator.desktop.i18n.I18n
+import com.github.nyabanban.fuji.emulator.desktop.wifi.WifiNetworkValidation
 import com.github.nyabanban.fuji.emulator.desktop.panels.AudioBackendPreference
 import com.github.nyabanban.fuji.emulator.desktop.panels.AudioDeviceCatalogSnapshot
 import com.github.nyabanban.fuji.emulator.desktop.panels.AudioInputMode
@@ -77,6 +82,24 @@ interface ConsoleBackend {
 
     /** Applies a live host audio I/O patch and returns the updated status map. */
     fun patchAudio(changes: Map<String, Any?>): Map<String, Any?> = audioStatus()
+
+    /** Returns live Wi-Fi network configuration, link telemetry, and bridge backend status map. */
+    fun wifiStatus(): Map<String, Any?> = emptyMap()
+
+    /** Enumerates host network interfaces suitable for Bridge mode on Windows, Linux, and macOS. */
+    fun wifiInterfaces(): List<HostNetworkInterfaceInfo> = emptyList()
+
+    /** Applies and persists a live Wi-Fi network patch (`mode`, `bridgeInterface`, `ssid`, `subnetCidr`, `dnsServers`, `enabled`). */
+    fun patchWifi(changes: Map<String, Any?>): Map<String, Any?> = wifiStatus()
+
+    /** Resets Wi-Fi network settings to defaults (`NAT`, `GFX100S-WiFi`, `192.168.42.0/24`) and persists. */
+    fun resetWifi(): Map<String, Any?> = wifiStatus()
+
+    /** Returns live battery, USB-C VBUS, and charging status map. */
+    fun powerStatus(): Map<String, Any?> = componentState("battery").orEmpty()
+
+    /** Applies and persists a live battery / charging patch (`charging`, `externalPowerConnected`, `chargePercent`, `voltageMillivolts`, `present`). */
+    fun patchPower(changes: Map<String, Any>): Map<String, Any?> = patchComponent("battery", changes)
 
     /** Returns active user profile theme status and available body/UI themes. */
     fun themeStatus(): Map<String, Any?> = emptyMap()
@@ -200,6 +223,18 @@ class RuntimeConsoleBackend(
     override fun audioDevices(): Map<String, Any?> = audioAdapter.fetchDevices()
 
     override fun patchAudio(changes: Map<String, Any?>): Map<String, Any?> = audioAdapter.applyPatch(changes)
+
+    override fun wifiStatus(): Map<String, Any?> = runtime.wifiRuntime.statusMap()
+
+    override fun wifiInterfaces(): List<HostNetworkInterfaceInfo> = runtime.wifiRuntime.listHostInterfaces()
+
+    override fun patchWifi(changes: Map<String, Any?>): Map<String, Any?> = runtime.wifiRuntime.reconfigure(changes)
+
+    override fun resetWifi(): Map<String, Any?> = runtime.wifiRuntime.reset()
+
+    override fun powerStatus(): Map<String, Any?> = runtime.powerRuntime.statusMap()
+
+    override fun patchPower(changes: Map<String, Any>): Map<String, Any?> = runtime.powerRuntime.reconfigure(changes)
 
     override fun themeStatus(): Map<String, Any?> = runtime.themeController.statusMap()
 
@@ -574,6 +609,16 @@ class EmulatorConsole(
         )
         registry.register(
             ConsoleCommand(
+                name = "wifi",
+                owner = ConsoleCommandRegistry.CORE_OWNER,
+                aliases = listOf("wlan", "net"),
+                description = "Inspect or configure Wi-Fi network mode (NAT / Bridge / Host-Only), host bridge adapter, SSID, subnet, DNS, port forwards, or reset",
+                usage = "/wifi [status | mode <nat|bridge|hostonly> | bridge <iface|auto> | interfaces | ssid <name> | pass <passphrase|clear> | subnet <cidr> | dns <ip1,ip2> | forward <hostPort:guestPort[,...]|clear> | loopback <on|off> | on | off | reset]",
+                executor = ::execWifi,
+            ),
+        )
+        registry.register(
+            ConsoleCommand(
                 name = "color",
                 owner = ConsoleCommandRegistry.CORE_OWNER,
                 aliases = listOf("ansi", "colours"),
@@ -742,8 +787,8 @@ class EmulatorConsole(
                     name = "battery",
                     owner = "battery",
                     aliases = listOf("bat"),
-                    description = "Inspect or adjust virtual battery charge level, voltage, or presence",
-                    usage = "/battery [status | level <0-100> | mv <0-12000> | present <on|off>]",
+                    description = "Inspect or adjust virtual NP-W235 battery charge %, USB-C charging state, voltage, or presence",
+                    usage = "/battery [status | level <0-100> | percent <0-100> | charge <on|off> | usb <on|off> | mv <0-12000> | present <on|off>]",
                     executor = ::execBattery,
                 ),
             )
@@ -1745,30 +1790,77 @@ class EmulatorConsole(
 
     private fun execBattery(ctx: ConsoleCommandContext): CommandResult {
         if (ctx.args.isEmpty() || ctx.args[0].equals("status", ignoreCase = true)) {
-            val state = backend.componentState("battery")
-                ?: return CommandResult.Error("battery component is not loaded.")
+            if (backend.componentState("battery") == null) {
+                return CommandResult.Error("battery component is not loaded.")
+            }
+            val state = backend.powerStatus().ifEmpty {
+                backend.componentState("battery").orEmpty()
+            }
             val charge = (state["chargePercent"] as? Number)?.toDouble() ?: 0.0
             val mv = (state["voltageMillivolts"] as? Number)?.toLong() ?: 0L
             val present = state["present"] != false
+            val charging = state["charging"] == true
+            val extPower = (state["externalPowerConnected"] as? Boolean)
+                ?: (state["usbVbusConnected"] as? Boolean)
+                ?: charging
             ctx.info(
                 String.format(
                     Locale.ROOT,
-                    "Battery: present=%s | charge=%.1f%% | voltage=%d mV",
+                    "Battery: present=%s | charge=%.1f%% | voltage=%d mV | charging=%s | usbVbus=%s",
                     present,
                     charge,
                     mv,
+                    if (charging) "ON" else "OFF",
+                    if (extPower) "CONNECTED" else "DISCONNECTED",
                 ),
             )
             return CommandResult.Ok
         }
         return when (ctx.args[0].lowercase(Locale.ROOT)) {
-            "level", "charge" -> {
-                val pct = ctx.args.getOrNull(1)?.toDoubleOrNull()
+            "charge", "charging" -> {
+                val rawArg = ctx.args.getOrNull(1)
+                    ?: return CommandResult.UsageError("Expected: battery charge <on|off> (or battery percent <0..100>).")
+                val onOff = parseOnOff(rawArg)
+                if (onOff != null) {
+                    val updated = backend.patchPower(
+                        mapOf(
+                            "charging" to onOff,
+                            "externalPowerConnected" to onOff,
+                        ),
+                    )
+                    val mv = (updated["voltageMillivolts"] as? Number)?.toLong()
+                    val mvSuffix = if (mv != null) " (voltage=${mv} mV)" else ""
+                    ctx.info("Battery charging -> ${if (onOff) "ON (USB-C VBUS connected)" else "OFF"}$mvSuffix")
+                    CommandResult.Ok
+                } else {
+                    val pct = rawArg.removeSuffix("%").toDoubleOrNull()
+                    if (pct == null || pct !in 0.0..100.0) {
+                        return CommandResult.UsageError("Expected: battery charge <on|off> (or battery percent <0..100>).")
+                    }
+                    backend.patchPower(mapOf("chargePercent" to pct))
+                    ctx.info(String.format(Locale.ROOT, "Battery charge -> %.1f%%", pct))
+                    CommandResult.Ok
+                }
+            }
+            "level", "percent", "pct", "soc" -> {
+                val pct = ctx.args.getOrNull(1)?.removeSuffix("%")?.toDoubleOrNull()
                 if (pct == null || pct !in 0.0..100.0) {
                     return CommandResult.UsageError("Battery level must be in 0..100.")
                 }
-                backend.patchComponent("battery", mapOf("chargePercent" to pct))
+                backend.patchPower(mapOf("chargePercent" to pct))
                 ctx.info(String.format(Locale.ROOT, "Battery charge -> %.1f%%", pct))
+                CommandResult.Ok
+            }
+            "usb", "vbus", "ac", "external" -> {
+                val connected = ctx.args.getOrNull(1)?.let(::parseOnOff)
+                    ?: return CommandResult.UsageError("Expected: battery usb <on|off>.")
+                val patch = if (!connected) {
+                    mapOf("externalPowerConnected" to false, "charging" to false)
+                } else {
+                    mapOf("externalPowerConnected" to true)
+                }
+                backend.patchPower(patch)
+                ctx.info("USB-C external power (VBUS) -> ${if (connected) "CONNECTED" else "DISCONNECTED"}")
                 CommandResult.Ok
             }
             "mv", "voltage" -> {
@@ -1776,18 +1868,20 @@ class EmulatorConsole(
                 if (mv == null || mv !in 0L..12000L) {
                     return CommandResult.UsageError("Battery voltage must be an integer in 0..12000 mV.")
                 }
-                backend.patchComponent("battery", mapOf("voltageMillivolts" to mv))
+                backend.patchPower(mapOf("voltageMillivolts" to mv))
                 ctx.info("Battery voltage -> $mv mV")
                 CommandResult.Ok
             }
             "present" -> {
                 val present = ctx.args.getOrNull(1)?.let(::parseOnOff)
                     ?: return CommandResult.UsageError("Expected: battery present <on|off>.")
-                backend.patchComponent("battery", mapOf("present" to present))
+                backend.patchPower(mapOf("present" to present))
                 ctx.info("Battery present -> $present")
                 CommandResult.Ok
             }
-            else -> CommandResult.UsageError("Unknown battery subcommand \"${ctx.args[0]}\".")
+            else -> CommandResult.UsageError(
+                "Unknown battery subcommand \"${ctx.args[0]}\". Expected: status, charge <on|off>, usb <on|off>, percent <0-100>, level <0-100>, mv <0-12000>, or present <on|off>.",
+            )
         }
     }
 
@@ -2456,6 +2550,229 @@ class EmulatorConsole(
                 CommandResult.Ok
             }
             else -> CommandResult.UsageError("Unknown audio subcommand \"${ctx.args[0]}\".")
+        }
+    }
+
+    private fun execWifi(ctx: ConsoleCommandContext): CommandResult {
+        fun extractConfigAndStatus(raw: Map<String, Any?>): Pair<WifiNetworkConfig, WifiNetworkStatus> {
+            val cfgMap = (raw["config"] as? Map<*, *>) ?: (raw["wifiNetwork"] as? Map<*, *>) ?: raw
+            val stMap = (raw["status"] as? Map<*, *>) ?: (raw["wifiNetwork"] as? Map<*, *>) ?: raw
+            val cfg = WifiNetworkConfig.fromMap(cfgMap)
+            val st = WifiNetworkStatus.fromMap(stMap)
+            return cfg to st
+        }
+
+        if (ctx.args.isEmpty() || ctx.args[0].equals("status", ignoreCase = true)) {
+            val raw = backend.wifiStatus()
+            val (cfg, st) = extractConfigAndStatus(raw)
+            val effectiveDns = WifiNetworkConfig.parseDnsList(raw["effectiveDnsServers"], st.dnsServers.ifEmpty { cfg.dnsServers })
+            val activeSubnet = if (cfg.mode == WifiNetworkMode.HOST_ONLY) cfg.hostOnlySubnetCidr else cfg.subnetCidr
+            val bridgeIfaceLabel = st.bridgeInterface.ifBlank { cfg.bridgeInterface }.ifBlank { "auto" }
+            val backendLabel = st.bridgeBackend.ifBlank { "NONE" }
+            val forwards = runCatching {
+                WifiNetworkValidation.parseAndValidatePortForwards(
+                    raw["portForwards"] ?: (raw["config"] as? Map<*, *>)?.get("portForwards"),
+                )
+            }.getOrDefault(emptyList())
+            ctx.info(
+                String.format(
+                    Locale.ROOT,
+                    "Wi-Fi Network: state=%s | mode=%s (%s) | link=%s | ssid=%s | assoc=%s",
+                    if (st.enabled && cfg.enabled) "ON" else "OFF",
+                    st.mode.name,
+                    st.mode.cliValue,
+                    if (st.linkUp) "UP" else "DOWN",
+                    cfg.ssid,
+                    st.associatedSsid.ifBlank { "-" },
+                ),
+            )
+            ctx.info(
+                String.format(
+                    Locale.ROOT,
+                    "  Addressing: guestIp=%s | gateway=%s | subnet=%s | dns=%s | mac=%s",
+                    st.guestIp.ifBlank { cfg.guestIp },
+                    st.gatewayIp.ifBlank { cfg.gatewayIp },
+                    activeSubnet,
+                    effectiveDns.joinToString(","),
+                    st.macAddress.ifBlank { cfg.macAddress },
+                ),
+            )
+            ctx.info(
+                String.format(
+                    Locale.ROOT,
+                    "  Bridge/Host: iface=%s | backend=%s | state=%s | hostOnlyLoopback=%s | forwards=%s",
+                    bridgeIfaceLabel,
+                    backendLabel,
+                    st.bridgeState,
+                    cfg.hostOnlyLoopbackForward,
+                    forwards.joinToString(",").ifBlank { "none" },
+                ),
+            )
+            ctx.info(
+                String.format(
+                    Locale.ROOT,
+                    "  Traffic:     tcpSessions=%d | udpSessions=%d | tx=%d pkts (%d B) | rx=%d pkts (%d B)",
+                    st.activeTcpSessions,
+                    st.activeUdpSessions,
+                    st.txPackets,
+                    st.txBytes,
+                    st.rxPackets,
+                    st.rxBytes,
+                ),
+            )
+            if (!st.lastError.isNullOrBlank()) {
+                ctx.warn("  Last error:  ${st.lastError}")
+            }
+            val bridgeEnv = raw["bridgeEnvironment"] as? Map<*, *>
+            if (
+                st.mode == WifiNetworkMode.BRIDGE &&
+                bridgeEnv?.get("isWindows") == true &&
+                bridgeEnv["npcapInstalled"] != true &&
+                bridgeEnv["tapWindowsInstalled"] != true
+            ) {
+                ctx.info("  Windows tip: Install Npcap or OpenVPN TAP-Windows6 for raw L2 Ethernet/DHCP bridging (active fallback: NIC-bound socket bridge).")
+            }
+            return CommandResult.Ok
+        }
+
+        return when (ctx.args[0].lowercase(Locale.ROOT)) {
+            "mode" -> {
+                val rawMode = ctx.args.getOrNull(1)?.trim()
+                    ?: return CommandResult.UsageError("Expected: wifi mode <nat|bridge|hostonly>.")
+                val mode = try {
+                    if (rawMode.isEmpty()) throw IllegalArgumentException("empty mode")
+                    WifiNetworkMode.parse(rawMode)
+                } catch (_: IllegalArgumentException) {
+                    return CommandResult.UsageError("Unsupported Wi-Fi mode \"$rawMode\". Expected: nat, bridge, or hostonly.")
+                }
+                val updated = backend.patchWifi(mapOf("mode" to mode.name))
+                val (cfg, st) = extractConfigAndStatus(updated)
+                ctx.info(
+                    "Wi-Fi mode -> ${mode.name} (${mode.cliValue}) | guestIp=${st.guestIp.ifBlank { cfg.guestIp }} | gateway=${st.gatewayIp.ifBlank { cfg.gatewayIp }}",
+                )
+                CommandResult.Ok
+            }
+            "bridge", "iface" -> {
+                val rawIface = ctx.args.drop(1).joinToString(" ").trim()
+                if (rawIface.isEmpty()) {
+                    return CommandResult.UsageError("Expected: wifi bridge <iface|auto> (use \"wifi interfaces\" to list host NICs).")
+                }
+                val normalized = WifiNetworkValidation.normalizeBridgeInterfaceInput(rawIface)
+                val updated = backend.patchWifi(mapOf("bridgeInterface" to normalized))
+                val (cfg, st) = extractConfigAndStatus(updated)
+                val effective = st.bridgeInterface.ifBlank { cfg.bridgeInterface }.ifBlank { "auto (default route)" }
+                ctx.info("Wi-Fi bridge interface -> $effective (backend=${st.bridgeBackend.ifBlank { "AUTO" }}, state=${st.bridgeState})")
+                CommandResult.Ok
+            }
+            "interfaces", "nics", "adapters", "list" -> {
+                val nics = backend.wifiInterfaces()
+                ctx.info("Host network interfaces (${nics.size}):")
+                if (nics.isEmpty()) {
+                    ctx.info("  (no active non-loopback interfaces detected)")
+                } else {
+                    nics.forEach { nic ->
+                        val tapBadge = if (nic.virtualOrTap) " [TAP/Virtual]" else ""
+                        ctx.info("  name=${nic.name} | ${nic.summaryLabel()}$tapBadge")
+                    }
+                }
+                CommandResult.Ok
+            }
+            "ssid" -> {
+                val rawSsid = ctx.args.drop(1).joinToString(" ").trim()
+                if (rawSsid.isEmpty() || rawSsid.toByteArray(Charsets.UTF_8).size > 32) {
+                    return CommandResult.UsageError("Expected: wifi ssid <name> (1..32 UTF-8 bytes).")
+                }
+                backend.patchWifi(mapOf("ssid" to rawSsid))
+                ctx.info("Wi-Fi SSID -> $rawSsid")
+                CommandResult.Ok
+            }
+            "pass", "passphrase", "password" -> {
+                val rawPass = ctx.args.drop(1).joinToString(" ")
+                if (rawPass.isEmpty()) {
+                    return CommandResult.UsageError("Expected: wifi pass <passphrase|clear>.")
+                }
+                val nextPass = if (rawPass.equals("clear", ignoreCase = true) || rawPass.equals("open", ignoreCase = true) || rawPass.equals("none", ignoreCase = true)) {
+                    ""
+                } else {
+                    rawPass
+                }
+                backend.patchWifi(mapOf("passphrase" to nextPass))
+                ctx.info("Wi-Fi security -> ${if (nextPass.isEmpty()) "OPEN (no passphrase)" else "WPA2-PSK (passphrase updated)"}")
+                CommandResult.Ok
+            }
+            "subnet", "cidr" -> {
+                val rawCidr = ctx.args.getOrNull(1)?.trim()
+                    ?: return CommandResult.UsageError("Expected: wifi subnet <A.B.C.D/prefix> (e.g. 192.168.42.0/24).")
+                val parsed = try {
+                    WifiNetworkValidation.validateIpv4Cidr(rawCidr, "subnet")
+                } catch (err: IllegalArgumentException) {
+                    return CommandResult.UsageError(err.message ?: "Invalid CIDR \"$rawCidr\".")
+                }
+                val updated = backend.patchWifi(mapOf("subnetCidr" to parsed.canonicalCidr))
+                val (cfg, st) = extractConfigAndStatus(updated)
+                ctx.info(
+                    "Wi-Fi subnet -> ${parsed.canonicalCidr} (gateway=${st.gatewayIp.ifBlank { cfg.gatewayIp }}, guestIp=${st.guestIp.ifBlank { cfg.guestIp }})",
+                )
+                CommandResult.Ok
+            }
+            "dns" -> {
+                val rawDns = ctx.args.drop(1).joinToString(",")
+                if (rawDns.isBlank()) {
+                    return CommandResult.UsageError("Expected: wifi dns <ip1,ip2> (e.g. wifi dns 8.8.8.8,1.1.1.1).")
+                }
+                val servers = try {
+                    WifiNetworkValidation.parseAndValidateDnsServers(rawDns, "dns")
+                } catch (err: IllegalArgumentException) {
+                    return CommandResult.UsageError(err.message ?: "Invalid DNS server list.")
+                }
+                backend.patchWifi(mapOf("dnsServers" to servers))
+                ctx.info("Wi-Fi DNS servers -> ${servers.joinToString(", ")}")
+                CommandResult.Ok
+            }
+            "forward", "forwards", "port-forward", "portforward" -> {
+                val rawSpec = ctx.args.drop(1).joinToString(",").trim()
+                if (rawSpec.isEmpty()) {
+                    return CommandResult.UsageError("Expected: wifi forward <hostPort:guestPort[,...]|clear> (e.g. wifi forward 3389:3389).")
+                }
+                val rules = if (rawSpec.equals("clear", ignoreCase = true) || rawSpec.equals("none", ignoreCase = true) || rawSpec.equals("off", ignoreCase = true)) {
+                    emptyList()
+                } else {
+                    try {
+                        WifiNetworkValidation.parseAndValidatePortForwards(rawSpec, "forward")
+                    } catch (err: IllegalArgumentException) {
+                        return CommandResult.UsageError(err.message ?: "Invalid port-forward specification.")
+                    }
+                }
+                backend.patchWifi(mapOf("portForwards" to rules))
+                ctx.info("Wi-Fi port forwards -> ${rules.joinToString(", ").ifEmpty { "none" }}")
+                CommandResult.Ok
+            }
+            "loopback", "hostonly-loopback" -> {
+                val enabled = ctx.args.getOrNull(1)?.let(::parseOnOff)
+                    ?: return CommandResult.UsageError("Expected: wifi loopback <on|off>.")
+                backend.patchWifi(mapOf("hostOnlyLoopbackForward" to enabled))
+                ctx.info("Wi-Fi Host-Only 127.0.0.1 loopback forwarding -> ${if (enabled) "ON" else "OFF"}")
+                CommandResult.Ok
+            }
+            "on", "enable", "enabled" -> {
+                backend.patchWifi(mapOf("enabled" to true))
+                ctx.info("Wi-Fi network -> ENABLED")
+                CommandResult.Ok
+            }
+            "off", "disable", "disabled" -> {
+                backend.patchWifi(mapOf("enabled" to false))
+                ctx.info("Wi-Fi network -> DISABLED")
+                CommandResult.Ok
+            }
+            "reset", "default", "defaults" -> {
+                val updated = backend.resetWifi()
+                val (cfg, _) = extractConfigAndStatus(updated)
+                ctx.info("Wi-Fi configuration reset to defaults (mode=${cfg.mode.name} | ssid=${cfg.ssid} | subnet=${cfg.subnetCidr})")
+                CommandResult.Ok
+            }
+            else -> CommandResult.UsageError(
+                "Unknown wifi subcommand \"${ctx.args[0]}\". Expected: status, mode <nat|bridge|hostonly>, bridge <iface|auto>, interfaces, ssid <name>, pass <passphrase|clear>, subnet <cidr>, dns <ip1,ip2>, loopback <on|off>, on, off, or reset.",
+            )
         }
     }
 

@@ -52,6 +52,32 @@ class SystemControlFactory : ComponentFactory {
         private var mirrorBootStrap: MmioMirrorHandle? = null
         private var mirrorStatusA200: MmioMirrorHandle? = null
         private var mirrorUsbVbus: MmioMirrorHandle? = null
+        private var batteryPort: BatteryPort? = null
+        private var batteryListenerLease: AutoCloseable? = null
+
+        private fun resolveBatteryPort(): BatteryPort? {
+            batteryPort?.let { return it }
+            val resolved = context.ports.find("battery", BatteryPort::class.java) ?: return null
+            batteryPort = resolved
+            batteryListenerLease = resolved.addPowerStateListener {
+                usbVbusA300?.let { input -> mirrorUsbVbus?.writeSlot(0, input.read(0L, 4).toInt()) }
+            }
+            return resolved
+        }
+
+        private fun effectiveUsbVbusPresent(): Boolean =
+            (values.getValue("usbVbusPresent") as Boolean) || (resolveBatteryPort()?.externalPowerConnected() == true)
+
+        override fun start() {
+            resolveBatteryPort()
+            usbVbusA300?.let { input -> mirrorUsbVbus?.writeSlot(0, input.read(0L, 4).toInt()) }
+        }
+
+        override fun close() {
+            batteryListenerLease?.close()
+            batteryListenerLease = null
+            batteryPort = null
+        }
 
         private fun syncArrayMirror(handle: MmioMirrorHandle?, arr: LongArray, first: Int, count: Int) {
             val h = handle ?: return
@@ -116,8 +142,13 @@ class SystemControlFactory : ComponentFactory {
         private val bootColdStartEnabled = profileName == BootColdStartMailbox.PROFILE
         private val setup49530And49500 = SetupSequence49530And49500(write49530Enabled, tail49500Enabled, repeatable = usbDwc3Enabled)
         private val usbVbusEnabled = profileName == UsbVbusA300Input.PROFILE || usbDwc3Enabled
-        private val usbVbusA300 = if (usbVbusEnabled) UsbVbusA300Input { values.getValue("usbVbusPresent") as Boolean } else null
-        private val usbDwc3 = if (usbDwc3Enabled) UsbDwc3Controller { values.getValue("usbVbusPresent") as Boolean } else null
+        private val usbVbusA300 = if (usbVbusEnabled) {
+            UsbVbusA300Input(
+                presentProvider = ::effectiveUsbVbusPresent,
+                scalarPresentProvider = { values.getValue("usbVbusPresent") as Boolean },
+            )
+        } else null
+        private val usbDwc3 = if (usbDwc3Enabled) UsbDwc3Controller(::effectiveUsbVbusPresent) else null
         private val bootColdStart = if (bootColdStartEnabled) BootColdStartMailbox() else null
         private val statusA200PortName = when {
             usbDwc3Enabled -> UsbDwc3Controller.STATUS_A200_V3_PORT

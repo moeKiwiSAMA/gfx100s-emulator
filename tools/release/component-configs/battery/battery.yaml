@@ -1,10 +1,11 @@
 # ==============================================================================
-# Camera Battery Pack (NP-W235)
+# Camera Battery Pack & USB-C Charging (NP-W235)
 # File: configs/components/battery/battery.yaml
 #
-# Controls the initial charge state of the virtual NP-W235 battery pack.
-# The fuel gauge chip (max17048) automatically reports these readings to the
-# camera body.
+# Controls the initial state of the virtual Fujifilm NP-W235 battery pack and
+# external USB-C power / charging state. The fuel gauge chip (max17048), Sub-MCU
+# power peer, and system-control USB VBUS sense automatically synchronize with
+# these readings.
 # ==============================================================================
 
 # Whether a battery pack is installed (true = installed, false = removed).
@@ -16,13 +17,26 @@ chargePercent: 100.0
 # Initial pack voltage in millivolts (typical NP-W235 range: 6400 to 8400 mV).
 voltageMillivolts: 7400
 
+# Whether the installed NP-W235 pack is actively charging via USB-C power.
+charging: false
+
+# Whether external USB-C VBUS / AC power is connected to the camera body.
+externalPowerConnected: false
+
+# Optional slow state-of-charge drift while charging (+36%/hr in virtual time).
+autoChargeDrift: false
+
 # --- Examples (uncomment and replace the values above) ------------------------
+# Charging at 78% via USB-C PD:
+# present: true
+# chargePercent: 78.0
+# voltageMillivolts: 8061
+# charging: true
+# externalPowerConnected: true
+#
 # Low-battery warning test (15% charge):
 # present: true
 # chargePercent: 15.0
 # voltageMillivolts: 6750
-#
-# Freshly charged pack:
-# present: true
-# chargePercent: 100.0
-# voltageMillivolts: 8350
+# charging: false
+# externalPowerConnected: false

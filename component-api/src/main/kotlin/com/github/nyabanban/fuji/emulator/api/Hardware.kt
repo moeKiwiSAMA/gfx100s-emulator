@@ -16,7 +16,24 @@ interface MmioDevice {
 /** Reads and writes only access retained storage and never change any device's pending deadlines. */
 interface RetainedMmioBank : MmioDevice
 
-interface BatteryPort { fun chargePercent(): Double; fun voltageMillivolts(): Int; fun present(): Boolean }
+interface BatteryPort {
+    fun chargePercent(): Double
+    fun voltageMillivolts(): Int
+    fun present(): Boolean
+    /** True when a battery pack is installed and actively receiving charge current. */
+    fun charging(): Boolean = false
+    /** True when external USB-C VBUS / AC power is connected to the camera body. */
+    fun externalPowerConnected(): Boolean = charging()
+    /** Signed state-of-charge rate in `%/hour` (`> 0` charging, `0` full/idle on external power, `< 0` discharging). */
+    fun chargeRatePercentPerHour(): Double = when {
+        !present() -> 0.0
+        charging() -> if (chargePercent() < 99.5) 36.0 else 6.0
+        externalPowerConnected() -> 0.0
+        else -> -12.0
+    }
+    /** Owner-thread observer invoked synchronously whenever battery, charging, or external power state changes. */
+    fun addPowerStateListener(listener: () -> Unit): AutoCloseable = AutoCloseable {}
+}
 interface ButtonPort { fun pressed(key: String): Boolean }
 interface BlockStoragePort {
     fun size(slot: Int): Long?

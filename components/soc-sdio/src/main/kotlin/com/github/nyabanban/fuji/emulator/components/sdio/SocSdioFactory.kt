@@ -55,16 +55,21 @@ class SocSdioFactory : ComponentFactory {
     private class Controller(
         context: ComponentContext,
         config: Map<String, Any>,
-    ) : ScalarComponent("soc-sdio", context, config), StatefulComponent, SdioBusPort, MmioDevice {
+    ) : ScalarComponent("soc-sdio", context, config), StatefulComponent, SdioBusPort, TickAwareMmioDevice {
 
         private val profile = config.getValue("profile") as String
         private val enabled = profile == PROFILE
         private val irqEnabled = (config["irqEnabled"] as? Boolean) ?: true
+        @Volatile
         private var closed = false
 
         private var attachedCard: SdioCardPort? = null
         private var cachedGic: InterruptSink? = null
         private var cachedMemory: DmaMemory? = null
+        @Volatile
+        private var ownerThread: Thread? = null
+        @Volatile
+        private var asyncIrqDirty: Boolean = false
 
         // Standard SDHCI register state
         private var sdmaSysAddr: Long = 0L
@@ -89,6 +94,7 @@ class SocSdioFactory : ComponentFactory {
         private var hostControl2: Int = 0
         private var admaSysAddrLo: Long = 0L
         private var admaSysAddrHi: Long = 0L
+        @Volatile
         private var cardInterruptLine: Boolean = false
 
         // Active PIO buffer state
@@ -123,6 +129,7 @@ class SocSdioFactory : ComponentFactory {
 
         override fun start() {
             check(!closed) { "soc-sdio closed" }
+            ownerThread = Thread.currentThread()
             if (enabled && irqEnabled) {
                 cachedGic = context.ports.find("soc-gic.lines", InterruptSink::class.java)
                 syncIrqs()
@@ -138,7 +145,20 @@ class SocSdioFactory : ComponentFactory {
             attachedCard = null
             cachedGic = null
             cachedMemory = null
+            ownerThread = null
+            asyncIrqDirty = false
             closed = true
+        }
+
+        override fun nextDeadline(): Long? = if (enabled && asyncIrqDirty) 0L else null
+
+        override fun nextInterestedTick(): Long = if (enabled && asyncIrqDirty) 0L else Long.MAX_VALUE
+
+        override fun beforeInstruction(tick: Long) {
+            if (asyncIrqDirty) {
+                asyncIrqDirty = false
+                syncIrqs()
+            }
         }
 
         // ================= SdioBusPort =================
@@ -162,7 +182,13 @@ class SocSdioFactory : ComponentFactory {
         override fun setCardInterrupt(asserted: Boolean) {
             if (closed) return
             cardInterruptLine = asserted
-            syncIrqs()
+            val owner = ownerThread
+            if (owner == null || Thread.currentThread() === owner) {
+                asyncIrqDirty = false
+                syncIrqs()
+            } else {
+                asyncIrqDirty = true
+            }
         }
 
         // ================= Interrupt Synchronization =================

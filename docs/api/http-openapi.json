@@ -28,6 +28,9 @@
     "name" : "Wireless",
     "description" : "BCM43438 Wi-Fi / BLE combo radio status and virtual mobile peer / PTP-IP bridge controls."
   }, {
+    "name" : "Power & Battery",
+    "description" : "NP-W235 battery pack state-of-charge, pack voltage, USB-C VBUS external power, and charging controls."
+  }, {
     "name" : "Telemetry",
     "description" : "Manual diagnostic session log upload."
   }, {
@@ -1801,6 +1804,336 @@
                 },
                 "example" : {
                   "error" : "bcm43438 wireless unavailable"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/battery" : {
+      "get" : {
+        "operationId" : "getBattery",
+        "tags" : [ "Power & Battery" ],
+        "summary" : "Get NP-W235 battery pack and USB-C charging state",
+        "description" : "Returns live NP-W235 battery installation state, charge percentage, terminal voltage in millivolts, charging flag, USB-C external power status, and MAX17049 `CRATE` drift rate.",
+        "responses" : {
+          "200" : {
+            "description" : "Current battery and USB-C power state.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                },
+                "example" : {
+                  "ok" : true,
+                  "component" : "battery",
+                  "revision" : 1,
+                  "present" : true,
+                  "chargePercent" : 78.0,
+                  "voltageMillivolts" : 8061,
+                  "charging" : true,
+                  "externalPowerConnected" : true,
+                  "usbVbusConnected" : true,
+                  "cratePercentPerHour" : 36.0,
+                  "autoChargeDrift" : false
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "`battery` component unavailable.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "battery component unavailable"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "operationId" : "postBattery",
+        "tags" : [ "Power & Battery" ],
+        "summary" : "Update NP-W235 battery level, charging, or USB-C external power",
+        "description" : "Updates a non-empty subset of live NP-W235 battery and USB-C external power settings, automatically synchronizing `max17048`, `power-peer`, and `soc-system-control` USB VBUS.",
+        "requestBody" : {
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object",
+                "properties" : {
+                  "present" : {
+                    "type" : "boolean",
+                    "description" : "`true` when NP-W235 battery pack is installed, `false` when removed.",
+                    "example" : true
+                  },
+                  "chargePercent" : {
+                    "type" : "number",
+                    "description" : "Battery state of charge (`0.0..100.0`).",
+                    "minimum" : 0.0,
+                    "maximum" : 100.0,
+                    "example" : 78.0
+                  },
+                  "batteryPercent" : {
+                    "type" : "number",
+                    "description" : "Alias for `chargePercent` (`0.0..100.0`).",
+                    "minimum" : 0.0,
+                    "maximum" : 100.0,
+                    "example" : 78.0
+                  },
+                  "voltageMillivolts" : {
+                    "type" : "integer",
+                    "description" : "Explicit 2S pack voltage in mV (`0..12000`); derived automatically from NP-W235 curve when omitted on charge changes.",
+                    "minimum" : 0,
+                    "maximum" : 12000,
+                    "example" : 8061
+                  },
+                  "charging" : {
+                    "type" : "boolean",
+                    "description" : "Enable or disable active battery charging (enabling automatically connects USB-C external power).",
+                    "example" : true
+                  },
+                  "externalPowerConnected" : {
+                    "type" : "boolean",
+                    "description" : "Connect or disconnect external USB-C VBUS power.",
+                    "example" : true
+                  },
+                  "usbVbusConnected" : {
+                    "type" : "boolean",
+                    "description" : "Alias for `externalPowerConnected`.",
+                    "example" : true
+                  },
+                  "autoChargeDrift" : {
+                    "type" : "boolean",
+                    "description" : "Enable gentle virtual-time SOC drift while charging (`+36%/hr`).",
+                    "example" : false
+                  }
+                }
+              },
+              "example" : {
+                "chargePercent" : 78.0,
+                "charging" : true
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Updated battery and USB-C power state.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                },
+                "example" : {
+                  "ok" : true,
+                  "component" : "battery",
+                  "revision" : 2,
+                  "present" : true,
+                  "chargePercent" : 78.0,
+                  "voltageMillivolts" : 8061,
+                  "charging" : true,
+                  "externalPowerConnected" : true,
+                  "usbVbusConnected" : true,
+                  "cratePercentPerHour" : 36.0,
+                  "autoChargeDrift" : false
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Unknown key, wrong type, or out-of-range percentage/voltage.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "chargePercent must be a finite number in 0..100"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "`battery` component unavailable.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "battery component unavailable"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/power" : {
+      "get" : {
+        "operationId" : "getPower",
+        "tags" : [ "Power & Battery" ],
+        "summary" : "Get power and battery state (alias of GET /api/battery)",
+        "description" : "Alias of `GET /api/battery` returning live NP-W235 battery pack and USB-C external power telemetry.",
+        "responses" : {
+          "200" : {
+            "description" : "Current battery and USB-C power state.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                },
+                "example" : {
+                  "ok" : true,
+                  "component" : "battery",
+                  "revision" : 1,
+                  "present" : true,
+                  "chargePercent" : 78.0,
+                  "voltageMillivolts" : 8061,
+                  "charging" : true,
+                  "externalPowerConnected" : true,
+                  "usbVbusConnected" : true,
+                  "cratePercentPerHour" : 36.0,
+                  "autoChargeDrift" : false
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "`battery` component unavailable.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "battery component unavailable"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "operationId" : "postPower",
+        "tags" : [ "Power & Battery" ],
+        "summary" : "Update power and battery state (alias of POST /api/battery)",
+        "description" : "Alias of `POST /api/battery` updating NP-W235 battery level, charging, or USB-C external power.",
+        "requestBody" : {
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object",
+                "properties" : {
+                  "present" : {
+                    "type" : "boolean",
+                    "description" : "`true` when NP-W235 battery pack is installed, `false` when removed.",
+                    "example" : true
+                  },
+                  "chargePercent" : {
+                    "type" : "number",
+                    "description" : "Battery state of charge (`0.0..100.0`).",
+                    "minimum" : 0.0,
+                    "maximum" : 100.0,
+                    "example" : 78.0
+                  },
+                  "batteryPercent" : {
+                    "type" : "number",
+                    "description" : "Alias for `chargePercent` (`0.0..100.0`).",
+                    "minimum" : 0.0,
+                    "maximum" : 100.0,
+                    "example" : 78.0
+                  },
+                  "voltageMillivolts" : {
+                    "type" : "integer",
+                    "description" : "Explicit 2S pack voltage in mV (`0..12000`).",
+                    "minimum" : 0,
+                    "maximum" : 12000,
+                    "example" : 8061
+                  },
+                  "charging" : {
+                    "type" : "boolean",
+                    "description" : "Enable or disable active battery charging.",
+                    "example" : true
+                  },
+                  "externalPowerConnected" : {
+                    "type" : "boolean",
+                    "description" : "Connect or disconnect external USB-C VBUS power.",
+                    "example" : true
+                  },
+                  "usbVbusConnected" : {
+                    "type" : "boolean",
+                    "description" : "Alias for `externalPowerConnected`.",
+                    "example" : true
+                  },
+                  "autoChargeDrift" : {
+                    "type" : "boolean",
+                    "description" : "Enable gentle virtual-time SOC drift while charging (`+36%/hr`).",
+                    "example" : false
+                  }
+                }
+              },
+              "example" : {
+                "externalPowerConnected" : true,
+                "charging" : true
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Updated battery and USB-C power state.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                },
+                "example" : {
+                  "ok" : true,
+                  "component" : "battery",
+                  "revision" : 2,
+                  "present" : true,
+                  "chargePercent" : 78.0,
+                  "voltageMillivolts" : 8061,
+                  "charging" : true,
+                  "externalPowerConnected" : true,
+                  "usbVbusConnected" : true,
+                  "cratePercentPerHour" : 36.0,
+                  "autoChargeDrift" : false
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Unknown key, wrong type, or out-of-range percentage/voltage.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "chargePercent must be a finite number in 0..100"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "`battery` component unavailable.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                },
+                "example" : {
+                  "error" : "battery component unavailable"
                 }
               }
             }

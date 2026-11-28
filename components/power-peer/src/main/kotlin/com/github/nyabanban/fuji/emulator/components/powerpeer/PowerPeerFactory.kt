@@ -15,6 +15,9 @@ import java.util.Properties
 /** FW-016/SRC-012: four-byte checksum transport. All external words/retention are explicit hypotheses. */
 class PowerPeerFactory : ComponentFactory {
     companion object {
+        // DAT 0x0120C3A8 -> 0x011E8DE4(0x98) -> 0x015A932C: edge-triggered GIC IRQ 176 (0xB0)
+        // invokes ISR 0x0120BA50 -> 0x0120B9D8(1) to invalidate Sub-MCU Cache Class 1 (selector 0x0E).
+        internal const val SUBMCU_POWER_STATUS_GIC_IRQ = 176
         private val NVRAM_SELECTORS = 31..34
         private val NVRAM_ENTRY_REGEX = Regex(""""(3[1-4])"\s*:\s*(0|[1-9][0-9]{0,4})""")
         private val NVRAM_BIN_MAGIC = byteArrayOf('F'.code.toByte(), 'N'.code.toByte(), 'V'.code.toByte(), 'R'.code.toByte())
@@ -63,6 +66,34 @@ class PowerPeerFactory : ComponentFactory {
         private val nvramPath: Path? = if (enabled && nvramFile.isNotBlank() && context.relaxedMode) resolveSafeNvramPath(context.directory, nvramFile) else null
         private var nvramDirty=false
         private var battery: BatteryPort?=null
+        private var batteryListenerLease: AutoCloseable?=null
+        private var gpioInputs: GpioInputPort?=null
+        private var gicLines: InterruptSink?=null
+        private var lastDrivenChargerGpio: Boolean?=null
+        private var lastObservedSel0E: Int=-1
+        private fun syncChargerHardwareLines(initialBoot: Boolean = false) {
+            val b=battery ?: return
+            val sink=gpioInputs ?: context.ports.find("soc-gpio.inputs", GpioInputPort::class.java)?.also { gpioInputs=it }
+            val extPower=b.externalPowerConnected()
+            if (sink != null && (initialBoot || lastDrivenChargerGpio != extPower)) {
+                lastDrivenChargerGpio=extPower
+                // DAT 0x0120CC20: GPIO(8, 0) (selector 0x00080000 -> 0xFFF41214 bit 0) = external USB power-good input
+                sink.setInputLevel(8, 0, extPower)
+            }
+            val currentSel0E=batteryWord(14) ?: -1
+            if (initialBoot) {
+                lastObservedSel0E=currentSel0E
+            } else if (currentSel0E >= 0 && lastObservedSel0E != currentSel0E) {
+                lastObservedSel0E=currentSel0E
+                val irqSink=gicLines ?: context.ports.find("soc-gic.lines", InterruptSink::class.java)?.also { gicLines=it }
+                if (irqSink != null) {
+                    // Pulse rising-edge GIC IRQ 176 so firmware ISR 0x0120BA50 invalidates Cache Class 1 (sel 0x0E)
+                    irqSink.setLine(SUBMCU_POWER_STATUS_GIC_IRQ, false)
+                    irqSink.setLine(SUBMCU_POWER_STATUS_GIC_IRQ, true)
+                    irqSink.setLine(SUBMCU_POWER_STATUS_GIC_IRQ, false)
+                }
+            }
+        }
         private fun resolveSafeNvramPath(rootDir: Path, relative: String): Path {
             val rel=Path.of(relative)
             require(!rel.isAbsolute && rel == rel.normalize() && rel.none { it.toString() in setOf(".", "..") }) {
@@ -178,16 +209,25 @@ class PowerPeerFactory : ComponentFactory {
         private fun batteryWord(reg: Int): Int? {
             if (!isBatterySelector(reg)) return null
             val b=checkNotNull(battery) { "power battery endpoint has not started" }
-            if (!b.present()) return 0
+            val present=b.present()
+            val extPower=b.externalPowerConnected()
+            val activeCharging=present && b.charging()
             return when (reg) {
-                // DAT 0x0120AF54 / 0x0120AF70: sel 0x0E bit 0 = battery present & smart-battery comm OK
-                14 -> 1
+                // DAT 0x0120AF54 / 0x0120BCFC / 0x0120BC78 / 0x0120CC30:
+                // sel 0x0E bit 0 (0x0001) = battery present & smart-battery comm OK
+                // sel 0x0E bit 4 (0x0010) = external USB-C power active (drives 0x8082 POWER_SUPPLY_ON / OSD 0x050A)
+                // sel 0x0E bit 5 (0x0020) = battery actively charging
+                14 -> (if (present) 0x0001 else 0) or (if (extPower) 0x0010 else 0) or (if (activeCharging) 0x0020 else 0)
                 // DAT 0x0120BB44 / 0x0120C4D8: sel 0x03 low 10-bit PMIC VBAT ADC (bank14[0x03E7]=507 cutoff, [0x03EB]=752 AC)
-                3 -> ((b.voltageMillivolts().toLong()*1024L)/12100L).toInt().coerceIn(0,1023)
+                3 -> when {
+                    present -> ((b.voltageMillivolts().toLong()*1024L)/12100L).toInt().coerceIn(0,1023)
+                    extPower -> ((8400L*1024L)/12100L).toInt().coerceIn(0,1023)
+                    else -> 0
+                }
                 // DAT 0x0120C9EC: sel 0x2F Full-Charge Capacity (NP-W235 2200 mAh)
-                47 -> 2200
+                47 -> if (present) 2200 else 0
                 // DAT 0x0120CA1C / 0x0120CE14: sel 0x30 Remaining Capacity inverted from displayed_pct=clamp((99*raw_pct-705)/87,1,100)
-                48 -> {
+                48 -> if (!present) 0 else {
                     val p=b.chargePercent().coerceIn(0.0,100.0)
                     if (p<=0.0) 0 else {
                         val rawPct=((87.0*p+705.0)/99.0).coerceIn(0.0,100.0)
@@ -195,9 +235,9 @@ class PowerPeerFactory : ComponentFactory {
                     }
                 }
                 // DAT 0x0120CB5C: sel 0x31 high byte = battery health % (100% -> LEVEL_0)
-                49 -> 100 shl 8
+                49 -> if (present) (100 shl 8) else 0
                 // DAT 0x0120CA80 / 0x0120AF54: sel 0x32 smart-battery temp in 0.1 K (2982 = 25.0 C, must be 1..0xFFFE)
-                50 -> 2982
+                50 -> if (present) 2982 else 0
                 else -> null
             }
         }
@@ -264,12 +304,25 @@ class PowerPeerFactory : ComponentFactory {
                 candidateReads?.let { context.ports.register(id,"$id.candidate-inputs",DescribedProtocolCandidateInputs::class.java,it) }
             } else candidateReads=null
         }
+        override fun interruptRoutes(): List<InterruptRoute> =
+            if (enabled && batteryPort.isNotEmpty() && context.ports.find("soc-gic.lines", InterruptSink::class.java) != null) {
+                listOf(InterruptRoute("soc-gic.lines", SUBMCU_POWER_STATUS_GIC_IRQ..SUBMCU_POWER_STATUS_GIC_IRQ))
+            } else {
+                emptyList()
+            }
         override fun start() {
             check(!closed) { "power peer closed" }
             if(!enabled)return
             pins=checkNotNull(context.ports.find(values.getValue("gpioPort") as String,GpioOutputPort::class.java)) { "power peer GPIO output port missing" }
             if(switchBinding!=null) buttons=checkNotNull(context.ports.find("buttons",ButtonPort::class.java)) { "power switch profile requires buttons port" }
-            if(batteryPort.isNotEmpty()) battery=checkNotNull(context.ports.find(batteryPort,BatteryPort::class.java)) { "power battery endpoint missing" }
+            if(batteryPort.isNotEmpty()) {
+                val resolved=checkNotNull(context.ports.find(batteryPort,BatteryPort::class.java)) { "power battery endpoint missing" }
+                battery=resolved
+                gpioInputs=context.ports.find("soc-gpio.inputs", GpioInputPort::class.java)
+                gicLines=context.ports.find("soc-gic.lines", InterruptSink::class.java)
+                syncChargerHardwareLines(initialBoot=true)
+                batteryListenerLease=resolved.addPowerStateListener { syncChargerHardwareLines(initialBoot=false) }
+            }
             nvramPath?.let { loadNvram(it) }
             if(registerPort.isNotEmpty()) {
                 val port=checkNotNull(context.ports.find(registerPort,PowerRegisterPort::class.java)) { "power register endpoint missing" }
@@ -290,6 +343,7 @@ class PowerPeerFactory : ComponentFactory {
         override fun applySettings(settings: Map<String,Any>) {validateSettings(settings);super.applySettings(settings)}
         override fun close() {
             if (!closed && nvramDirty) { nvramPath?.let { runCatching { persistNvram(it) } } }
+            batteryListenerLease?.close();batteryListenerLease=null;gpioInputs=null;gicLines=null;lastDrivenChargerGpio=null;lastObservedSel0E=-1
             preparedRead?.cancel();preparedRead=null;preparedDelegatedTick=-1L;candidateReads?.close();closed=true;registers?.close();registers=null;pins=null;buttons=null;battery=null;delegated.fill(false)
         }
         private inner class ReattachingDelegatedLease(
@@ -338,6 +392,7 @@ class PowerPeerFactory : ComponentFactory {
         private fun append(queue: ArrayDeque<Map<String,Any>>,entry: Map<String,Any>) { if(queue.size==256) queue.removeFirst();queue.addLast(entry) }
         override fun exchange(bits: Int,tx: Int,tick: Long): Int {
             check(enabled && !closed);require(bits in 1..16 && tx in 0 until (1 shl bits) && tick>=0) { "invalid power serial word" }
+            syncChargerHardwareLines()
             val gpio=checkNotNull(pins);val level=gpio.outputLevel(12,5);val changed=gpio.outputSequence(12,5)
             if(level) require(bits==8) { "checksum power protocol requires eight-bit words" }
             if(changed!=edge) { preparedRead?.cancel();preparedRead=null;preparedDelegatedTick=-1L;preparedReadAborted=false;discarded+=phase;phase=0;edge=changed }
@@ -364,7 +419,14 @@ class PowerPeerFactory : ComponentFactory {
                             try { require(lease.value in 0..65535) { "power endpoint returned invalid raw16 input" };headerRead=lease;headerDelegatedTick=tick;lease.value }
                             catch(error:Throwable) {lease.cancel();throw error}
                         } else connection.read(reg,tick)
-                    } else if(stored[reg]>=0) stored[reg] else externalWord(reg)
+                    } else {
+                        val baseWord=if(stored[reg]>=0) stored[reg] else externalWord(reg)
+                        // DAT 0x0120BF44 (called by TSK_USBCHARGE 0x0235523C): sel 0x12 bits[5:4]=0b01 (0x0010) = USB power mode 1
+                        if(reg==18 && batteryPort.isNotEmpty()) {
+                            val safeBase=if(baseWord>=0) baseWord else 0
+                            if(battery?.externalPowerConnected()==true) (safeBase and 0x0030.inv()) or 0x0010 else safeBase
+                        } else baseWord
+                    }
                     require(result in 0..65535) { "power peer missing explicit input register$reg" };0
                 }
                 1 -> result ushr 8

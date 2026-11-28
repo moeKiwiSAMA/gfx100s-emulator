@@ -71,9 +71,26 @@ class ConnectivityBtWifiLiveE2eTest {
         rt.host.components().single { it.descriptor.id == id }.component.state()
     }.join()
 
-    private fun tapButton(rt: EmulatorRuntime, key: String, holdAttempts: Long = 5_000_000L, releaseAttempts: Long = 20_000_000L) {
+    private fun stepByVirtualTicks(rt: EmulatorRuntime, deltaTicks: Long) {
+        val target = rt.telemetry.virtualTick + deltaTicks
+        var guard = 0
+        while (rt.telemetry.virtualTick < target && guard < 10_000) {
+            guard++
+            val cont = rt.owner.submit {
+                var i = 0
+                while (i < 512 && rt.telemetry.virtualTick < target) {
+                    if (!rt.session.stepFast()) return@submit false
+                    i++
+                }
+                true
+            }.join()
+            if (!cont) break
+        }
+    }
+
+    private fun tapButton(rt: EmulatorRuntime, key: String, holdTicks: Long = 5_000_000L, releaseAttempts: Long = 20_000_000L) {
         patchComp(rt, "buttons", mapOf(key to true))
-        stepBy(rt, holdAttempts)
+        stepByVirtualTicks(rt, holdTicks)
         patchComp(rt, "buttons", mapOf(key to false))
         stepBy(rt, releaseAttempts)
     }
@@ -123,10 +140,11 @@ class ConnectivityBtWifiLiveE2eTest {
             rt.owner.submit { rt.session.initialize() }.join()
 
             // 1. Cold boot -> OOBE -> STILL HUD (0x0100)
-            for (i in 0 until 60) {
+            for (i in 0 until 80) {
                 stepBy(rt, 12_000_000L)
                 if (readGuestU32(rt, 0x01CC6424L) == 0x0421) break
             }
+            stepBy(rt, 60_000_000L)
             tapButton(rt, "menu", 5_000_000L, 45_000_000L)
             tapButton(rt, "down", 5_000_000L, 25_000_000L)
             tapButton(rt, "down", 5_000_000L, 25_000_000L)

@@ -9,11 +9,13 @@ import com.github.nyabanban.fuji.emulator.runtime.Formats
 class DiagnosticsRefreshController(
     val autoRefreshIntervalNanos: Long = DEFAULT_AUTO_REFRESH_INTERVAL_NANOS,
     val audioIdleIntervalNanos: Long = DEFAULT_AUDIO_IDLE_INTERVAL_NANOS,
+    val wifiIdleIntervalNanos: Long = DEFAULT_WIFI_IDLE_INTERVAL_NANOS,
     val maxDiagnosticsChars: Int = DEFAULT_MAX_DIAGNOSTICS_CHARS,
 ) {
     init {
         require(autoRefreshIntervalNanos > 0L) { "autoRefreshIntervalNanos must be positive" }
         require(audioIdleIntervalNanos > 0L) { "audioIdleIntervalNanos must be positive" }
+        require(wifiIdleIntervalNanos > 0L) { "wifiIdleIntervalNanos must be positive" }
         require(maxDiagnosticsChars > 0) { "maxDiagnosticsChars must be positive" }
     }
 
@@ -26,6 +28,8 @@ class DiagnosticsRefreshController(
     private var lastDisplayedDiagnosticsText: String? = null
     private var hasFetchedAudio: Boolean = false
     private var lastAudioFetchNanos: Long = Long.MIN_VALUE
+    private var hasFetchedWifi: Boolean = false
+    private var lastWifiFetchNanos: Long = Long.MIN_VALUE
 
     fun requestManualRefresh() {
         manualRefreshRequested = true
@@ -55,6 +59,16 @@ class DiagnosticsRefreshController(
         lastAudioFetchNanos = nowNanos
     }
 
+    fun shouldFetchWifi(wifiTabVisible: Boolean, nowNanos: Long): Boolean {
+        if (wifiTabVisible || !hasFetchedWifi) return true
+        return (nowNanos - lastWifiFetchNanos) >= wifiIdleIntervalNanos
+    }
+
+    fun markWifiFetchDispatched(nowNanos: Long) {
+        hasFetchedWifi = true
+        lastWifiFetchNanos = nowNanos
+    }
+
     /** Formats snapshot JSON off the JavaFX UI thread and caps length to [maxDiagnosticsChars]. */
     fun formatDiagnosticsJson(snapshot: Map<String, Any?>): String =
         Formats.json.writerWithDefaultPrettyPrinter().writeValueAsString(snapshot).take(maxDiagnosticsChars)
@@ -70,6 +84,7 @@ class DiagnosticsRefreshController(
     companion object {
         const val DEFAULT_AUTO_REFRESH_INTERVAL_NANOS: Long = 2_000_000_000L
         const val DEFAULT_AUDIO_IDLE_INTERVAL_NANOS: Long = 1_000_000_000L
+        const val DEFAULT_WIFI_IDLE_INTERVAL_NANOS: Long = 1_000_000_000L
         const val DEFAULT_MAX_DIAGNOSTICS_CHARS: Int = 131_072
 
         /**

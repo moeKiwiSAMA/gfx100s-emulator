@@ -81,6 +81,17 @@ internal class Max17048Device(
         return (pct * 256.0).roundToInt().coerceIn(0, 0xFFFF)
     }
 
+    fun currentCratePercentPerHour(): Double {
+        val batt = batteryProvider()
+        return if (batt != null && batt.present()) batt.chargeRatePercentPerHour() else 0.0
+    }
+
+    fun currentCrateWord(): Int {
+        // MAX17048/MAX17049 REG_CRATE (0x16): signed 16-bit two's-complement big-endian, 0.208 %/hr/LSB.
+        val signedLsb = (currentCratePercentPerHour() / CRATE_LSB_PCT_PER_HOUR).roundToInt().coerceIn(-32768, 32767)
+        return signedLsb and 0xFFFF
+    }
+
     private fun readWord(evenAddr: Int): Int = when (evenAddr) {
         REG_VCELL -> currentVcellWord()
         REG_SOC -> currentSocWord()
@@ -90,7 +101,7 @@ internal class Max17048Device(
         REG_CONFIG -> configReg and 0xFFFF
         REG_OCV -> if (modelUnlocked) (if (ocvOverride >= 0) ocvOverride else currentVcellWord()) else 0xFFFF
         REG_VALRT -> valrtReg and 0xFFFF
-        REG_CRATE -> 0x0000
+        REG_CRATE -> currentCrateWord()
         REG_VRESET_ID -> ((vresetReg and 0xFF) shl 8) or CHIP_ID_BYTE
         REG_STATUS -> statusReg and 0xFFFF
         REG_LOCK -> lockWord and 0xFFFF
@@ -211,6 +222,8 @@ internal class Max17048Device(
         "version" to versionId,
         "vcellWord" to currentVcellWord(),
         "socWord" to currentSocWord(),
+        "crateWord" to currentCrateWord(),
+        "cratePercentPerHour" to currentCratePercentPerHour(),
         "config" to configReg,
         "hibrt" to hibrtReg,
         "status" to statusReg,
@@ -343,6 +356,7 @@ internal class Max17048Device(
         private const val DEFAULT_VRESET_HI = 0x96
         private const val CHIP_ID_BYTE = 0x02
         private const val DEFAULT_STATUS = 0x0100
+        private const val CRATE_LSB_PCT_PER_HOUR = 0.208
 
         private val SNAPSHOT_KEYS = setOf(
             "address7", "modeReg", "hibrtReg", "configReg", "ocvOverride",

@@ -106,4 +106,69 @@ class UsbVbusA300InputTest {
         legacyTarget.restoreSnapshot(v3Snap)
         assertEquals(defaultComp.state(), legacyTarget.state())
     }
+
+    @Test
+    fun batteryExternalPowerDrivesUsbVbusA300AndFastMmioMirrorWhilePreservingCleanSnapshot() {
+        var extPower = false
+        val listeners = mutableListOf<() -> Unit>()
+        val ctx = TestContext()
+        ctx.claims["battery"] = object : BatteryPort {
+            override fun chargePercent(): Double = 80.0
+            override fun voltageMillivolts(): Int = 8050
+            override fun present(): Boolean = true
+            override fun charging(): Boolean = extPower
+            override fun externalPowerConnected(): Boolean = extPower
+            override fun addPowerStateListener(listener: () -> Unit): AutoCloseable {
+                listeners += listener
+                return AutoCloseable { listeners.remove(listener) }
+            }
+        }
+
+        val factory = SystemControlFactory()
+        val config = factory.descriptor.settings.associate { it.key to it.default } + mapOf(
+            "profile" to UsbDwc3Controller.PROFILE,
+        )
+        java.lang.foreign.Arena.ofConfined().use { arena ->
+            val comp = factory.create(ctx, config) as StatefulComponent
+            val mirrorPort = assertIs<NativeMmioMirrorPort>(comp)
+            val vbusSpec = mirrorPort.describeMmioMirrorWindows().single { it.portName == UsbDwc3Controller.USB_VBUS_V2_PORT }
+            val mirrorHandle = MmioMirrorHandle(
+                vbusSpec,
+                arena.allocate(MmioMirrorHandle.requiredBytes(vbusSpec.slots.size), 8L),
+            )
+            mirrorPort.attachMmioMirror(UsbDwc3Controller.USB_VBUS_V2_PORT, mirrorHandle)
+            comp.start()
+
+            val vbus = assertNotNull(ctx.ports.find(UsbDwc3Controller.USB_VBUS_V2_PORT, MmioDevice::class.java))
+            assertEquals(0L, vbus.read(0, 4))
+            assertEquals(0, mirrorHandle.readSlot(0))
+            assertEquals(1L, mirrorHandle.currentValidMask())
+
+            // Toggling external power on BatteryPort immediately updates 0xFFF4A300 AND the real off-heap fast-MMIO mirror!
+            extPower = true
+            listeners.toList().forEach { it.invoke() }
+            assertEquals(1L, vbus.read(0, 4))
+            assertEquals(1, mirrorHandle.readSlot(0))
+
+            // Saving & restoring snapshot while battery external power is true (and scalar usbVbusPresent is false) succeeds cleanly
+            val snap = comp.saveSnapshot()
+            val ctx2 = TestContext()
+            ctx2.claims["battery"] = ctx.claims["battery"]!!
+            val restored = SystemControlFactory().create(ctx2, config) as StatefulComponent
+            restored.start()
+            restored.restoreSnapshot(snap)
+            val vbus2 = assertNotNull(ctx2.ports.find(UsbDwc3Controller.USB_VBUS_V2_PORT, MmioDevice::class.java))
+            assertEquals(1L, vbus2.read(0, 4))
+
+            extPower = false
+            listeners.toList().forEach { it.invoke() }
+            assertEquals(0L, vbus.read(0, 4))
+            assertEquals(0, mirrorHandle.readSlot(0))
+
+            mirrorPort.detachMmioMirrors()
+            comp.close()
+            restored.close()
+            assertTrue(listeners.isEmpty())
+        }
+    }
 }

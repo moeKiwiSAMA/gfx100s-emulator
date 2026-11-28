@@ -1,6 +1,6 @@
 # FUJIFILM GFX100S Emulator HTTP Control API
 
-> **Auto-generated** from `ControlApiSpec.kt` (`OpenAPI 3.1.0`, `39` endpoints). Do not hand-edit; regenerate with `./gradlew :generateHttpApiDocs`.
+> **Auto-generated** from `ControlApiSpec.kt` (`OpenAPI 3.1.0`, `43` endpoints). Do not hand-edit; regenerate with `./gradlew :generateHttpApiDocs`.
 
 ## Overview
 
@@ -52,6 +52,10 @@
 | Audio | `POST` | `/api/audio` | Update audio output, input, and jack settings |
 | Wireless | `GET` | `/api/wireless` | Get BCM43438 Wi-Fi / BLE wireless state |
 | Wireless | `POST` | `/api/wireless` | Update BCM43438 virtual wireless peer state |
+| Power & Battery | `GET` | `/api/battery` | Get NP-W235 battery pack and USB-C charging state |
+| Power & Battery | `POST` | `/api/battery` | Update NP-W235 battery level, charging, or USB-C external power |
+| Power & Battery | `GET` | `/api/power` | Get power and battery state (alias of GET /api/battery) |
+| Power & Battery | `POST` | `/api/power` | Update power and battery state (alias of POST /api/battery) |
 | Telemetry | `POST` | `/api/telemetry/upload-log` | Upload current diagnostic session log |
 | UI & Personalization | `GET` | `/api/lang` | Get active UI language and supported locales |
 | UI & Personalization | `POST` | `/api/lang` | Switch desktop UI language live |
@@ -71,6 +75,7 @@
 - [Optics & Filters](#optics-filters) (6) — Mounted lens control, multi-slot optical filter rack (UV, ND, Bokeh Mask, Star, Mist, GND), and ND shorthand.
 - [Audio](#audio) (3) — Host audio output/input mixer, device enumeration, headphone/mic jack simulation, and loopback monitoring.
 - [Wireless](#wireless) (2) — BCM43438 Wi-Fi / BLE combo radio status and virtual mobile peer / PTP-IP bridge controls.
+- [Power & Battery](#power-battery) (4) — NP-W235 battery pack state-of-charge, pack voltage, USB-C VBUS external power, and charging controls.
 - [Telemetry](#telemetry) (1) — Manual diagnostic session log upload.
 - [UI & Personalization](#ui-personalization) (5) — Runtime UI locale switching and camera body / studio theme customization.
 - [NOR Flash](#nor-flash) (2) — Unified 64 MiB QSPI NOR Flash status inspection, .DAT firmware flashing, raw export/import, and factory restore.
@@ -1376,6 +1381,200 @@ curl -s "http://127.0.0.1:18080/api/wireless"
 curl -s -X POST "http://127.0.0.1:18080/api/wireless" \
   -H "Content-Type: application/json" \
   -d '{"blePeerConnected":true,"ptpIpBridgeEnabled":true}'
+```
+
+## Power & Battery
+
+NP-W235 battery pack state-of-charge, pack voltage, USB-C VBUS external power, and charging controls.
+
+### `GET /api/battery`
+
+**Get NP-W235 battery pack and USB-C charging state** — Returns live NP-W235 battery installation state, charge percentage, terminal voltage in millivolts, charging flag, USB-C external power status, and MAX17049 `CRATE` drift rate.
+
+**Responses**
+
+| Status | Content-Type | Description |
+| --- | --- | --- |
+| `200` | `application/json` | Current battery and USB-C power state. |
+| `404` | `application/json` | `battery` component unavailable. |
+
+**Success Response Example (`200`)**
+
+```json
+{
+  "ok" : true,
+  "component" : "battery",
+  "revision" : 1,
+  "present" : true,
+  "chargePercent" : 78.0,
+  "voltageMillivolts" : 8061,
+  "charging" : true,
+  "externalPowerConnected" : true,
+  "usbVbusConnected" : true,
+  "cratePercentPerHour" : 36.0,
+  "autoChargeDrift" : false
+}
+```
+
+**curl Example**
+
+```bash
+curl -s "http://127.0.0.1:18080/api/battery"
+```
+
+### `POST /api/battery`
+
+**Update NP-W235 battery level, charging, or USB-C external power** — Updates a non-empty subset of live NP-W235 battery and USB-C external power settings, automatically synchronizing `max17048`, `power-peer`, and `soc-system-control` USB VBUS.
+
+**Request Body (`application/json`)**
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `present` | `boolean` | no | `true` when NP-W235 battery pack is installed, `false` when removed. |
+| `chargePercent` | `number` | no | Battery state of charge (`0.0..100.0`). (range: `0.0..100.0`) |
+| `batteryPercent` | `number` | no | Alias for `chargePercent` (`0.0..100.0`). (range: `0.0..100.0`) |
+| `voltageMillivolts` | `integer` | no | Explicit 2S pack voltage in mV (`0..12000`); derived automatically from NP-W235 curve when omitted on charge changes. (range: `0..12000`) |
+| `charging` | `boolean` | no | Enable or disable active battery charging (enabling automatically connects USB-C external power). |
+| `externalPowerConnected` | `boolean` | no | Connect or disconnect external USB-C VBUS power. |
+| `usbVbusConnected` | `boolean` | no | Alias for `externalPowerConnected`. |
+| `autoChargeDrift` | `boolean` | no | Enable gentle virtual-time SOC drift while charging (`+36%/hr`). |
+
+**Request Example**
+
+```json
+{
+  "chargePercent" : 78.0,
+  "charging" : true
+}
+```
+
+**Responses**
+
+| Status | Content-Type | Description |
+| --- | --- | --- |
+| `200` | `application/json` | Updated battery and USB-C power state. |
+| `400` | `application/json` | Unknown key, wrong type, or out-of-range percentage/voltage. |
+| `404` | `application/json` | `battery` component unavailable. |
+
+**Success Response Example (`200`)**
+
+```json
+{
+  "ok" : true,
+  "component" : "battery",
+  "revision" : 2,
+  "present" : true,
+  "chargePercent" : 78.0,
+  "voltageMillivolts" : 8061,
+  "charging" : true,
+  "externalPowerConnected" : true,
+  "usbVbusConnected" : true,
+  "cratePercentPerHour" : 36.0,
+  "autoChargeDrift" : false
+}
+```
+
+**curl Example**
+
+```bash
+curl -s -X POST "http://127.0.0.1:18080/api/battery" \
+  -H "Content-Type: application/json" \
+  -d '{"chargePercent":78.0,"charging":true}'
+```
+
+### `GET /api/power`
+
+**Get power and battery state (alias of GET /api/battery)** — Alias of `GET /api/battery` returning live NP-W235 battery pack and USB-C external power telemetry.
+
+**Responses**
+
+| Status | Content-Type | Description |
+| --- | --- | --- |
+| `200` | `application/json` | Current battery and USB-C power state. |
+| `404` | `application/json` | `battery` component unavailable. |
+
+**Success Response Example (`200`)**
+
+```json
+{
+  "ok" : true,
+  "component" : "battery",
+  "revision" : 1,
+  "present" : true,
+  "chargePercent" : 78.0,
+  "voltageMillivolts" : 8061,
+  "charging" : true,
+  "externalPowerConnected" : true,
+  "usbVbusConnected" : true,
+  "cratePercentPerHour" : 36.0,
+  "autoChargeDrift" : false
+}
+```
+
+**curl Example**
+
+```bash
+curl -s "http://127.0.0.1:18080/api/power"
+```
+
+### `POST /api/power`
+
+**Update power and battery state (alias of POST /api/battery)** — Alias of `POST /api/battery` updating NP-W235 battery level, charging, or USB-C external power.
+
+**Request Body (`application/json`)**
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `present` | `boolean` | no | `true` when NP-W235 battery pack is installed, `false` when removed. |
+| `chargePercent` | `number` | no | Battery state of charge (`0.0..100.0`). (range: `0.0..100.0`) |
+| `batteryPercent` | `number` | no | Alias for `chargePercent` (`0.0..100.0`). (range: `0.0..100.0`) |
+| `voltageMillivolts` | `integer` | no | Explicit 2S pack voltage in mV (`0..12000`). (range: `0..12000`) |
+| `charging` | `boolean` | no | Enable or disable active battery charging. |
+| `externalPowerConnected` | `boolean` | no | Connect or disconnect external USB-C VBUS power. |
+| `usbVbusConnected` | `boolean` | no | Alias for `externalPowerConnected`. |
+| `autoChargeDrift` | `boolean` | no | Enable gentle virtual-time SOC drift while charging (`+36%/hr`). |
+
+**Request Example**
+
+```json
+{
+  "externalPowerConnected" : true,
+  "charging" : true
+}
+```
+
+**Responses**
+
+| Status | Content-Type | Description |
+| --- | --- | --- |
+| `200` | `application/json` | Updated battery and USB-C power state. |
+| `400` | `application/json` | Unknown key, wrong type, or out-of-range percentage/voltage. |
+| `404` | `application/json` | `battery` component unavailable. |
+
+**Success Response Example (`200`)**
+
+```json
+{
+  "ok" : true,
+  "component" : "battery",
+  "revision" : 2,
+  "present" : true,
+  "chargePercent" : 78.0,
+  "voltageMillivolts" : 8061,
+  "charging" : true,
+  "externalPowerConnected" : true,
+  "usbVbusConnected" : true,
+  "cratePercentPerHour" : 36.0,
+  "autoChargeDrift" : false
+}
+```
+
+**curl Example**
+
+```bash
+curl -s -X POST "http://127.0.0.1:18080/api/power" \
+  -H "Content-Type: application/json" \
+  -d '{"externalPowerConnected":true,"charging":true}'
 ```
 
 ## Telemetry

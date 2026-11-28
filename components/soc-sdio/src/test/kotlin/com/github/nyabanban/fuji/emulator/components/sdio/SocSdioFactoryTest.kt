@@ -171,7 +171,45 @@ class SocSdioFactoryTest {
         bus.setCardInterrupt(false)
         assertEquals(false, irqState[225])
 
-        // 5. Snapshot round-trip
+        // 5. Async background-thread setCardInterrupt defers GIC mutation safely to owner beforeInstruction()
+        var gicCallerThread: Thread? = null
+        val ownerThread = Thread.currentThread()
+        val strictCtx = TestContext()
+        strictCtx.claims["cpu.memory"] = mem
+        val strictIrqState = mutableMapOf<Int, Boolean>()
+        strictCtx.claims["soc-gic.lines"] = object : InterruptSink {
+            override fun setLine(irq: Int, high: Boolean) {
+                gicCallerThread = Thread.currentThread()
+                strictIrqState[irq] = high
+            }
+        }
+        val strictComp = SocSdioFactory().create(
+            strictCtx,
+            mapOf("profile" to SocSdioFactory.PROFILE, "irqEnabled" to true),
+        ) as StatefulComponent
+        strictComp.start()
+        val strictMmio = strictCtx.ports.find(SocSdioFactory.MMIO_PORT, MmioDevice::class.java) as TickAwareMmioDevice
+        val strictBus = strictCtx.ports.find(SocSdioFactory.BUS_PORT, SdioBusPort::class.java)!!
+        strictMmio.write(0x34, 2, 0x01FFL)
+        strictMmio.write(0x38, 2, 0x01FFL)
+        strictIrqState[225] = false
+        gicCallerThread = null
+
+        val bg = Thread {
+            strictBus.setCardInterrupt(true)
+        }
+        bg.start()
+        bg.join()
+        // Off-owner thread must NOT touch GIC directly; instead schedules immediate tick 0 wakeup
+        assertNull(gicCallerThread)
+        assertEquals(0L, strictMmio.nextInterestedTick())
+        strictMmio.beforeInstruction(100L)
+        assertSame(ownerThread, gicCallerThread)
+        assertEquals(true, strictIrqState[225])
+        assertEquals(Long.MAX_VALUE, strictMmio.nextInterestedTick())
+        strictComp.close()
+
+        // 6. Snapshot round-trip
         val snap = comp.saveSnapshot()
         val ctx2 = TestContext()
         ctx2.claims["soc-gic.lines"] = ctx.claims["soc-gic.lines"]!!

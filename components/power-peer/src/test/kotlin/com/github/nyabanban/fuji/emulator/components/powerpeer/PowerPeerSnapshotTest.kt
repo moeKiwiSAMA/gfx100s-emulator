@@ -586,6 +586,109 @@ class PowerPeerSnapshotTest {
     }
 
     @Test
+    fun externalUsbPowerAndChargingProjectSelector0ESelector12AndChargerGpio8Pin0() {
+        var present = true
+        var charge = 74.0
+        var voltage = 8010
+        var charging = false
+        var extPower = false
+        var activeListener: (() -> Unit)? = null
+        val gpioDrives = mutableListOf<Triple<Int, Int, Boolean>>()
+        val gicTransitions = mutableListOf<Pair<Int, Boolean>>()
+
+        val base = v3InputData()
+        val inputs = (base["inputs"] as Map<*, *>).entries.associateTo(LinkedHashMap<String, Any>()) { (k, v) -> k as String to requireNotNull(v) }.apply { put("18", 0) }
+        val retained = ((base["retained_registers"] as List<*>) + 18)
+        val inputWithReg18 = base + mapOf("inputs" to inputs, "retained_registers" to retained)
+        val ctx = TestContext(inputWithReg18)
+        ctx.registeredPorts["soc-gpio.inputs"] = GpioInputPort { port, pin, high ->
+            gpioDrives += Triple(port, pin, high)
+        }
+        ctx.registeredPorts["soc-gic.lines"] = object : InterruptSink {
+            override fun setLine(irq: Int, high: Boolean) {
+                gicTransitions += irq to high
+            }
+        }
+        ctx.registeredPorts["battery"] = object : BatteryPort {
+            override fun chargePercent(): Double = charge
+            override fun voltageMillivolts(): Int = voltage
+            override fun present(): Boolean = present
+            override fun charging(): Boolean = present && charging
+            override fun externalPowerConnected(): Boolean = extPower || charging
+            override fun addPowerStateListener(listener: () -> Unit): AutoCloseable {
+                activeListener = listener
+                return AutoCloseable { if (activeListener === listener) activeListener = null }
+            }
+        }
+
+        val peer = assertIs<StatefulComponent>(
+            PowerPeerFactory().create(
+                ctx,
+                mapOf(
+                    "profile" to finiteProfile,
+                    "inputFile" to "v3-input.json",
+                    "gpioPort" to "soc-gpio.outputs",
+                    "registerPort" to "",
+                    "powerButtonProfile" to switchProfile,
+                    "repeatLastCandidateRead" to true,
+                    "batteryPort" to "battery",
+                ),
+            ),
+        )
+        peer.start()
+        assertEquals(listOf(InterruptRoute("soc-gic.lines", 176..176)), peer.interruptRoutes())
+        fun readWord(sel: Int, tick: Long): Int =
+            transferFrame(ctx, selector = sel, startTick = tick).let { (it[1] shl 8) or it[2] }
+
+        // Initial detached state: GPIO(8, 0) = false, sel 0x0E = 0x0001, sel 0x12 = 0x0000, no spurious cold-boot IRQ
+        assertEquals(listOf(Triple(8, 0, false)), gpioDrives)
+        assertTrue(gicTransitions.isEmpty())
+        assertEquals(0x0001, readWord(14, 10L))
+        assertEquals(0x0000, readWord(18, 20L))
+
+        // Firmware writes sleep-timer setup 0x0101 to retained selector 18 (0x12)
+        transferFrame(ctx, selector = 18, startTick = 30L, wordValue = 0x0101, write = true)
+        assertEquals(0x0101, readWord(18, 40L))
+
+        // Connect USB-C charger & start charging -> GPIO(8, 0) goes HIGH, GIC IRQ 176 pulses rising edge,
+        // sel 0x0E = 0x0031 (bit 0 present | bit 4 USB power | bit 5 charging),
+        // sel 0x12 = 0x0111 (preserves written 0x0101 + bits[5:4]=0b01 USB power mode, without mutating stored[18]!)
+        charging = true
+        extPower = true
+        activeListener?.invoke()
+        assertEquals(Triple(8, 0, true), gpioDrives.last())
+        assertEquals(listOf(176 to false, 176 to true, 176 to false), gicTransitions)
+        assertEquals(0x0031, readWord(14, 50L))
+        assertEquals(0x0111, readWord(18, 60L))
+        assertEquals(0x0101, (peer.state()["stored"] as Map<*, *>)["18"])
+
+        // Charge complete on external USB power (charging=false, extPower=true) -> sel 0x0E = 0x0011, sel 0x12 = 0x0111
+        charging = false
+        extPower = true
+        charge = 100.0
+        activeListener?.invoke()
+        assertEquals(0x0011, readWord(14, 70L))
+        assertEquals(0x0111, readWord(18, 80L))
+
+        // Battery pack removed while external USB power remains connected -> sel 0x0E = 0x0010, sel 0x03 > 507
+        present = false
+        activeListener?.invoke()
+        assertEquals(0x0010, readWord(14, 90L))
+        assertTrue(readWord(3, 100L) > 507)
+
+        // Disconnect external USB power -> GPIO(8, 0) goes LOW, sel 0x12 returns to exact stored 0x0101
+        present = true
+        extPower = false
+        activeListener?.invoke()
+        assertEquals(Triple(8, 0, false), gpioDrives.last())
+        assertEquals(0x0001, readWord(14, 110L))
+        assertEquals(0x0101, readWord(18, 120L))
+
+        peer.close()
+        assertNull(activeListener)
+    }
+
+    @Test
     fun shutdownWriteToRegister15WithLiveBatteryPresentBit0SucceedsUnderMask0xC001AndRejectsUndeclaredBits() {
         val base = v3InputData()
         val inputs = (base["inputs"] as Map<*, *>).entries.associateTo(LinkedHashMap<String, Any>()) { (k, v) -> k as String to requireNotNull(v) }.apply { put("15", 0) }

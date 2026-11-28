@@ -109,4 +109,86 @@ class BatterySnapshotTest {
             assertTrue(harness.batteryPort.present())
         }
     }
+
+    @Test
+    fun chargingExternalPowerCurveListenersAndDriftSynchronizeAndRoundTrip() {
+        var nowTick = 1_000_000L
+        lateinit var registeredPort: BatteryPort
+        val context = object : ComponentContext {
+            override val directory: Path = Path.of("unused-battery-charging-test")
+            override val clock = EmulationClock { nowTick }
+            override val ports = object : Ports {
+                override fun <T : Any> register(owner: String, name: String, type: Class<T>, port: T) {
+                    assertEquals<Class<*>>(BatteryPort::class.java, type)
+                    registeredPort = port as BatteryPort
+                }
+                override fun <T : Any> find(name: String, type: Class<T>): T? = null
+                override fun removeOwner(owner: String) {}
+            }
+            override val events = object : EventChannel {
+                override fun publish(event: ComponentEvent) = error("unexpected battery event")
+                override fun subscribe(listener: (ComponentEvent) -> Unit): AutoCloseable = error("unexpected subscribe")
+            }
+            override fun dataPath(relative: String): Path = error("unexpected dataPath")
+        }
+
+        val factory = BatteryFactory()
+        val comp = factory.create(
+            context,
+            mapOf("chargePercent" to 60.0, "voltageMillivolts" to 7400L, "present" to true),
+        ) as StatefulComponent
+        val control = assertIs<PowerControlPort>(registeredPort)
+
+        var notifications = 0
+        val lease = registeredPort.addPowerStateListener { notifications++ }
+
+        assertFalse(registeredPort.charging())
+        assertFalse(registeredPort.externalPowerConnected())
+        assertTrue(registeredPort.chargeRatePercentPerHour() < 0.0)
+
+        // Enabling charging automatically connects external USB-C power and derives NP-W235 charging voltage
+        val chargingStatus = control.updatePowerState(chargePercent = 78.0, charging = true, autoChargeDrift = true)
+        assertEquals(1, notifications)
+        assertTrue(chargingStatus.charging)
+        assertTrue(chargingStatus.externalPowerConnected)
+        assertEquals(78.0, chargingStatus.chargePercent)
+        assertEquals(NpW235BatteryCurve.deriveMillivolts(78.0, charging = true), chargingStatus.voltageMillivolts)
+        assertEquals(36.0, chargingStatus.chargeRatePercentPerHour)
+
+        // Advance virtual clock by 50 seconds (5 x 10s intervals at 54 MHz = +0.5% SOC)
+        nowTick += 5L * 540_000_000L
+        assertEquals(78.5, registeredPort.chargePercent(), 1e-6)
+        assertEquals(NpW235BatteryCurve.deriveMillivolts(78.5, charging = true), registeredPort.voltageMillivolts())
+
+        // Snapshot round-trip preserves charging, externalPowerConnected, and drifted chargePercent
+        val snap = simulateJsonRoundTripMap(comp.saveSnapshot())
+        val harnessRestored = BatteryTestHarness()
+        val restored = factory.create(
+            harnessRestored.context,
+            mapOf("chargePercent" to 100.0, "voltageMillivolts" to 7400L, "present" to true),
+        ) as StatefulComponent
+        restored.restoreSnapshot(snap)
+        assertTrue(harnessRestored.batteryPort.charging())
+        assertTrue(harnessRestored.batteryPort.externalPowerConnected())
+        assertEquals(78.5, harnessRestored.batteryPort.chargePercent(), 1e-6)
+
+        // Plugged in, not charging (charge complete / idle on external power) -> CRATE == 0.0
+        control.applyPowerAction(mapOf("charging" to false, "externalPowerConnected" to true))
+        assertFalse(registeredPort.charging())
+        assertTrue(registeredPort.externalPowerConnected())
+        assertEquals(0.0, registeredPort.chargeRatePercentPerHour())
+
+        // Unplugging external USB-C power clears both externalPowerConnected and charging
+        control.applyPowerAction(mapOf("usbVbusConnected" to false))
+        assertFalse(registeredPort.charging())
+        assertFalse(registeredPort.externalPowerConnected())
+        assertTrue(registeredPort.chargeRatePercentPerHour() < 0.0)
+
+        lease.close()
+        val countBeforeAfterClose = notifications
+        control.updatePowerState(charging = true)
+        assertEquals(countBeforeAfterClose, notifications)
+        comp.close()
+        restored.close()
+    }
 }

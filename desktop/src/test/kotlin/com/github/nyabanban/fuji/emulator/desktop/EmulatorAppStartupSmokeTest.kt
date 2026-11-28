@@ -63,11 +63,12 @@ class EmulatorAppStartupSmokeTest {
                     val scene = assertNotNull(stage.scene, "EmulatorApp.start() must attach Scene")
                     val tabPane = scene.root.lookup(".studio-sidebar") as? TabPane
                     assertNotNull(tabPane, "EmulatorApp.start() must create sidebar TabPane")
-                    assertEquals(7, tabPane.tabs.size, "Expected all 7 sidebar tabs initialized (Controls, Lens, Audio, Components, Evidence, Diagnostics, Dictionary)")
+                    assertEquals(8, tabPane.tabs.size, "Expected all 8 sidebar tabs initialized (Controls, Lens, Audio, Wi-Fi, Components, Evidence, Diagnostics, Dictionary)")
 
-                    // Exercise selecting Components & Diagnostics tabs so configTab, configurationScroll, and diagnosticsTab are proven live
+                    // Exercise selecting Wi-Fi, Components & Diagnostics tabs so wifiTab, configTab, configurationScroll, and diagnosticsTab are proven live
                     tabPane.selectionModel.select(3)
-                    tabPane.selectionModel.select(5)
+                    tabPane.selectionModel.select(4)
+                    tabPane.selectionModel.select(6)
                     tabPane.selectionModel.select(0)
                     assertTrue(stage.isShowing, "Main entry stage must be showing after start()")
 

@@ -13,7 +13,10 @@ import com.github.nyabanban.fuji.emulator.api.MmioDevice
  *
  * Zero writes exist anywhere in firmware. Default state is detached (`0L`).
  */
-internal class UsbVbusA300Input(private val presentProvider: () -> Boolean) : MmioDevice {
+internal class UsbVbusA300Input(
+    private val presentProvider: () -> Boolean,
+    private val scalarPresentProvider: () -> Boolean = presentProvider,
+) : MmioDevice {
     override val clockOrder = 70
 
     private fun word(): Long = if (presentProvider()) 1L else 0L
@@ -37,7 +40,7 @@ internal class UsbVbusA300Input(private val presentProvider: () -> Boolean) : Mm
 
     fun saveSnapshot(): Map<String, Any> = linkedMapOf(
         "profile" to PROFILE,
-        "present" to presentProvider(),
+        "present" to scalarPresentProvider(),
     )
 
     fun validateSnapshot(raw: Any?, expectedPresent: Boolean) {

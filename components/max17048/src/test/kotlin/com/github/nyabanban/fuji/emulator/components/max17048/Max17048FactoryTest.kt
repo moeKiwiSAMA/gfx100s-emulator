@@ -9,6 +9,9 @@ class Max17048FactoryTest {
     private class Harness(
         var pct: Double = 87.5,
         var mv: Int = 7800,
+        var isCharging: Boolean = false,
+        var extPower: Boolean = false,
+        var isPresent: Boolean = true,
     ) : ComponentContext {
         override val directory: Path = Path.of("unused-max17048-test")
         override val clock = EmulationClock { 0L }
@@ -23,7 +26,9 @@ class Max17048FactoryTest {
             registered["battery"] = object : BatteryPort {
                 override fun chargePercent(): Double = pct
                 override fun voltageMillivolts(): Int = mv
-                override fun present(): Boolean = true
+                override fun present(): Boolean = isPresent
+                override fun charging(): Boolean = isPresent && isCharging
+                override fun externalPowerConnected(): Boolean = extPower || isCharging
             }
             registered["i2c-bus.bus1"] = object : I2cBusPort {
                 override fun connect(owner: String): I2cConnection = error("unused")
@@ -109,5 +114,40 @@ class Max17048FactoryTest {
         comp.close()
         comp2.close()
         assertNull(h.registeredSlave)
+    }
+
+    @Test
+    fun reportsSignedTwoComplementCrateForChargingFullExternalPowerAndDischarging() {
+        val h = Harness(pct = 65.0, mv = 7950, isCharging = true, extPower = true)
+        val comp = Max17048Factory().create(h, mapOf("enabled" to true)) as StatefulComponent
+        comp.start()
+        val slave = assertNotNull(h.registeredSlave)
+
+        // Charging (+36.0 %/hr / 0.208 = +173 = 0x00AD > 0)
+        val chargingCrate = readWord16(slave, Max17048Device.REG_CRATE).toShort().toInt()
+        assertEquals(173, chargingCrate)
+        assertTrue(chargingCrate > 0)
+
+        // CV top-off at 100% while charging (+6.0 %/hr / 0.208 = +29 > 0)
+        h.pct = 100.0
+        val topOffCrate = readWord16(slave, Max17048Device.REG_CRATE).toShort().toInt()
+        assertEquals(29, topOffCrate)
+
+        // External USB power connected, not charging -> CRATE == 0
+        h.isCharging = false
+        h.extPower = true
+        assertEquals(0, readWord16(slave, Max17048Device.REG_CRATE).toShort().toInt())
+
+        // On battery alone (discharging -12.0 %/hr / 0.208 = -58 = 0xFFC6 < 0)
+        h.extPower = false
+        val dischargingRaw = readWord16(slave, Max17048Device.REG_CRATE)
+        assertEquals(0xFFC6, dischargingRaw)
+        assertEquals(-58, dischargingRaw.toShort().toInt())
+
+        // Battery removed -> CRATE == 0
+        h.isPresent = false
+        assertEquals(0, readWord16(slave, Max17048Device.REG_CRATE))
+
+        comp.close()
     }
 }

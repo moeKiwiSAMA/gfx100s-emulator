@@ -17,6 +17,7 @@ import com.github.nyabanban.fuji.emulator.desktop.panels.MomentaryHoldPolicy
 import com.github.nyabanban.fuji.emulator.desktop.panels.PanelCatalog
 import com.github.nyabanban.fuji.emulator.desktop.panels.PanelControl
 import com.github.nyabanban.fuji.emulator.desktop.panels.StudioTypography
+import com.github.nyabanban.fuji.emulator.desktop.panels.WifiNetworkPanel
 import com.github.nyabanban.fuji.emulator.desktop.theme.BodyTheme
 import com.github.nyabanban.fuji.emulator.desktop.theme.UiTheme
 import com.github.nyabanban.fuji.emulator.desktop.theme.UiThemeRegistry
@@ -50,6 +51,7 @@ class EmulatorApp : Application() {
     private lateinit var studio: CameraStudio
     private lateinit var audioAdapter: HostAudioRuntimeAdapter
     private lateinit var audioIoPanel: AudioIoPanel
+    private lateinit var wifiNetworkPanel: WifiNetworkPanel
     private lateinit var lensProfileTabPanel: LensProfilePanel
     private lateinit var opticalFilterTabPanel: OpticalFilterPane
     private lateinit var orientationIbisPane: OrientationIbisPane
@@ -84,11 +86,14 @@ class EmulatorApp : Application() {
     private lateinit var lensTab: Tab
     private lateinit var configTab: Tab
     private lateinit var audioTab: Tab
+    private lateinit var wifiTab: Tab
     private lateinit var diagnosticsTab: Tab
     private data class RefreshPayload(
         val snapshot: Map<String, Any?>,
         val formattedDiagnostics: String?,
         val audioStatus: Map<String, Any?>?,
+        val wifiStatus: Map<String, Any?>?,
+        val powerStatus: Map<String, Any?>?,
     )
     private val editors = linkedMapOf<String, TextField>()
     private val observedValues = hashMapOf<String, String>()
@@ -687,6 +692,14 @@ class EmulatorApp : Application() {
             onStatus = updateStatusText,
             onError = ::error,
         )
+        wifiNetworkPanel = WifiNetworkPanel(
+            fetchStatus = runtime.wifiRuntime::statusMap,
+            fetchInterfaces = runtime.wifiRuntime::listHostInterfaces,
+            applyPatchAsync = { patch -> runtime.wifiRuntime.reconfigureAsync(patch) },
+            resetAsync = { runtime.wifiRuntime.resetAsync() },
+            onStatus = updateStatusText,
+            onError = ::error,
+        )
         val persistGraphicsChoice: (String?, String?) -> Unit = { backend, device ->
             if (LaunchContext.smokePath == null) {
                 themeController.updateGraphicsPreferences(opticsBackend = backend, vulkanDevice = device)
@@ -725,6 +738,11 @@ class EmulatorApp : Application() {
         audioTab = Tab().apply {
             textProperty().bind(I18n.bind("app.tab.audio"))
             content = ScrollPane(audioIoPanel.root).apply { isFitToWidth = true }
+            isClosable = false
+        }
+        wifiTab = Tab().apply {
+            textProperty().bind(I18n.bind("app.tab.wifi"))
+            content = ScrollPane(wifiNetworkPanel.root).apply { isFitToWidth = true }
             isClosable = false
         }
         val autoRefreshDiagnostics = CheckBox().apply {
@@ -790,11 +808,12 @@ class EmulatorApp : Application() {
             tabs.addAll(
                 lensTab,
                 audioTab,
+                wifiTab,
                 configTab,
                 evidenceTab,
                 diagnosticsTab)
             selectionModel.selectedItemProperty().addListener { _, _, selected ->
-                if (selected === lensTab || (selected === diagnosticsTab && !diagnosticsController.hasRenderedDiagnostics)) {
+                if (selected === lensTab || selected === wifiTab || (selected === diagnosticsTab && !diagnosticsController.hasRenderedDiagnostics)) {
                     refresh()
                 }
             }
@@ -878,6 +897,7 @@ class EmulatorApp : Application() {
             onOpenLensProfile = { lensProfileWindow.setVisible(true) },
             applyAudioPatch = audioAdapter::applyPatchAsync,
             onOpenAudioPanel = { showControls(true); side.selectionModel.select(audioTab) },
+            applyPowerPatch = { patch -> runtime.powerRuntime.reconfigureAsync(patch) },
             onStatusMessage = updateStatusText,
             initialBodyTheme = themeController.bodyTheme,
             initialUiTheme = themeController.uiTheme,
@@ -1035,6 +1055,13 @@ class EmulatorApp : Application() {
             audioIoPanel.observeStatusMap(st)
             studio.observeAudioStatus(st)
         }
+        wifiNetworkPanel.refreshInterfacesAsync()
+        runCatching { runtime.wifiRuntime.statusMap() }.getOrNull()?.let { st ->
+            wifiNetworkPanel.observeStatusMap(st, forceEditorSync = true)
+        }
+        runCatching { runtime.powerRuntime.statusMap() }.getOrNull()?.let { st ->
+            studio.observePowerStatus(st)
+        }
         runtime.host.snapshot().whenComplete { data, problem -> Platform.runLater {
             if (problem == null) {
                 buildConfig(data)
@@ -1139,6 +1166,7 @@ class EmulatorApp : Application() {
         val showLensOpticsTab = entryStage.isShowing && selectedTab === lensTab
         val showDiagnosticsTab = entryStage.isShowing && selectedTab === diagnosticsTab
         val showAudioTab = entryStage.isShowing && selectedTab === audioTab
+        val showWifiTab = entryStage.isShowing && selectedTab === wifiTab
         val configChanged = runtime.host.configRevision != lastObservedConfigRevision
         val needLensState = configChanged || showLensOpticsTab || lensProfileWindow.isShowing
         val needOrientationIbisState = configChanged || showLensOpticsTab
@@ -1157,6 +1185,13 @@ class EmulatorApp : Application() {
         )
         if (fetchAudio) {
             diagnosticsController.markAudioFetchDispatched(nowNanos)
+        }
+        val fetchWifi = diagnosticsController.shouldFetchWifi(
+            wifiTabVisible = showWifiTab,
+            nowNanos = nowNanos,
+        )
+        if (fetchWifi) {
+            diagnosticsController.markWifiFetchDispatched(nowNanos)
         }
         val mainSeq = runtime.displayBridge.stats("display.main")?.lastPublishedSequence ?: 0L
         val evfSeq = runtime.displayBridge.stats("display.evf")?.lastPublishedSequence ?: 0L
@@ -1194,7 +1229,17 @@ class EmulatorApp : Application() {
             } else {
                 null
             }
-            RefreshPayload(snapshot, formattedDiagnostics, audioStatus)
+            val wifiStatus = if (fetchWifi) {
+                runCatching { runtime.wifiRuntime.statusMap() }.getOrNull()
+            } else {
+                null
+            }
+            val powerStatus = if (fetchAudio) {
+                runCatching { runtime.powerRuntime.statusMap() }.getOrNull()
+            } else {
+                null
+            }
+            RefreshPayload(snapshot, formattedDiagnostics, audioStatus, wifiStatus, powerStatus)
         }, uiBackgroundExecutor).whenComplete { payload, problem -> Platform.runLater {
             try {
                 if (problem != null) {
@@ -1229,6 +1274,14 @@ class EmulatorApp : Application() {
                 if (audioStatus != null) {
                     audioIoPanel.observeStatusMap(audioStatus)
                     studio.observeAudioStatus(audioStatus)
+                }
+                val wifiStatus = payload.wifiStatus
+                if (wifiStatus != null) {
+                    wifiNetworkPanel.observeStatusMap(wifiStatus)
+                }
+                val powerStatus = payload.powerStatus
+                if (powerStatus != null) {
+                    studio.observePowerStatus(powerStatus)
                 }
                 if (configChanged || showLensOpticsTab) {
                     lensProfileTabPanel.observeSnapshot(snapshot)

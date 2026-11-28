@@ -66,6 +66,7 @@ class CameraStudio(private val owner: Stage, sendButton: (String, Boolean) -> Co
     private val onOpenLensProfile: (() -> Unit)? = null,
     private val applyAudioPatch: ((Map<String, Any?>) -> CompletableFuture<Map<String, Any?>>)? = null,
     private val onOpenAudioPanel: (() -> Unit)? = null,
+    private val applyPowerPatch: ((Map<String, Any?>) -> CompletableFuture<Map<String, Any?>>)? = null,
     private val onStatusMessage: (String) -> Unit = {},
     initialBodyTheme: BodyTheme = BodyThemeRegistry.origin(),
     initialUiTheme: UiTheme = UiThemeRegistry.origin(),
@@ -557,6 +558,7 @@ class CameraStudio(private val owner: Stage, sendButton: (String, Boolean) -> Co
     val shootingControlsPane: ShootingControlsPane
     val sourceSelectorPane: SourceSelectorPane
     val opticalFilterPane: OpticalFilterPane
+    val batteryChargingPane: BatteryChargingPane
     val quickAudioStripPane: QuickAudioStripPane
     val root = BorderPane()
     val viewTitleProperty = SimpleStringProperty(I18n.t("studio.view.default_title"))
@@ -806,6 +808,11 @@ class CameraStudio(private val owner: Stage, sendButton: (String, Boolean) -> Co
             onStatus = onStatusMessage,
             onError = failure,
         )
+        batteryChargingPane = BatteryChargingPane(
+            applyPowerPatch = applyPowerPatch,
+            onStatus = onStatusMessage,
+            onError = failure,
+        )
         quickAudioStripPane = QuickAudioStripPane(
             applyAudioPatch = applyAudioPatch,
             onOpenAudioPanel = onOpenAudioPanel,
@@ -882,6 +889,7 @@ class CameraStudio(private val owner: Stage, sendButton: (String, Boolean) -> Co
             facesCard,
             sourceSelectorPane.root,
             opticalFilterPane.root,
+            batteryChargingPane.root,
             quickAudioStripPane.root,
         ).apply { padding = Insets(8.0) }
         refreshAllBodyIndicators()
@@ -3343,6 +3351,7 @@ class CameraStudio(private val owner: Stage, sendButton: (String, Boolean) -> Co
         shootingControlsPane.observeSnapshot(snapshot)
         sourceSelectorPane.observeSnapshot(snapshot)
         opticalFilterPane.observeSnapshot(snapshot)
+        batteryChargingPane.observeSnapshot(snapshot)
         applyLayersFromSnapshot(snapshot)
     }
     @Suppress("UNCHECKED_CAST")
@@ -3421,6 +3430,9 @@ class CameraStudio(private val owner: Stage, sendButton: (String, Boolean) -> Co
     }
     fun observeAudioStatus(status: Map<String, Any?>?) {
         quickAudioStripPane.observeStatusMap(status)
+    }
+    fun observePowerStatus(status: Map<String, Any?>?) {
+        batteryChargingPane.observeStatusMap(status)
     }
     fun releaseAll(includeLatching: Boolean = true) {
         cancelAndReleaseTouch()

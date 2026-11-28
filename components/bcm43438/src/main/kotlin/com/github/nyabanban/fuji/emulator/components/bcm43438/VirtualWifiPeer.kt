@@ -140,6 +140,25 @@ internal class VirtualWifiPeer(
         }
     }
 
+    /** Passively updates observed camera IP and PTP-IP port counters without generating duplicate L2 replies. */
+    fun observePassiveFrame(frame: ByteArray) {
+        if (frame.size < 34 || u16Be(frame, 12) != ETHER_TYPE_IPV4) return
+        val ihl = (frame[14].toInt() and 0x0f) * 4
+        if (ihl < 20 || 14 + ihl > frame.size) return
+        val srcIp = formatIpv4(frame, 26)
+        if (srcIp != "0.0.0.0") observedCameraIp = srcIp
+        val proto = frame[23].toInt() and 0xff
+        val l4Off = 14 + ihl
+        if (proto == 6 && l4Off + 20 <= frame.size) {
+            val srcPort = u16Be(frame, l4Off)
+            val dstPort = u16Be(frame, l4Off + 2)
+            if (srcPort in PTP_IP_PORTS || dstPort in PTP_IP_PORTS) {
+                ptpIpReady = true
+                ptpIpExchangeCount++
+            }
+        }
+    }
+
     private fun handleArp(frame: ByteArray) {
         if (frame.size < 42) return
         val op = u16Be(frame, 20)

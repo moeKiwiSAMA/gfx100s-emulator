@@ -4,6 +4,7 @@ import com.github.nyabanban.fuji.emulator.api.BokehMaskShape
 import com.github.nyabanban.fuji.emulator.api.ControlClient
 import com.github.nyabanban.fuji.emulator.api.NdFilterPreset
 import com.github.nyabanban.fuji.emulator.api.NdFilterSpec
+import com.github.nyabanban.fuji.emulator.api.NpW235BatteryCurve
 import com.github.nyabanban.fuji.emulator.api.OpticalFilterSlotCodec
 import com.github.nyabanban.fuji.emulator.api.UvFilterPreset
 import com.sun.net.httpserver.HttpExchange
@@ -39,6 +40,8 @@ class ControlServer(
     private val themeReload: (() -> Map<String, Any?>)? = null,
     private val flashStatus: (() -> Map<String, Any?>)? = null,
     private val flashAction: ((Map<String, Any?>) -> Map<String, Any?>)? = null,
+    private val batteryStatus: (() -> Map<String, Any?>)? = null,
+    private val batteryAction: ((Map<String, Any?>) -> Map<String, Any?>)? = null,
 ) : AutoCloseable {
     @Volatile
     private var fallbackLanguage: String = "en"
@@ -310,6 +313,32 @@ class ControlServer(
                 if (result == null) respond(request, 404, mapOf("error" to "bcm43438 wireless unavailable"))
                 else respond(request, 200, result)
             }
+            path == "/api/battery" && request.requestMethod == "GET" -> {
+                val result = batteryStatus?.invoke() ?: inspectBatteryViaControl()
+                if (result == null) respond(request, 404, mapOf("error" to "battery component unavailable"))
+                else respond(request, 200, result)
+            }
+            path == "/api/battery" && request.requestMethod == "POST" -> {
+                requireJson(request)
+                val body = readJsonObject(readBody(request))
+                val normalized = validateBatteryPayload(body)
+                val result = batteryAction?.invoke(normalized) ?: dispatchBatteryViaControl(normalized)
+                if (result == null) respond(request, 404, mapOf("error" to "battery component unavailable"))
+                else respond(request, 200, result)
+            }
+            path == "/api/power" && request.requestMethod == "GET" -> {
+                val result = batteryStatus?.invoke() ?: inspectBatteryViaControl()
+                if (result == null) respond(request, 404, mapOf("error" to "battery component unavailable"))
+                else respond(request, 200, result)
+            }
+            path == "/api/power" && request.requestMethod == "POST" -> {
+                requireJson(request)
+                val body = readJsonObject(readBody(request))
+                val normalized = validateBatteryPayload(body)
+                val result = batteryAction?.invoke(normalized) ?: dispatchBatteryViaControl(normalized)
+                if (result == null) respond(request, 404, mapOf("error" to "battery component unavailable"))
+                else respond(request, 200, result)
+            }
             path == "/api/lens" && request.requestMethod == "GET" -> {
                 val result = inspectLensViaControl()
                 if (result == null) respond(request, 404, mapOf("error" to "lens component unavailable"))
@@ -531,12 +560,109 @@ class ControlServer(
         val components = snapshot["components"] as? List<Map<String, Any?>> ?: return null
         val chip = components.singleOrNull { it["id"] == "bcm43438" } ?: return null
         val revision = (chip["revision"] as? Number)?.toLong() ?: return null
-        val allowed = setOf("deviceName", "blePeerConnected", "wifiPeerConnected", "ptpIpBridgeEnabled")
+        val allowed = setOf(
+            "deviceName", "blePeerConnected", "wifiPeerConnected", "ptpIpBridgeEnabled",
+            "wifiNetworkEnabled", "wifiNetworkMode", "wifiSsid", "wifiPassphrase",
+            "wifiMacAddr", "wifiSubnetCidr", "wifiGatewayIp", "wifiGuestIp",
+            "wifiDnsServers", "wifiBridgeInterface", "wifiHostOnlyLoopbackForward",
+            "wifiHostOnlySubnetCidr", "wifiPortForwards",
+        )
         val patch = body.filterKeys { it in allowed }.mapValues { it.value as Any }
         require(patch.isNotEmpty()) { "wireless update requires non-empty subset of $allowed" }
         val updated = control.patch("bcm43438", revision, patch).join()
         @Suppress("UNCHECKED_CAST")
         return (updated["state"] as? Map<String, Any?>) ?: updated
+    }
+    private fun validateBatteryPayload(body: Map<String, Any?>): Map<String, Any> {
+        val allowed = setOf(
+            "present",
+            "chargePercent",
+            "batteryPercent",
+            "voltageMillivolts",
+            "charging",
+            "externalPowerConnected",
+            "usbVbusConnected",
+            "autoChargeDrift",
+        )
+        require(body.isNotEmpty() && body.keys.all { it in allowed }) {
+            "battery update requires non-empty subset of $allowed"
+        }
+        val out = LinkedHashMap<String, Any>()
+        if ("present" in body) {
+            out["present"] = body["present"] as? Boolean ?: throw IllegalArgumentException("present must be boolean")
+        }
+        val pctRaw = body["chargePercent"] ?: body["batteryPercent"]
+        if (pctRaw != null || "chargePercent" in body || "batteryPercent" in body) {
+            require(pctRaw is Number && pctRaw.toDouble().isFinite() && pctRaw.toDouble() in 0.0..100.0) {
+                "chargePercent must be a finite number in 0..100"
+            }
+            out["chargePercent"] = pctRaw.toDouble()
+        }
+        if ("voltageMillivolts" in body) {
+            out["voltageMillivolts"] = requireExactInt(body["voltageMillivolts"], "voltageMillivolts", 0..12000).toLong()
+        }
+        if ("charging" in body) {
+            out["charging"] = body["charging"] as? Boolean ?: throw IllegalArgumentException("charging must be boolean")
+        }
+        if ("externalPowerConnected" in body || "usbVbusConnected" in body) {
+            val extRaw = body["externalPowerConnected"] ?: body["usbVbusConnected"]
+            out["externalPowerConnected"] = extRaw as? Boolean
+                ?: throw IllegalArgumentException("externalPowerConnected must be boolean")
+        }
+        if ("autoChargeDrift" in body) {
+            out["autoChargeDrift"] = body["autoChargeDrift"] as? Boolean
+                ?: throw IllegalArgumentException("autoChargeDrift must be boolean")
+        }
+        return out
+    }
+    private fun inspectBatteryViaControl(): Map<String, Any?>? {
+        val snapshot = control.snapshot().join()
+        @Suppress("UNCHECKED_CAST")
+        val components = (snapshot["components"] as? List<Map<String, Any?>>)?.associateBy { it["id"] } ?: return null
+        val bat = components["battery"] ?: return null
+        @Suppress("UNCHECKED_CAST")
+        val st = (bat["state"] as? Map<String, Any?>).orEmpty()
+        @Suppress("UNCHECKED_CAST")
+        val cfg = (bat["config"] as? Map<String, Any?>).orEmpty()
+        val present = (st["present"] as? Boolean) ?: (cfg["present"] as? Boolean) ?: true
+        val pct = ((st["chargePercent"] as? Number) ?: (cfg["chargePercent"] as? Number))?.toDouble() ?: 100.0
+        val mv = ((st["voltageMillivolts"] as? Number) ?: (cfg["voltageMillivolts"] as? Number))?.toInt()
+            ?: NpW235BatteryCurve.NOMINAL_MILLIVOLTS
+        val rawCharging = (st["charging"] as? Boolean) ?: (cfg["charging"] as? Boolean) ?: false
+        val charging = present && rawCharging
+        val extPower = (st["externalPowerConnected"] as? Boolean)
+            ?: (cfg["externalPowerConnected"] as? Boolean)
+            ?: rawCharging
+        val crate = ((st["cratePercentPerHour"] as? Number) ?: (st["chargeRatePercentPerHour"] as? Number))?.toDouble()
+            ?: when {
+                !present -> 0.0
+                charging -> if (pct < 99.5) 36.0 else 6.0
+                extPower -> 0.0
+                else -> -12.0
+            }
+        val autoDrift = (st["autoChargeDrift"] as? Boolean) ?: (cfg["autoChargeDrift"] as? Boolean) ?: false
+        return linkedMapOf(
+            "ok" to true,
+            "component" to "battery",
+            "revision" to bat["revision"],
+            "present" to present,
+            "chargePercent" to pct,
+            "voltageMillivolts" to mv,
+            "charging" to charging,
+            "externalPowerConnected" to extPower,
+            "usbVbusConnected" to extPower,
+            "cratePercentPerHour" to crate,
+            "autoChargeDrift" to autoDrift,
+        )
+    }
+    private fun dispatchBatteryViaControl(changes: Map<String, Any>): Map<String, Any?>? {
+        val snapshot = control.snapshot().join()
+        @Suppress("UNCHECKED_CAST")
+        val components = snapshot["components"] as? List<Map<String, Any?>> ?: return null
+        val bat = components.singleOrNull { it["id"] == "battery" } ?: return null
+        val revision = (bat["revision"] as? Number)?.toLong() ?: return null
+        control.patch("battery", revision, changes).join()
+        return inspectBatteryViaControl()
     }
     private fun inspectLensViaControl(): Map<String, Any?>? {
         val snapshot = control.snapshot().join()

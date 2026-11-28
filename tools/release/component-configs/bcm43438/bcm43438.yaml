@@ -2,8 +2,8 @@
 # Built-in Wi-Fi & Bluetooth Wireless Radio (BCM43438)
 # File: configs/components/bcm43438/bcm43438.yaml
 #
-# Configures the camera's built-in Wi-Fi and Bluetooth 4.1 wireless adapter
-# and the virtual paired companion device shown in wireless menus.
+# Configures the camera's built-in Wi-Fi and Bluetooth 4.1 wireless adapter,
+# networking mode (NAT / BRIDGE / HOST_ONLY), and virtual companion device.
 # ==============================================================================
 
 # Enable the camera's Wi-Fi and Bluetooth radio.
@@ -22,12 +22,30 @@ wifiPeerConnected: false
 # testing external wireless transfer tools).
 ptpIpBridgeEnabled: false
 
-# --- Examples (uncomment to customize) ----------------------------------------
-# Auto-connect a virtual companion device on startup:
-# deviceName: "My Phone"
-# blePeerConnected: true
-# wifiPeerConnected: true
-#
-# Override the camera's Bluetooth and Wi-Fi MAC addresses:
-# btBdAddr: "02:46:4A:10:00:01"
-# wifiMacAddr: "02:46:4A:10:00:00"
+# Enable real Wi-Fi network stack for guest operating systems and firmware.
+wifiNetworkEnabled: true
+
+# Wi-Fi networking mode: NAT, BRIDGE, or HOST_ONLY.
+wifiNetworkMode: "NAT"
+
+# Default Wi-Fi access point SSID advertised to the guest.
+wifiSsid: "GFX100S-WiFi"
+
+# Optional WPA2 passphrase (leave empty for an open virtual access point).
+wifiPassphrase: ""
+
+# Virtual subnet, gateway, guest IP, and upstream DNS servers for NAT mode.
+wifiSubnetCidr: "192.168.42.0/24"
+wifiGatewayIp: "192.168.42.1"
+wifiGuestIp: "192.168.42.100"
+wifiDnsServers: "8.8.8.8,1.1.1.1"
+
+# Host network interface name or display name used when wifiNetworkMode is BRIDGE.
+wifiBridgeInterface: ""
+
+# Isolated subnet and localhost port forwarding used when wifiNetworkMode is HOST_ONLY.
+wifiHostOnlySubnetCidr: "192.168.56.0/24"
+wifiHostOnlyLoopbackForward: true
+
+# Optional host-to-guest port forwards (comma-separated, e.g. "2222:22,3389:3389").
+wifiPortForwards: ""

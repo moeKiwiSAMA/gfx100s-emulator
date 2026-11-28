@@ -12,6 +12,14 @@ import com.github.nyabanban.fuji.emulator.desktop.panels.AsyncDisplayBridge
 import com.github.nyabanban.fuji.emulator.desktop.panels.ViewfinderStatus
 import com.github.nyabanban.fuji.emulator.desktop.theme.ThemeRuntimeController
 import com.github.nyabanban.fuji.emulator.desktop.theme.UserProfileStore
+import com.github.nyabanban.fuji.emulator.desktop.power.BatteryPowerValidation
+import com.github.nyabanban.fuji.emulator.desktop.power.HostPowerRuntime
+import com.github.nyabanban.fuji.emulator.desktop.power.PowerLaunchCliOverrides
+import com.github.nyabanban.fuji.emulator.desktop.power.parsePowerLaunchArgs
+import com.github.nyabanban.fuji.emulator.desktop.wifi.HostWifiRuntime
+import com.github.nyabanban.fuji.emulator.desktop.wifi.WifiLaunchCliOverrides
+import com.github.nyabanban.fuji.emulator.desktop.wifi.WifiNetworkValidation
+import com.github.nyabanban.fuji.emulator.desktop.wifi.parseWifiLaunchArgs
 import com.github.nyabanban.fuji.emulator.firmware.*
 import com.github.nyabanban.fuji.emulator.runtime.*
 import javafx.application.Application
@@ -35,6 +43,10 @@ class EmulatorRuntime @JvmOverloads constructor(
     private val audioVolumeCli: Double? = System.getProperty("fuji.audio.volume")?.toDoubleOrNull(),
     private val startupProgress: Boolean = false,
     private val userProfilePath: Path? = null,
+    private val wifiCliOverrides: WifiLaunchCliOverrides = WifiLaunchCliOverrides(),
+    private val persistWifiChanges: Boolean = true,
+    private val powerCliOverrides: PowerLaunchCliOverrides = PowerLaunchCliOverrides(),
+    private val persistPowerChanges: Boolean = true,
 ) : AutoCloseable {
     private val log = LoggerFactory.getLogger(EmulatorRuntime::class.java)
     private val closed = java.util.concurrent.atomic.AtomicBoolean()
@@ -194,6 +206,22 @@ class EmulatorRuntime @JvmOverloads constructor(
         initialConfig = AudioPlaybackConfig.resolve(bootPlan.effectiveConfig, cliEnabled = audioEnabledCli, cliVolume = audioVolumeCli),
         deviceCatalog = AudioDeviceCatalog.defaultCatalog(home),
     )
+    val wifiRuntime = HostWifiRuntime(
+        home = home,
+        runtimeConfig = bootPlan.effectiveConfig,
+        owner = owner,
+        hostProvider = { host },
+        cliOverrides = wifiCliOverrides,
+        persistChanges = persistWifiChanges,
+    )
+    val powerRuntime = HostPowerRuntime(
+        home = home,
+        runtimeConfig = bootPlan.effectiveConfig,
+        owner = owner,
+        hostProvider = { host },
+        cliOverrides = powerCliOverrides,
+        persistChanges = persistPowerChanges,
+    )
     val session = FirmwareSession(
         host = host,
         home = home,
@@ -275,6 +303,8 @@ class EmulatorRuntime @JvmOverloads constructor(
                     log.info("Loaded {} hardware components in {} ms", host.components().size, elapsedMs)
                 }
                 audioPlayback.bindPorts(host.ports)
+                wifiRuntime.syncToHardwareOnOwner()
+                powerRuntime.syncToHardwareOnOwner()
                 catalog.bindLogicalPorts(host.logicalPortBindings(),host.logicalComponentProfiles())
                 catalog.bindCandidateInputs(host.candidateInputBindings())
             } catch(error:Throwable) { host.close();throw error }
@@ -381,6 +411,8 @@ class EmulatorRuntime @JvmOverloads constructor(
             }
         }
         audioPlayback.bindPorts(host.ports)
+        wifiRuntime.syncToHardwareOnOwner()
+        powerRuntime.syncToHardwareOnOwner()
         catalog.resetForColdReset()
         catalog.bindLogicalPorts(host.logicalPortBindings(), host.logicalComponentProfiles())
         catalog.bindCandidateInputs(host.candidateInputBindings())
@@ -428,6 +460,8 @@ class EmulatorRuntime @JvmOverloads constructor(
             RelaxedFlashPersistence.syncMutableManifest(home, config)
             host.load()
             audioPlayback.bindPorts(host.ports)
+            wifiRuntime.syncToHardwareOnOwner()
+            powerRuntime.syncToHardwareOnOwner()
             catalog.resetForColdReset()
             catalog.bindLogicalPorts(host.logicalPortBindings(), host.logicalComponentProfiles())
             catalog.bindCandidateInputs(host.candidateInputBindings())
@@ -681,6 +715,7 @@ class EmulatorRuntime @JvmOverloads constructor(
                 if (body["ptpIpBridgeEnabled"] == true && executionMode != RelaxedPeripheralFallback.MODE) {
                     throw IllegalArgumentException("ptpIpBridgeEnabled is only permitted in relaxed executionMode")
                 }
+                wifiRuntime.observeExternalWirelessAction(body)
                 owner.submit {
                     val port = host.ports.find("bcm43438.control", com.github.nyabanban.fuji.emulator.api.WirelessControlPort::class.java)
                         ?: throw IllegalStateException("bcm43438 wireless component unavailable")
@@ -739,6 +774,8 @@ class EmulatorRuntime @JvmOverloads constructor(
                     else -> throw IllegalArgumentException("Unsupported flash action '$action'")
                 }
             },
+            batteryStatus = { powerRuntime.statusMap() },
+            batteryAction = { body -> powerRuntime.reconfigure(body) },
         )
         log.info("Control API listening on {}", server!!.address)
     }
@@ -1208,6 +1245,8 @@ internal fun validateLaunchConfiguration(config: Map<String, Any?>) {
         }
     }
     AudioPlaybackConfig.validateConfigValue(config[AudioPlaybackConfig.CONFIG_KEY])
+    WifiNetworkValidation.validateConfigValue(config[WifiNetworkValidation.CONFIG_KEY])
+    BatteryPowerValidation.validateConfigValue(config[BatteryPowerValidation.CONFIG_KEY])
     TelemetryHubClient.validateLaunchConfig(config)
     if (config.containsKey("realTimePacer")) {
         require(relaxed) { "realTimePacer is only permitted in relaxed mode" }
@@ -1247,7 +1286,7 @@ internal fun validateLaunchConfiguration(config: Map<String, Any?>) {
         setOf("schema", "components", "httpPort", "firmwareMetadata", "instructionBudget", "enabledDevices")
     }
     val requiredKeys = if (customRawImage != null || hasNorFlashFile) baseRequired else baseRequired + "firmwareFile"
-    val optionalKeys = setOf("componentConfigs","executionMode","addressDictionary","discovery","tracePoints","tracePerPointLimit","memoryWatches","cbarInput","clusterProfile","clusterReset","mmuProfile","wordExclusive","transactionLimit","idleClock","undefinedExceptionProfile","prefetchAbortProfile","exceptionProfile","flashPartitionScope","powerBlockScope","flashReadPairScope","flashWritableSetScope","bootRomFile",BOOT_ROM_BOOT_KEY,"norFlashFile","factoryFlashFile","bootHoldButtons","profiler","realTimePacer","nativeLibrary",CpuEngineConfig.CPU_ENGINE_KEY,CpuEngineConfig.DYNARMIC_LIBRARY_KEY,CpuEngineConfig.SMP_HOST_THREADS_KEY,CustomFirmwareConfig.ALLOW_CUSTOM_KEY,CustomFirmwareConfig.CUSTOM_RAW_KEY,CustomFirmwareConfig.CUSTOM_KERNEL_KEY,AudioPlaybackConfig.CONFIG_KEY,TelemetryHubClient.CONFIG_KEY,TelemetryHubClient.LEGACY_UPLOAD_CONFIG_KEY,KernelLateCallObservation.KEY,Power2Bit8Admission.CONFIG_KEY,RelaxedBootstrapRam.CONFIG_KEY) +
+    val optionalKeys = setOf("componentConfigs","executionMode","addressDictionary","discovery","tracePoints","tracePerPointLimit","memoryWatches","cbarInput","clusterProfile","clusterReset","mmuProfile","wordExclusive","transactionLimit","idleClock","undefinedExceptionProfile","prefetchAbortProfile","exceptionProfile","flashPartitionScope","powerBlockScope","flashReadPairScope","flashWritableSetScope","bootRomFile",BOOT_ROM_BOOT_KEY,"norFlashFile","factoryFlashFile","bootHoldButtons","profiler","realTimePacer","nativeLibrary",CpuEngineConfig.CPU_ENGINE_KEY,CpuEngineConfig.DYNARMIC_LIBRARY_KEY,CpuEngineConfig.SMP_HOST_THREADS_KEY,CustomFirmwareConfig.ALLOW_CUSTOM_KEY,CustomFirmwareConfig.CUSTOM_RAW_KEY,CustomFirmwareConfig.CUSTOM_KERNEL_KEY,AudioPlaybackConfig.CONFIG_KEY,WifiNetworkValidation.CONFIG_KEY,BatteryPowerValidation.CONFIG_KEY,TelemetryHubClient.CONFIG_KEY,TelemetryHubClient.LEGACY_UPLOAD_CONFIG_KEY,KernelLateCallObservation.KEY,Power2Bit8Admission.CONFIG_KEY,RelaxedBootstrapRam.CONFIG_KEY) +
         (if (relaxed) setOf("instructionBudget") else emptySet()) +
         (if (customRawImage != null || hasNorFlashFile) setOf("firmwareFile") else emptySet())
     require(config.keys - optionalKeys == requiredKeys && config["schema"] == 1) { "invalid runtime config" }
@@ -1416,6 +1455,8 @@ internal fun executeMain(
         val cliAudioVolume = (option("--audio-volume")?.toDoubleOrNull()
             ?: System.getProperty("fuji.audio.volume")?.toDoubleOrNull())
             ?.let { if (it > 1.0 && it <= 100.0) it / 100.0 else it }
+        val cliWifiOverrides = parseWifiLaunchArgs(args)
+        val cliPowerOverrides = parsePowerLaunchArgs(args)
         val interactiveProgress = !isMachineOutputMode(args)
         val consoleOptions = parseConsoleLaunchOptions(args)
         val smokeUiRaw = option("--smoke-ui")
@@ -1432,6 +1473,10 @@ internal fun executeMain(
             audioVolumeCli = cliAudioVolume,
             startupProgress = interactiveProgress,
             userProfilePath = cliUserProfilePath,
+            wifiCliOverrides = cliWifiOverrides,
+            persistWifiChanges = smokeUiRaw == null && "--probe" !in args,
+            powerCliOverrides = cliPowerOverrides,
+            persistPowerChanges = smokeUiRaw == null && "--probe" !in args,
         )
 
         val initialRuntime = try {
