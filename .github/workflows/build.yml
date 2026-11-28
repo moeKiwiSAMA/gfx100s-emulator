@@ -213,6 +213,7 @@ jobs:
         run: |
           xvfb-run -a ./gradlew --no-daemon --build-cache \
             -PfujiBundleStockBins=false \
+            -PfujiTestForks=1 \
             :address-catalog:verifyCatalog \
             :address-catalog:test \
             :component-api:test \
