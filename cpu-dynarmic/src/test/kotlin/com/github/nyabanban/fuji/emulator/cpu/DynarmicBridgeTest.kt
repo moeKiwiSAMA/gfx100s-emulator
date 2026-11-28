@@ -1226,4 +1226,104 @@ class DynarmicBridgeTest {
             assertEquals(expectedWord1, d.getReg(0, 2), "Guest CPU must observe direct RAM copy word 1")
         }
     }
+
+    @Test
+    fun vfpFpexcDisableTrapsUndefAndSupportsLazyRtosContextSwitching() {
+        val dynLib = findDynarmicLib()
+        assumeTrue(dynLib != null, "Skipping lazy VFP FPEXC test: libfuji_dynarmic missing")
+
+        val vbar = 0x0000_0000L
+        val undHandlerAddr = 0x0000_0100L
+        val tcbAddr = DATA_BASE
+        val spUndAddr = STACK_BASE + 0x1000L
+        val spSvcAddr = STACK_BASE + 0x2000L
+        val vfpFuncAddr = CODE_BASE + 0x200L
+        val callerAddr = CODE_BASE + 0x300L
+
+        val undHandler = intArrayOf(
+            0xE92D0003.toInt(), // push {r0, r1}
+            0xE59D0008.toInt(), // ldr  r0, [sp, #8] (tcbAddr)
+            0xE5901000.toInt(), // ldr  r1, [r0, #0] (lazy_vfp_count)
+            0xE2811001.toInt(), // add  r1, r1, #1
+            0xE5801000.toInt(), // str  r1, [r0, #0]
+            0xE3A01001.toInt(), // mov  r1, #1
+            0xE58010A0.toInt(), // str  r1, [r0, #0xa0] ([tcb + 0xa0] = 1, matching ThreadX!)
+            0xE3A01101.toInt(), // mov  r1, #0x40000000
+            0xEEE81A10.toInt(), // vmsr fpexc, r1
+            0xE8BD0003.toInt(), // pop  {r0, r1}
+            SUBS_PC_LR_4,       // subs pc, lr, #4 (retry faulting VFP instruction)
+        )
+
+        val vfpFunc = intArrayOf(
+            0xED2D8B02.toInt(), // vpush {d8}
+            0xEE308A01.toInt(), // vadd.f32 s16, s0, s2 (3.25f + 4.5f = 7.75f)
+            0xEE182A10.toInt(), // vmov r2, s16
+            0xECBD8B02.toInt(), // vpop {d8}
+            0xE12FFF1E.toInt(), // bx lr
+        )
+
+        val bl1Off = ((vfpFuncAddr - (callerAddr + 8L) - 8L) / 4L).toInt() and 0x00FF_FFFF
+        val bl2Off = ((vfpFuncAddr - (callerAddr + 20L) - 8L) / 4L).toInt() and 0x00FF_FFFF
+        val callerCode = intArrayOf(
+            movImm(0, 0),
+            0xEEE80A10.toInt(),           // vmsr fpexc, r0 (disable VFP)
+            (0xEB000000L or bl1Off.toLong()).toInt(), // bl vfpFuncAddr (traps -> enables -> retries)
+            movImm(0, 0),
+            0xEEE80A10.toInt(),           // vmsr fpexc, r0 (re-disable VFP on already-cached block!)
+            (0xEB000000L or bl2Off.toLong()).toInt(), // bl vfpFuncAddr (must trap again without ClearCache!)
+            WFI_INSN,
+        )
+
+        Dynarmic(checkNotNull(dynLib), 1, 0xFFFF_0000L).use { d ->
+            d.map(0x0000_0000L, 0x0004_0000L, Dynarmic.PERM_ALL)
+            d.writePhysicalWord(vbar + 0x04L, 0xEA00_003DL) // UND vector -> b 0x100
+            d.writeMemory(undHandlerAddr, wordsToBytes(*undHandler))
+            d.writeMemory(vfpFuncAddr, wordsToBytes(*vfpFunc))
+            d.writeMemory(callerAddr, wordsToBytes(*callerCode))
+
+            // 1. Synchronous STOP_FAULT_UNDEF when AUTO_EXCP_UNDEF is off and FPEXC.EN == 0
+            d.setCpsr(0, INITIAL_CPSR)
+            d.setReg(0, 13, spSvcAddr)
+            d.setFpexc(0, 0L)
+            d.setReg(0, 15, vfpFuncAddr)
+            val syncFault = d.runFast(0, 100L, 0L, false)
+            assertEquals(Dynarmic.STOP_FAULT_UNDEF, syncFault.stopReason)
+            assertEquals(vfpFuncAddr, d.getReg(0, 15), "Faulting VFP instruction must report exact fault PC")
+            assertEquals(spSvcAddr, d.getReg(0, 13), "Faulting VPUSH must not decrement SP")
+
+            // 2. Warm up vfpFuncAddr with FPEXC.EN == 1, then verify two lazy-VFP traps without ClearCache
+            val f1Bits = java.lang.Float.floatToRawIntBits(3.25f).toLong() and 0xFFFF_FFFFL
+            val f2Bits = java.lang.Float.floatToRawIntBits(4.5f).toLong() and 0xFFFF_FFFFL
+            val expectBits = java.lang.Float.floatToRawIntBits(7.75f).toLong() and 0xFFFF_FFFFL
+            d.setDreg(0, 0, f1Bits) // s0 = 3.25f
+            d.setDreg(0, 1, f2Bits) // s2 = 4.5f
+            d.setDreg(0, 8, 0x1122_3344_5566_7788L)
+
+            val warmupAddr = CODE_BASE + 0x280L
+            val blWarmOff = ((vfpFuncAddr - warmupAddr - 8L) / 4L).toInt() and 0x00FF_FFFF
+            d.writeMemory(warmupAddr, wordsToBytes((0xEB000000L or blWarmOff.toLong()).toInt(), WFI_INSN))
+            d.setFpexc(0, 0x4000_0000L)
+            d.setReg(0, 15, warmupAddr)
+            assertEquals(Dynarmic.STOP_WFI, d.runFast(0, 1_000L, 0L, false).stopReason)
+            assertEquals(expectBits, d.getReg(0, 2))
+
+            d.writePhysicalWord(tcbAddr, 0L)
+            d.writePhysicalWord(tcbAddr + 0xA0L, 0L)
+            d.writePhysicalWord(spUndAddr, tcbAddr)
+            d.setCp15(0, 0, 12, 0, 0, vbar)
+            d.setBankedReg(0, Dynarmic.MODE_UND, 13, spUndAddr)
+            d.setAutoExceptions(Dynarmic.AUTO_EXCP_UNDEF)
+            d.setReg(0, 2, 0L)
+            d.setReg(0, 13, spSvcAddr)
+            d.setReg(0, 15, callerAddr)
+
+            val lazyRes = d.runFast(0, 5_000L, 0L, false)
+            assertEquals(Dynarmic.STOP_WFI, lazyRes.stopReason)
+            assertEquals(2L, d.physicalWord(tcbAddr), "UND lazy-VFP handler must fire on both FPEXC=0 transitions")
+            assertEquals(1L, d.physicalWord(tcbAddr + 0xA0L), "ThreadX [tcb + 0xa0] VFP active flag must be set")
+            assertEquals(0x4000_0000L, d.getFpexc(0))
+            assertEquals(expectBits, d.getReg(0, 2))
+            assertEquals(0x1122_3344_5566_7788L, d.getDreg(0, 8), "Callee-saved d8 must be preserved")
+        }
+    }
 }

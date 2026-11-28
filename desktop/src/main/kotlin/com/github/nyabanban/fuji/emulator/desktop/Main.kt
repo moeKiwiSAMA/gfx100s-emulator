@@ -469,13 +469,7 @@ class EmulatorRuntime @JvmOverloads constructor(
             var result: NorFlashTool.NorInspect? = null
             reloadHostAfterFlashMutationOnOwner { livePath ->
                 result = NorFlashTool.restoreFactoryNor(factoryPath, livePath)
-                val compDir = (config["components"] as? String)?.let { home.resolve(it) }
-                compDir?.resolve("power-peer/submcu-nvram.json")?.let { nvram ->
-                    runCatching { java.nio.file.Files.deleteIfExists(nvram) }
-                }
-                compDir?.resolve("power-peer/submcu-nvram.bin")?.let { nvram ->
-                    runCatching { java.nio.file.Files.deleteIfExists(nvram) }
-                }
+                NorFlashTool.clearCompanionSubMcuState(home, config)
             }
             checkNotNull(result)
         }.join()
@@ -977,6 +971,9 @@ class EmulatorRuntime @JvmOverloads constructor(
                     }
                 }
             }
+            if (more && stopRequested.get() && owner.isRunning) {
+                drainGracefulPowerOffIfNeeded()
+            }
             return if (owner.isRunning) {
                 owner.submit { session.state() }.join().also {
                     finalStatus = it["status"]?.toString() ?: "stopped"
@@ -1019,6 +1016,60 @@ class EmulatorRuntime @JvmOverloads constructor(
             session.logRelaxedSummaryIfNeeded()
             watchdog.close()
         }
+    }
+    private fun drainGracefulPowerOffIfNeeded() {
+        if (catalog.mode != RelaxedPeripheralFallback.MODE) return
+        if (bootPlan.activeNorPath == null) return
+        if ((telemetry.stageMask and FirmwareStage.STAGE_6_INTERACTIVE_UI.bit) == 0) return
+        if (session.isSocPoweredOff || !owner.isRunning) return
+        val startNanos = System.nanoTime()
+        val deadlineNanos = startNanos + 8_000_000_000L
+        val startTick = telemetry.virtualTick
+        val maxDrainVirtualTicks = 600_000_000L
+        val initiated = owner.submit {
+            if (session.isSocPoweredOff) return@submit false
+            val buttons = host.ports.find("buttons", com.github.nyabanban.fuji.emulator.api.ButtonPort::class.java)
+                ?: return@submit false
+            if (buttons.pressed("power")) {
+                host.patchLatestDirect("buttons", mapOf("power" to false), persistToDisk = false)
+            }
+            true
+        }.join()
+        if (!initiated) return
+        var keepGoing = true
+        while (
+            keepGoing &&
+            owner.isRunning &&
+            !session.isSocPoweredOff &&
+            (telemetry.virtualTick - startTick) < maxDrainVirtualTicks &&
+            System.nanoTime() < deadlineNanos
+        ) {
+            keepGoing = owner.submitRunnerSlice {
+                var batch = 0
+                var cont = true
+                val sliceDeadline = minOf(deadlineNanos, System.nanoTime() + 25_000_000L)
+                while (
+                    cont &&
+                    batch < 64 &&
+                    owner.isRunning &&
+                    !session.isSocPoweredOff &&
+                    (telemetry.virtualTick - startTick) < maxDrainVirtualTicks &&
+                    System.nanoTime() < sliceDeadline
+                ) {
+                    if (owner.hasPending()) owner.drainQueued()
+                    if (!owner.isRunning) break
+                    cont = session.stepFast()
+                    batch++
+                }
+                cont
+            }.join()
+        }
+        log.info(
+            "[SHUTDOWN] Graceful firmware power-off drain finished: socPoweredOff={}, deltaTicks={}, elapsedMs={}",
+            session.isSocPoweredOff,
+            telemetry.virtualTick - startTick,
+            (System.nanoTime() - startNanos) / 1_000_000L,
+        )
     }
     fun dump() = owner.submit {
         val state = host.snapshot().join() + mapOf("machine" to session.state(), "registerSnapshot" to session.registerSnapshot(), "javaVersion" to System.getProperty("java.version"))
@@ -1316,6 +1367,7 @@ internal fun executeMain(
                 ?: error("factoryFlashFile is not configured in $configPath")
             explicitCliTarget = factoryPath
             val result = NorFlashTool.restoreFactoryNor(factoryPath, norPath)
+            NorFlashTool.clearCompanionSubMcuState(home, config)
             print(Formats.jsonText(result.toMap())); return 0
         }
         if ("--query-address" in args || "--query-selector" in args || "--query-id" in args || "--query-coverage" in args) {
@@ -1532,6 +1584,7 @@ internal fun executeMain(
                     stopRequested.set(true)
                     paused.set(false)
                     stopLatch.countDown()
+                    runnerThread.get()?.let { runCatching { it.join(9000) } }
                     try { runtime.close() } finally { LogArchiver.shutdownLogging() }
                 }, "fuji-headless-shutdown")
                 Runtime.getRuntime().addShutdownHook(shutdownHook)
@@ -1555,7 +1608,7 @@ internal fun executeMain(
                     stopRequested.set(true)
                     paused.set(false)
                     console?.close()
-                    runnerThread.get()?.let { runCatching { it.join(2000) } }
+                    runnerThread.get()?.let { runCatching { it.join(9000) } }
                     runCatching { Runtime.getRuntime().removeShutdownHook(shutdownHook) }
                 }
                 headlessFailure.get()?.let { throw it }

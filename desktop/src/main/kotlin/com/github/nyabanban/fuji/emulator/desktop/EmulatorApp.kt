@@ -1362,7 +1362,7 @@ class EmulatorApp : Application() {
         stopRequested.set(true)
         paused.set(false)
         runnerThread?.let { thread ->
-            runCatching { thread.join(2000) }
+            runCatching { thread.join(9000) }
         }
         displayTimer?.stop()
         if(::timeline.isInitialized) timeline.stop()

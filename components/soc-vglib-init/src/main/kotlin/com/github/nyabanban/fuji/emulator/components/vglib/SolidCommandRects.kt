@@ -476,10 +476,12 @@ internal object SolidCommandRects {
         }
     }
 
-    private fun decodeFloat24(word: Int): Double? {
+    internal fun decodeFloat24(word: Int): Double? {
         if ((word ushr 24) != 0) return null
-        if (word == 0) return 0.0
-        val value = Math.scalb(1.0 + (word and 0xffff) / 65536.0, ((word ushr 16) and 0x7f) - 63) *
+        if ((word and 0x7fffff) == 0) return 0.0
+        val exp = (word ushr 16) and 0x7f
+        if (exp == 0x7f) return null
+        val value = Math.scalb(1.0 + (word and 0xffff) / 65536.0, exp - 63) *
             if ((word and 0x800000) == 0) 1.0 else -1.0
         return if (value.isFinite()) value else null
     }
@@ -720,7 +722,7 @@ internal object SolidCommandRects {
             horizontal(points.maxOf { it.first }),vertical(points.minOf { it.second }),color,blendMode == 8)
     }
 
-    private fun applyDmpColorTransform(color: Int, xform: List<Int>?): Int {
+    internal fun applyDmpColorTransform(color: Int, xform: List<Int>?): Int {
         if (xform == null || xform.size != 4) return color
         // DMP OpenVG 0x0180f01e: 4 words = [scaleRG, scaleBA, biasRG, biasBA] in signed Q7 (0x0080 = 1.0).
         // Identity [0x00800080, 0x00800080, 0, 0] is a zero-cost no-op.

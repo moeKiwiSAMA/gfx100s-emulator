@@ -78,6 +78,11 @@ internal class GraphicsCommandExecution(private val heap: GraphicsMode2Workspace
         val m4: Double = -scaleY,
         val m6: Double = left,
         val m7: Double = HEIGHT - top,
+        val rectX: Int = 0,
+        val rectY: Int = 0,
+        val texWidth: Int = width,
+        val texHeight: Int = height,
+        val customUv: DoubleArray? = null,
         val canvasHeight: Int = HEIGHT,
         val isAxisAligned: Boolean = true,
         val linearFilter: Boolean,
@@ -221,21 +226,44 @@ internal class GraphicsCommandExecution(private val heap: GraphicsMode2Workspace
         fragments: List<Packet>,
         streamState: SolidCommandRects.StreamState,
         texStorage: Int?,
+        texSize: Int?,
         texAddr: Long?,
+        uvMatrix: List<Int>?,
         textureFilter: Int,
+        imagePaintActive: Boolean,
         canvasWidth: Int = WIDTH,
         canvasHeight: Int = HEIGHT,
     ): Draw? {
+        if (!imagePaintActive) return null
+        val explicitTexEnable = fragments.lastOrNull { (it.header ushr 16) == 0x140 && (it.header and 0x1000) != 0 }
+        if (explicitTexEnable != null && (explicitTexEnable.data.singleOrNull()?.and(0xff) != 2)) return null
+        if (fragments.any { it.header == 0x185f004 } && fragments.none { it.header == 0x155f004 }) return null
+
         val rect = vertices.lastOrNull { it.header == 0x22 }?.data ?: return null
         if (rect.size < 4) return null
+        val rectX = rect[0]
+        val rectY = rect[1]
         val width = rect[2]
         val height = rect[3]
         if (width !in 1..4096 || height !in 1..4096) return null
+        if (rect.size >= 5 && rect[4] != -width) return null
 
         val storage = fragments.lastOrNull { it.header == 0x152f004 }?.data?.singleOrNull() ?: texStorage ?: return null
         val pitch = storage ushr 16
         val rows = storage and 65535
         if (pitch < width || rows < height || pitch !in 8..4096 || rows !in 8..4096 || ((pitch or rows) and 7) != 0) return null
+
+        val sizeWord = fragments.lastOrNull { it.header == 0x158f004 }?.data?.singleOrNull() ?: texSize
+        val texWidth: Int
+        val texHeight: Int
+        if (sizeWord != null) {
+            texWidth = sizeWord ushr 16
+            texHeight = sizeWord and 0xffff
+            if (texWidth !in width..pitch || texHeight !in height..rows) return null
+        } else {
+            texWidth = width
+            texHeight = height
+        }
 
         val drawTarget = fragments.lastOrNull { it.header == 0x1a4f004 }?.data?.singleOrNull()?.toUInt()?.toLong()
             ?: streamState.target
@@ -267,11 +295,39 @@ internal class GraphicsCommandExecution(private val heap: GraphicsMode2Workspace
         val m7 = matrix[7]
         val det = m0 * m4 - m1 * m3
         if (abs(det) <= 1e-9) return null
+        val rxD = rectX.toDouble()
+        val ryD = rectY.toDouble()
+        val originVgX = m6 + m0 * rxD + m3 * ryD
+        val originVgY = m7 + m1 * rxD + m4 * ryD
         val axisAligned = m1 == 0.0 && m3 == 0.0 && m0 > 0.0 && m4 < 0.0
-        val left = m6
-        val top = canvasHeight - m7
+        val left = originVgX
+        val top = canvasHeight - originVgY
         val scaleX = if (axisAligned) m0 else kotlin.math.hypot(m0, m1)
         val scaleY = if (axisAligned) -m4 else kotlin.math.hypot(m3, m4)
+
+        val customUv = if (rectX != 0 || rectY != 0 || texWidth != width || texHeight != height) {
+            val uvWords = fragments.lastOrNull { it.header == 0x10c7046 }?.data ?: uvMatrix
+            uvWords?.takeIf { it.size == 9 }?.let { words ->
+                val decoded = DoubleArray(9)
+                for (i in 0 until 9) {
+                    decoded[i] = SolidCommandRects.decodeFloat24(words[i]) ?: return@let null
+                }
+                if (decoded[6] != 0.0 || decoded[7] != 0.0 || abs(decoded[8] - 1.0) > 1e-3) return@let null
+                val halfW = 0.5 * width.toDouble()
+                val halfH = 0.5 * height.toDouble()
+                val centerVgX = originVgX + m0 * halfW + m3 * halfH
+                val centerVgY = originVgY + m1 * halfW + m4 * halfH
+                val centerU = texWidth * (decoded[0] * centerVgX + decoded[1] * centerVgY + decoded[2])
+                val centerV = texHeight * (decoded[3] * centerVgX + decoded[4] * centerVgY + decoded[5])
+                if (centerU in -0.5..(texWidth + 0.5) && centerV in -0.5..(texHeight + 0.5)) {
+                    doubleArrayOf(decoded[0], decoded[1], decoded[2], decoded[3], decoded[4], decoded[5])
+                } else {
+                    null
+                }
+            }
+        } else {
+            null
+        }
 
         val scissorWords = fragments.lastOrNull { it.header == 0xc0f00e }?.data ?: streamState.scissor
         val scissor = if (scissorWords != null && scissorWords.size == 2) {
@@ -296,18 +352,112 @@ internal class GraphicsCommandExecution(private val heap: GraphicsMode2Workspace
             m4 = m4,
             m6 = m6,
             m7 = m7,
+            rectX = rectX,
+            rectY = rectY,
+            texWidth = texWidth,
+            texHeight = texHeight,
+            customUv = customUv,
             canvasHeight = canvasHeight,
             isAxisAligned = axisAligned,
             linearFilter = (textureFilter and FILTER_LINEAR) != 0,
         )
     }
 
+    private fun decodeSolidQuad0x22(
+        vertices: List<Packet>,
+        fragments: List<Packet>,
+        streamState: SolidCommandRects.StreamState,
+        solidColor: Int?,
+        blendWord: Int,
+        ropEnableWord: Int,
+        canvasWidth: Int = WIDTH,
+        canvasHeight: Int = HEIGHT,
+    ): SolidCommandRects.Shape? {
+        val rawColor = fragments.lastOrNull { it.header == 0x185f004 }?.data?.singleOrNull() ?: solidColor ?: return null
+        val rect = vertices.lastOrNull { it.header == 0x22 }?.data ?: return null
+        if (rect.size < 4) return null
+        val rectX = rect[0]
+        val rectY = rect[1]
+        val width = rect[2]
+        val height = rect[3]
+        if (width !in 1..4096 || height !in 1..4096) return null
+        if (rect.size >= 5 && rect[4] != -width) return null
+
+        val drawTarget = fragments.lastOrNull { it.header == 0x1a4f004 }?.data?.singleOrNull()?.toUInt()?.toLong()
+            ?: streamState.target
+            ?: return null
+        if (drawTarget != target) return null
+
+        val matrix = vertices.lastOrNull { it.header == 0x41f046 }?.data?.takeIf { it.size == 9 }
+            ?.map { Float.fromBits(it).toDouble() }
+            ?: streamState.matrix
+            ?: return null
+        if (matrix.size != 9 || !matrix.all(Double::isFinite) ||
+            matrix[2] != 0.0 || matrix[5] != 0.0 || matrix[8] != 1.0
+        ) {
+            return null
+        }
+        val m0 = matrix[0]
+        val m1 = matrix[1]
+        val m3 = matrix[3]
+        val m4 = matrix[4]
+        val m6 = matrix[6]
+        val m7 = matrix[7]
+        if (abs(m0 * m4 - m1 * m3) <= 1e-9) return null
+
+        val xformEnable = fragments.lastOrNull { it.header == 0x1848004 }?.data?.singleOrNull() ?: 0
+        val xformWords = if (xformEnable == 0x01000000) {
+            fragments.lastOrNull { it.header == 0x180f01e }?.data?.takeIf { it.size == 4 }
+        } else {
+            null
+        }
+        val color = SolidCommandRects.applyDmpColorTransform(rawColor, xformWords)
+        // DMP vgClear non-8x8 fallback sets 0x1a04004 = 0 (blender bypass -> unconditional SRC overwrite);
+        // solid draws with 0x1a04004 = 0x10000 honor bit 3 of 0x1841004 (8 = SRC_OVER, 0 = SRC).
+        val srcOver = (ropEnableWord and 0x10000) != 0 && (blendWord and 8) != 0
+
+        val scissorWords = fragments.lastOrNull { it.header == 0xc0f00e }?.data ?: streamState.scissor
+        val scissor = if (scissorWords != null && scissorWords.size == 2) {
+            SolidCommandRects.parseScissor(scissorWords, canvasWidth, canvasHeight)
+        } else {
+            SolidCommandRects.Scissor(0, 0, canvasWidth, canvasHeight)
+        }
+
+        val rxD = rectX.toDouble()
+        val ryD = rectY.toDouble()
+        val w = width.toDouble()
+        val h = height.toDouble()
+        val ch = canvasHeight.toDouble()
+        val originVgX = m6 + m0 * rxD + m3 * ryD
+        val originVgY = m7 + m1 * rxD + m4 * ryD
+        val c0 = SolidCommandRects.Point(originVgX, ch - originVgY)
+        val c1 = SolidCommandRects.Point(originVgX + m0 * w, ch - (originVgY + m1 * w))
+        val c2 = SolidCommandRects.Point(originVgX + m0 * w + m3 * h, ch - (originVgY + m1 * w + m4 * h))
+        val c3 = SolidCommandRects.Point(originVgX + m3 * h, ch - (originVgY + m4 * h))
+        if (m1 == 0.0 && m3 == 0.0) {
+            val left = ceil(minOf(c0.x, c1.x) - 0.5).toInt().coerceIn(scissor.clipLeft, scissor.clipRight)
+            val right = ceil(maxOf(c0.x, c1.x) - 0.5).toInt().coerceIn(scissor.clipLeft, scissor.clipRight)
+            val top = ceil(minOf(c0.y, c3.y) - 0.5).toInt().coerceIn(scissor.clipTop, scissor.clipBottom)
+            val bottom = ceil(maxOf(c0.y, c3.y) - 0.5).toInt().coerceIn(scissor.clipTop, scissor.clipBottom)
+            return SolidCommandRects.Rect(left, top, right, bottom, color, srcOver, canvasWidth)
+        }
+        return SolidCommandRects.PolygonFill(
+            listOf(SolidCommandRects.Subpath(listOf(c0, c1, c2, c3), closed = true)),
+            color,
+            srcOver,
+            scissor,
+            canvasWidth,
+        )
+    }
+
     private fun paint(draw: Draw, texture: ByteArray, frame: ByteArray, canvasWidth: Int = WIDTH) {
         fun edge(position: Double) = ceil(position - 0.5).toInt()
         val pitchTiles = draw.pitch / 8
-        val exactCopy = draw.isAxisAligned && draw.scaleX == 1.0 && draw.scaleY == 1.0 &&
+        val isSubRectOrOffset = draw.rectX != 0 || draw.rectY != 0 ||
+            draw.texWidth != draw.width || draw.texHeight != draw.height || draw.customUv != null
+        val exactCopy = !isSubRectOrOffset && draw.isAxisAligned && draw.scaleX == 1.0 && draw.scaleY == 1.0 &&
             draw.left == kotlin.math.floor(draw.left) && draw.top == kotlin.math.floor(draw.top)
-        if (!draw.isAxisAligned || (draw.linearFilter && !exactCopy)) {
+        if (isSubRectOrOffset || !draw.isAxisAligned || (draw.linearFilter && !exactCopy)) {
             paintAffine(draw, texture, frame, canvasWidth, pitchTiles)
             return
         }
@@ -404,13 +554,17 @@ internal class GraphicsCommandExecution(private val heap: GraphicsMode2Workspace
         val det = m0 * m4 - m1 * m3
         if (abs(det) <= 1e-9) return
         val invDet = 1.0 / det
+        val rxD = draw.rectX.toDouble()
+        val ryD = draw.rectY.toDouble()
+        val originVgX = m6 + m0 * rxD + m3 * ryD
+        val originVgY = m7 + m1 * rxD + m4 * ryD
         val w = draw.width.toDouble()
         val h = draw.height.toDouble()
         val ch = draw.canvasHeight.toDouble()
-        val c0x = m6; val c0y = ch - m7
-        val c1x = m6 + m0 * w; val c1y = ch - (m7 + m1 * w)
-        val c2x = m6 + m0 * w + m3 * h; val c2y = ch - (m7 + m1 * w + m4 * h)
-        val c3x = m6 + m3 * h; val c3y = ch - (m7 + m4 * h)
+        val c0x = originVgX; val c0y = ch - originVgY
+        val c1x = originVgX + m0 * w; val c1y = ch - (originVgY + m1 * w)
+        val c2x = originVgX + m0 * w + m3 * h; val c2y = ch - (originVgY + m1 * w + m4 * h)
+        val c3x = originVgX + m3 * h; val c3y = ch - (originVgY + m4 * h)
         val minSx = minOf(minOf(c0x, c1x), minOf(c2x, c3x))
         val maxSx = maxOf(maxOf(c0x, c1x), maxOf(c2x, c3x))
         val minSy = minOf(minOf(c0y, c1y), minOf(c2y, c3y))
@@ -421,27 +575,59 @@ internal class GraphicsCommandExecution(private val heap: GraphicsMode2Workspace
         val colEnd = minOf(ceil(maxSx - 0.5).toInt(), draw.scissor.clipRight)
         if (rowStart >= rowEnd || colStart >= colEnd) return
 
-        // Inverse affine step per +1 screen column (dx=+1, dy=0)
-        val duDx = m4 * invDet
-        val dvDx = -m1 * invDet
-        val texW = draw.width
-        val texH = draw.height
-        val startDx = (colStart + 0.5) - m6
+        val texW = draw.texWidth
+        val texH = draw.texHeight
+        val sx0 = colStart + 0.5
+        val sy0 = rowStart + 0.5
+        val customUv = draw.customUv
+        val u0: Double
+        val v0: Double
+        val duDx: Double
+        val dvDx: Double
+        val duDy: Double
+        val dvDy: Double
+        if (customUv != null) {
+            val tw = texW.toDouble()
+            val th = texH.toDouble()
+            val yVg0 = ch - sy0
+            duDx = tw * customUv[0]
+            dvDx = th * customUv[3]
+            duDy = -tw * customUv[1]
+            dvDy = -th * customUv[4]
+            u0 = tw * (customUv[0] * sx0 + customUv[1] * yVg0 + customUv[2])
+            v0 = th * (customUv[3] * sx0 + customUv[4] * yVg0 + customUv[5])
+        } else {
+            val startDx = sx0 - originVgX
+            val startDy = ch - sy0 - originVgY
+            duDx = m4 * invDet
+            dvDx = -m1 * invDet
+            duDy = m3 / det
+            dvDy = -m0 / det
+            u0 = (m4 * startDx - m3 * startDy) / det
+            v0 = (-m1 * startDx + m0 * startDy) / det
+        }
 
         if (draw.linearFilter) {
-            val startDy = ch - (rowStart + 0.5) - m7
             FilteredMortonBlit.paint(
-                texture, frame, canvasWidth, draw.width, draw.height, pitchTiles,
+                texture, frame, canvasWidth, texW, texH, pitchTiles,
                 rowStart, rowEnd, colStart, colEnd,
-                (m4 * startDx - m3 * startDy) / det, (-m1 * startDx + m0 * startDy) / det,
-                duDx, dvDx, m3 / det, -m0 / det,
+                u0, v0, duDx, dvDx, duDy, dvDy,
             )
             return
         }
+        val startDx = sx0 - originVgX
         for (row in rowStart until rowEnd) {
-            val dy = (ch - (row + 0.5)) - m7
-            var u = (m4 * startDx - m3 * dy) * invDet
-            var v = (-m1 * startDx + m0 * dy) * invDet
+            var u: Double
+            var v: Double
+            if (customUv != null) {
+                val rowStep = (row - rowStart).toDouble()
+                u = u0 + rowStep * duDy
+                v = v0 + rowStep * dvDy
+            } else {
+                val dy = (ch - (row + 0.5)) - originVgY
+                u = (m4 * startDx - m3 * dy) * invDet
+                v = (-m1 * startDx + m0 * dy) * invDet
+            }
             val dstRowOffset = row * canvasWidth
             for (col in colStart until colEnd) {
                 val tx = kotlin.math.floor(u).toInt()
@@ -575,8 +761,14 @@ internal class GraphicsCommandExecution(private val heap: GraphicsMode2Workspace
             }
             var streamState = SolidCommandRects.StreamState()
             var texStorage: Int? = null
+            var texSize: Int? = null
             var texAddr: Long? = null
+            var uvMatrix: List<Int>? = null
             var textureFilter = 0
+            var imagePaintActive = false
+            var solidColor: Int? = null
+            var blendWord = 0
+            var ropEnableWord = 0x10000
             val extDraws = linkedMapOf<Int, Draw>()
             val extSolids = linkedMapOf<Int, SolidCommandRects.Shape>()
             for ((id, packets) in vertices) {
@@ -585,7 +777,9 @@ internal class GraphicsCommandExecution(private val heap: GraphicsMode2Workspace
                 val targetPacket = material?.lastOrNull { it.header == 0x1a4f004 }
                 val scissorPacket = material?.lastOrNull { it.header == 0xc0f00e }
                 val storagePacket = material?.lastOrNull { it.header == 0x152f004 }
+                val texSizePacket = material?.lastOrNull { it.header == 0x158f004 }
                 val texAddrPacket = material?.lastOrNull { it.header == 0x155f004 }
+                val uvPacket = material?.lastOrNull { it.header == 0x10c7046 }
                 if (matrixPacket != null || targetPacket != null || scissorPacket != null) {
                     streamState = SolidCommandRects.StreamState(
                         matrix = matrixPacket?.data?.takeIf { it.size == 9 }?.map { Float.fromBits(it).toDouble() } ?: streamState.matrix,
@@ -594,13 +788,40 @@ internal class GraphicsCommandExecution(private val heap: GraphicsMode2Workspace
                     )
                 }
                 if (storagePacket != null) texStorage = storagePacket.data.singleOrNull() ?: texStorage
+                if (texSizePacket != null) {
+                    texSize = texSizePacket.data.singleOrNull() ?: texSize
+                } else if (storagePacket != null || texAddrPacket != null) {
+                    texSize = null
+                }
                 if (texAddrPacket != null) texAddr = texAddrPacket.data.singleOrNull()?.toUInt()?.toLong() ?: texAddr
+                if (uvPacket != null) {
+                    uvMatrix = uvPacket.data
+                } else if (matrixPacket != null || texAddrPacket != null) {
+                    uvMatrix = null
+                }
                 if (material == null) continue
+                material.lastOrNull { it.header == 0x185f004 }?.data?.singleOrNull()?.let { solidColor = it }
+                material.lastOrNull { (it.header ushr 16) == 0x184 && (it.header and 0x1000) != 0 }?.data?.singleOrNull()?.let { blendWord = it }
+                material.lastOrNull { (it.header ushr 16) == 0x1a0 && (it.header and 0x4000) != 0 }?.data?.singleOrNull()?.let { ropEnableWord = it }
+                val texEnablePacket = material.lastOrNull { (it.header ushr 16) == 0x140 && (it.header and 0x1000) != 0 }
+                imagePaintActive = when {
+                    texEnablePacket != null -> (texEnablePacket.data.singleOrNull()?.and(0xff) == 2)
+                    material.any { it.header == 0x155f004 || it.header == 0x152f004 || it.header == 0x158f004 || it.header == 0x10c7046 } -> true
+                    material.any { it.header == 0x185f004 || it.header == 0x16cf3fc } -> false
+                    else -> imagePaintActive
+                }
                 // The image texture unit retains its sampler across delta command groups (0x1531004 / 0x153f004).
                 material.lastOrNull { (it.header ushr 16) == TEXTURE_FILTER_REG }?.data?.singleOrNull()?.let { textureFilter = it }
                 if (id in candidates) {
-                    decodeExtended(packets, material, streamState, texStorage, texAddr, textureFilter, effWidth, effHeight)
-                        ?.let { extDraws[id] = it }
+                    if (imagePaintActive) {
+                        decodeExtended(
+                            packets, material, streamState, texStorage, texSize, texAddr, uvMatrix,
+                            textureFilter, imagePaintActive = true, effWidth, effHeight,
+                        )?.let { extDraws[id] = it }
+                    } else {
+                        decodeSolidQuad0x22(packets, material, streamState, solidColor, blendWord, ropEnableWord, effWidth, effHeight)
+                            ?.let { extSolids[id] = it }
+                    }
                 } else if (solidRects) {
                     SolidCommandRects.decodeShape(packets, material, target, true, streamState, effWidth, effHeight) { address, size ->
                         range(address, size)

@@ -456,4 +456,317 @@ class GraphicsCommandExecutionTest {
             assertContentEquals(byteArrayOf(191.toByte(), 0, 0, -1), frame.copyOfRange(4, 8))
         }
     }
+
+    private fun f32Bits(value: Float): Int = java.lang.Float.floatToRawIntBits(value)
+
+    private fun encodeFloat24(value: Double): Int {
+        val bits = java.lang.Float.floatToRawIntBits(value.toFloat())
+        val sign = (bits ushr 31) and 1
+        val exp8 = (bits ushr 23) and 0xff
+        if (exp8 <= 64) return 0
+        val exp7 = exp8 - 64
+        if (exp7 >= 0x7f) return (sign shl 23) or 0x7f0000
+        val mant16 = (bits ushr 7) and 0xffff
+        val round = (bits ushr 6) and 1
+        return (sign shl 23) or (((exp7 shl 16) or mant16) + round)
+    }
+
+    @Test fun solidVgClear0x22AfterTexturedDrawRendersSolidColorNotStaleTexture() {
+        val localHeap = GraphicsMode2Workspace.parse(mapOf("base" to 0x400000, "bytes" to 0x20000))
+        val texAddr = localHeap.base + 0x6000
+        val vAddr = localHeap.base
+        val mAddr = localHeap.base + 0x2000
+        // Fill 8x8 Morton texture with opaque cyan [A=255, B=255, G=200, R=0]
+        val cyanTex = ByteArray(256)
+        for (i in cyanTex.indices step 4) {
+            cyanTex[i] = (-1).toByte()
+            cyanTex[i + 1] = (-1).toByte()
+            cyanTex[i + 2] = 200.toByte()
+            cyanTex[i + 3] = 0
+        }
+
+        // Group 0x57: Textured 8x8 0x22 draw at screen [0..8) x [0..8)
+        // Group 0x58: DMP vgClear non-8x8 fallback 0x22 = [3, 760, 6, 5, -6] (w=6 <= stale pitch=8!),
+        //   0x41f046 = identity [1,0,0, 0,+1,0, 0,0,1], 0x1401004=0, 0x1a04004=0, 0x185f004=0x802060e0
+        //   -> OpenVG y in [760..765) => screen rows [3..8), cols [3..9): overlaps [3..8)x[3..8) of cyan texture!
+        // Group 0x59: DMP vgClear non-8x8 fallback 0x22 = [20, 740, 13, 9, -13] (w=13 > stale pitch=8!),
+        //   0x1401004=0, 0x1a04004=0, 0x185f004=0xff118833 -> screen rows [19..28), cols [20..33)
+        val vBuf = ByteBuffer.allocate(1024).order(ByteOrder.LITTLE_ENDIAN)
+        val mBuf = ByteBuffer.allocate(1024).order(ByteOrder.LITTLE_ENDIAN)
+
+        // Append Group 0x57 from base vertices/fragments (without trailing 0x58 marker)
+        vBuf.put(vertices, 0, vertices.size - 8)
+        val patchedFrag57 = fragments.copyOf(fragments.size - 8)
+        ByteBuffer.wrap(patchedFrag57).order(ByteOrder.LITTLE_ENDIAN).let { fb ->
+            val off = (0 until patchedFrag57.size step 4).single { fb.getInt(it) == 0x155f004 } + 4
+            fb.putInt(off, texAddr.toInt())
+        }
+        mBuf.put(patchedFrag57)
+
+        // Group 0x58: solid vgClear 0x22 (6x5 at x=3, yVg=760)
+        vBuf.putInt(0x85f004).putInt(0x58)
+            .putInt(0x41f046)
+            .putFloat(1f).putFloat(0f).putFloat(0f)
+            .putFloat(0f).putFloat(1f).putFloat(0f)
+            .putFloat(0f).putFloat(0f).putFloat(1f)
+            .putInt(0x653004).putInt(0x100)
+            .putInt(0x40f004).putInt(0x03000400)
+            .putInt(0x9).putInt(0x07090702).putInt(0)
+            .putInt(0x22).putInt(3).putInt(760).putInt(6).putInt(5).putInt(-6)
+            .putInt(0x6f004).putInt(1)
+        mBuf.putInt(0xa6f004).putInt(0x58)
+            .putInt(0x115c004).putInt(0)
+            .putInt(0xc0f00e).putInt(0x03ff0000).putInt(0x02ff0000)
+            .putInt(0x1a4f004).putInt(target.toInt())
+            .putInt(0x1401004).putInt(0)
+            .putInt(0x185f004).putInt(0x802060e0.toInt())
+            .putInt(0x1841004).putInt(8)
+            .putInt(0x1848004).putInt(0)
+            .putInt(0x1a04004).putInt(0)
+            .putInt(0x101004).putInt(1)
+
+        // Group 0x59: solid vgClear 0x22 (13x9 at x=20, yVg=740, width > stale pitch 8)
+        vBuf.putInt(0x85f004).putInt(0x59)
+            .putInt(0x9).putInt(0x07090702).putInt(0)
+            .putInt(0x22).putInt(20).putInt(740).putInt(13).putInt(9).putInt(-13)
+            .putInt(0x6f004).putInt(1)
+        mBuf.putInt(0xa6f004).putInt(0x59)
+            .putInt(0x1401004).putInt(0)
+            .putInt(0x185f004).putInt(0xff118833.toInt())
+            .putInt(0x1a04004).putInt(0)
+            .putInt(0x101004).putInt(1)
+
+        // Terminal marker 0x5a
+        vBuf.putInt(0x85f004).putInt(0x5a)
+        mBuf.putInt(0xa6f004).putInt(0x5a)
+        while (vBuf.position() % 8 != 0) vBuf.putInt(0)
+        while (mBuf.position() % 8 != 0) mBuf.putInt(0)
+        val vBytes = vBuf.array().copyOf(vBuf.position())
+        val mBytes = mBuf.array().copyOf(mBuf.position())
+
+        for (solidEnabled in listOf(true, false)) {
+            val fb = ByteArray(0x300000)
+            val map = mapOf(vAddr to vBytes, mAddr to mBytes, texAddr to cyanTex, target to fb)
+            val mem = object : DmaMemory {
+                override fun check(address: Long, size: Long, write: Boolean) {
+                    require(map.getValue(address).size.toLong() == size && (!write || address == target))
+                }
+                override fun read(address: Long, destination: ByteBuffer) { destination.put(map.getValue(address)) }
+                override fun write(address: Long, source: ByteBuffer) { source.get(map.getValue(address)) }
+            }
+            val gDesc = mapOf("address" to vAddr, "countWord" to vBytes.size / 8L, "control" to 0x0100ffffL)
+            val mDesc = mapOf("address" to mAddr, "countWord" to mBytes.size / 8L, "control" to 0x0100ffffL)
+            val exec = GraphicsCommandExecution(localHeap, target, solidRects = solidEnabled, extended = true)
+            val receipt = exec.execute(mem, gDesc, mDesc)
+            assertEquals(listOf(0x57L), receipt["sequences"])
+            if (solidEnabled) {
+                assertEquals(listOf(0x58L, 0x59L), receipt["solidSequences"])
+            }
+            assertEquals(receipt, exec.restore(receipt, gDesc, mDesc))
+
+            fun px(col: Int, row: Int): List<Int> {
+                val o = (row * 1024 + col) * 4
+                return listOf(fb[o].toInt() and 0xff, fb[o + 1].toInt() and 0xff, fb[o + 2].toInt() and 0xff, fb[o + 3].toInt() and 0xff)
+            }
+            // Non-overlapped cyan texture region stays cyan
+            assertEquals(listOf(255, 255, 200, 0), px(0, 0))
+            assertEquals(listOf(255, 255, 200, 0), px(2, 7))
+            assertEquals(listOf(255, 255, 200, 0), px(7, 2))
+            // Group 0x58 clear box [3..8] x [3..7] unconditionally overwrites with 0x802060e0 (NOT stale cyan texture)
+            for (r in 3..7) {
+                for (c in 3..8) {
+                    assertEquals(listOf(0x80, 0x20, 0x60, 0xe0), px(c, r), "Mismatch in 6x5 vgClear at ($c,$r)")
+                }
+            }
+            // Bottom-left [0..7] x [760..767] must remain untouched (no upside-down stale texture ghost at (0, 768))
+            assertEquals(listOf(0, 0, 0, 0), px(0, 767))
+            assertEquals(listOf(0, 0, 0, 0), px(3, 765))
+            // Group 0x59 clear box [20..32] x [19..27] renders exact solid 0xff118833 despite w=13 > stale pitch=8
+            for (r in 19..27) {
+                for (c in 20..32) {
+                    assertEquals(listOf(255, 0x11, 0x88, 0x33), px(c, r), "Mismatch in 13x9 vgClear at ($c,$r)")
+                }
+            }
+            assertEquals(listOf(0, 0, 0, 0), px(19, 22))
+            assertEquals(listOf(0, 0, 0, 0), px(33, 22))
+        }
+
+        // Also verify that a non-image 0x1401004=0 0x22 group without 0x185f004 never blits stale texture
+        val vNoColor = ByteBuffer.allocate(512).order(ByteOrder.LITTLE_ENDIAN)
+        val mNoColor = ByteBuffer.allocate(512).order(ByteOrder.LITTLE_ENDIAN)
+        vNoColor.put(vertices, 0, vertices.size - 8)
+            .putInt(0x85f004).putInt(0x58)
+            .putInt(0x41f046)
+            .putFloat(1f).putFloat(0f).putFloat(0f)
+            .putFloat(0f).putFloat(-1f).putFloat(0f)
+            .putFloat(40f).putFloat(728f).putFloat(1f)
+            .putInt(0x22).putInt(0).putInt(0).putInt(8).putInt(8).putInt(-8)
+            .putInt(0x85f004).putInt(0x59)
+        mNoColor.put(patchedFrag57)
+            .putInt(0xa6f004).putInt(0x58)
+            .putInt(0x1401004).putInt(0)
+            .putInt(0x101004).putInt(1)
+            .putInt(0xa6f004).putInt(0x59)
+        while (vNoColor.position() % 8 != 0) vNoColor.putInt(0)
+        while (mNoColor.position() % 8 != 0) mNoColor.putInt(0)
+        val vNcBytes = vNoColor.array().copyOf(vNoColor.position())
+        val mNcBytes = mNoColor.array().copyOf(mNoColor.position())
+        val fbNc = ByteArray(0x300000)
+        val mapNc = mapOf(vAddr to vNcBytes, mAddr to mNcBytes, texAddr to cyanTex, target to fbNc)
+        val memNc = object : DmaMemory {
+            override fun check(address: Long, size: Long, write: Boolean) {
+                require(mapNc.getValue(address).size.toLong() == size && (!write || address == target))
+            }
+            override fun read(address: Long, destination: ByteBuffer) { destination.put(mapNc.getValue(address)) }
+            override fun write(address: Long, source: ByteBuffer) { source.get(mapNc.getValue(address)) }
+        }
+        val gNc = mapOf("address" to vAddr, "countWord" to vNcBytes.size / 8L, "control" to 0x0100ffffL)
+        val mNc = mapOf("address" to mAddr, "countWord" to mNcBytes.size / 8L, "control" to 0x0100ffffL)
+        val receiptNc = GraphicsCommandExecution(localHeap, target, solidRects = true, extended = true).execute(memNc, gNc, mNc)
+        assertEquals(listOf(0x57L), receiptNc["sequences"])
+        assertEquals(0, fbNc[(42 * 1024 + 42) * 4].toInt() and 0xff, "Stale texture must not render when 0x1401004 != 2")
+    }
+
+    @Test fun subRect0x22BlitHonorsNonZeroRectOffsetAndSubImageUvInPointAndLinearModes() {
+        val localHeap = GraphicsMode2Workspace.parse(mapOf("base" to 0x400000, "bytes" to 0x20000))
+        val vAddr = localHeap.base
+        val mAddr = localHeap.base + 0x2000
+        val texAddr = localHeap.base + 0x6000
+        val fullW = 32
+        val fullH = 16
+        val srcX = 11
+        val srcY = 5
+        val subW = 10
+        val subH = 6
+
+        fun expectedTexel(tx: Int, ty: Int): List<Int> =
+            listOf(255, (tx * 9 + 7) and 0xff, (ty * 15 + 11) and 0xff, (tx * 5 + ty * 3 + 19) and 0xff)
+
+        val linearTex = ByteArray(fullW * fullH * 4)
+        for (ty in 0 until fullH) {
+            for (tx in 0 until fullW) {
+                val o = (ty * fullW + tx) * 4
+                if (tx in srcX until (srcX + subW) && ty in srcY until (srcY + subH)) {
+                    val c = expectedTexel(tx, ty)
+                    linearTex[o] = c[0].toByte()
+                    linearTex[o + 1] = c[1].toByte()
+                    linearTex[o + 2] = c[2].toByte()
+                    linearTex[o + 3] = c[3].toByte()
+                } else {
+                    // Opaque magenta sentinel outside the [11..20] x [5..10] sub-rectangle
+                    linearTex[o] = (-1).toByte()
+                    linearTex[o + 1] = (-1).toByte()
+                    linearTex[o + 2] = 0
+                    linearTex[o + 3] = (-1).toByte()
+                }
+            }
+        }
+        val mortonTex = mortonTileLinear(linearTex, fullW, fullH)
+
+        // 1. DMP 0x01379cbc sub-rect encoding:
+        //    0x22 = [srcX, srcY, subW, subH, -subW], 0x41f046 = [1,0,0, 0,+1,0, dx-srcX, dyVg-srcY, 1],
+        //    0x158f004 = (fullW<<16)|fullH, 0x152f004 = (fullW<<16)|fullH,
+        //    0x10c7046 = [1/fullW, 0, (srcX-dx)/fullW, 0, +1/fullH, (srcY-dyVg)/fullH, 0, 0, 1]
+        val dmpDx = 43
+        val dmpDyVg = 700 // yVg in [700..706) -> screen rows [62..68) (row 67 => yVg=700.5 => ty=srcY=5)
+        // 2. Direct top-down [dx, dy, subW, subH, -subW] encoding with top-down matrix [1,0,0, 0,-1,0, 0,768,1]
+        //    and sub-image UV offset inside 0x10c7046 -> screen cols [120..130), rows [34..40)
+        val topDx = 120
+        val topDy = 34
+
+        for (filterMode in listOf(0, 6)) {
+            val vBuf = ByteBuffer.allocate(1024).order(ByteOrder.LITTLE_ENDIAN)
+            val mBuf = ByteBuffer.allocate(1024).order(ByteOrder.LITTLE_ENDIAN)
+
+            // Group 0x60: DMP bottom-up sub-rect blit
+            vBuf.putInt(0x85f004).putInt(0x60)
+                .putInt(0x41f046)
+                .putInt(f32Bits(1f)).putInt(0).putInt(0)
+                .putInt(0).putInt(f32Bits(1f)).putInt(0)
+                .putInt(f32Bits((dmpDx - srcX).toFloat())).putInt(f32Bits((dmpDyVg - srcY).toFloat())).putInt(f32Bits(1f))
+                .putInt(0x9).putInt(0x07090702).putInt(0)
+                .putInt(0x22).putInt(srcX).putInt(srcY).putInt(subW).putInt(subH).putInt(-subW)
+                .putInt(0x6f004).putInt(1)
+            mBuf.putInt(0xa6f004).putInt(0x60)
+                .putInt(0xc0f00e).putInt(0x03ff0000).putInt(0x02ff0000)
+                .putInt(0x10c7046)
+                .putInt(encodeFloat24(1.0 / fullW)).putInt(0).putInt(encodeFloat24((srcX - dmpDx).toDouble() / fullW))
+                .putInt(0).putInt(encodeFloat24(1.0 / fullH)).putInt(encodeFloat24((srcY - dmpDyVg).toDouble() / fullH))
+                .putInt(0).putInt(0).putInt(encodeFloat24(1.0))
+                .putInt(0x158f004).putInt((fullW shl 16) or fullH)
+                .putInt(0x152f004).putInt((fullW shl 16) or fullH)
+                .putInt(0x1401004).putInt(2)
+                .putInt(0x155f004).putInt(texAddr.toInt())
+                .putInt(0x1a4f004).putInt(target.toInt())
+                .putInt(0x1531004).putInt(filterMode)
+                .putInt(0x1431004).putInt(filterMode)
+                .putInt(0x101004).putInt(1)
+
+            // Group 0x61: Top-down [dx, dy, subW, subH, -subW] sub-rect blit reusing bound texture
+            vBuf.putInt(0x85f004).putInt(0x61)
+                .putInt(0x41f046)
+                .putInt(f32Bits(1f)).putInt(0).putInt(0)
+                .putInt(0).putInt(f32Bits(-1f)).putInt(0)
+                .putInt(0).putInt(f32Bits(768f)).putInt(f32Bits(1f))
+                .putInt(0x9).putInt(0x07090702).putInt(0)
+                .putInt(0x22).putInt(topDx).putInt(topDy).putInt(subW).putInt(subH).putInt(-subW)
+                .putInt(0x6f004).putInt(1)
+            mBuf.putInt(0xa6f004).putInt(0x61)
+                .putInt(0x10c7046)
+                .putInt(encodeFloat24(1.0 / fullW)).putInt(0).putInt(encodeFloat24((srcX - topDx).toDouble() / fullW))
+                .putInt(0).putInt(encodeFloat24(-1.0 / fullH)).putInt(encodeFloat24((srcY - topDy + 768).toDouble() / fullH))
+                .putInt(0).putInt(0).putInt(encodeFloat24(1.0))
+                .putInt(0x101004).putInt(1)
+
+            vBuf.putInt(0x85f004).putInt(0x62)
+            mBuf.putInt(0xa6f004).putInt(0x62)
+            while (vBuf.position() % 8 != 0) vBuf.putInt(0)
+            while (mBuf.position() % 8 != 0) mBuf.putInt(0)
+            val vBytes = vBuf.array().copyOf(vBuf.position())
+            val mBytes = mBuf.array().copyOf(mBuf.position())
+
+            val fb = ByteArray(0x300000)
+            val map = mapOf(vAddr to vBytes, mAddr to mBytes, texAddr to mortonTex, target to fb)
+            val mem = object : DmaMemory {
+                override fun check(address: Long, size: Long, write: Boolean) {
+                    require(map.getValue(address).size.toLong() == size && (!write || address == target))
+                }
+                override fun read(address: Long, destination: ByteBuffer) { destination.put(map.getValue(address)) }
+                override fun write(address: Long, source: ByteBuffer) { source.get(map.getValue(address)) }
+            }
+            val gDesc = mapOf("address" to vAddr, "countWord" to vBytes.size / 8L, "control" to 0x0100ffffL)
+            val mDesc = mapOf("address" to mAddr, "countWord" to mBytes.size / 8L, "control" to 0x0100ffffL)
+            val exec = GraphicsCommandExecution(localHeap, target, solidRects = true, extended = true)
+            val receipt = exec.execute(mem, gDesc, mDesc)
+            assertEquals(listOf(0x60L, 0x61L), receipt["sequences"])
+
+            fun px(col: Int, row: Int): List<Int> {
+                val o = (row * 1024 + col) * 4
+                return listOf(fb[o].toInt() and 0xff, fb[o + 1].toInt() and 0xff, fb[o + 2].toInt() and 0xff, fb[o + 3].toInt() and 0xff)
+            }
+
+            // Verify Group 0x60: exact sub-rect texels at [43..52] x [62..67], zero magenta bleed
+            for (r in 62 until 68) {
+                for (c in dmpDx until (dmpDx + subW)) {
+                    val tx = srcX + (c - dmpDx)
+                    val ty = srcY + (67 - r)
+                    assertEquals(expectedTexel(tx, ty), px(c, r), "DMP sub-rect mismatch at ($c,$r) filter=$filterMode")
+                }
+            }
+            // Verify Group 0x61: exact sub-rect texels at [120..129] x [34..39], zero magenta bleed
+            for (r in topDy until (topDy + subH)) {
+                for (c in topDx until (topDx + subW)) {
+                    val tx = srcX + (c - topDx)
+                    val ty = srcY + (r - topDy)
+                    assertEquals(expectedTexel(tx, ty), px(c, r), "Top-down sub-rect mismatch at ($c,$r) filter=$filterMode")
+                }
+            }
+            // Verify total lit pixel count equals exact 2 * (10 * 6) = 120 pixels (nothing painted at (0,0) or outside sub-rects)
+            var litCount = 0
+            for (i in fb.indices step 4) {
+                if (fb[i] != 0.toByte()) litCount++
+            }
+            assertEquals(2 * subW * subH, litCount, "Unexpected painted pixel count for filter=$filterMode")
+        }
+    }
 }

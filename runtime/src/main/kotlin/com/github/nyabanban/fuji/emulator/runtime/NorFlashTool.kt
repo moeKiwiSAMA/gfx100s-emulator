@@ -101,8 +101,34 @@ object NorFlashTool {
         }
         Files.createDirectories(livePath.parent)
         copyAtomic(factoryPath, livePath)
+        clearCompanionSubMcuState(home, config)
         LOG.info("Initialized live 64 MiB NOR Flash {} from stock factory template {}", livePath, factoryPath)
         return true
+    }
+
+    /**
+     * Deletes companion Sub-MCU retained NVRAM (`power-peer/submcu-nvram.{json,bin}`) and RTC
+     * (`rtc/rtc-state.json`) state files when seeding or restoring a fresh factory NOR image, so
+     * `RTC_HDR` (`bLanguageSet`/`bDatetimeSet`) never stays out of sync with an erased `BlockA`.
+     */
+    fun clearCompanionSubMcuState(home: Path, config: Map<String, Any>) {
+        val roots = linkedSetOf<Path>()
+        (config["components"] as? String)?.takeIf { it.isNotBlank() }?.let {
+            roots.add(home.resolve(it).toAbsolutePath().normalize())
+        }
+        (config["componentConfigs"] as? String)?.takeIf { it.isNotBlank() }?.let {
+            roots.add(home.resolve(it).toAbsolutePath().normalize())
+        }
+        val relTargets = listOf(
+            "power-peer/submcu-nvram.json",
+            "power-peer/submcu-nvram.bin",
+            "rtc/rtc-state.json",
+        )
+        for (root in roots) {
+            for (rel in relTargets) {
+                runCatching { Files.deleteIfExists(root.resolve(rel)) }
+            }
+        }
     }
 
     /**

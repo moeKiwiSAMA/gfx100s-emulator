@@ -1,9 +1,91 @@
+--- a/dynarmic/backend/arm64/a32_interface.cpp
++++ b/dynarmic/backend/arm64/a32_interface.cpp
+@@ -118,6 +118,14 @@ struct Jit::Impl final {
+         current_state.SetFpscr(value);
+     }
+
++    bool FpexcEn() const {
++        return current_state.FpexcEn();
++    }
++
++    void SetFpexcEn(bool value) {
++        current_state.SetFpexcEn(value);
++    }
++
+     void ClearExclusiveState() {
+         current_state.exclusive_state = false;
+     }
+@@ -228,6 +236,14 @@ void Jit::SetFpscr(std::uint32_t value) {
+     impl->SetFpscr(value);
+ }
+
++bool Jit::FpexcEn() const {
++    return impl->FpexcEn();
++}
++
++void Jit::SetFpexcEn(bool value) {
++    impl->SetFpexcEn(value);
++}
++
+ void Jit::ClearExclusiveState() {
+     impl->ClearExclusiveState();
+ }
+--- a/dynarmic/backend/arm64/a32_jitstate.cpp
++++ b/dynarmic/backend/arm64/a32_jitstate.cpp
+@@ -62,13 +62,25 @@ constexpr u32 FPCR_MASK = A32::LocationDescriptor::FPSCR_MODE_MASK;
+ constexpr u32 FPSR_MASK = 0x0800'009f;
+
+ u32 A32JitState::Fpscr() const {
+-    return (upper_location_descriptor & 0xffff'0000) | fpsr | fpsr_nzcv;
++    return (upper_location_descriptor & FPCR_MASK) | fpsr | fpsr_nzcv;
+ }
+
+ void A32JitState::SetFpscr(u32 fpscr) {
+     fpsr_nzcv = fpscr & 0xf000'0000;
+     fpsr = fpscr & FPSR_MASK;
+-    upper_location_descriptor = (upper_location_descriptor & 0x0000'ffff) | (fpscr & FPCR_MASK);
++    upper_location_descriptor = (upper_location_descriptor & 0x4000'ffff) | (fpscr & FPCR_MASK);
++}
++
++bool A32JitState::FpexcEn() const {
++    return (upper_location_descriptor & A32::LocationDescriptor::FPEXC_EN_MASK) != 0;
++}
++
++void A32JitState::SetFpexcEn(bool value) {
++    if (value) {
++        upper_location_descriptor |= A32::LocationDescriptor::FPEXC_EN_MASK;
++    } else {
++        upper_location_descriptor &= ~A32::LocationDescriptor::FPEXC_EN_MASK;
++    }
+ }
+
+ }  // namespace Dynarmic::Backend::Arm64
+--- a/dynarmic/backend/arm64/a32_jitstate.h
++++ b/dynarmic/backend/arm64/a32_jitstate.h
+@@ -25,7 +25,7 @@ struct A32JitState {
+
+     std::array<u32, 16> regs{};
+
+-    u32 upper_location_descriptor;
++    u32 upper_location_descriptor = A32::LocationDescriptor::FPEXC_EN_MASK;
+
+     alignas(16) std::array<u32, 64> ext_regs{};
+
+@@ -36,6 +36,8 @@ struct A32JitState {
+
+     u32 Fpscr() const;
+     void SetFpscr(u32 fpscr);
++    bool FpexcEn() const;
++    void SetFpexcEn(bool value);
+
+     IR::LocationDescriptor GetLocationDescriptor() const {
+         return IR::LocationDescriptor{regs[15] | (static_cast<u64>(upper_location_descriptor) << 32)};
 --- a/dynarmic/backend/x64/a32_emit_x64_memory.cpp
 +++ b/dynarmic/backend/x64/a32_emit_x64_memory.cpp
-@@ -27,19 +27,43 @@
- 
+@@ -27,19 +27,43 @@ namespace Dynarmic::Backend::X64 {
+
  using namespace Xbyak::util;
- 
+
 +// ARM DDI 0406C, LDRD/STRD: a doubleword-aligned access may use a single transfer.
 +// At address 4 mod 8 these instructions perform two individually aligned word transfers.
 +// Keep the ordinary 64-bit callback for other addresses, including alignment faults.
@@ -46,7 +128,7 @@
      }};
      const std::array<std::pair<size_t, ArgCallback>, 4> exclusive_write_callbacks{{
          {8, Devirtualize<&A32::UserCallbacks::MemoryWriteExclusive8>(conf.callbacks)},
-@@ -51,9 +75,12 @@
+@@ -51,9 +75,12 @@ void A32EmitX64::GenFastmemFallbacks() {
      for (bool ordered : {false, true}) {
          for (int vaddr_idx : idxes) {
              for (int value_idx : idxes) {
@@ -61,13 +143,13 @@
                      ABI_PushCallerSaveRegistersAndAdjustStackExcept(code, HostLocRegIdx(value_idx));
                      if (vaddr_idx != code.ABI_PARAM2.getIdx()) {
                          code.mov(code.ABI_PARAM2, Xbyak::Reg64{vaddr_idx});
-@@ -68,11 +95,11 @@
+@@ -68,11 +95,11 @@ void A32EmitX64::GenFastmemFallbacks() {
                      ABI_PopCallerSaveRegistersAndAdjustStackExcept(code, HostLocRegIdx(value_idx));
                      code.ZeroExtendFrom(bitsize, Xbyak::Reg64{value_idx});
                      code.ret();
 -                    PerfMapRegister(read_fallbacks[std::make_tuple(ordered, bitsize, vaddr_idx, value_idx)], code.getCurr(), fmt::format("a32_read_fallback_{}", bitsize));
 +                    PerfMapRegister(read_fallbacks[std::make_tuple(ordered, key, vaddr_idx, value_idx)], code.getCurr(), fmt::format("a32_read_fallback_{}", bitsize));
- 
+
                      if (!ordered) {
                          code.align();
 -                        read_fallbacks_no_xmm[std::make_tuple(bitsize, vaddr_idx, value_idx)] = code.getCurr<void (*)()>();
@@ -75,7 +157,7 @@
                          ABI_PushCallerSaveGprsAndAdjustStackExcept(code, HostLocRegIdx(value_idx));
                          if (vaddr_idx != code.ABI_PARAM2.getIdx()) {
                              code.mov(code.ABI_PARAM2, Xbyak::Reg64{vaddr_idx});
-@@ -84,13 +111,16 @@
+@@ -84,13 +111,16 @@ void A32EmitX64::GenFastmemFallbacks() {
                          ABI_PopCallerSaveGprsAndAdjustStackExcept(code, HostLocRegIdx(value_idx));
                          code.ZeroExtendFrom(bitsize, Xbyak::Reg64{value_idx});
                          code.ret();
@@ -83,7 +165,7 @@
 +                        PerfMapRegister(read_fallbacks_no_xmm[std::make_tuple(key, vaddr_idx, value_idx)], code.getCurr(), fmt::format("a32_read_fallback_no_xmm_{}", bitsize));
                      }
                  }
- 
+
 -                for (const auto& [bitsize, callback] : write_callbacks) {
 +                for (const auto& [key, callback] : write_callbacks) {
 +                    if (ordered && key == word_pair_fallback)
@@ -95,13 +177,13 @@
                      ABI_PushCallerSaveRegistersAndAdjustStack(code);
                      if (vaddr_idx == code.ABI_PARAM3.getIdx() && value_idx == code.ABI_PARAM2.getIdx()) {
                          code.xchg(code.ABI_PARAM2, code.ABI_PARAM3);
-@@ -114,11 +144,11 @@
+@@ -114,11 +144,11 @@ void A32EmitX64::GenFastmemFallbacks() {
                      }
                      ABI_PopCallerSaveRegistersAndAdjustStack(code);
                      code.ret();
 -                    PerfMapRegister(write_fallbacks[std::make_tuple(ordered, bitsize, vaddr_idx, value_idx)], code.getCurr(), fmt::format("a32_write_fallback_{}", bitsize));
 +                    PerfMapRegister(write_fallbacks[std::make_tuple(ordered, key, vaddr_idx, value_idx)], code.getCurr(), fmt::format("a32_write_fallback_{}", bitsize));
- 
+
                      if (!ordered) {
                          code.align();
 -                        write_fallbacks_no_xmm[std::make_tuple(bitsize, vaddr_idx, value_idx)] = code.getCurr<void (*)()>();
@@ -109,7 +191,7 @@
                          ABI_PushCallerSaveGprsAndAdjustStack(code);
                          if (vaddr_idx == code.ABI_PARAM3.getIdx() && value_idx == code.ABI_PARAM2.getIdx()) {
                              code.xchg(code.ABI_PARAM2, code.ABI_PARAM3);
-@@ -139,7 +169,7 @@
+@@ -139,7 +169,7 @@ void A32EmitX64::GenFastmemFallbacks() {
                          callback.EmitCall(code);
                          ABI_PopCallerSaveGprsAndAdjustStack(code);
                          code.ret();
@@ -117,20 +199,114 @@
 +                        PerfMapRegister(write_fallbacks_no_xmm[std::make_tuple(key, vaddr_idx, value_idx)], code.getCurr(), fmt::format("a32_write_fallback_no_xmm_{}", bitsize));
                      }
                  }
- 
-@@ -175,6 +205,7 @@
+
+@@ -175,6 +205,7 @@ void A32EmitX64::GenFastmemFallbacks() {
      }
  }
- 
+
 +#define Axx_HAS_WORD_PAIR_FALLBACK
  #define Axx A32
  #define Axx_HAS_NO_XMM_FALLBACKS 1
  #include "dynarmic/backend/x64/emit_x64_memory.cpp.inc"
+--- a/dynarmic/backend/x64/a32_interface.cpp
++++ b/dynarmic/backend/x64/a32_interface.cpp
+@@ -175,6 +175,14 @@ struct Jit::Impl {
+         return jit_state.SetFpscr(value);
+     }
+
++    bool FpexcEn() const {
++        return jit_state.FpexcEn();
++    }
++
++    void SetFpexcEn(bool value) {
++        jit_state.SetFpexcEn(value);
++    }
++
+     void DumpDisassembly() const {
+         const size_t size = reinterpret_cast<const char*>(block_of_code.getCurr()) - reinterpret_cast<const char*>(block_of_code.GetCodeBegin());
+         Common::DumpDisassembledX64(block_of_code.GetCodeBegin(), size);
+@@ -218,8 +226,11 @@ private:
+         IR::Block ir_block = A32::Translate(A32::LocationDescriptor{descriptor}, conf.callbacks, {conf.arch_version, conf.define_unpredictable_behaviour, conf.hook_hint_instructions, conf.enable_system_mode});
+         Optimization::PolyfillPass(ir_block, polyfill_options);
+         Optimization::NamingPass(ir_block);
+-        if (conf.HasOptimization(OptimizationFlag::GetSetElimination) && !conf.check_halt_on_memory_access) {
+-            Optimization::A32GetSetElimination(ir_block, {.convert_nz_to_nzc = true});
++        if (conf.HasOptimization(OptimizationFlag::GetSetElimination)) {
++            Optimization::A32GetSetElimination(ir_block, {
++                .convert_nz_to_nzc = true,
++                .preserve_state_across_memory_access = conf.check_halt_on_memory_access,
++            });
+             Optimization::DeadCodeElimination(ir_block);
+         }
+         if (conf.HasOptimization(OptimizationFlag::ConstProp)) {
+@@ -334,6 +345,14 @@ void Jit::SetFpscr(std::uint32_t value) {
+     impl->SetFpscr(value);
+ }
+
++bool Jit::FpexcEn() const {
++    return impl->FpexcEn();
++}
++
++void Jit::SetFpexcEn(bool value) {
++    impl->SetFpexcEn(value);
++}
++
+ void Jit::ClearExclusiveState() {
+     impl->ClearExclusiveState();
+ }
+--- a/dynarmic/backend/x64/a32_jitstate.cpp
++++ b/dynarmic/backend/x64/a32_jitstate.cpp
+@@ -182,7 +182,7 @@ void A32JitState::SetFpscr(u32 FPSCR) {
+     // Ensure that only upper half of upper_location_descriptor is used for FPSCR bits.
+     static_assert((FPSCR_MODE_MASK & 0xFFFF0000) == FPSCR_MODE_MASK);
+
+-    upper_location_descriptor &= 0x0000FFFF;
++    upper_location_descriptor &= 0x4000FFFF;
+     upper_location_descriptor |= FPSCR & FPSCR_MODE_MASK;
+
+     fpsr_nzcv = FPSCR & FPSCR_NZCV_MASK;
+@@ -205,4 +205,16 @@ void A32JitState::SetFpscr(u32 FPSCR) {
+     }
+ }
+
++bool A32JitState::FpexcEn() const {
++    return (upper_location_descriptor & A32::LocationDescriptor::FPEXC_EN_MASK) != 0;
++}
++
++void A32JitState::SetFpexcEn(bool value) {
++    if (value) {
++        upper_location_descriptor |= A32::LocationDescriptor::FPEXC_EN_MASK;
++    } else {
++        upper_location_descriptor &= ~A32::LocationDescriptor::FPEXC_EN_MASK;
++    }
++}
++
+ }  // namespace Dynarmic::Backend::X64
+--- a/dynarmic/backend/x64/a32_jitstate.h
++++ b/dynarmic/backend/x64/a32_jitstate.h
+@@ -26,7 +26,7 @@ struct A32JitState {
+     std::array<u32, 16> Reg{};  // Current register file.
+     // TODO: Mode-specific register sets unimplemented.
+
+-    u32 upper_location_descriptor = 0;
++    u32 upper_location_descriptor = 0x40000000;
+
+     u32 cpsr_ge = 0;
+     u32 cpsr_q = 0;
+@@ -57,6 +57,8 @@ struct A32JitState {
+     u32 fpsr_nzcv = 0;
+     u32 Fpscr() const;
+     void SetFpscr(u32 FPSCR);
++    bool FpexcEn() const;
++    void SetFpexcEn(bool value);
+
+     u64 GetUniqueHash() const noexcept {
+         return (static_cast<u64>(upper_location_descriptor) << 32) | (static_cast<u64>(Reg[15]));
 --- a/dynarmic/backend/x64/emit_x64_memory.cpp.inc
 +++ b/dynarmic/backend/x64/emit_x64_memory.cpp.inc
-@@ -90,20 +90,33 @@
+@@ -90,20 +90,33 @@ void AxxEmitX64::EmitMemoryRead(AxxEmitContext& ctx, IR::Inst* inst) {
      const int value_idx = bitsize == 128 ? ctx.reg_alloc.ScratchXmm().getIdx() : ctx.reg_alloc.ScratchGpr().getIdx();
- 
+
      const auto wrapped_fn = [&] {
 +        size_t key = bitsize;
 +#ifdef Axx_HAS_WORD_PAIR_FALLBACK
@@ -150,9 +326,9 @@
 -        return read_fallbacks[std::make_tuple(ordered, bitsize, vaddr.getIdx(), value_idx)];
 +        return read_fallbacks[std::make_tuple(ordered, key, vaddr.getIdx(), value_idx)];
      }();
- 
+
      SharedLabel abort = GenSharedLabel(), end = GenSharedLabel();
- 
+
      if (fastmem_marker) {
          // Use fastmem
 +        if constexpr (bitsize == 64) {
@@ -163,10 +339,10 @@
 +        }
          bool require_abort_handling;
          const auto src_ptr = EmitFastmemVAddr(code, ctx, *abort, vaddr, require_abort_handling);
- 
-@@ -186,20 +199,33 @@
+
+@@ -186,20 +199,33 @@ void AxxEmitX64::EmitMemoryWrite(AxxEmitContext& ctx, IR::Inst* inst) {
                              : (ordered ? ctx.reg_alloc.UseScratchGpr(args[2]).getIdx() : ctx.reg_alloc.UseGpr(args[2]).getIdx());
- 
+
      const auto wrapped_fn = [&] {
 +        size_t key = bitsize;
 +#ifdef Axx_HAS_WORD_PAIR_FALLBACK
@@ -186,9 +362,9 @@
 -        return write_fallbacks[std::make_tuple(ordered, bitsize, vaddr.getIdx(), value_idx)];
 +        return write_fallbacks[std::make_tuple(ordered, key, vaddr.getIdx(), value_idx)];
      }();
- 
+
      SharedLabel abort = GenSharedLabel(), end = GenSharedLabel();
- 
+
      if (fastmem_marker) {
          // Use fastmem
 +        if constexpr (bitsize == 64) {
@@ -199,49 +375,435 @@
 +        }
          bool require_abort_handling;
          const auto dest_ptr = EmitFastmemVAddr(code, ctx, *abort, vaddr, require_abort_handling);
- 
-@@ -380,7 +406,8 @@
+
+@@ -380,7 +406,8 @@ void AxxEmitX64::EmitExclusiveReadMemoryInline(AxxEmitContext& ctx, IR::Inst* in
      code.mov(tmp, mcl::bit_cast<u64>(GetExclusiveMonitorAddressPointer(conf.global_monitor, conf.processor_id)));
      code.mov(qword[tmp], vaddr);
- 
+
 -    const auto fastmem_marker = ShouldFastmem(ctx, inst);
 +    const bool checked_width = conf.page_table && (conf.detect_misaligned_access_via_page_table & bitsize);
 +    const auto fastmem_marker = checked_width ? std::nullopt : ShouldFastmem(ctx, inst);
      if (fastmem_marker) {
          SharedLabel abort = GenSharedLabel(), end = GenSharedLabel();
          bool require_abort_handling = false;
-@@ -486,7 +513,8 @@
+@@ -486,7 +513,8 @@ void AxxEmitX64::EmitExclusiveWriteMemoryInline(AxxEmitContext& ctx, IR::Inst* i
          EmitReadMemoryMov<bitsize>(code, rax.getIdx(), tmp, false);
      }
- 
+
 -    const auto fastmem_marker = ShouldFastmem(ctx, inst);
 +    const bool checked_width = conf.page_table && (conf.detect_misaligned_access_via_page_table & bitsize);
 +    const auto fastmem_marker = checked_width ? std::nullopt : ShouldFastmem(ctx, inst);
      if (fastmem_marker) {
          SharedLabel abort = GenSharedLabel();
          bool require_abort_handling = false;
---- a/dynarmic/ir/opt/passes.h
-+++ b/dynarmic/ir/opt/passes.h
-@@ -30,6 +30,7 @@
- struct A32GetSetEliminationOptions {
-     bool convert_nzc_to_nz = false;
-     bool convert_nz_to_nzc = false;
-+    bool preserve_state_across_memory_access = false;
+--- a/dynarmic/frontend/A32/a32_location_descriptor.cpp
++++ b/dynarmic/frontend/A32/a32_location_descriptor.cpp
+@@ -10,12 +10,13 @@
+ namespace Dynarmic::A32 {
+
+ std::string ToString(const LocationDescriptor& descriptor) {
+-    return fmt::format("{{{:08x},{},{},{:08x}{}}}",
++    return fmt::format("{{{:08x},{},{},{:08x}{}{}}}",
+                        descriptor.PC(),
+                        descriptor.TFlag() ? "T" : "!T",
+                        descriptor.EFlag() ? "E" : "!E",
+                        descriptor.FPSCR().Value(),
+-                       descriptor.SingleStepping() ? ",step" : "");
++                       descriptor.SingleStepping() ? ",step" : "",
++                       descriptor.FpexcEn() ? "" : ",!fpexc");
+ }
+
+ }  // namespace Dynarmic::A32
+--- a/dynarmic/frontend/A32/a32_location_descriptor.h
++++ b/dynarmic/frontend/A32/a32_location_descriptor.h
+@@ -30,12 +30,14 @@ public:
+     // Indicates bits that should be preserved within descriptors.
+     static constexpr u32 CPSR_MODE_MASK = 0x0600FE20;
+     static constexpr u32 FPSCR_MODE_MASK = 0x07F70000;
++    static constexpr u32 FPEXC_EN_MASK = 0x40000000;
+
+-    LocationDescriptor(u32 arm_pc, PSR cpsr, FPSCR fpscr, bool single_stepping = false)
++    LocationDescriptor(u32 arm_pc, PSR cpsr, FPSCR fpscr, bool single_stepping = false, bool fpexc_en = true)
+             : arm_pc(arm_pc)
+             , cpsr(cpsr.Value() & CPSR_MODE_MASK)
+             , fpscr(fpscr.Value() & FPSCR_MODE_MASK)
+-            , single_stepping(single_stepping) {}
++            , single_stepping(single_stepping)
++            , fpexc_en(fpexc_en) {}
+
+     explicit LocationDescriptor(const IR::LocationDescriptor& o) {
+         arm_pc = static_cast<u32>(o.Value());
+@@ -44,6 +46,7 @@ public:
+         fpscr = (o.Value() >> 32) & FPSCR_MODE_MASK;
+         cpsr.IT(ITState{static_cast<u8>(o.Value() >> 40)});
+         single_stepping = (o.Value() >> 32) & 4;
++        fpexc_en = ((o.Value() >> 32) & FPEXC_EN_MASK) != 0;
+     }
+
+     u32 PC() const { return arm_pc; }
+@@ -55,9 +58,10 @@ public:
+     A32::FPSCR FPSCR() const { return fpscr; }
+
+     bool SingleStepping() const { return single_stepping; }
++    bool FpexcEn() const { return fpexc_en; }
+
+     bool operator==(const LocationDescriptor& o) const {
+-        return std::tie(arm_pc, cpsr, fpscr, single_stepping) == std::tie(o.arm_pc, o.cpsr, o.fpscr, o.single_stepping);
++        return std::tie(arm_pc, cpsr, fpscr, single_stepping, fpexc_en) == std::tie(o.arm_pc, o.cpsr, o.fpscr, o.single_stepping, o.fpexc_en);
+     }
+
+     bool operator!=(const LocationDescriptor& o) const {
+@@ -65,36 +69,36 @@ public:
+     }
+
+     LocationDescriptor SetPC(u32 new_arm_pc) const {
+-        return LocationDescriptor(new_arm_pc, cpsr, fpscr, single_stepping);
++        return LocationDescriptor(new_arm_pc, cpsr, fpscr, single_stepping, fpexc_en);
+     }
+
+     LocationDescriptor AdvancePC(int amount) const {
+-        return LocationDescriptor(static_cast<u32>(arm_pc + amount), cpsr, fpscr, single_stepping);
++        return LocationDescriptor(static_cast<u32>(arm_pc + amount), cpsr, fpscr, single_stepping, fpexc_en);
+     }
+
+     LocationDescriptor SetTFlag(bool new_tflag) const {
+         PSR new_cpsr = cpsr;
+         new_cpsr.T(new_tflag);
+
+-        return LocationDescriptor(arm_pc, new_cpsr, fpscr, single_stepping);
++        return LocationDescriptor(arm_pc, new_cpsr, fpscr, single_stepping, fpexc_en);
+     }
+
+     LocationDescriptor SetEFlag(bool new_eflag) const {
+         PSR new_cpsr = cpsr;
+         new_cpsr.E(new_eflag);
+
+-        return LocationDescriptor(arm_pc, new_cpsr, fpscr, single_stepping);
++        return LocationDescriptor(arm_pc, new_cpsr, fpscr, single_stepping, fpexc_en);
+     }
+
+     LocationDescriptor SetFPSCR(u32 new_fpscr) const {
+-        return LocationDescriptor(arm_pc, cpsr, A32::FPSCR{new_fpscr & FPSCR_MODE_MASK}, single_stepping);
++        return LocationDescriptor(arm_pc, cpsr, A32::FPSCR{new_fpscr & FPSCR_MODE_MASK}, single_stepping, fpexc_en);
+     }
+
+     LocationDescriptor SetIT(ITState new_it) const {
+         PSR new_cpsr = cpsr;
+         new_cpsr.IT(new_it);
+
+-        return LocationDescriptor(arm_pc, new_cpsr, fpscr, single_stepping);
++        return LocationDescriptor(arm_pc, new_cpsr, fpscr, single_stepping, fpexc_en);
+     }
+
+     LocationDescriptor AdvanceIT() const {
+@@ -102,7 +106,11 @@ public:
+     }
+
+     LocationDescriptor SetSingleStepping(bool new_single_stepping) const {
+-        return LocationDescriptor(arm_pc, cpsr, fpscr, new_single_stepping);
++        return LocationDescriptor(arm_pc, cpsr, fpscr, new_single_stepping, fpexc_en);
++    }
++
++    LocationDescriptor SetFpexcEn(bool new_fpexc_en) const {
++        return LocationDescriptor(arm_pc, cpsr, fpscr, single_stepping, new_fpexc_en);
+     }
+
+     u64 UniqueHash() const noexcept {
+@@ -114,7 +122,8 @@ public:
+         const u64 e_u64 = cpsr.E() ? 2 : 0;
+         const u64 single_stepping_u64 = single_stepping ? 4 : 0;
+         const u64 it_u64 = u64(cpsr.IT().Value()) << 8;
+-        const u64 upper = (fpscr_u64 | t_u64 | e_u64 | single_stepping_u64 | it_u64) << 32;
++        const u64 fpexc_en_u64 = fpexc_en ? FPEXC_EN_MASK : 0;
++        const u64 upper = (fpscr_u64 | t_u64 | e_u64 | single_stepping_u64 | it_u64 | fpexc_en_u64) << 32;
+         return pc_u64 | upper;
+     }
+
+@@ -127,6 +136,7 @@ private:
+     PSR cpsr;          ///< Current program status register.
+     A32::FPSCR fpscr;  ///< Floating point status control register.
+     bool single_stepping;
++    bool fpexc_en;
  };
- 
- void PolyfillPass(IR::Block& block, const PolyfillOptions& opt);
+
+ /**
+--- a/dynarmic/frontend/A32/translate/impl/coprocessor.cpp
++++ b/dynarmic/frontend/A32/translate/impl/coprocessor.cpp
+@@ -54,19 +54,37 @@ bool TranslatorVisitor::arm_LDC(Cond cond, bool p, bool u, bool d, bool w, Reg n
+
+ // MCR{2}<c> <coproc_no>, #<opc1>, <Rt>, <CRn>, <CRm>, #<opc2>
+ bool TranslatorVisitor::arm_MCR(Cond cond, size_t opc1, CoprocReg CRn, Reg t, size_t coproc_no, size_t opc2, CoprocReg CRm) {
++    const bool two = cond == Cond::NV;
++
+     if ((coproc_no & 0b1110) == 0b1010) {
+-        if (!(options.enable_system_mode && coproc_no == 10 && opc1 == 7 && CRm == CoprocReg::C0 && opc2 == 0)) {
++        if (!(options.enable_system_mode && !two && coproc_no == 10 && opc1 == 7 && CRm == CoprocReg::C0 && opc2 == 0)) {
+             return arm_UDF();
+         }
++        if (t == Reg::PC) {
++            return UnpredictableInstruction();
++        }
++        if (ArmConditionPassed(cond)) {
++            ir.UpdateUpperLocationDescriptor();
++            ir.BranchWritePC(ir.Imm32(ir.current_location.PC() + 4));
++            ir.CoprocSendOneWord(coproc_no, two, opc1, CRn, CRm, opc2, ir.GetRegister(t));
++            ir.SetTerm(IR::Term::CheckHalt{IR::Term::FastDispatchHint{}});
++            return false;
++        }
++        return true;
+     }
+
+     if (t == Reg::PC) {
+         return UnpredictableInstruction();
+     }
+
+-    const bool two = cond == Cond::NV;
+-
+     if (two || ArmConditionPassed(cond)) {
++        if (options.enable_system_mode && !two && coproc_no == 15 && opc1 == 0 && CRn == CoprocReg::C1 && CRm == CoprocReg::C0 && opc2 == 2) {
++            ir.UpdateUpperLocationDescriptor();
++            ir.BranchWritePC(ir.Imm32(ir.current_location.PC() + 4));
++            ir.CoprocSendOneWord(coproc_no, two, opc1, CRn, CRm, opc2, ir.GetRegister(t));
++            ir.SetTerm(IR::Term::CheckHalt{IR::Term::FastDispatchHint{}});
++            return false;
++        }
+         ir.CoprocSendOneWord(coproc_no, two, opc1, CRn, CRm, opc2, ir.GetRegister(t));
+     }
+     return true;
+@@ -92,14 +110,22 @@ bool TranslatorVisitor::arm_MCRR(Cond cond, Reg t2, Reg t, size_t coproc_no, siz
+
+ // MRC{2}<c> <coproc_no>, #<opc1>, <Rt>, <CRn>, <CRm>, #<opc2>
+ bool TranslatorVisitor::arm_MRC(Cond cond, size_t opc1, CoprocReg CRn, Reg t, size_t coproc_no, size_t opc2, CoprocReg CRm) {
++    const bool two = cond == Cond::NV;
++
+     if ((coproc_no & 0b1110) == 0b1010) {
+-        if (!(options.enable_system_mode && coproc_no == 10 && opc1 == 7 && CRm == CoprocReg::C0 && opc2 == 0)) {
++        if (!(options.enable_system_mode && !two && coproc_no == 10 && opc1 == 7 && CRm == CoprocReg::C0 && opc2 == 0)) {
+             return arm_UDF();
+         }
++        if (ArmConditionPassed(cond)) {
++            ir.UpdateUpperLocationDescriptor();
++            ir.BranchWritePC(ir.Imm32(ir.current_location.PC() + 4));
++            ir.CoprocInternalOperation(coproc_no, two, opc1, static_cast<CoprocReg>(static_cast<size_t>(t)), CRn, CRm, opc2);
++            ir.SetTerm(IR::Term::CheckHalt{IR::Term::FastDispatchHint{}});
++            return false;
++        }
++        return true;
+     }
+
+-    const bool two = cond == Cond::NV;
+-
+     if (two || ArmConditionPassed(cond)) {
+         const auto word = ir.CoprocGetOneWord(coproc_no, two, opc1, CRn, CRm, opc2);
+         if (t != Reg::PC) {
+--- a/dynarmic/frontend/A32/translate/impl/thumb32_coprocessor.cpp
++++ b/dynarmic/frontend/A32/translate/impl/thumb32_coprocessor.cpp
+@@ -8,11 +8,17 @@
+ namespace Dynarmic::A32 {
+
+ bool TranslatorVisitor::thumb32_MCRR(bool two, Reg t2, Reg t, size_t coproc_no, size_t opc, CoprocReg CRm) {
++    if ((coproc_no & 0b1110) == 0b1010) {
++        return thumb32_UDF();
++    }
+     ir.CoprocSendTwoWords(coproc_no, two, opc, CRm, ir.GetRegister(t), ir.GetRegister(t2));
+     return true;
+ }
+
+ bool TranslatorVisitor::thumb32_MRRC(bool two, Reg t2, Reg t, size_t coproc_no, size_t opc, CoprocReg CRm) {
++    if ((coproc_no & 0b1110) == 0b1010) {
++        return thumb32_UDF();
++    }
+     const auto two_words = ir.CoprocGetTwoWords(coproc_no, two, opc, CRm);
+     ir.SetRegister(t, ir.LeastSignificantWord(two_words));
+     ir.SetRegister(t2, ir.MostSignificantWord(two_words).result);
+@@ -20,6 +26,9 @@ bool TranslatorVisitor::thumb32_MRRC(bool two, Reg t2, Reg t, size_t coproc_no,
+ }
+
+ bool TranslatorVisitor::thumb32_STC(bool two, bool p, bool u, bool d, bool w, Reg n, CoprocReg CRd, size_t coproc_no, Imm<8> imm8) {
++    if ((coproc_no & 0b1110) == 0b1010) {
++        return thumb32_UDF();
++    }
+     const u32 imm32 = imm8.ZeroExtend() << 2;
+     const bool index = p;
+     const bool add = u;
+@@ -36,6 +45,9 @@ bool TranslatorVisitor::thumb32_STC(bool two, bool p, bool u, bool d, bool w, Re
+ }
+
+ bool TranslatorVisitor::thumb32_LDC(bool two, bool p, bool u, bool d, bool w, Reg n, CoprocReg CRd, size_t coproc_no, Imm<8> imm8) {
++    if ((coproc_no & 0b1110) == 0b1010) {
++        return thumb32_UDF();
++    }
+     const u32 imm32 = imm8.ZeroExtend() << 2;
+     const bool index = p;
+     const bool add = u;
+@@ -52,16 +64,52 @@ bool TranslatorVisitor::thumb32_LDC(bool two, bool p, bool u, bool d, bool w, Re
+ }
+
+ bool TranslatorVisitor::thumb32_CDP(bool two, size_t opc1, CoprocReg CRn, CoprocReg CRd, size_t coproc_no, size_t opc2, CoprocReg CRm) {
++    if ((coproc_no & 0b1110) == 0b1010) {
++        return thumb32_UDF();
++    }
+     ir.CoprocInternalOperation(coproc_no, two, opc1, CRd, CRn, CRm, opc2);
+     return true;
+ }
+
+ bool TranslatorVisitor::thumb32_MCR(bool two, size_t opc1, CoprocReg CRn, Reg t, size_t coproc_no, size_t opc2, CoprocReg CRm) {
++    if ((coproc_no & 0b1110) == 0b1010) {
++        if (!(options.enable_system_mode && !two && coproc_no == 10 && opc1 == 7 && CRm == CoprocReg::C0 && opc2 == 0)) {
++            return thumb32_UDF();
++        }
++        if (t == Reg::PC) {
++            return UnpredictableInstruction();
++        }
++        ir.UpdateUpperLocationDescriptor();
++        ir.BranchWritePC(ir.Imm32(ir.current_location.PC() + 4));
++        ir.CoprocSendOneWord(coproc_no, two, opc1, CRn, CRm, opc2, ir.GetRegister(t));
++        ir.SetTerm(IR::Term::CheckHalt{IR::Term::FastDispatchHint{}});
++        return false;
++    }
++    if (options.enable_system_mode && !two && coproc_no == 15 && opc1 == 0 && CRn == CoprocReg::C1 && CRm == CoprocReg::C0 && opc2 == 2) {
++        if (t == Reg::PC) {
++            return UnpredictableInstruction();
++        }
++        ir.UpdateUpperLocationDescriptor();
++        ir.BranchWritePC(ir.Imm32(ir.current_location.PC() + 4));
++        ir.CoprocSendOneWord(coproc_no, two, opc1, CRn, CRm, opc2, ir.GetRegister(t));
++        ir.SetTerm(IR::Term::CheckHalt{IR::Term::FastDispatchHint{}});
++        return false;
++    }
+     ir.CoprocSendOneWord(coproc_no, two, opc1, CRn, CRm, opc2, ir.GetRegister(t));
+     return true;
+ }
+
+ bool TranslatorVisitor::thumb32_MRC(bool two, size_t opc1, CoprocReg CRn, Reg t, size_t coproc_no, size_t opc2, CoprocReg CRm) {
++    if ((coproc_no & 0b1110) == 0b1010) {
++        if (!(options.enable_system_mode && !two && coproc_no == 10 && opc1 == 7 && CRm == CoprocReg::C0 && opc2 == 0)) {
++            return thumb32_UDF();
++        }
++        ir.UpdateUpperLocationDescriptor();
++        ir.BranchWritePC(ir.Imm32(ir.current_location.PC() + 4));
++        ir.CoprocInternalOperation(coproc_no, two, opc1, static_cast<CoprocReg>(static_cast<size_t>(t)), CRn, CRm, opc2);
++        ir.SetTerm(IR::Term::CheckHalt{IR::Term::FastDispatchHint{}});
++        return false;
++    }
+     const auto word = ir.CoprocGetOneWord(coproc_no, two, opc1, CRn, CRm, opc2);
+     if (t != Reg::PC) {
+         ir.SetRegister(t, word);
+--- a/dynarmic/frontend/A32/translate/translate_arm.cpp
++++ b/dynarmic/frontend/A32/translate/translate_arm.cpp
+@@ -42,9 +42,20 @@ IR::Block TranslateArm(LocationDescriptor descriptor, TranslateCallbacks* tcb, c
+             ticks_for_instruction = tcb->GetTicksForCode(false, arm_pc, *arm_instruction);
+
+             if (const auto vfp_decoder = DecodeVFP<TranslatorVisitor>(*arm_instruction)) {
+-                should_continue = vfp_decoder->get().call(visitor, *arm_instruction);
++                if (!visitor.ir.current_location.FpexcEn()) {
++                    const u32 cond_bits = *arm_instruction >> 28;
++                    if (cond_bits == 0xFu || visitor.ArmConditionPassed(static_cast<Cond>(cond_bits))) {
++                        should_continue = visitor.UndefinedInstruction();
++                    }
++                } else {
++                    should_continue = vfp_decoder->get().call(visitor, *arm_instruction);
++                }
+             } else if (const auto asimd_decoder = DecodeASIMD<TranslatorVisitor>(*arm_instruction)) {
+-                should_continue = asimd_decoder->get().call(visitor, *arm_instruction);
++                if (!visitor.ir.current_location.FpexcEn()) {
++                    should_continue = visitor.UndefinedInstruction();
++                } else {
++                    should_continue = asimd_decoder->get().call(visitor, *arm_instruction);
++                }
+             } else if (const auto decoder = DecodeArm<TranslatorVisitor>(*arm_instruction)) {
+                 should_continue = decoder->get().call(visitor, *arm_instruction);
+             } else {
+@@ -93,9 +104,20 @@ bool TranslateSingleArmInstruction(IR::Block& block, LocationDescriptor descript
+     const u64 ticks_for_instruction = 1;
+
+     if (const auto vfp_decoder = DecodeVFP<TranslatorVisitor>(arm_instruction)) {
+-        should_continue = vfp_decoder->get().call(visitor, arm_instruction);
++        if (!visitor.ir.current_location.FpexcEn()) {
++            const u32 cond_bits = arm_instruction >> 28;
++            if (cond_bits == 0xFu || visitor.ArmConditionPassed(static_cast<Cond>(cond_bits))) {
++                should_continue = visitor.UndefinedInstruction();
++            }
++        } else {
++            should_continue = vfp_decoder->get().call(visitor, arm_instruction);
++        }
+     } else if (const auto asimd_decoder = DecodeASIMD<TranslatorVisitor>(arm_instruction)) {
+-        should_continue = asimd_decoder->get().call(visitor, arm_instruction);
++        if (!visitor.ir.current_location.FpexcEn()) {
++            should_continue = visitor.UndefinedInstruction();
++        } else {
++            should_continue = asimd_decoder->get().call(visitor, arm_instruction);
++        }
+     } else if (const auto decoder = DecodeArm<TranslatorVisitor>(arm_instruction)) {
+         should_continue = decoder->get().call(visitor, arm_instruction);
+     } else {
+--- a/dynarmic/frontend/A32/translate/translate_thumb.cpp
++++ b/dynarmic/frontend/A32/translate/translate_thumb.cpp
+@@ -134,9 +134,17 @@ IR::Block TranslateThumb(LocationDescriptor descriptor, TranslateCallbacks* tcb,
+                 } else {
+                     if (MaybeVFPOrASIMDInstruction(thumb_instruction)) {
+                         if (const auto vfp_decoder = DecodeVFP<TranslatorVisitor>(thumb_instruction)) {
+-                            should_continue = vfp_decoder->get().call(visitor, thumb_instruction);
++                            if (!visitor.ir.current_location.FpexcEn()) {
++                                should_continue = visitor.UndefinedInstruction();
++                            } else {
++                                should_continue = vfp_decoder->get().call(visitor, thumb_instruction);
++                            }
+                         } else if (const auto asimd_decoder = DecodeASIMD<TranslatorVisitor>(ConvertASIMDInstruction(thumb_instruction))) {
+-                            should_continue = asimd_decoder->get().call(visitor, ConvertASIMDInstruction(thumb_instruction));
++                            if (!visitor.ir.current_location.FpexcEn()) {
++                                should_continue = visitor.UndefinedInstruction();
++                            } else {
++                                should_continue = asimd_decoder->get().call(visitor, ConvertASIMDInstruction(thumb_instruction));
++                            }
+                         } else if (const auto decoder = DecodeThumb32<TranslatorVisitor>(thumb_instruction)) {
+                             should_continue = decoder->get().call(visitor, thumb_instruction);
+                         } else {
+@@ -200,9 +208,17 @@ bool TranslateSingleThumbInstruction(IR::Block& block, LocationDescriptor descri
+         thumb_instruction = mcl::bit::swap_halves_32(thumb_instruction);
+         if (MaybeVFPOrASIMDInstruction(thumb_instruction)) {
+             if (const auto vfp_decoder = DecodeVFP<TranslatorVisitor>(thumb_instruction)) {
+-                should_continue = vfp_decoder->get().call(visitor, thumb_instruction);
++                if (!visitor.ir.current_location.FpexcEn()) {
++                    should_continue = visitor.UndefinedInstruction();
++                } else {
++                    should_continue = vfp_decoder->get().call(visitor, thumb_instruction);
++                }
+             } else if (const auto asimd_decoder = DecodeASIMD<TranslatorVisitor>(ConvertASIMDInstruction(thumb_instruction))) {
+-                should_continue = asimd_decoder->get().call(visitor, ConvertASIMDInstruction(thumb_instruction));
++                if (!visitor.ir.current_location.FpexcEn()) {
++                    should_continue = visitor.UndefinedInstruction();
++                } else {
++                    should_continue = asimd_decoder->get().call(visitor, ConvertASIMDInstruction(thumb_instruction));
++                }
+             } else if (const auto decoder = DecodeThumb32<TranslatorVisitor>(thumb_instruction)) {
+                 should_continue = decoder->get().call(visitor, thumb_instruction);
+             } else {
+--- a/dynarmic/interface/A32/a32.h
++++ b/dynarmic/interface/A32/a32.h
+@@ -78,6 +78,10 @@ public:
+     std::uint32_t Fpscr() const;
+     void SetFpscr(std::uint32_t value);
+
++    /// View and modify effective VFP/ASIMD enable state (FPEXC.EN & CPACR).
++    bool FpexcEn() const;
++    void SetFpexcEn(bool value);
++
+     /// Clears exclusive state for this core.
+     void ClearExclusiveState();
+
 --- a/dynarmic/ir/opt/a32_get_set_elimination_pass.cpp
 +++ b/dynarmic/ir/opt/a32_get_set_elimination_pass.cpp
-@@ -21,7 +21,7 @@
- 
+@@ -21,7 +21,7 @@ namespace Dynarmic::Optimization {
+
  namespace {
- 
+
 -void FlagsPass(IR::Block& block) {
 +void FlagsPass(IR::Block& block, bool preserve_state_across_memory_access) {
      using Iterator = std::reverse_iterator<IR::Block::iterator>;
- 
+
      struct FlagInfo {
-@@ -173,6 +173,12 @@
+@@ -173,6 +173,12 @@ void FlagsPass(IR::Block& block) {
                  nz = {};
                  c_flag = {};
                  ge = {};
@@ -254,16 +816,16 @@
              }
              break;
          }
-@@ -180,7 +186,7 @@
+@@ -180,7 +186,7 @@ void FlagsPass(IR::Block& block) {
      }
  }
- 
+
 -void RegisterPass(IR::Block& block) {
 +void RegisterPass(IR::Block& block, bool preserve_state_across_memory_access) {
      using Iterator = IR::Block::iterator;
- 
+
      struct RegInfo {
-@@ -360,6 +366,13 @@
+@@ -360,6 +366,13 @@ void RegisterPass(IR::Block& block) {
              if (inst->ReadsFromCoreRegister() || inst->WritesToCoreRegister()) {
                  reg_info = {};
                  ext_reg_info = {};
@@ -277,10 +839,10 @@
              }
              break;
          }
-@@ -369,9 +382,9 @@
- 
+@@ -369,9 +382,9 @@ void RegisterPass(IR::Block& block) {
+
  }  // namespace
- 
+
 -void A32GetSetElimination(IR::Block& block, A32GetSetEliminationOptions) {
 -    FlagsPass(block);
 -    RegisterPass(block);
@@ -288,21 +850,15 @@
 +    FlagsPass(block, opt.preserve_state_across_memory_access);
 +    RegisterPass(block, opt.preserve_state_across_memory_access);
  }
- 
+
  }  // namespace Dynarmic::Optimization
---- a/dynarmic/backend/x64/a32_interface.cpp
-+++ b/dynarmic/backend/x64/a32_interface.cpp
-@@ -218,8 +218,11 @@
-         IR::Block ir_block = A32::Translate(A32::LocationDescriptor{descriptor}, conf.callbacks, {conf.arch_version, conf.define_unpredictable_behaviour, conf.hook_hint_instructions, conf.enable_system_mode});
-         Optimization::PolyfillPass(ir_block, polyfill_options);
-         Optimization::NamingPass(ir_block);
--        if (conf.HasOptimization(OptimizationFlag::GetSetElimination) && !conf.check_halt_on_memory_access) {
--            Optimization::A32GetSetElimination(ir_block, {.convert_nz_to_nzc = true});
-+        if (conf.HasOptimization(OptimizationFlag::GetSetElimination)) {
-+            Optimization::A32GetSetElimination(ir_block, {
-+                .convert_nz_to_nzc = true,
-+                .preserve_state_across_memory_access = conf.check_halt_on_memory_access,
-+            });
-             Optimization::DeadCodeElimination(ir_block);
-         }
-         if (conf.HasOptimization(OptimizationFlag::ConstProp)) {
+--- a/dynarmic/ir/opt/passes.h
++++ b/dynarmic/ir/opt/passes.h
+@@ -30,6 +30,7 @@ struct PolyfillOptions {
+ struct A32GetSetEliminationOptions {
+     bool convert_nzc_to_nz = false;
+     bool convert_nz_to_nzc = false;
++    bool preserve_state_across_memory_access = false;
+ };
+
+ void PolyfillPass(IR::Block& block, const PolyfillOptions& opt);

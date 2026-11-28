@@ -1862,6 +1862,16 @@ struct CoreState final : public Dynarmic::A32::UserCallbacks {
             }
             return 0;
         }
+        static std::uint64_t cpacr_write_cb(void* arg, std::uint32_t val, std::uint32_t) {
+            auto* c = static_cast<CoreState*>(arg);
+            if (c->is_user_mode()) {
+                c->raise_sync_undef_from_callback(c->jit->Regs()[15] - 4u);
+                return 0;
+            }
+            c->cp15.cpacr = val;
+            c->sync_vfp_enable_state();
+            return 0;
+        }
 
         std::optional<Callback> CompileInternalOperation(
             bool two, unsigned opc1, Dynarmic::A32::CoprocReg crd, Dynarmic::A32::CoprocReg crn,
@@ -1874,9 +1884,13 @@ struct CoreState final : public Dynarmic::A32::UserCallbacks {
             Dynarmic::A32::CoprocReg crm, unsigned opc2) override {
             const uint32_t n = static_cast<uint32_t>(crn);
             const uint32_t m = static_cast<uint32_t>(crm);
-            if (opc1 == 0u && n == 1u && m == 0u && opc2 == 0u) {
+            if (!two && opc1 == 0u && n == 1u && m == 0u && opc2 == 0u) {
                 /* SCTLR: only flush TLB/Fastmem when MMU-affecting bits (M/A/TRE/AFE) actually change */
                 return Callback{&sctlr_write_cb, owner};
+            }
+            if (!two && opc1 == 0u && n == 1u && m == 0u && opc2 == 2u) {
+                /* CPACR: sync CP10/CP11 VFP/ASIMD access permissions into JIT LocationDescriptor */
+                return Callback{&cpacr_write_cb, owner};
             }
             if (opc1 == 0u && n == 2u && m == 0u && opc2 == 0u) {
                 /* TTBR0: switch user page table, invalidate fastmem and (for non-global OS) JIT cache */
@@ -2010,9 +2024,129 @@ struct CoreState final : public Dynarmic::A32::UserCallbacks {
         static std::uint64_t nop_cb(void*, std::uint32_t, std::uint32_t) { return 0; }
     };
 
+    /* CP10 VFP system registers (FPEXC, FPSID, MVFR0, MVFR1) with ARMv7-A PL1 & CPACR checks
+     * and live JIT LocationDescriptor FPEXC.EN synchronization for RTOS lazy VFP context switching. */
+    class FujiVfpSystemCoprocessor final : public Dynarmic::A32::Coprocessor {
+    public:
+        struct Node {
+            CoreState* owner = nullptr;
+            uint8_t rt = 0;
+            uint8_t crn = 0;
+        };
+
+        explicit FujiVfpSystemCoprocessor(CoreState* c) : owner(c) {
+            for (uint32_t crn = 0; crn < 16u; ++crn) {
+                write_nodes[crn] = Node{c, 0u, static_cast<uint8_t>(crn)};
+                for (uint32_t rt = 0; rt < 16u; ++rt) {
+                    read_nodes[crn][rt] = Node{c, static_cast<uint8_t>(rt), static_cast<uint8_t>(crn)};
+                }
+            }
+        }
+
+        std::optional<Callback> CompileInternalOperation(
+            bool two, unsigned opc1, Dynarmic::A32::CoprocReg crd, Dynarmic::A32::CoprocReg crn,
+            Dynarmic::A32::CoprocReg crm, unsigned opc2) override {
+            if (!two && opc1 == 7u && static_cast<uint32_t>(crm) == 0u && opc2 == 0u) {
+                const uint32_t rt = static_cast<uint32_t>(crd) & 0xFu;
+                const uint32_t reg = static_cast<uint32_t>(crn) & 0xFu;
+                return Callback{&vmrs_cb, &read_nodes[reg][rt]};
+            }
+            return std::nullopt;
+        }
+
+        CallbackOrAccessOneWord CompileSendOneWord(
+            bool two, unsigned opc1, Dynarmic::A32::CoprocReg crn,
+            Dynarmic::A32::CoprocReg crm, unsigned opc2) override {
+            if (!two && opc1 == 7u && static_cast<uint32_t>(crm) == 0u && opc2 == 0u) {
+                const uint32_t reg = static_cast<uint32_t>(crn) & 0xFu;
+                return Callback{&vmsr_cb, &write_nodes[reg]};
+            }
+            return std::monostate{};
+        }
+
+        CallbackOrAccessTwoWords CompileSendTwoWords(bool, unsigned, Dynarmic::A32::CoprocReg) override {
+            return std::monostate{};
+        }
+
+        CallbackOrAccessOneWord CompileGetOneWord(
+            bool two, unsigned opc1, Dynarmic::A32::CoprocReg crn,
+            Dynarmic::A32::CoprocReg crm, unsigned opc2) override {
+            if (!two && opc1 == 7u && static_cast<uint32_t>(crm) == 0u && opc2 == 0u) {
+                switch (static_cast<uint32_t>(crn)) {
+                case 0u: return &owner->cp15.fpsid;
+                case 6u: return &owner->cp15.mvfr1;
+                case 7u: return &owner->cp15.mvfr0;
+                case 8u: return &owner->cp15.fpexc;
+                default: return Callback{&zero_cb, nullptr};
+                }
+            }
+            return std::monostate{};
+        }
+
+        CallbackOrAccessTwoWords CompileGetTwoWords(bool, unsigned, Dynarmic::A32::CoprocReg) override {
+            return std::monostate{};
+        }
+
+        std::optional<Callback> CompileLoadWords(
+            bool, bool, Dynarmic::A32::CoprocReg, std::optional<std::uint8_t>) override {
+            return std::nullopt;
+        }
+
+        std::optional<Callback> CompileStoreWords(
+            bool, bool, Dynarmic::A32::CoprocReg, std::optional<std::uint8_t>) override {
+            return std::nullopt;
+        }
+
+    private:
+        static std::uint64_t zero_cb(void*, std::uint32_t, std::uint32_t) { return 0; }
+
+        static std::uint64_t vmsr_cb(void* arg, std::uint32_t val, std::uint32_t) {
+            const auto* n = static_cast<const Node*>(arg);
+            CoreState* c = n->owner;
+            const uint32_t mode = c->jit->Cpsr() & CPSR_M_MASK;
+            if (mode == FUJI_DYN_MODE_USR || !c->cpacr_allows_cp10(mode)) {
+                c->raise_sync_undef_from_callback(c->jit->Regs()[15] - 4u);
+                return 0;
+            }
+            if (n->crn == 8u) {
+                c->cp15.fpexc = val;
+                c->sync_vfp_enable_state_for_mode(mode);
+            }
+            return 0;
+        }
+
+        static std::uint64_t vmrs_cb(void* arg, std::uint32_t, std::uint32_t) {
+            const auto* n = static_cast<const Node*>(arg);
+            CoreState* c = n->owner;
+            const uint32_t mode = c->jit->Cpsr() & CPSR_M_MASK;
+            if (mode == FUJI_DYN_MODE_USR || !c->cpacr_allows_cp10(mode)) {
+                c->raise_sync_undef_from_callback(c->jit->Regs()[15] - 4u);
+                return 0;
+            }
+            uint32_t val = 0u;
+            switch (n->crn) {
+            case 0u: val = c->cp15.fpsid; break;
+            case 6u: val = c->cp15.mvfr1; break;
+            case 7u: val = c->cp15.mvfr0; break;
+            case 8u: val = c->cp15.fpexc; break;
+            default: val = 0u; break;
+            }
+            if (n->rt < 15u) {
+                c->jit->Regs()[n->rt] = val;
+            } else {
+                c->jit->SetCpsr((c->jit->Cpsr() & 0x0FFFFFFFu) | (val & 0xF0000000u));
+            }
+            return 0;
+        }
+
+        CoreState* owner = nullptr;
+        std::array<Node, 16> write_nodes{};
+        std::array<std::array<Node, 16>, 16> read_nodes{};
+    };
+
     std::shared_ptr<FujiCp15Coprocessor> cp15_coproc;
     std::shared_ptr<FujiCp14Coprocessor> cp14_coproc;
-    std::shared_ptr<ArmVfpSystemCoprocessor> cp10_coproc;
+    std::shared_ptr<FujiVfpSystemCoprocessor> cp10_coproc;
     std::unique_ptr<Dynarmic::A32::Jit> jit;
     PrivMemCallbacks priv_mem_cbs;
     bool has_non_global_pages = false;
@@ -2182,6 +2316,7 @@ struct CoreState final : public Dynarmic::A32::UserCallbacks {
     static void on_mode_switch_cb(void* user, uint32_t old_mode, uint32_t new_mode) {
         auto* c = static_cast<CoreState*>(user);
         c->banked.switch_mode(old_mode, new_mode, c->jit->Regs());
+        c->sync_vfp_enable_state_for_mode(new_mode);
         if ((old_mode == FUJI_DYN_MODE_USR) != (new_mode == FUJI_DYN_MODE_USR)) {
             c->mmu.flush();
             if (c->engine->mt_epoch_active.load(std::memory_order_acquire)) {
@@ -2384,7 +2519,7 @@ struct CoreState final : public Dynarmic::A32::UserCallbacks {
 
         cp15_coproc = std::make_shared<FujiCp15Coprocessor>(this, cp15, std::move(hooks));
         cp14_coproc = std::make_shared<FujiCp14Coprocessor>();
-        cp10_coproc = std::make_shared<ArmVfpSystemCoprocessor>(cp15);
+        cp10_coproc = std::make_shared<FujiVfpSystemCoprocessor>(this);
         priv_mem_cbs.read32 = [this](uint32_t va, bool& faulted) -> uint32_t {
             uint32_t v = mem_read_impl<uint32_t>(va);
             faulted = dabt_latched;
@@ -2456,6 +2591,7 @@ struct CoreState final : public Dynarmic::A32::UserCallbacks {
         jit->ExtRegs().fill(0);
         jit->SetCpsr(FUJI_DYN_MODE_SVC | CPSR_I_BIT | CPSR_F_BIT);
         jit->SetFpscr(0);
+        sync_vfp_enable_state();
         jit->ClearExclusiveState();
         resume_from_tracepoint = false;
         resume_tp_pc = 0u;
@@ -2468,6 +2604,34 @@ struct CoreState final : public Dynarmic::A32::UserCallbacks {
 
     inline bool is_user_mode() const {
         return (jit->Cpsr() & CPSR_M_MASK) == FUJI_DYN_MODE_USR;
+    }
+
+    inline bool cpacr_allows_cp10(uint32_t mode) const {
+        const uint32_t cp10 = (cp15.cpacr >> 20) & 3u;
+        if (cp10 == 3u) return true;
+        if (cp10 == 1u) return mode != FUJI_DYN_MODE_USR;
+        return false;
+    }
+
+    inline void sync_vfp_enable_state_for_mode(uint32_t mode) {
+        if (!jit) return;
+        const bool en = ((cp15.fpexc & 0x40000000u) != 0u) && cpacr_allows_cp10(mode);
+        jit->SetFpexcEn(en);
+    }
+
+    inline void sync_vfp_enable_state() {
+        if (!jit) return;
+        sync_vfp_enable_state_for_mode(jit->Cpsr() & CPSR_M_MASK);
+    }
+
+    inline void raise_sync_undef_from_callback(uint32_t fault_pc) {
+        stop_insn = peek_code_u32(fault_pc).value_or(0u);
+        jit->Regs()[15] = fault_pc;
+        if ((engine->auto_excp_mask & FUJI_DYN_AUTO_EXCP_UNDEF) != 0u) {
+            deliver_undef_internal();
+            return;
+        }
+        latch_stop(FUJI_DYN_STOP_FAULT_UNDEF);
     }
 
     inline void latch_stop(uint32_t reason, Dynarmic::HaltReason hr = Dynarmic::HaltReason::UserDefined1) {
@@ -3235,7 +3399,13 @@ struct CoreState final : public Dynarmic::A32::UserCallbacks {
                     return;
                 }
                 raw_insn = *maybe_w;
-                handled = execute_privileged_a32(cur_pc, raw_insn, jit->Regs(), cpsr, banked, cp15, priv_mem_cbs, mode_changed, faulted);
+                const bool is_a32_vfp_sys = ((raw_insn >> 28) != 0xFu) && ((raw_insn & 0x0FE00FFFu) == 0x0EE00A10u);
+                if (is_a32_vfp_sys && arm_cond_passed(raw_insn >> 28, cpsr) &&
+                    (was_user || !cpacr_allows_cp10(cpsr & CPSR_M_MASK))) {
+                    handled = false;
+                } else {
+                    handled = execute_privileged_a32(cur_pc, raw_insn, jit->Regs(), cpsr, banked, cp15, priv_mem_cbs, mode_changed, faulted);
+                }
             } else {
                 auto maybe_h1 = peek_code_u16(cur_pc);
                 if (!maybe_h1.has_value()) {
@@ -3252,7 +3422,12 @@ struct CoreState final : public Dynarmic::A32::UserCallbacks {
                     if (maybe_h2.has_value()) hw2 = *maybe_h2;
                 }
                 raw_insn = (static_cast<uint32_t>(hw1) << 16) | hw2;
-                handled = execute_privileged_thumb(cur_pc, hw1, hw2, jit->Regs(), cpsr, banked, cp15, priv_mem_cbs, mode_changed, faulted);
+                const bool is_t32_vfp_sys = ((hw1 & 0xFFE0u) == 0xEEE0u) && ((hw2 & 0x0FFFu) == 0x0A10u);
+                if (is_t32_vfp_sys && (was_user || !cpacr_allows_cp10(cpsr & CPSR_M_MASK))) {
+                    handled = false;
+                } else {
+                    handled = execute_privileged_thumb(cur_pc, hw1, hw2, jit->Regs(), cpsr, banked, cp15, priv_mem_cbs, mode_changed, faulted);
+                }
             }
 
             if (faulted) {
@@ -3262,11 +3437,16 @@ struct CoreState final : public Dynarmic::A32::UserCallbacks {
             if (!handled) {
                 stop_insn = raw_insn;
                 jit->Regs()[15] = cur_pc;
+                if ((engine->auto_excp_mask & FUJI_DYN_AUTO_EXCP_UNDEF) != 0u) {
+                    deliver_undef_internal();
+                    return;
+                }
                 latch_stop(FUJI_DYN_STOP_FAULT_UNDEF);
                 return;
             }
 
             jit->SetCpsr(cpsr);
+            sync_vfp_enable_state();
             const bool is_user_now = (cpsr & CPSR_M_MASK) == FUJI_DYN_MODE_USR;
             if (is_user_now != was_user) {
                 mmu.flush();
@@ -3301,6 +3481,7 @@ struct CoreState final : public Dynarmic::A32::UserCallbacks {
             enter_exception_mode(jit->Regs(), cpsr, banked, cp15,
                                  FUJI_DYN_MODE_SVC, CPSR_I_BIT, lr_val, 0x08u);
             jit->SetCpsr(cpsr);
+            sync_vfp_enable_state();
             jit->ClearExclusiveState();
             if (was_user) {
                 mmu.flush();
@@ -3574,6 +3755,7 @@ struct CoreState final : public Dynarmic::A32::UserCallbacks {
         bool was_user = (cpsr & CPSR_M_MASK) == FUJI_DYN_MODE_USR;
         if (!deliver_irq(jit->Regs(), cpsr, banked, cp15)) return -1; /* IRQ masked */
         jit->SetCpsr(cpsr);
+        sync_vfp_enable_state();
         jit->ClearExclusiveState();
         if (was_user) { mmu.flush(); engine->fastmem.invalidate_core(core_id); }
         publish_live_state();
@@ -3585,6 +3767,7 @@ struct CoreState final : public Dynarmic::A32::UserCallbacks {
         bool was_user = (cpsr & CPSR_M_MASK) == FUJI_DYN_MODE_USR;
         if (!deliver_fiq(jit->Regs(), cpsr, banked, cp15)) return -1;
         jit->SetCpsr(cpsr);
+        sync_vfp_enable_state();
         jit->ClearExclusiveState();
         if (was_user) { mmu.flush(); engine->fastmem.invalidate_core(core_id); }
         publish_live_state();
@@ -3597,6 +3780,7 @@ struct CoreState final : public Dynarmic::A32::UserCallbacks {
         uint32_t lr_val = jit->Regs()[15];
         deliver_svc(jit->Regs(), cpsr, banked, cp15, lr_val);
         jit->SetCpsr(cpsr);
+        sync_vfp_enable_state();
         jit->ClearExclusiveState();
         if (was_user) { mmu.flush(); engine->fastmem.invalidate_core(core_id); }
         publish_live_state();
@@ -3608,6 +3792,7 @@ struct CoreState final : public Dynarmic::A32::UserCallbacks {
         bool was_user = (cpsr & CPSR_M_MASK) == FUJI_DYN_MODE_USR;
         deliver_undef(jit->Regs(), cpsr, banked, cp15);
         jit->SetCpsr(cpsr);
+        sync_vfp_enable_state();
         jit->ClearExclusiveState();
         if (was_user) { mmu.flush(); engine->fastmem.invalidate_core(core_id); }
         publish_live_state();
@@ -3619,6 +3804,7 @@ struct CoreState final : public Dynarmic::A32::UserCallbacks {
         bool was_user = (cpsr & CPSR_M_MASK) == FUJI_DYN_MODE_USR;
         deliver_pabt(jit->Regs(), cpsr, banked, cp15, far, fsr);
         jit->SetCpsr(cpsr);
+        sync_vfp_enable_state();
         jit->ClearExclusiveState();
         if (was_user) { mmu.flush(); engine->fastmem.invalidate_core(core_id); }
         publish_live_state();
@@ -3694,6 +3880,7 @@ struct CoreState final : public Dynarmic::A32::UserCallbacks {
         rollback_base_reg_on_dabt(jit->Regs()[15], cpsr);
         deliver_dabt(jit->Regs(), cpsr, banked, cp15, far, fsr);
         jit->SetCpsr(cpsr);
+        sync_vfp_enable_state();
         jit->ClearExclusiveState();
         if (was_user) { mmu.flush(); engine->fastmem.invalidate_core(core_id); }
         publish_live_state();
@@ -4797,6 +4984,7 @@ FUJI_DYN_EXPORT void fuji_dyn_set_cpsr(FujiDynEngine* engine, uint32_t core, uin
         }
     }
     c->jit->SetCpsr(value);
+    c->sync_vfp_enable_state();
     c->publish_live_state();
 }
 
@@ -4852,6 +5040,7 @@ FUJI_DYN_EXPORT void fuji_dyn_set_cp15(FujiDynEngine* engine, uint32_t core, uin
     };
     hooks.get_virtual_tick = [engine]() -> uint64_t { return engine->current_vtick.load(std::memory_order_acquire); };
     cp15_write_reg(c->cp15, hooks, opc1, crn, crm, opc2, value, false);
+    c->sync_vfp_enable_state();
     engine->fastmem.invalidate_core(core);
 }
 
@@ -4884,6 +5073,7 @@ FUJI_DYN_EXPORT void fuji_dyn_set_ext_reg(FujiDynEngine* engine, uint32_t core, 
         c->jit->SetFpscr(value);
     } else if (index == FUJI_DYN_EXT_FPEXC) {
         c->cp15.fpexc = value;
+        c->sync_vfp_enable_state();
     }
 }
 
@@ -4917,7 +5107,10 @@ FUJI_DYN_EXPORT uint32_t fuji_dyn_get_fpexc(FujiDynEngine* engine, uint32_t core
 }
 
 FUJI_DYN_EXPORT void fuji_dyn_set_fpexc(FujiDynEngine* engine, uint32_t core, uint32_t value) {
-    if (auto* c = get_core(engine, core)) c->cp15.fpexc = value;
+    if (auto* c = get_core(engine, core)) {
+        c->cp15.fpexc = value;
+        c->sync_vfp_enable_state();
+    }
 }
 
 FUJI_DYN_EXPORT uint32_t fuji_dyn_get_current_pc(FujiDynEngine* engine, uint32_t core) {

@@ -58,11 +58,26 @@ set(overlay "${CMAKE_CURRENT_BINARY_DIR}/checked-memory")
 set(inputs "${CMAKE_CURRENT_BINARY_DIR}/checked-memory-inputs")
 set(patch "${CMAKE_CURRENT_SOURCE_DIR}/a32-checked-memory.patch")
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${patch}")
+file(SHA256 "${patch}" FUJI_PATCH_SHA256)
+string(SUBSTRING "${FUJI_PATCH_SHA256}" 0 8 FUJI_PATCH_REV)
+target_compile_definitions(dynarmic PRIVATE "FUJI_DYNARMIC_OVERLAY_REV=0x${FUJI_PATCH_REV}")
 
 set(patched_files
     "backend/x64/a32_emit_x64_memory.cpp"
     "backend/x64/emit_x64_memory.cpp.inc"
     "backend/x64/a32_interface.cpp"
+    "backend/x64/a32_jitstate.h"
+    "backend/x64/a32_jitstate.cpp"
+    "backend/arm64/a32_interface.cpp"
+    "backend/arm64/a32_jitstate.h"
+    "backend/arm64/a32_jitstate.cpp"
+    "interface/A32/a32.h"
+    "frontend/A32/a32_location_descriptor.h"
+    "frontend/A32/a32_location_descriptor.cpp"
+    "frontend/A32/translate/translate_arm.cpp"
+    "frontend/A32/translate/translate_thumb.cpp"
+    "frontend/A32/translate/impl/coprocessor.cpp"
+    "frontend/A32/translate/impl/thumb32_coprocessor.cpp"
     "ir/opt/passes.h"
     "ir/opt/a32_get_set_elimination_pass.cpp"
 )
@@ -76,32 +91,37 @@ foreach(file IN LISTS patched_files)
 endforeach()
 target_include_directories(dynarmic BEFORE PRIVATE "${overlay}")
 
-set(patched_arm_emitter FALSE)
-set(patched_arm_interface FALSE)
-set(patched_gse_pass FALSE)
+set(patched_cpp_sources
+    "backend/x64/a32_emit_x64_memory.cpp"
+    "backend/x64/a32_interface.cpp"
+    "backend/x64/a32_jitstate.cpp"
+    "backend/arm64/a32_interface.cpp"
+    "backend/arm64/a32_jitstate.cpp"
+    "frontend/A32/a32_location_descriptor.cpp"
+    "frontend/A32/translate/translate_arm.cpp"
+    "frontend/A32/translate/translate_thumb.cpp"
+    "frontend/A32/translate/impl/coprocessor.cpp"
+    "frontend/A32/translate/impl/thumb32_coprocessor.cpp"
+    "ir/opt/a32_get_set_elimination_pass.cpp"
+)
+set(patched_matched_count 0)
 foreach(source IN LISTS dynarmic_sources)
-    if(source MATCHES "(^|/)backend/x64/a32_emit_x64_memory\\.cpp$")
-        set_source_files_properties("${DYNARMIC_SOURCE_DIR}/src/dynarmic/backend/x64/a32_emit_x64_memory.cpp"
-            TARGET_DIRECTORY dynarmic PROPERTIES HEADER_FILE_ONLY TRUE)
-        target_sources(dynarmic PRIVATE "${overlay}/dynarmic/backend/x64/a32_emit_x64_memory.cpp")
-        set(patched_arm_emitter TRUE)
-    elseif(source MATCHES "(^|/)backend/x64/a32_interface\\.cpp$")
-        set_source_files_properties("${DYNARMIC_SOURCE_DIR}/src/dynarmic/backend/x64/a32_interface.cpp"
-            TARGET_DIRECTORY dynarmic PROPERTIES HEADER_FILE_ONLY TRUE)
-        target_sources(dynarmic PRIVATE "${overlay}/dynarmic/backend/x64/a32_interface.cpp")
-        set(patched_arm_interface TRUE)
-    elseif(source MATCHES "(^|/)ir/opt/a32_get_set_elimination_pass\\.cpp$")
-        set_source_files_properties("${DYNARMIC_SOURCE_DIR}/src/dynarmic/ir/opt/a32_get_set_elimination_pass.cpp"
-            TARGET_DIRECTORY dynarmic PROPERTIES HEADER_FILE_ONLY TRUE)
-        target_sources(dynarmic PRIVATE "${overlay}/dynarmic/ir/opt/a32_get_set_elimination_pass.cpp")
-        set(patched_gse_pass TRUE)
-    endif()
+    foreach(rel_cpp IN LISTS patched_cpp_sources)
+        string(REPLACE "." "\\." rel_regex "${rel_cpp}")
+        if(source MATCHES "(^|/)${rel_regex}$")
+            set_source_files_properties("${DYNARMIC_SOURCE_DIR}/src/dynarmic/${rel_cpp}"
+                TARGET_DIRECTORY dynarmic PROPERTIES HEADER_FILE_ONLY TRUE)
+            target_sources(dynarmic PRIVATE "${overlay}/dynarmic/${rel_cpp}")
+            math(EXPR patched_matched_count "${patched_matched_count} + 1")
+        endif()
+    endforeach()
 endforeach()
-if(NOT patched_gse_pass)
-    message(FATAL_ERROR "No A32 GetSetElimination pass found in the pinned Dynarmic target")
-endif()
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64|amd64)$" AND (NOT patched_arm_emitter OR NOT patched_arm_interface))
-    message(FATAL_ERROR "No A32 x64 memory emitter/interface found in the pinned Dynarmic target")
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64|amd64)$" AND NOT patched_matched_count EQUAL 9)
+    message(FATAL_ERROR "Expected 9 patched Dynarmic A32/x64 C++ sources, matched ${patched_matched_count}")
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64|ARM64)$" AND NOT patched_matched_count EQUAL 8)
+    message(FATAL_ERROR "Expected 8 patched Dynarmic A32/arm64 C++ sources, matched ${patched_matched_count}")
+elseif(patched_matched_count LESS 6)
+    message(FATAL_ERROR "Missing patched Dynarmic A32 frontend/IR C++ sources (matched ${patched_matched_count})")
 endif()
 
 add_library(fuji_dynarmic SHARED
@@ -111,6 +131,7 @@ add_library(fuji_dynarmic SHARED
 )
 
 target_compile_definitions(fuji_dynarmic PRIVATE FUJI_DYNARMIC_BUILD_DLL=1)
+target_include_directories(fuji_dynarmic BEFORE PRIVATE "${overlay}")
 target_include_directories(fuji_dynarmic
     PUBLIC  "${CMAKE_CURRENT_SOURCE_DIR}"
     PRIVATE "${DYNARMIC_SOURCE_DIR}/src"

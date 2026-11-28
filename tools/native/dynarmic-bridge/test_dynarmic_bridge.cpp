@@ -2296,6 +2296,269 @@ static void test_64bit_alignment_normal_nc_device_and_strexd(FujiDynEngine* eng)
     std::printf("  [PASS] 23. 64-bit alignment: word-aligned Normal/Device pairs, unaligned Device faults and strict STREXD\n");
 }
 
+static void test_vfp_fpexc_lazy_undef_and_cache_invalidation(FujiDynEngine* eng) {
+    fuji_dyn_reset_core(eng, 0u);
+    fuji_dyn_clear_cache(eng);
+    fuji_dyn_set_auto_exceptions(eng, 0u);
+
+    /* 1. FPEXC.EN == 0 traps VFP, FPSCR, and ASIMD instructions at exact fault_pc without side effects */
+    const uint32_t trap_vpush_pa = 0x00080000u;
+    const uint32_t trap_vadd_pa  = 0x00080020u;
+    const uint32_t trap_vmrs_pa  = 0x00080040u;
+    const uint32_t trap_neon_pa  = 0x00080060u;
+    const uint32_t vpush_code[] = { 0xED2D8B02u, 0xE320F003u }; /* vpush {d8}; wfi */
+    const uint32_t vadd_code[]  = { 0xEE310B02u, 0xE320F003u }; /* vadd.f64 d0, d1, d2; wfi */
+    const uint32_t vmrs_code[]  = { 0xEEF10A10u, 0xE320F003u }; /* vmrs r0, fpscr; wfi */
+    const uint32_t neon_code[]  = { 0xF2210802u, 0xE320F003u }; /* vadd.i32 d0, d1, d2; wfi */
+    CHECK(fuji_dyn_mem_write(eng, trap_vpush_pa, vpush_code, sizeof(vpush_code)) == 0, "write vpush");
+    CHECK(fuji_dyn_mem_write(eng, trap_vadd_pa, vadd_code, sizeof(vadd_code)) == 0, "write vadd");
+    CHECK(fuji_dyn_mem_write(eng, trap_vmrs_pa, vmrs_code, sizeof(vmrs_code)) == 0, "write vmrs fpscr");
+    CHECK(fuji_dyn_mem_write(eng, trap_neon_pa, neon_code, sizeof(neon_code)) == 0, "write neon");
+
+    fuji_dyn_set_fpexc(eng, 0u, 0x00000000u);
+    fuji_dyn_set_reg(eng, 0u, 13u, 0x00090000u);
+    fuji_dyn_set_dreg(eng, 0u, 0u, 0x1122334455667788ull);
+    fuji_dyn_set_reg(eng, 0u, 0u, 0xDEADC0DEu);
+
+    FujiDynRunResult res{};
+    fuji_dyn_set_reg(eng, 0u, 15u, trap_vpush_pa);
+    CHECK(fuji_dyn_run_fast(eng, 0u, 100u, 0u, 0u, &res) == 0, "run vpush fpexc=0");
+    CHECK(res.stop_reason == FUJI_DYN_STOP_FAULT_UNDEF && fuji_dyn_get_reg(eng, 0u, 15u) == trap_vpush_pa &&
+          fuji_dyn_get_reg(eng, 0u, 13u) == 0x00090000u,
+          "vpush with FPEXC.EN=0 must fault at exact PC without decrementing SP");
+
+    fuji_dyn_set_reg(eng, 0u, 15u, trap_vadd_pa);
+    CHECK(fuji_dyn_run_fast(eng, 0u, 100u, 0u, 0u, &res) == 0, "run vadd fpexc=0");
+    CHECK(res.stop_reason == FUJI_DYN_STOP_FAULT_UNDEF && fuji_dyn_get_reg(eng, 0u, 15u) == trap_vadd_pa &&
+          fuji_dyn_get_dreg(eng, 0u, 0u) == 0x1122334455667788ull,
+          "vadd.f64 with FPEXC.EN=0 must fault at exact PC without modifying d0");
+
+    fuji_dyn_set_reg(eng, 0u, 15u, trap_vmrs_pa);
+    CHECK(fuji_dyn_run_fast(eng, 0u, 100u, 0u, 0u, &res) == 0, "run vmrs fpscr fpexc=0");
+    CHECK(res.stop_reason == FUJI_DYN_STOP_FAULT_UNDEF && fuji_dyn_get_reg(eng, 0u, 15u) == trap_vmrs_pa &&
+          fuji_dyn_get_reg(eng, 0u, 0u) == 0xDEADC0DEu,
+          "vmrs fpscr with FPEXC.EN=0 must fault without modifying Rt");
+
+    fuji_dyn_set_reg(eng, 0u, 15u, trap_neon_pa);
+    CHECK(fuji_dyn_run_fast(eng, 0u, 100u, 0u, 0u, &res) == 0, "run neon fpexc=0");
+    CHECK(res.stop_reason == FUJI_DYN_STOP_FAULT_UNDEF && fuji_dyn_get_reg(eng, 0u, 15u) == trap_neon_pa &&
+          fuji_dyn_get_dreg(eng, 0u, 0u) == 0x1122334455667788ull,
+          "ASIMD vadd.i32 with FPEXC.EN=0 must fault without modifying d0");
+
+    /* 2. Conditional ARM VFP with FPEXC.EN == 0: false condition executes as NOP, true condition faults */
+    const uint32_t cond_vfp_pa = 0x00080100u;
+    const uint32_t cond_vfp_code[] = {
+        0xE3500001u, /* cmp r0, #1 */
+        0x0E310B02u, /* vaddeq.f64 d0, d1, d2 */
+        0xE2811005u, /* add r1, r1, #5 */
+        0xE320F003u, /* wfi */
+    };
+    CHECK(fuji_dyn_mem_write(eng, cond_vfp_pa, cond_vfp_code, sizeof(cond_vfp_code)) == 0, "write cond vfp");
+    fuji_dyn_set_reg(eng, 0u, 0u, 0u); /* r0 != 1 -> EQ false */
+    fuji_dyn_set_reg(eng, 0u, 1u, 10u);
+    fuji_dyn_set_reg(eng, 0u, 15u, cond_vfp_pa);
+    CHECK(fuji_dyn_run_fast(eng, 0u, 100u, 0u, 0u, &res) == 0, "run false-cond vfp");
+    CHECK(res.stop_reason == FUJI_DYN_STOP_WFI && fuji_dyn_get_reg(eng, 0u, 1u) == 15u,
+          "false-condition ARM VFP with FPEXC.EN=0 must execute as NOP without trapping");
+
+    fuji_dyn_set_reg(eng, 0u, 0u, 1u); /* r0 == 1 -> EQ true */
+    fuji_dyn_set_reg(eng, 0u, 1u, 10u);
+    fuji_dyn_set_reg(eng, 0u, 15u, cond_vfp_pa);
+    CHECK(fuji_dyn_run_fast(eng, 0u, 100u, 0u, 0u, &res) == 0, "run true-cond vfp");
+    CHECK(res.stop_reason == FUJI_DYN_STOP_FAULT_UNDEF &&
+          fuji_dyn_get_reg(eng, 0u, 15u) == cond_vfp_pa + 4u &&
+          fuji_dyn_get_reg(eng, 0u, 1u) == 10u,
+          "true-condition ARM VFP with FPEXC.EN=0 must trap at vaddeq PC");
+
+    /* 3. Privileged VMRS/VMSR on FPEXC/FPSID/MVFR0/MVFR1 succeed in SVC with FPEXC=0, trap in USR, and honor CPACR */
+    const uint32_t sysreg_pa = 0x00080200u;
+    const uint32_t sysreg_code[] = {
+        0xEEF02A10u, /* vmrs r2, fpsid */
+        0xEEF73A10u, /* vmrs r3, mvfr0 */
+        0xEEF64A10u, /* vmrs r4, mvfr1 */
+        0xEEF85A10u, /* vmrs r5, fpexc */
+        0xE320F003u, /* wfi */
+    };
+    CHECK(fuji_dyn_mem_write(eng, sysreg_pa, sysreg_code, sizeof(sysreg_code)) == 0, "write vfp sysregs");
+    fuji_dyn_set_fpexc(eng, 0u, 0u);
+    fuji_dyn_set_reg(eng, 0u, 15u, sysreg_pa);
+    CHECK(fuji_dyn_run_fast(eng, 0u, 100u, 0u, 0u, &res) == 0 && res.stop_reason == FUJI_DYN_STOP_WFI,
+          "SVC VMRS on FPSID/MVFR0/MVFR1/FPEXC must succeed when FPEXC.EN=0");
+    CHECK(fuji_dyn_get_reg(eng, 0u, 2u) == 0x41023075u &&
+          fuji_dyn_get_reg(eng, 0u, 3u) == 0x10110222u &&
+          fuji_dyn_get_reg(eng, 0u, 4u) == 0x11111111u &&
+          fuji_dyn_get_reg(eng, 0u, 5u) == 0u,
+          "VFP system register values mismatch");
+
+    /* USR mode: VMRS/VMSR FPEXC must fault as UND even when FPEXC.EN=1 and CPACR=0x00F00000 */
+    const uint32_t usr_vmsr_pa = 0x00080240u;
+    const uint32_t usr_vmsr_code[] = { 0xEEE81A10u, 0xE320F003u }; /* vmsr fpexc, r1; wfi */
+    CHECK(fuji_dyn_mem_write(eng, usr_vmsr_pa, usr_vmsr_code, sizeof(usr_vmsr_code)) == 0, "write usr vmsr");
+    fuji_dyn_set_fpexc(eng, 0u, 0x40000000u);
+    fuji_dyn_set_cpsr(eng, 0u, 0x000001D0u); /* USR mode */
+    fuji_dyn_set_reg(eng, 0u, 2u, 0xCAFE1234u);
+    fuji_dyn_set_reg(eng, 0u, 15u, sysreg_pa);
+    CHECK(fuji_dyn_run_fast(eng, 0u, 100u, 0u, 0u, &res) == 0 &&
+          res.stop_reason == FUJI_DYN_STOP_FAULT_UNDEF &&
+          fuji_dyn_get_reg(eng, 0u, 15u) == sysreg_pa &&
+          fuji_dyn_get_reg(eng, 0u, 2u) == 0xCAFE1234u,
+          "USR mode VMRS FPSID must trap as UND without clobbering Rt");
+
+    fuji_dyn_set_reg(eng, 0u, 1u, 0u);
+    fuji_dyn_set_reg(eng, 0u, 15u, usr_vmsr_pa);
+    CHECK(fuji_dyn_run_fast(eng, 0u, 100u, 0u, 0u, &res) == 0 &&
+          res.stop_reason == FUJI_DYN_STOP_FAULT_UNDEF &&
+          fuji_dyn_get_reg(eng, 0u, 15u) == usr_vmsr_pa &&
+          fuji_dyn_get_fpexc(eng, 0u) == 0x40000000u,
+          "USR mode VMSR FPEXC must trap as UND without modifying FPEXC");
+
+    /* CPACR.cp10 == 0 in SVC mode: MCR CPACR immediately disables VFP on the very next instruction */
+    fuji_dyn_set_cpsr(eng, 0u, 0x000001D3u); /* back to SVC */
+    const uint32_t cpacr_pa = 0x00080280u;
+    const uint32_t cpacr_code[] = {
+        0xE3A00000u, /* mov r0, #0 */
+        0xEE010F50u, /* mcr p15, 0, r0, c1, c0, 2 (CPACR = 0) */
+        0xEE310B02u, /* vadd.f64 d0, d1, d2 -> must fault immediately! */
+        0xE320F003u, /* wfi */
+    };
+    CHECK(fuji_dyn_mem_write(eng, cpacr_pa, cpacr_code, sizeof(cpacr_code)) == 0, "write cpacr code");
+    fuji_dyn_set_reg(eng, 0u, 15u, cpacr_pa);
+    CHECK(fuji_dyn_run_fast(eng, 0u, 100u, 0u, 0u, &res) == 0 &&
+          res.stop_reason == FUJI_DYN_STOP_FAULT_UNDEF &&
+          fuji_dyn_get_reg(eng, 0u, 15u) == cpacr_pa + 8u,
+          "MCR CPACR=0 must disable VFP immediately on the next instruction");
+
+    /* 4. Full ThreadX-style AUTO_EXCP_UNDEF lazy VFP context switch (warm JIT cache + re-disable + Thumb-2 IT retry) */
+    fuji_dyn_reset_core(eng, 0u);
+    fuji_dyn_set_auto_exceptions(eng, FUJI_DYN_AUTO_EXCP_UNDEF);
+
+    const uint32_t vbar      = 0x00081000u;
+    const uint32_t und_h_pa  = vbar + 0x100u;
+    const uint32_t tcb_pa    = 0x00082000u;
+    const uint32_t sp_und_pa = 0x00083000u;
+    const uint32_t sp_svc_pa = 0x00084000u;
+    const uint32_t vfp_fn_pa = 0x00085000u;
+    const uint32_t caller_pa = 0x00085100u;
+    const uint32_t thumb_pa  = 0x00085200u;
+
+    /* Vector +0x04 (UND): b und_h_pa -> offset = (0x100 - 0x04 - 8)/4 = 0x3D */
+    write_u32(eng, vbar + 0x04u, 0xEA00003Du);
+    const uint32_t und_handler[] = {
+        0xE92D0003u, /* push {r0, r1} */
+        0xE59D0008u, /* ldr  r0, [sp, #8] (tcb_pa) */
+        0xE5901000u, /* ldr  r1, [r0, #0] (trap_count) */
+        0xE2811001u, /* add  r1, r1, #1 */
+        0xE5801000u, /* str  r1, [r0, #0] */
+        0xE580E004u, /* str  lr, [r0, #4] (last LR_und) */
+        0xE3A01101u, /* mov  r1, #0x40000000 */
+        0xEEE81A10u, /* vmsr fpexc, r1 */
+        0xE14F0000u, /* mrs  r0, spsr */
+        0xE3100020u, /* tst  r0, #0x20 (Thumb?) */
+        0xE8BD0003u, /* pop  {r0, r1} */
+        0x125EF002u, /* subsne pc, lr, #2 */
+        0xE25EF004u, /* subs   pc, lr, #4 */
+    };
+    CHECK(fuji_dyn_mem_write(eng, und_h_pa, und_handler, sizeof(und_handler)) == 0, "write und handler");
+
+    const uint32_t vfp_fn[] = {
+        0xED2D8B02u, /* vpush {d8} */
+        0xEE318B02u, /* vadd.f64 d8, d1, d2 */
+        0xEC532B18u, /* vmov r2, r3, d8 */
+        0xECBD8B02u, /* vpop {d8} */
+        0xE12FFF1Eu, /* bx lr */
+    };
+    CHECK(fuji_dyn_mem_write(eng, vfp_fn_pa, vfp_fn, sizeof(vfp_fn)) == 0, "write vfp_fn");
+
+    /* Warm up vfp_fn_pa with FPEXC.EN=1 FIRST so its enabled block is already compiled & cached! */
+    const uint32_t warmup_pa = 0x00085080u;
+    const uint32_t warmup_code[] = {
+        0xEBFFFFDEu, /* bl vfp_fn_pa: (0x85000 - 0x85080 - 8)/4 = -34 = 0xFFFFDE */
+        0xE320F003u, /* wfi */
+    };
+    CHECK(fuji_dyn_mem_write(eng, warmup_pa, warmup_code, sizeof(warmup_code)) == 0, "write warmup");
+
+    write_u32(eng, tcb_pa + 0u, 0u);
+    write_u32(eng, tcb_pa + 4u, 0u);
+    write_u32(eng, sp_und_pa, tcb_pa);
+    fuji_dyn_set_cp15(eng, 0u, 0u, 12u, 0u, 0u, vbar);
+    fuji_dyn_set_banked_reg(eng, 0u, FUJI_DYN_MODE_UND, 13u, sp_und_pa);
+    fuji_dyn_set_reg(eng, 0u, 13u, sp_svc_pa);
+
+    const double a = 12.5, b = 29.75, expect_sum = 42.25;
+    uint64_t a_bits = 0, b_bits = 0, sum_bits = 0;
+    std::memcpy(&a_bits, &a, 8);
+    std::memcpy(&b_bits, &b, 8);
+    std::memcpy(&sum_bits, &expect_sum, 8);
+    fuji_dyn_set_dreg(eng, 0u, 1u, a_bits);
+    fuji_dyn_set_dreg(eng, 0u, 2u, b_bits);
+    fuji_dyn_set_dreg(eng, 0u, 8u, 0xCAFEBABE12345678ull);
+
+    fuji_dyn_set_reg(eng, 0u, 15u, warmup_pa);
+    CHECK(fuji_dyn_run_fast(eng, 0u, 1000u, 0u, 0u, &res) == 0 && res.stop_reason == FUJI_DYN_STOP_WFI, "run warmup");
+    CHECK(read_u32(eng, tcb_pa) == 0u, "warmup with FPEXC=1 must not trap");
+
+    /* Now disable FPEXC twice in guest code and call the ALREADY-CACHED vfp_fn_pa WITHOUT ClearCache()! */
+    const int32_t bl1_off = static_cast<int32_t>(vfp_fn_pa - (caller_pa + 8u) - 8u) / 4;
+    const int32_t bl2_off = static_cast<int32_t>(vfp_fn_pa - (caller_pa + 20u) - 8u) / 4;
+    const uint32_t caller_code[] = {
+        0xE3A00000u,                                        /* +0x00: mov r0, #0 */
+        0xEEE80A10u,                                        /* +0x04: vmsr fpexc, r0 (disable VFP!) */
+        0xEB000000u | (static_cast<uint32_t>(bl1_off) & 0x00FFFFFFu), /* +0x08: bl vfp_fn_pa */
+        0xE3A00000u,                                        /* +0x0C: mov r0, #0 */
+        0xEEE80A10u,                                        /* +0x10: vmsr fpexc, r0 (re-disable VFP!) */
+        0xEB000000u | (static_cast<uint32_t>(bl2_off) & 0x00FFFFFFu), /* +0x14: bl vfp_fn_pa */
+        0xE320F003u,                                        /* +0x18: wfi */
+    };
+    CHECK(fuji_dyn_mem_write(eng, caller_pa, caller_code, sizeof(caller_code)) == 0, "write caller");
+    fuji_dyn_set_reg(eng, 0u, 2u, 0u);
+    fuji_dyn_set_reg(eng, 0u, 3u, 0u);
+    fuji_dyn_set_reg(eng, 0u, 15u, caller_pa);
+    CHECK(fuji_dyn_run_fast(eng, 0u, 5000u, 0u, 0u, &res) == 0 && res.stop_reason == FUJI_DYN_STOP_WFI,
+          "run ThreadX-style lazy VFP round-trip");
+    const uint64_t got_sum = static_cast<uint64_t>(fuji_dyn_get_reg(eng, 0u, 2u)) |
+                             (static_cast<uint64_t>(fuji_dyn_get_reg(eng, 0u, 3u)) << 32);
+    CHECK(read_u32(eng, tcb_pa + 0u) == 2u, "lazy VFP UND handler must fire on BOTH disable->use transitions without ClearCache");
+    CHECK(read_u32(eng, tcb_pa + 4u) == vfp_fn_pa + 4u, "ARM UND LR_und must equal fault_pc + 4");
+    CHECK(got_sum == sum_bits, "retried VFP function must produce exact IEEE-754 f64 result");
+    CHECK(fuji_dyn_get_dreg(eng, 0u, 8u) == 0xCAFEBABE12345678ull &&
+          fuji_dyn_get_reg(eng, 0u, 13u) == sp_svc_pa,
+          "callee-saved d8 and SP must be preserved across lazy VFP trap + retry");
+    CHECK(fuji_dyn_get_fpexc(eng, 0u) == 0x40000000u, "FPEXC must remain 0x40000000 after lazy enable");
+
+    /* 5. Thumb-2 VFP with IT false-skip + true-trap lazy retry (LR_und = fault_pc + 2) */
+    const uint16_t thumb_code[] = {
+        0x2800u,             /* +0x00: cmp r0, #0 */
+        0xBF18u,             /* +0x02: it ne (NE is false -> skip next VFP as NOP!) */
+        0xEE30u, 0x0A81u,    /* +0x04: vaddne.f32 s0, s1, s2 (skipped!) */
+        0xEE30u, 0x0A81u,    /* +0x08: vadd.f32   s0, s1, s2 (traps at +0x08, retries cleanly!) */
+        0xEE10u, 0x4A10u,    /* +0x0C: vmov r4, s0 */
+        0xBF30u, 0xBF00u,    /* +0x10: wfi; nop */
+    };
+    CHECK(fuji_dyn_mem_write(eng, thumb_pa, thumb_code, sizeof(thumb_code)) == 0, "write thumb vfp");
+    const float f1 = 3.5f, f2 = 2.25f, f_expect = 5.75f;
+    uint32_t f1_u = 0, f2_u = 0, f_exp_u = 0;
+    std::memcpy(&f1_u, &f1, 4);
+    std::memcpy(&f2_u, &f2, 4);
+    std::memcpy(&f_exp_u, &f_expect, 4);
+    fuji_dyn_set_ext_reg(eng, 0u, 1u, f1_u); /* s1 */
+    fuji_dyn_set_ext_reg(eng, 0u, 2u, f2_u); /* s2 */
+    fuji_dyn_set_ext_reg(eng, 0u, 0u, 0u);   /* s0 */
+    fuji_dyn_set_fpexc(eng, 0u, 0u);         /* disable VFP via host API */
+    fuji_dyn_set_cpsr(eng, 0u, 0x000001F3u); /* SVC + Thumb */
+    fuji_dyn_set_reg(eng, 0u, 0u, 0u);
+    fuji_dyn_set_reg(eng, 0u, 4u, 0u);
+    fuji_dyn_set_reg(eng, 0u, 15u, thumb_pa);
+    CHECK(fuji_dyn_run_fast(eng, 0u, 2000u, 0u, 0u, &res) == 0 && res.stop_reason == FUJI_DYN_STOP_WFI,
+          "run Thumb-2 lazy VFP retry");
+    CHECK(read_u32(eng, tcb_pa + 0u) == 3u, "Thumb-2 VFP must skip false IT VFP and trap once on unconditional VFP");
+    CHECK(read_u32(eng, tcb_pa + 4u) == thumb_pa + 8u + 2u, "Thumb-2 32-bit VFP UND LR_und must equal fault_pc + 2");
+    CHECK(fuji_dyn_get_reg(eng, 0u, 4u) == f_exp_u, "Thumb-2 retried VADD.F32 result mismatch");
+
+    fuji_dyn_set_auto_exceptions(eng, 0u);
+    fuji_dyn_reset_core(eng, 0u);
+    std::printf("  [PASS] 24. VFP/ASIMD FPEXC.EN=0 trapping, conditional NOP, PL1/CPACR checks & lazy VFP switching\n");
+}
+
 int main() {
     CHECK(fuji_dyn_abi_version() == FUJI_DYN_ABI_VERSION, "ABI version mismatch");
     FujiDynEngine* eng = fuji_dyn_create(4, 0xFFFF0000u);
@@ -2333,9 +2596,10 @@ int main() {
     bench_smp_mt_4core_ab(eng);
     test_declarative_mmio_mirror_bank(eng, &mmio);
     test_64bit_alignment_normal_nc_device_and_strexd(eng);
+    test_vfp_fpexc_lazy_undef_and_cache_invalidation(eng);
     bench_mips(eng);
 
     fuji_dyn_destroy(eng);
-    std::printf("[DYNARMIC-BRIDGE] ALL 24/24 SELF-TESTS PASSED!\n");
+    std::printf("[DYNARMIC-BRIDGE] ALL 25/25 SELF-TESTS PASSED!\n");
     return 0;
 }
