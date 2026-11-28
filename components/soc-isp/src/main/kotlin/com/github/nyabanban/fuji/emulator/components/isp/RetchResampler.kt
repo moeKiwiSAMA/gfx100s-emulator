@@ -68,10 +68,11 @@ internal object RetchResampler {
                 }
             }
             val pair = (x / 2) * 4
+            // Real-silicon Milbeaut packed 4:2:2 layout is YYUV422: [Y0, Y1, Cb, Cr].
             val offset = when (channel) {
-                0 -> 1 + (x and 1) * 2
-                1 -> 0
-                else -> 2
+                0 -> x and 1
+                1 -> 2
+                else -> 3
             }
             return data.get(pair + offset).toInt() and 255
         }
@@ -110,10 +111,10 @@ internal object RetchResampler {
                 previousPhase = phase
                 rowOut.clear()
                 for (x in 0 until dstW step 2) {
-                    rowOut.put(((filtered(x, 1) + filtered(x + 1, 1) + 1) / 2).toByte())
                     rowOut.put(filtered(x, 0).toByte())
-                    rowOut.put(((filtered(x, 2) + filtered(x + 1, 2) + 1) / 2).toByte())
                     rowOut.put(filtered(x + 1, 0).toByte())
+                    rowOut.put(((filtered(x, 1) + filtered(x + 1, 1) + 1) / 2).toByte())
+                    rowOut.put(((filtered(x, 2) + filtered(x + 1, 2) + 1) / 2).toByte())
                 }
             }
             rowOut.clear()

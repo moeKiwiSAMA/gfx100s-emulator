@@ -1499,13 +1499,11 @@ class SocIspFactory : ComponentFactory {
             val exposure = computeLiveExposureParams()
             val statsConfig = buildStatsConfig()
             colorPipeline.updateFromBank68000(bank68000Words)
-            val isLvCh0 = words === liveView0Words
-            // DAT S4 0x011C0CF0: LV Ch0/Ch1 +0xD4[18:16] encodes 6 packed/semi-planar output formats (0..5):
-            //   - mode 4 (0x10040000) = Face/Eye-AF packed YYUV422 [Y0, Y1, Cb, Cr] (640x480 ring)
-            //   - modes 2/3/5 (0x10020000/0x10030000/0x10050000) = LCD PIC0/PIC1 packed UYVY422 [U, Y0, V, Y1]
-            //     (including MF Dual Display PIC0 on LV Ch0 with ctrl=0x10030000 -> BUG-V3-5-3).
-            val formatMode = ((ctrl ushr 16) and 0x7L).toInt()
-            val isYyuv422 = isLvCh0 && formatMode == 4
+            // Real-silicon GFX100S 2.13 (DAT s4 0x011C0CF0, s5 0x021CDEA0/0x02202504/0x0233C3F4, s6 0x0436DFD0):
+            // ALL Milbeaut packed 4:2:2 surfaces (LV Ch0 Face/Eye-AF ring, LV Ch0/Ch1 PIC0/PIC1 LCD/EVF rings,
+            // Playback buffers) use packed YYUV422 [Y0, Y1, Cb, Cr] (LE u32 0xCr_Cb_Y1_Y0; black = 0x80800000).
+            // Semi-planar Y+UV modes (plane1Addr != 0) are handled separately by pumpSemiPlanarYuv.
+            val isYyuv422 = true
             val cropZoom = computeLiveViewCropZoom(words)
             val readout = (sensor as? LiveSensorReadout)?.beginLiveReadout(tick)
             val pumped = try {

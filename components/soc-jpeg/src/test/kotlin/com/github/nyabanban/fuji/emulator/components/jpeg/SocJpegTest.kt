@@ -178,9 +178,9 @@ class SocJpegTest {
             val rowOff = y * strideBytes
             for (x in 0 until width) {
                 val pairOff = rowOff + (x and 1.inv()) * 2
-                val u = bytes[pairOff].toInt() and 0xFF
-                val luma = bytes[pairOff + if ((x and 1) != 0) 3 else 1].toInt() and 0xFF
-                val v = bytes[pairOff + 2].toInt() and 0xFF
+                val luma = bytes[pairOff + (x and 1)].toInt() and 0xFF
+                val u = bytes[pairOff + 2].toInt() and 0xFF
+                val v = bytes[pairOff + 3].toInt() and 0xFF
                 val d = u - 128
                 val e = v - 128
                 val r = ((256 * luma + 359 * e + 128) shr 8).coerceIn(0, 255)
@@ -344,9 +344,9 @@ class SocJpegTest {
             dev.beforeInstruction(h.tick)
             assertEquals(0x10L, dev.read(0x004L, 4))
             val out = h.dma.readBytes(memYc, 64 * 48 * 2)
-            // Neutral chroma U/V near 128
-            val u = out[0].toInt() and 0xFF
-            val v = out[2].toInt() and 0xFF
+            // Neutral chroma U/V near 128 (YYUV422: [Y0, Y1, Cb, Cr])
+            val u = out[2].toInt() and 0xFF
+            val v = out[3].toInt() and 0xFF
             assertTrue(u in 126..130 && v in 126..130, "Grayscale chroma expected near 128, got U=$u V=$v")
         }
 
@@ -1025,10 +1025,12 @@ class SocJpegTest {
         val source = ByteArray((height - 1) * bytePitch + width * 2)
         for (row in 0 until height) {
             val luma = if (row < height / 2) 40 else 210
-            for (x in 0 until width) {
+            for (x in 0 until width step 2) {
                 val offset = row * bytePitch + x * 2
-                source[offset] = 128.toByte()
+                source[offset] = luma.toByte()
                 source[offset + 1] = luma.toByte()
+                source[offset + 2] = 128.toByte()
+                source[offset + 3] = 128.toByte()
             }
         }
         val src = 0x4000_0000L

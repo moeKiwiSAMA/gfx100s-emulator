@@ -10,4 +10,12 @@ interface FacePreviewScalerPort {
     /** [sourceStrideBytes] counts bytes, with padding excluded after the last active row. */
     fun resizeFacePreview(source: MemorySegment, sourceStrideBytes: Int, destination: MemorySegment, yyuv: Boolean): Boolean =
         sourceStrideBytes == 2048 && resizeFacePreview(source, destination, yyuv)
+    /** Packed 4:2:2 resize allowing Milbeaut YYUV422 input ([yyuvIn]=true) as well as legacy UYVY422 input. */
+    fun resizeFacePreview(
+        source: MemorySegment,
+        sourceStrideBytes: Int,
+        destination: MemorySegment,
+        yyuv: Boolean,
+        yyuvIn: Boolean,
+    ): Boolean = !yyuvIn && resizeFacePreview(source, sourceStrideBytes, destination, yyuv)
 }

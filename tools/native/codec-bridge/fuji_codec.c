@@ -1960,52 +1960,94 @@ static int compute_decode_geometry(
     return 1;
 }
 
-static inline void fill_neutral_uyvy_span(uint8_t* dst, int32_t pixel_pairs) {
-    /* Neutral UYVY black: [0x80, 0x00, 0x80, 0x00] */
-    for (int32_t i = 0; i < pixel_pairs; ++i) {
-        dst[i * 4 + 0] = 0x80;
-        dst[i * 4 + 1] = 0x00;
-        dst[i * 4 + 2] = 0x80;
-        dst[i * 4 + 3] = 0x00;
+static inline void fill_neutral_422_span(uint8_t* dst, int32_t pixel_pairs, int is_yyuv) {
+    if (is_yyuv) {
+        /* Neutral Milbeaut YYUV422 black: [0x00, 0x00, 0x80, 0x80] (0x80800000 LE) */
+        for (int32_t i = 0; i < pixel_pairs; ++i) {
+            dst[i * 4 + 0] = 0x00;
+            dst[i * 4 + 1] = 0x00;
+            dst[i * 4 + 2] = 0x80;
+            dst[i * 4 + 3] = 0x80;
+        }
+    } else {
+        /* Neutral UYVY black: [0x80, 0x00, 0x80, 0x00] */
+        for (int32_t i = 0; i < pixel_pairs; ++i) {
+            dst[i * 4 + 0] = 0x80;
+            dst[i * 4 + 1] = 0x00;
+            dst[i * 4 + 2] = 0x80;
+            dst[i * 4 + 3] = 0x00;
+        }
     }
 }
 
-/* Unpack one row of Milbeaut UYVY422 into planar Y, Cb, Cr with black-fill sanitization */
-static void unpack_uyvy_row_to_planar422(
-    const uint8_t* src_row, int32_t width,
+/* Unpack one row of packed 4:2:2 (UYVY422 or Milbeaut YYUV422) into planar Y, Cb, Cr with black-fill sanitization */
+static void unpack_422_row_to_planar422(
+    const uint8_t* src_row, int32_t width, int is_yyuv,
     uint8_t* y_dst, uint8_t* cb_dst, uint8_t* cr_dst,
     int32_t y_stride, int32_t c_stride
 ) {
     int32_t pairs = width >> 1;
-    for (int32_t p = 0; p < pairs; ++p) {
-        uint8_t u  = src_row[p * 4 + 0];
-        uint8_t y0 = src_row[p * 4 + 1];
-        uint8_t v  = src_row[p * 4 + 2];
-        uint8_t y1 = src_row[p * 4 + 3];
+    if (is_yyuv) {
+        for (int32_t p = 0; p < pairs; ++p) {
+            uint8_t y0 = src_row[p * 4 + 0];
+            uint8_t y1 = src_row[p * 4 + 1];
+            uint8_t u  = src_row[p * 4 + 2];
+            uint8_t v  = src_row[p * 4 + 3];
+            /* Unwritten zero DRAM (0x00000000) & alternate-endian black ([80 80 00 00]) -> neutral black.
+             * Native Milbeaut black 0x80800000 ([00 00 80 80]) is already y0=0, y1=0, u=0x80, v=0x80. */
+            if ((y0 == 0 && y1 == 0 && u == 0 && v == 0) ||
+                (y0 == 0x80 && y1 == 0x80 && u == 0 && v == 0)) {
+                y0 = 0; y1 = 0; u = 0x80; v = 0x80;
+            }
+            y_dst[p * 2]     = y0;
+            y_dst[p * 2 + 1] = y1;
+            cb_dst[p]        = u;
+            cr_dst[p]        = v;
+        }
+        if (width & 1) {
+            int32_t p = pairs;
+            uint8_t y0 = src_row[p * 4 + 0];
+            uint8_t u  = src_row[p * 4 + 2];
+            uint8_t v  = src_row[p * 4 + 3];
+            if ((y0 == 0 && u == 0 && v == 0) || (y0 == 0x80 && u == 0 && v == 0)) {
+                y0 = 0; u = 0x80; v = 0x80;
+            }
+            y_dst[width - 1] = y0;
+            cb_dst[p] = u;
+            cr_dst[p] = v;
+            pairs++;
+        }
+    } else {
+        for (int32_t p = 0; p < pairs; ++p) {
+            uint8_t u  = src_row[p * 4 + 0];
+            uint8_t y0 = src_row[p * 4 + 1];
+            uint8_t v  = src_row[p * 4 + 2];
+            uint8_t y1 = src_row[p * 4 + 3];
 
-        /* Sanitize Milbeaut unwritten zero DRAM (0x00000000) & Playback black words ([00 00 80 80], [80 80 00 00]) */
-        if ((u == 0 && y0 == 0 && v == 0 && y1 == 0) ||
-            (u == 0 && y0 == 0 && v == 0x80 && y1 == 0x80) ||
-            (u == 0x80 && y0 == 0x80 && v == 0 && y1 == 0)) {
-            u = 0x80; y0 = 0; v = 0x80; y1 = 0;
+            /* Sanitize Milbeaut unwritten zero DRAM (0x00000000) & Playback black words ([00 00 80 80], [80 80 00 00]) */
+            if ((u == 0 && y0 == 0 && v == 0 && y1 == 0) ||
+                (u == 0 && y0 == 0 && v == 0x80 && y1 == 0x80) ||
+                (u == 0x80 && y0 == 0x80 && v == 0 && y1 == 0)) {
+                u = 0x80; y0 = 0; v = 0x80; y1 = 0;
+            }
+            y_dst[p * 2]     = y0;
+            y_dst[p * 2 + 1] = y1;
+            cb_dst[p]        = u;
+            cr_dst[p]        = v;
         }
-        y_dst[p * 2]     = y0;
-        y_dst[p * 2 + 1] = y1;
-        cb_dst[p]        = u;
-        cr_dst[p]        = v;
-    }
-    if (width & 1) {
-        int32_t p = pairs;
-        uint8_t u  = src_row[p * 4 + 0];
-        uint8_t y0 = src_row[p * 4 + 1];
-        uint8_t v  = src_row[p * 4 + 2];
-        if (u == 0 && y0 == 0 && v == 0) {
-            u = 0x80; y0 = 0; v = 0x80;
+        if (width & 1) {
+            int32_t p = pairs;
+            uint8_t u  = src_row[p * 4 + 0];
+            uint8_t y0 = src_row[p * 4 + 1];
+            uint8_t v  = src_row[p * 4 + 2];
+            if (u == 0 && y0 == 0 && v == 0) {
+                u = 0x80; y0 = 0; v = 0x80;
+            }
+            y_dst[width - 1] = y0;
+            cb_dst[p] = u;
+            cr_dst[p] = v;
+            pairs++;
         }
-        y_dst[width - 1] = y0;
-        cb_dst[p] = u;
-        cr_dst[p] = v;
-        pairs++;
     }
     /* Edge-replicate to MCU-aligned planar stride */
     uint8_t last_y  = (width > 0) ? y_dst[width - 1] : 0;
@@ -2018,10 +2060,24 @@ static void unpack_uyvy_row_to_planar422(
     }
 }
 
-static inline void rgb_pair_to_uyvy(
+static inline void store_422_pair(uint8_t* dst4, uint8_t y0, uint8_t y1, uint8_t u, uint8_t v, int is_yyuv) {
+    if (is_yyuv) {
+        dst4[0] = y0;
+        dst4[1] = y1;
+        dst4[2] = u;
+        dst4[3] = v;
+    } else {
+        dst4[0] = u;
+        dst4[1] = y0;
+        dst4[2] = v;
+        dst4[3] = y1;
+    }
+}
+
+static inline void rgb_pair_to_422(
     int32_t r0, int32_t g0, int32_t b0,
     int32_t r1, int32_t g1, int32_t b1,
-    uint8_t* dst4
+    uint8_t* dst4, int is_yyuv
 ) {
     int32_t y0 = clamp_i32((77 * r0 + 150 * g0 + 29 * b0 + 128) >> 8, 0, 255);
     int32_t y1 = clamp_i32((77 * r1 + 150 * g1 + 29 * b1 + 128) >> 8, 0, 255);
@@ -2030,16 +2086,13 @@ static inline void rgb_pair_to_uyvy(
     int32_t b_avg = (b0 + b1) >> 1;
     int32_t u = clamp_i32(((-43 * r_avg - 85 * g_avg + 128 * b_avg + 128) >> 8) + 128, 0, 255);
     int32_t v = clamp_i32(((128 * r_avg - 107 * g_avg - 21 * b_avg + 128) >> 8) + 128, 0, 255);
-    dst4[0] = (uint8_t)u;
-    dst4[1] = (uint8_t)y0;
-    dst4[2] = (uint8_t)v;
-    dst4[3] = (uint8_t)y1;
+    store_422_pair(dst4, (uint8_t)y0, (uint8_t)y1, (uint8_t)u, (uint8_t)v, is_yyuv);
 }
 
-static void pack_ycbcr_scanline_to_uyvy(
+static void pack_ycbcr_scanline_to_422(
     const uint8_t* src_ycc, int32_t src_w,
     int32_t x_start, int32_t x_step, int32_t out_w, int32_t aligned_w,
-    uint8_t* dst_row
+    uint8_t* dst_row, int is_yyuv
 ) {
     if (x_step == 1 && x_start == 0) {
         int32_t pairs = out_w >> 1;
@@ -2048,23 +2101,19 @@ static void pack_ycbcr_scanline_to_uyvy(
         for (int32_t p = 0; p < pairs; ++p) {
             uint8_t y0  = s[0], cb0 = s[1], cr0 = s[2];
             uint8_t y1  = s[3], cb1 = s[4], cr1 = s[5];
-            d[0] = (uint8_t)(((int32_t)cb0 + (int32_t)cb1 + 1) >> 1);
-            d[1] = y0;
-            d[2] = (uint8_t)(((int32_t)cr0 + (int32_t)cr1 + 1) >> 1);
-            d[3] = y1;
+            uint8_t u = (uint8_t)(((int32_t)cb0 + (int32_t)cb1 + 1) >> 1);
+            uint8_t v = (uint8_t)(((int32_t)cr0 + (int32_t)cr1 + 1) >> 1);
+            store_422_pair(d, y0, y1, u, v, is_yyuv);
             s += 6;
             d += 4;
         }
         if (out_w & 1) {
             int32_t idx = (out_w - 1) * 3;
-            d[0] = src_ycc[idx + 1];
-            d[1] = src_ycc[idx + 0];
-            d[2] = src_ycc[idx + 2];
-            d[3] = 0;
+            store_422_pair(d, src_ycc[idx + 0], 0, src_ycc[idx + 1], src_ycc[idx + 2], is_yyuv);
             pairs++;
         }
         if (aligned_w > pairs * 2) {
-            fill_neutral_uyvy_span(dst_row + pairs * 4, (aligned_w - pairs * 2) >> 1);
+            fill_neutral_422_span(dst_row + pairs * 4, (aligned_w - pairs * 2) >> 1, is_yyuv);
         }
         return;
     }
@@ -2074,83 +2123,73 @@ static void pack_ycbcr_scanline_to_uyvy(
     for (int32_t p = 0; p < pairs; ++p) {
         int32_t sx0 = clamp_i32(x_start + (p * 2) * x_step, 0, src_w - 1) * 3;
         int32_t sx1 = clamp_i32(x_start + (p * 2 + 1) * x_step, 0, src_w - 1) * 3;
-        d[0] = (uint8_t)(((int32_t)src_ycc[sx0 + 1] + (int32_t)src_ycc[sx1 + 1] + 1) >> 1);
-        d[1] = src_ycc[sx0];
-        d[2] = (uint8_t)(((int32_t)src_ycc[sx0 + 2] + (int32_t)src_ycc[sx1 + 2] + 1) >> 1);
-        d[3] = src_ycc[sx1];
+        uint8_t u = (uint8_t)(((int32_t)src_ycc[sx0 + 1] + (int32_t)src_ycc[sx1 + 1] + 1) >> 1);
+        uint8_t v = (uint8_t)(((int32_t)src_ycc[sx0 + 2] + (int32_t)src_ycc[sx1 + 2] + 1) >> 1);
+        store_422_pair(d, src_ycc[sx0], src_ycc[sx1], u, v, is_yyuv);
         d += 4;
     }
     if (out_w & 1) {
         int32_t sx = clamp_i32(x_start + (out_w - 1) * x_step, 0, src_w - 1) * 3;
-        d[0] = src_ycc[sx + 1];
-        d[1] = src_ycc[sx];
-        d[2] = src_ycc[sx + 2];
-        d[3] = 0;
+        store_422_pair(d, src_ycc[sx], 0, src_ycc[sx + 1], src_ycc[sx + 2], is_yyuv);
         pairs++;
     }
     if (aligned_w > pairs * 2) {
-        fill_neutral_uyvy_span(dst_row + pairs * 4, (aligned_w - pairs * 2) >> 1);
+        fill_neutral_422_span(dst_row + pairs * 4, (aligned_w - pairs * 2) >> 1, is_yyuv);
     }
 }
 
-static void pack_gray_scanline_to_uyvy(
+static void pack_gray_scanline_to_422(
     const uint8_t* src_gray, int32_t src_w,
     int32_t x_start, int32_t x_step, int32_t out_w, int32_t aligned_w,
-    uint8_t* dst_row
+    uint8_t* dst_row, int is_yyuv
 ) {
     int32_t pairs = out_w >> 1;
     uint8_t* d = dst_row;
     for (int32_t p = 0; p < pairs; ++p) {
         int32_t sx0 = clamp_i32(x_start + (p * 2) * x_step, 0, src_w - 1);
         int32_t sx1 = clamp_i32(x_start + (p * 2 + 1) * x_step, 0, src_w - 1);
-        d[0] = 0x80;
-        d[1] = src_gray[sx0];
-        d[2] = 0x80;
-        d[3] = src_gray[sx1];
+        store_422_pair(d, src_gray[sx0], src_gray[sx1], 0x80, 0x80, is_yyuv);
         d += 4;
     }
     if (out_w & 1) {
         int32_t sx = clamp_i32(x_start + (out_w - 1) * x_step, 0, src_w - 1);
-        d[0] = 0x80;
-        d[1] = src_gray[sx];
-        d[2] = 0x80;
-        d[3] = 0;
+        store_422_pair(d, src_gray[sx], 0, 0x80, 0x80, is_yyuv);
         pairs++;
     }
     if (aligned_w > pairs * 2) {
-        fill_neutral_uyvy_span(dst_row + pairs * 4, (aligned_w - pairs * 2) >> 1);
+        fill_neutral_422_span(dst_row + pairs * 4, (aligned_w - pairs * 2) >> 1, is_yyuv);
     }
 }
 
-static void pack_rgb_scanline_to_uyvy(
+static void pack_rgb_scanline_to_422(
     const uint8_t* src_rgb, int32_t src_w,
     int32_t x_start, int32_t x_step, int32_t out_w, int32_t aligned_w,
-    uint8_t* dst_row
+    uint8_t* dst_row, int is_yyuv
 ) {
     int32_t pairs = out_w >> 1;
     uint8_t* d = dst_row;
     for (int32_t p = 0; p < pairs; ++p) {
         int32_t sx0 = clamp_i32(x_start + (p * 2) * x_step, 0, src_w - 1) * 3;
         int32_t sx1 = clamp_i32(x_start + (p * 2 + 1) * x_step, 0, src_w - 1) * 3;
-        rgb_pair_to_uyvy(
+        rgb_pair_to_422(
             src_rgb[sx0], src_rgb[sx0 + 1], src_rgb[sx0 + 2],
             src_rgb[sx1], src_rgb[sx1 + 1], src_rgb[sx1 + 2],
-            d
+            d, is_yyuv
         );
         d += 4;
     }
     if (out_w & 1) {
         int32_t sx = clamp_i32(x_start + (out_w - 1) * x_step, 0, src_w - 1) * 3;
-        rgb_pair_to_uyvy(
+        rgb_pair_to_422(
             src_rgb[sx], src_rgb[sx + 1], src_rgb[sx + 2],
             src_rgb[sx], src_rgb[sx + 1], src_rgb[sx + 2],
-            d
+            d, is_yyuv
         );
-        d[3] = 0;
+        if (is_yyuv) d[1] = 0; else d[3] = 0;
         pairs++;
     }
     if (aligned_w > pairs * 2) {
-        fill_neutral_uyvy_span(dst_row + pairs * 4, (aligned_w - pairs * 2) >> 1);
+        fill_neutral_422_span(dst_row + pairs * 4, (aligned_w - pairs * 2) >> 1, is_yyuv);
     }
 }
 
@@ -2256,7 +2295,7 @@ FUJI_CODEC_EXPORT int32_t fuji_jpeg_probe_header(
     return 0;
 }
 
-FUJI_CODEC_EXPORT int32_t fuji_jpeg_decode_to_uyvy(
+static int32_t jpeg_decode_to_422(
     const uint8_t* src_jpeg,
     int32_t src_jpeg_len,
     int32_t downscale_shift,
@@ -2265,11 +2304,12 @@ FUJI_CODEC_EXPORT int32_t fuji_jpeg_decode_to_uyvy(
     int32_t crop_x1,
     int32_t crop_y0,
     int32_t crop_y1,
-    uint8_t* dst_uyvy,
+    uint8_t* dst_422,
     int32_t dst_capacity,
-    int32_t* out_meta
+    int32_t* out_meta,
+    int is_yyuv
 ) {
-    if (!src_jpeg || src_jpeg_len < 4 || !dst_uyvy || dst_capacity <= 0) {
+    if (!src_jpeg || src_jpeg_len < 4 || !dst_422 || dst_capacity <= 0) {
         return FUJI_CODEC_ERR_INVALID_ARGS;
     }
     ensure_runtime_init();
@@ -2381,13 +2421,13 @@ FUJI_CODEC_EXPORT int32_t fuji_jpeg_decode_to_uyvy(
                 int32_t cur_y = cur_base_y + bi;
                 const uint8_t* line = row_ptrs[bi];
                 while (target_y < out_h && cur_y == next_src_y) {
-                    uint8_t* dst_row = dst_uyvy + (size_t)target_y * (size_t)stride;
+                    uint8_t* dst_row = dst_422 + (size_t)target_y * (size_t)stride;
                     if (mode == 0) {
-                        pack_ycbcr_scanline_to_uyvy(line, dec_w, x_start, step, out_w, aligned_w, dst_row);
+                        pack_ycbcr_scanline_to_422(line, dec_w, x_start, step, out_w, aligned_w, dst_row, is_yyuv);
                     } else if (mode == 1) {
-                        pack_gray_scanline_to_uyvy(line, dec_w, x_start, step, out_w, aligned_w, dst_row);
+                        pack_gray_scanline_to_422(line, dec_w, x_start, step, out_w, aligned_w, dst_row, is_yyuv);
                     } else {
-                        pack_rgb_scanline_to_uyvy(line, dec_w, x_start, step, out_w, aligned_w, dst_row);
+                        pack_rgb_scanline_to_422(line, dec_w, x_start, step, out_w, aligned_w, dst_row, is_yyuv);
                     }
                     target_y++;
                     next_src_y = y_start + target_y * step;
@@ -2408,9 +2448,9 @@ FUJI_CODEC_EXPORT int32_t fuji_jpeg_decode_to_uyvy(
             return FUJI_CODEC_ERR_CODEC;
         }
 
-        /* Fill bottom alignment padding rows with neutral UYVY black [0x80, 0x00, 0x80, 0x00] */
+        /* Fill bottom alignment padding rows with neutral packed 4:2:2 black */
         for (int32_t y = out_h; y < aligned_h; ++y) {
-            fill_neutral_uyvy_span(dst_uyvy + (size_t)y * (size_t)stride, aligned_w >> 1);
+            fill_neutral_422_span(dst_422 + (size_t)y * (size_t)stride, aligned_w >> 1, is_yyuv);
         }
 
         return (int32_t)total_bytes;
@@ -2520,13 +2560,13 @@ FUJI_CODEC_EXPORT int32_t fuji_jpeg_decode_to_uyvy(
                 int32_t cur_y = cur_base_y + bi;
                 const uint8_t* line = row_ptrs[bi];
                 while (target_y < out_h && cur_y == next_src_y) {
-                    uint8_t* dst_row = dst_uyvy + (size_t)target_y * (size_t)stride;
+                    uint8_t* dst_row = dst_422 + (size_t)target_y * (size_t)stride;
                     if (mode == 0) {
-                        pack_ycbcr_scanline_to_uyvy(line, dec_w, x_start, step, out_w, aligned_w, dst_row);
+                        pack_ycbcr_scanline_to_422(line, dec_w, x_start, step, out_w, aligned_w, dst_row, is_yyuv);
                     } else if (mode == 1) {
-                        pack_gray_scanline_to_uyvy(line, dec_w, x_start, step, out_w, aligned_w, dst_row);
+                        pack_gray_scanline_to_422(line, dec_w, x_start, step, out_w, aligned_w, dst_row, is_yyuv);
                     } else {
-                        pack_rgb_scanline_to_uyvy(line, dec_w, x_start, step, out_w, aligned_w, dst_row);
+                        pack_rgb_scanline_to_422(line, dec_w, x_start, step, out_w, aligned_w, dst_row, is_yyuv);
                     }
                     target_y++;
                     next_src_y = y_start + target_y * step;
@@ -2546,7 +2586,7 @@ FUJI_CODEC_EXPORT int32_t fuji_jpeg_decode_to_uyvy(
         }
 
         for (int32_t y = out_h; y < aligned_h; ++y) {
-            fill_neutral_uyvy_span(dst_uyvy + (size_t)y * (size_t)stride, aligned_w >> 1);
+            fill_neutral_422_span(dst_422 + (size_t)y * (size_t)stride, aligned_w >> 1, is_yyuv);
         }
 
         return (int32_t)total_bytes;
@@ -2601,21 +2641,61 @@ FUJI_CODEC_EXPORT int32_t fuji_jpeg_decode_to_uyvy(
         for (int32_t y = 0; y < out_h; ++y) {
             int32_t sy = clamp_i32(ry0 + y * scale_factor, 0, h - 1);
             const uint8_t* src_row = rgb + (size_t)sy * (size_t)w * (size_t)bpp;
-            uint8_t* dst_row = dst_uyvy + (size_t)y * (size_t)stride;
+            uint8_t* dst_row = dst_422 + (size_t)y * (size_t)stride;
             if (is_gray) {
-                pack_gray_scanline_to_uyvy(src_row, w, rx0, scale_factor, out_w, aligned_w, dst_row);
+                pack_gray_scanline_to_422(src_row, w, rx0, scale_factor, out_w, aligned_w, dst_row, is_yyuv);
             } else {
-                pack_rgb_scanline_to_uyvy(src_row, w, rx0, scale_factor, out_w, aligned_w, dst_row);
+                pack_rgb_scanline_to_422(src_row, w, rx0, scale_factor, out_w, aligned_w, dst_row, is_yyuv);
             }
         }
         for (int32_t y = out_h; y < aligned_h; ++y) {
-            fill_neutral_uyvy_span(dst_uyvy + (size_t)y * (size_t)stride, aligned_w >> 1);
+            fill_neutral_422_span(dst_422 + (size_t)y * (size_t)stride, aligned_w >> 1, is_yyuv);
         }
         free(rgb);
         return (int32_t)total_bytes;
     }
 
     return FUJI_CODEC_ERR_NO_BACKEND;
+}
+
+FUJI_CODEC_EXPORT int32_t fuji_jpeg_decode_to_uyvy(
+    const uint8_t* src_jpeg,
+    int32_t src_jpeg_len,
+    int32_t downscale_shift,
+    int32_t crop_enabled,
+    int32_t crop_x0,
+    int32_t crop_x1,
+    int32_t crop_y0,
+    int32_t crop_y1,
+    uint8_t* dst_uyvy,
+    int32_t dst_capacity,
+    int32_t* out_meta
+) {
+    return jpeg_decode_to_422(
+        src_jpeg, src_jpeg_len, downscale_shift,
+        crop_enabled, crop_x0, crop_x1, crop_y0, crop_y1,
+        dst_uyvy, dst_capacity, out_meta, 0
+    );
+}
+
+FUJI_CODEC_EXPORT int32_t fuji_jpeg_decode_to_yyuv(
+    const uint8_t* src_jpeg,
+    int32_t src_jpeg_len,
+    int32_t downscale_shift,
+    int32_t crop_enabled,
+    int32_t crop_x0,
+    int32_t crop_x1,
+    int32_t crop_y0,
+    int32_t crop_y1,
+    uint8_t* dst_yyuv,
+    int32_t dst_capacity,
+    int32_t* out_meta
+) {
+    return jpeg_decode_to_422(
+        src_jpeg, src_jpeg_len, downscale_shift,
+        crop_enabled, crop_x0, crop_x1, crop_y0, crop_y1,
+        dst_yyuv, dst_capacity, out_meta, 1
+    );
 }
 
 /* ============================================================================
@@ -3112,7 +3192,8 @@ static void fj_encode_block_aan(
 typedef enum {
     FJ_BUILTIN_SRC_BGR24 = 0,
     FJ_BUILTIN_SRC_UYVY  = 1,
-    FJ_BUILTIN_SRC_SCALED_BGR24 = 2
+    FJ_BUILTIN_SRC_SCALED_BGR24 = 2,
+    FJ_BUILTIN_SRC_YYUV  = 3
 } fj_builtin_src_mode_t;
 
 typedef struct {
@@ -3268,11 +3349,9 @@ static void fj_builtin_encode_worker(fj_builtin_job_t* job, int32_t tid) {
                         uint8_t y0 = srow[x * 2 + 1];
                         uint8_t v  = srow[x * 2 + 2];
                         uint8_t y1 = srow[x * 2 + 3];
-                        if ((y0 | y1 | u | v) == 0u) {
-                            u = 128u; v = 128u;
-                        } else if ((y0 | y1) == 0u && u == 128u && v == 128u) {
-                            /* already neutral black */
-                        } else if ((u | v) == 0u && y0 == 128u && y1 == 128u) {
+                        if ((u | y0 | v | y1) == 0u ||
+                            (u == 0u && y0 == 0u && v == 128u && y1 == 128u) ||
+                            (u == 128u && y0 == 128u && v == 0u && y1 == 0u)) {
                             y0 = 0u; y1 = 0u; u = 128u; v = 128u;
                         }
                         y_dst[x]     = y0;
@@ -3285,6 +3364,32 @@ static void fj_builtin_encode_worker(fj_builtin_job_t* job, int32_t tid) {
                         uint8_t u  = srow[x * 2 + 0];
                         uint8_t y0 = srow[x * 2 + 1];
                         uint8_t v  = srow[x * 2 + 2];
+                        if ((y0 | u | v) == 0u) { u = 128u; v = 128u; }
+                        y_dst[x] = y0;
+                        cb_dst[x >> 1] = u;
+                        cr_dst[x >> 1] = v;
+                    }
+                } else if (job->mode == FJ_BUILTIN_SRC_YYUV) {
+                    const uint8_t* srow = job->src + (size_t)dy * (size_t)job->src_stride;
+                    for (int32_t x = 0; x + 1 < dst_w; x += 2) {
+                        uint8_t y0 = srow[x * 2 + 0];
+                        uint8_t y1 = srow[x * 2 + 1];
+                        uint8_t u  = srow[x * 2 + 2];
+                        uint8_t v  = srow[x * 2 + 3];
+                        if ((y0 | y1 | u | v) == 0u ||
+                            (y0 == 128u && y1 == 128u && u == 0u && v == 0u)) {
+                            y0 = 0u; y1 = 0u; u = 128u; v = 128u;
+                        }
+                        y_dst[x]     = y0;
+                        y_dst[x + 1] = y1;
+                        cb_dst[x >> 1] = u;
+                        cr_dst[x >> 1] = v;
+                    }
+                    if (dst_w & 1) {
+                        int32_t x = dst_w - 1;
+                        uint8_t y0 = srow[x * 2 + 0];
+                        uint8_t u  = srow[x * 2 + 2];
+                        uint8_t v  = srow[x * 2 + 3];
                         if ((y0 | u | v) == 0u) { u = 128u; v = 128u; }
                         y_dst[x] = y0;
                         cb_dst[x >> 1] = u;
@@ -3673,18 +3778,20 @@ static int32_t fj_builtin_jpeg_encode_core(
     return rc;
 }
 
-static int32_t fj_builtin_jpeg_encode_uyvy_alloc(
-    const uint8_t* src_uyvy,
+static int32_t fj_builtin_jpeg_encode_422_alloc(
+    const uint8_t* src_422,
     int32_t width,
     int32_t height,
     int32_t src_stride_bytes,
     int32_t quality,
     int32_t max_bytes,
     uint8_t** out_buf,
-    int32_t* out_actual_size
+    int32_t* out_actual_size,
+    int is_yyuv
 ) {
     return fj_builtin_jpeg_encode_core(
-        FJ_BUILTIN_SRC_UYVY, src_uyvy, width, height, src_stride_bytes,
+        is_yyuv ? FJ_BUILTIN_SRC_YYUV : FJ_BUILTIN_SRC_UYVY,
+        src_422, width, height, src_stride_bytes,
         0, 0, width, height, width, height, quality, max_bytes,
         NULL, 0, out_buf, out_actual_size
     );
@@ -3707,17 +3814,18 @@ static int32_t fj_builtin_jpeg_encode_bgr24_alloc(
     );
 }
 
-FUJI_CODEC_EXPORT int32_t fuji_jpeg_encode_uyvy_alloc(
-    const uint8_t* src_uyvy,
+static int32_t jpeg_encode_422_alloc(
+    const uint8_t* src_422,
     int32_t width,
     int32_t height,
     int32_t src_stride_bytes,
     int32_t quality,
     int32_t max_bytes,
     uint8_t** out_buf,
-    int32_t* out_actual_size
+    int32_t* out_actual_size,
+    int is_yyuv
 ) {
-    if (!src_uyvy || width <= 0 || height <= 0 || src_stride_bytes < width * 2 || !out_buf) {
+    if (!src_422 || width <= 0 || height <= 0 || src_stride_bytes < width * 2 || !out_buf) {
         return FUJI_CODEC_ERR_INVALID_ARGS;
     }
     *out_buf = NULL;
@@ -3797,9 +3905,9 @@ FUJI_CODEC_EXPORT int32_t fuji_jpeg_encode_uyvy_alloc(
             for (int32_t r = 0; r < FJ_DCTSIZE; ++r) {
                 int32_t sy = y + r;
                 if (sy >= height) sy = height - 1;
-                const uint8_t* src_row = src_uyvy + (size_t)sy * (size_t)src_stride_bytes;
-                unpack_uyvy_row_to_planar422(
-                    src_row, width, y_rows[r], cb_rows[r], cr_rows[r], y_stride, c_stride
+                const uint8_t* src_row = src_422 + (size_t)sy * (size_t)src_stride_bytes;
+                unpack_422_row_to_planar422(
+                    src_row, width, is_yyuv, y_rows[r], cb_rows[r], cr_rows[r], y_stride, c_stride
                 );
             }
             g_rt.write_raw_data(&cinfo, planes, FJ_DCTSIZE);
@@ -3892,9 +4000,9 @@ FUJI_CODEC_EXPORT int32_t fuji_jpeg_encode_uyvy_alloc(
             for (int32_t r = 0; r < FJ_DCTSIZE; ++r) {
                 int32_t sy = y + r;
                 if (sy >= height) sy = height - 1;
-                const uint8_t* src_row = src_uyvy + (size_t)sy * (size_t)src_stride_bytes;
-                unpack_uyvy_row_to_planar422(
-                    src_row, width, y_rows[r], cb_rows[r], cr_rows[r], y_stride, c_stride
+                const uint8_t* src_row = src_422 + (size_t)sy * (size_t)src_stride_bytes;
+                unpack_422_row_to_planar422(
+                    src_row, width, is_yyuv, y_rows[r], cb_rows[r], cr_rows[r], y_stride, c_stride
                 );
             }
             g_rt.write_raw_data(&cinfo, planes, FJ_DCTSIZE);
@@ -3931,9 +4039,9 @@ FUJI_CODEC_EXPORT int32_t fuji_jpeg_encode_uyvy_alloc(
         uint8_t* cr_plane = cb_plane + c_sz;
 
         for (int32_t y = 0; y < height; ++y) {
-            const uint8_t* src_row = src_uyvy + (size_t)y * (size_t)src_stride_bytes;
-            unpack_uyvy_row_to_planar422(
-                src_row, width,
+            const uint8_t* src_row = src_422 + (size_t)y * (size_t)src_stride_bytes;
+            unpack_422_row_to_planar422(
+                src_row, width, is_yyuv,
                 y_plane + (size_t)y * (size_t)y_stride,
                 cb_plane + (size_t)y * (size_t)c_stride,
                 cr_plane + (size_t)y * (size_t)c_stride,
@@ -3978,8 +4086,38 @@ FUJI_CODEC_EXPORT int32_t fuji_jpeg_encode_uyvy_alloc(
         return actual;
     }
 
-    return fj_builtin_jpeg_encode_uyvy_alloc(
-        src_uyvy, width, height, src_stride_bytes, q, max_bytes, out_buf, out_actual_size
+    return fj_builtin_jpeg_encode_422_alloc(
+        src_422, width, height, src_stride_bytes, q, max_bytes, out_buf, out_actual_size, is_yyuv
+    );
+}
+
+FUJI_CODEC_EXPORT int32_t fuji_jpeg_encode_uyvy_alloc(
+    const uint8_t* src_uyvy,
+    int32_t width,
+    int32_t height,
+    int32_t src_stride_bytes,
+    int32_t quality,
+    int32_t max_bytes,
+    uint8_t** out_buf,
+    int32_t* out_actual_size
+) {
+    return jpeg_encode_422_alloc(
+        src_uyvy, width, height, src_stride_bytes, quality, max_bytes, out_buf, out_actual_size, 0
+    );
+}
+
+FUJI_CODEC_EXPORT int32_t fuji_jpeg_encode_yyuv_alloc(
+    const uint8_t* src_yyuv,
+    int32_t width,
+    int32_t height,
+    int32_t src_stride_bytes,
+    int32_t quality,
+    int32_t max_bytes,
+    uint8_t** out_buf,
+    int32_t* out_actual_size
+) {
+    return jpeg_encode_422_alloc(
+        src_yyuv, width, height, src_stride_bytes, quality, max_bytes, out_buf, out_actual_size, 1
     );
 }
 

@@ -332,6 +332,7 @@ internal class LiveViewDmaEngine {
         val iso: Int,
         val colorSignature: Long,
         val bayerFingerprint: Long,
+        val isYyuv422: Boolean,
         val srcW: Int,
         val srcH: Int,
         val srcStride: Int,
@@ -1327,6 +1328,7 @@ internal class LiveViewDmaEngine {
         stillReadout: IspStillReadout? = null,
         firstRow: Int = 0,
         frameHeight: Int = height,
+        yyuv422: Boolean = true,
     ): Boolean {
         if ((sensor == null && stillReadout == null) || memory == null) return false
         if (addr == 0L || width < 2 || (width and 1) != 0 || height < 1 || stride < width * 2) return false
@@ -1340,8 +1342,9 @@ internal class LiveViewDmaEngine {
             return false
         }
 
-        // Fast GPU-resident fused still path (Optics -> CMOS Bayer -> ISP Demosaic + Aspect/35mm Crop -> UYVY422).
+        // Fast GPU-resident fused still path (Optics -> CMOS Bayer -> ISP Demosaic + Aspect/35mm Crop -> packed 4:2:2).
         // Skipped when a latched IspStillReadout is active so 102MP YC, RAW, and JPEG stay 100% consistent.
+        val fusedOutFormat = if (yyuv422) LiveViewIspFusionRequest.FMT_YYUV422 else LiveViewIspFusionRequest.FMT_UYVY422
         if (stillReadout == null && sensor != null) {
             val defaultCrop = computeStillCrop(DEFAULT_SENSOR_WIDTH, DEFAULT_SENSOR_HEIGHT, width, frameHeight, cropFactor)
             val fusedBaseReq = buildFusedIspRequest(
@@ -1349,7 +1352,7 @@ internal class LiveViewDmaEngine {
                 dstW = width,
                 dstH = height,
                 stride = stride,
-                outputFormat = LiveViewIspFusionRequest.FMT_UYVY422,
+                outputFormat = fusedOutFormat,
                 lens = lens,
                 peaking = MfAssistPeakingFilter.DISABLED,
                 exposure = exposure,
@@ -1362,7 +1365,7 @@ internal class LiveViewDmaEngine {
                     dstWidth = width,
                     dstHeight = height,
                     dstStrideBytes = stride,
-                    outputFormat = LiveViewIspFusionRequest.FMT_UYVY422,
+                    outputFormat = fusedOutFormat,
                     flags = fusedBaseReq.flags or LiveViewIspFusionRequest.FLAG_SRC_CROP,
                     offX = defaultCrop[0],
                     offY = defaultCrop[1],
@@ -1395,7 +1398,7 @@ internal class LiveViewDmaEngine {
                     dstWidth = cropW,
                     dstHeight = cropH,
                     dstStrideBytes = cropStride,
-                    outputFormat = LiveViewIspFusionRequest.FMT_UYVY422,
+                    outputFormat = fusedOutFormat,
                     flags = fusedBaseReq.flags or LiveViewIspFusionRequest.FLAG_SRC_CROP,
                     offX = defaultCrop[0],
                     offY = defaultCrop[1],
@@ -1458,7 +1461,8 @@ internal class LiveViewDmaEngine {
                     it.durationNanos == effectiveExposure.durationNanos &&
                     it.iso == effectiveExposure.iso &&
                     it.colorSignature == colorSignature &&
-                    it.bayerFingerprint == bayerFingerprint
+                    it.bayerFingerprint == bayerFingerprint &&
+                    it.isYyuv422 == yyuv422
             }
         } else null
 
@@ -1513,24 +1517,25 @@ internal class LiveViewDmaEngine {
             val is16Bit = dims.third
             srcStride = srcW * 2
             srcUyvy = ByteArray(srcH * srcStride)
-            if (tryNativeIspPipeline(
-                    raw = rawBytes,
-                    srcW = srcW,
-                    srcH = srcH,
-                    is16Bit = is16Bit,
-                    yOrUyvyDst = srcUyvy,
-                    uvDst = null,
-                    dstW = srcW,
-                    dstH = srcH,
-                    stride = srcStride,
-                    isSemiPlanar = false,
-                    isNv12 = false,
-                    exposure = effectiveExposure,
-                    statsEngine = null,
-                    colorPipeline = colorPipeline,
-                    peaking = MfAssistPeakingFilter.DISABLED,
-                ) == NATIVE_ISP_NONE
-            ) {
+            val nativeStillStatus = tryNativeIspPipeline(
+                raw = rawBytes,
+                srcW = srcW,
+                srcH = srcH,
+                is16Bit = is16Bit,
+                yOrUyvyDst = srcUyvy,
+                uvDst = null,
+                dstW = srcW,
+                dstH = srcH,
+                stride = srcStride,
+                isSemiPlanar = false,
+                isNv12 = false,
+                exposure = effectiveExposure,
+                statsEngine = null,
+                colorPipeline = colorPipeline,
+                peaking = MfAssistPeakingFilter.DISABLED,
+                yyuv422 = yyuv422,
+            )
+            if (nativeStillStatus == NATIVE_ISP_NONE) {
                 demosaicBayerToUyvy(
                     raw = rawBytes,
                     srcW = srcW,
@@ -1543,9 +1548,24 @@ internal class LiveViewDmaEngine {
                     exposure = effectiveExposure,
                     colorPipeline = colorPipeline,
                 )
+                if (yyuv422) {
+                    var off = 0
+                    val end = srcUyvy.size - 3
+                    while (off <= end) {
+                        val u = srcUyvy[off]
+                        val y0 = srcUyvy[off + 1]
+                        val v = srcUyvy[off + 2]
+                        val y1 = srcUyvy[off + 3]
+                        srcUyvy[off] = y0
+                        srcUyvy[off + 1] = y1
+                        srcUyvy[off + 2] = u
+                        srcUyvy[off + 3] = v
+                        off += 4
+                    }
+                }
             }
         }
-        // Cache demosaiced UYVY across multi-strip RECC_S passes of the same still readout,
+        // Cache demosaiced packed 4:2:2 across multi-strip RECC_S passes of the same still readout,
         // and release immediately on the final strip so 0 bytes stay pinned after capture.
         if (stillReadout != null && firstRow + height < frameHeight) {
             stillStripCache = StillStripCache(
@@ -1559,6 +1579,7 @@ internal class LiveViewDmaEngine {
                 iso = effectiveExposure.iso,
                 colorSignature = colorSignature,
                 bayerFingerprint = bayerFingerprint,
+                isYyuv422 = yyuv422,
                 srcW = srcW,
                 srcH = srcH,
                 srcStride = srcStride,

@@ -748,9 +748,9 @@ class SocIspFactoryTest {
         lv1.write(0x0cc, 4, 0L)
         lv1.write(0x0d0, 4, 32L) // 16 * 2
         lv1.write(0x0d4, 4, 0x1000_0000L)
-        val uUyvy = ram[uyvyOff].toInt() and 0xFF
-        val yUyvy = ram[uyvyOff + 1].toInt() and 0xFF
-        val vUyvy = ram[uyvyOff + 2].toInt() and 0xFF
+        val yUyvy = ram[uyvyOff].toInt() and 0xFF
+        val uUyvy = ram[uyvyOff + 2].toInt() and 0xFF
+        val vUyvy = ram[uyvyOff + 3].toInt() and 0xFF
         assertTrue(yUyvy > 40, "Expected non-zero UYVY luma: $yUyvy")
         assertTrue(vUyvy > uUyvy, "Warm red scene should yield V ($vUyvy) > U ($uUyvy)")
 

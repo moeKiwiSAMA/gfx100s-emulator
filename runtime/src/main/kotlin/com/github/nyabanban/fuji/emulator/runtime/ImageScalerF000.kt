@@ -196,14 +196,15 @@ internal class ImageScalerF000 private constructor(
             return
         }
 
-        val yyuv422Out = registerValues[F0D8_SLOT] == 0x88L
+        // Real-silicon GFX100S 2.13 Milbeaut packed 4:2:2 layout is YYUV422 [Y0, Y1, Cb, Cr] on all paths.
+        val yyuv422Out = true
         if (scaler?.supportsFacePreviewResize == true && memory is DirectGuestRamPort && srcW == 1024 && srcH == 576 &&
             cropX == 0 && cropY == 0 && cropW == srcW && cropH == srcH && hDecim == 0 && vDecim == 0 &&
             dstW == 640 && dstH == 360 && (srcStrideBytes == 2048 || srcStrideBytes == 2560) && dstStrideBytes == 1280) {
             val source = memory.sliceDirect(srcAddr, srcSpan, false)
             val target = memory.sliceDirect(dstAddr, dstSpan, true)
             if (source != null && source.isNative && target != null && target.isNative &&
-                scaler.resizeFacePreview(source, srcStrideBytes, target, yyuv422Out)) {
+                scaler.resizeFacePreview(source, srcStrideBytes, target, yyuv422Out, yyuvIn = true)) {
                 memory.notifyDirectWrite(dstAddr, dstSpan)
                 return
             }
@@ -240,12 +241,11 @@ internal class ImageScalerF000 private constructor(
 
         fun samplePixel(x: Int, y: Int): Int {
             val row = y * srcStrideBytes
-            val yOffset = row + 2 * x + 1
-            val uvColumn = (x and 1.inv()) * 2
-            val uvOffset = row + uvColumn
-            val luma = src[yOffset].toInt() and 255
-            val u = src[uvOffset].toInt() and 255
-            val v = if (uvColumn + 2 < srcStrideBytes && uvOffset + 2 < srcSize) src[uvOffset + 2].toInt() and 255 else 128
+            val pairCol = (x and 1.inv()) * 2
+            val pairOff = row + pairCol
+            val luma = src[pairOff + (x and 1)].toInt() and 255
+            val u = if (pairCol + 2 < srcStrideBytes && pairOff + 2 < srcSize) src[pairOff + 2].toInt() and 255 else 128
+            val v = if (pairCol + 3 < srcStrideBytes && pairOff + 3 < srcSize) src[pairOff + 3].toInt() and 255 else 128
             return (luma shl 16) or (u shl 8) or v
         }
 
@@ -385,8 +385,8 @@ internal class ImageScalerF000 private constructor(
                 val topU0 = (src[r0 + aUvOff0].toInt() and 0xff) * cx0 + (src[r0 + bUvOff0].toInt() and 0xff) * wx0
                 val botU0 = (src[r1 + aUvOff0].toInt() and 0xff) * cx0 + (src[r1 + bUvOff0].toInt() and 0xff) * wx0
                 val outU0 = (topU0 * cy + botU0 * wy + FACE_HALF) / FACE_DENOM
-                val topV0 = (src[r0 + aUvOff0 + 2].toInt() and 0xff) * cx0 + (src[r0 + bUvOff0 + 2].toInt() and 0xff) * wx0
-                val botV0 = (src[r1 + aUvOff0 + 2].toInt() and 0xff) * cx0 + (src[r1 + bUvOff0 + 2].toInt() and 0xff) * wx0
+                val topV0 = (src[r0 + aUvOff0 + 1].toInt() and 0xff) * cx0 + (src[r0 + bUvOff0 + 1].toInt() and 0xff) * wx0
+                val botV0 = (src[r1 + aUvOff0 + 1].toInt() and 0xff) * cx0 + (src[r1 + bUvOff0 + 1].toInt() and 0xff) * wx0
                 val outV0 = (topV0 * cy + botV0 * wy + FACE_HALF) / FACE_DENOM
 
                 val dx1 = dx + 1
@@ -402,8 +402,8 @@ internal class ImageScalerF000 private constructor(
                 val topU1 = (src[r0 + aUvOff1].toInt() and 0xff) * cx1 + (src[r0 + bUvOff1].toInt() and 0xff) * wx1
                 val botU1 = (src[r1 + aUvOff1].toInt() and 0xff) * cx1 + (src[r1 + bUvOff1].toInt() and 0xff) * wx1
                 val outU1 = (topU1 * cy + botU1 * wy + FACE_HALF) / FACE_DENOM
-                val topV1 = (src[r0 + aUvOff1 + 2].toInt() and 0xff) * cx1 + (src[r0 + bUvOff1 + 2].toInt() and 0xff) * wx1
-                val botV1 = (src[r1 + aUvOff1 + 2].toInt() and 0xff) * cx1 + (src[r1 + bUvOff1 + 2].toInt() and 0xff) * wx1
+                val topV1 = (src[r0 + aUvOff1 + 1].toInt() and 0xff) * cx1 + (src[r0 + bUvOff1 + 1].toInt() and 0xff) * wx1
+                val botV1 = (src[r1 + aUvOff1 + 1].toInt() and 0xff) * cx1 + (src[r1 + bUvOff1 + 1].toInt() and 0xff) * wx1
                 val outV1 = (topV1 * cy + botV1 * wy + FACE_HALF) / FACE_DENOM
 
                 val u = (outU0 + outU1) ushr 1
@@ -614,10 +614,16 @@ internal class ImageScalerF000 private constructor(
 
         private const val FACE_DENOM = 639 * 359
         private const val FACE_HALF = FACE_DENOM / 2
-        private val FACE_X0_Y_OFF = IntArray(640) { dx -> ((dx * 1023) / 639) * 2 + 1 }
-        private val FACE_X1_Y_OFF = IntArray(640) { dx -> minOf((dx * 1023) / 639 + 1, 1023) * 2 + 1 }
-        private val FACE_X0_UV_OFF = IntArray(640) { dx -> (((dx * 1023) / 639) and 1.inv()) * 2 }
-        private val FACE_X1_UV_OFF = IntArray(640) { dx -> (minOf((dx * 1023) / 639 + 1, 1023) and 1.inv()) * 2 }
+        private val FACE_X0_Y_OFF = IntArray(640) { dx ->
+            val sx = (dx * 1023) / 639
+            ((sx and 1.inv()) shl 1) + (sx and 1)
+        }
+        private val FACE_X1_Y_OFF = IntArray(640) { dx ->
+            val sx = minOf((dx * 1023) / 639 + 1, 1023)
+            ((sx and 1.inv()) shl 1) + (sx and 1)
+        }
+        private val FACE_X0_UV_OFF = IntArray(640) { dx -> (((dx * 1023) / 639) and 1.inv()) * 2 + 2 }
+        private val FACE_X1_UV_OFF = IntArray(640) { dx -> (minOf((dx * 1023) / 639 + 1, 1023) and 1.inv()) * 2 + 2 }
         private val FACE_WX = IntArray(640) { dx -> dx * 1023 - ((dx * 1023) / 639) * 639 }
         private val FACE_CX = IntArray(640) { dx -> 639 - (dx * 1023 - ((dx * 1023) / 639) * 639) }
         private val FACE_Y0 = IntArray(360) { dy -> (dy * 575) / 359 }

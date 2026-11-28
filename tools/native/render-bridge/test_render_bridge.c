@@ -567,6 +567,127 @@ static int test_isp_bayer_border_cfa_parity(void) {
     return 0;
 }
 
+static uint32_t ref_yyuv_to_rgb(const uint8_t* pair, int odd) {
+    uint32_t y0 = pair[0], y1 = pair[1], u = pair[2], v = pair[3];
+    if ((y0 | y1 | u | v) == 0u ||
+        (y0 == 0x80u && y1 == 0x80u && u == 0u && v == 0u)) return 0u;
+    int32_t y = (int32_t)(odd ? y1 : y0);
+    int32_t d = (int32_t)u - 128;
+    int32_t e = (int32_t)v - 128;
+    int32_t r = (256 * y + 359 * e + 128) >> 8;
+    int32_t g = (256 * y - 88 * d - 183 * e + 128) >> 8;
+    int32_t b = (256 * y + 454 * d + 128) >> 8;
+    if (r < 0) r = 0; else if (r > 255) r = 255;
+    if (g < 0) g = 0; else if (g > 255) g = 255;
+    if (b < 0) b = 0; else if (b > 255) b = 255;
+    return ((uint32_t)r << 16) | ((uint32_t)g << 8) | (uint32_t)b;
+}
+
+static int test_composite_planes_yyuv422(void) {
+    /* Verify FUJI_RENDER_CFG_FLAG_YYUV422 bit-exact parity across 1:1 & scaled SIMD/scalar paths,
+     * including GFX100S 2.13 PIC1 film-strip sprocket 50%-blended words (0x7e7f3e41 -> neutral gray). */
+    const int32_t src_w = 100, src_h = 20;
+    const int32_t p0_x = 8, p0_y = 2, p0_w = 84, p0_h = 16, p0_stride = p0_w * 2;
+    const int32_t p1_x = 12, p1_y = 4, p1_w = 72, p1_h = 12, p1_stride = p1_w * 2;
+    uint8_t* osd = (uint8_t*)calloc((size_t)(src_w * src_h * 4), 1);
+    uint8_t* pic0 = (uint8_t*)malloc((size_t)(p0_h * p0_stride));
+    uint8_t* pic1 = (uint8_t*)malloc((size_t)(p1_h * p1_stride));
+    for (int32_t y = 0; y < p0_h; ++y) {
+        for (int32_t x = 0; x < p0_w; x += 2) {
+            uint8_t* p = pic0 + y * p0_stride + x * 2;
+            if (x == 0) {
+                p[0] = 0x00; p[1] = 0x00; p[2] = 0x00; p[3] = 0x00; /* all-zero black */
+            } else if (x == 2) {
+                p[0] = 0x00; p[1] = 0x00; p[2] = 0x80; p[3] = 0x80; /* 0x80800000 native YYUV black */
+            } else if (x == 4) {
+                p[0] = 0x41; p[1] = 0x3e; p[2] = 0x7f; p[3] = 0x7e; /* 0x7e7f3e41 50%-blended film-strip gray */
+            } else if (x == 6) {
+                p[0] = 0x80; p[1] = 0x80; p[2] = 0x00; p[3] = 0x00; /* 0x00008080 legacy black sentinel */
+            } else {
+                p[0] = (uint8_t)((30 + x * 2 + y * 5) & 0xff);
+                p[1] = (uint8_t)((40 + x * 2 + y * 3) & 0xff);
+                p[2] = (uint8_t)((64 + (x & 63)) & 0xff);
+                p[3] = (uint8_t)((192 - (x & 63)) & 0xff);
+            }
+        }
+    }
+    for (int32_t y = 0; y < p1_h; ++y) {
+        for (int32_t x = 0; x < p1_w; x += 2) {
+            uint8_t* p = pic1 + y * p1_stride + x * 2;
+            p[0] = 0x41; p[1] = 0x3e; p[2] = 0x7f; p[3] = 0x7e; /* film-strip neutral dark gray */
+        }
+    }
+    /* Transparent OSD everywhere except a few blended pixels */
+    osd[(3 * src_w + 15) * 4 + 0] = 0x80; osd[(3 * src_w + 15) * 4 + 1] = 0xff;
+    osd[(3 * src_w + 15) * 4 + 2] = 0x40; osd[(3 * src_w + 15) * 4 + 3] = 0x20;
+
+    const int32_t sizes[][2] = { { src_w, src_h }, { 73, 15 } };
+    for (size_t si = 0; si < 2; ++si) {
+        int32_t ow = sizes[si][0], oh = sizes[si][1];
+        int32_t* srows = (int32_t*)malloc((size_t)oh * sizeof(int32_t));
+        int32_t* scols = (int32_t*)malloc((size_t)ow * sizeof(int32_t));
+        for (int32_t r = 0; r < oh; ++r) srows[r] = ((2 * r + 1) * src_h) / (2 * oh);
+        for (int32_t x = 0; x < ow; ++x) scols[x] = ((2 * x + 1) * src_w) / (2 * ow);
+        const int32_t cfg[20] = {
+            0, src_w * 4,
+            p0_x, p0_y, p0_w, p0_h, p0_stride,
+            p1_x, p1_y, p1_w, p1_h, p1_stride,
+            255, 0, (int32_t)0xff000000u,
+            src_w, src_h, ow, oh, 0 | FUJI_RENDER_CFG_FLAG_YYUV422
+        };
+        uint32_t* got = (uint32_t*)calloc((size_t)(ow * oh), sizeof(uint32_t));
+        uint32_t* got_pre = (uint32_t*)calloc((size_t)(ow * oh), sizeof(uint32_t));
+        fuji_render_composite_planes_matrix(osd, pic0, pic1, srows, scols, NULL, cfg, got);
+        fuji_render_composite_lcdc_to_argb_pre(osd, pic0, pic1, srows, scols, NULL, cfg, got_pre);
+        for (int32_t dr = 0; dr < oh; ++dr) {
+            int32_t sr = (ow == src_w && oh == src_h) ? dr : srows[dr];
+            for (int32_t dc = 0; dc < ow; ++dc) {
+                int32_t sc = (ow == src_w && oh == src_h) ? dc : scols[dc];
+                uint32_t bg = 0xff000000u;
+                if (sr >= p1_y && sr < p1_y + p1_h && sc >= p1_x && sc < p1_x + p1_w) {
+                    int lx = sc - p1_x;
+                    bg = 0xff000000u | ref_yyuv_to_rgb(pic1 + (sr - p1_y) * p1_stride + (lx & ~1) * 2, lx & 1);
+                } else if (sr >= p0_y && sr < p0_y + p0_h && sc >= p0_x && sc < p0_x + p0_w) {
+                    int lx = sc - p0_x;
+                    bg = 0xff000000u | ref_yyuv_to_rgb(pic0 + (sr - p0_y) * p0_stride + (lx & ~1) * 2, lx & 1);
+                }
+                uint32_t argb = ref_ror32_8(ref_load_u32(osd + (sr * src_w + sc) * 4));
+                uint32_t a = argb >> 24;
+                uint32_t exp = bg;
+                if (a == 255u) exp = argb;
+                else if (a != 0u) {
+                    uint32_t inv = 255u - a;
+                    uint32_t r = ref_div255_rounded(((argb >> 16) & 0xffu) * a + ((bg >> 16) & 0xffu) * inv);
+                    uint32_t g = ref_div255_rounded(((argb >> 8) & 0xffu) * a + ((bg >> 8) & 0xffu) * inv);
+                    uint32_t b = ref_div255_rounded((argb & 0xffu) * a + (bg & 0xffu) * inv);
+                    exp = 0xff000000u | (r << 16) | (g << 8) | b;
+                }
+                if (got[dr * ow + dc] != exp || got_pre[dr * ow + dc] != exp) {
+                    fprintf(stderr, "FAIL yyuv422 si=%zu (%d,%d) got=0x%08x pre=0x%08x exp=0x%08x\n",
+                            si, dc, dr, got[dr * ow + dc], got_pre[dr * ow + dc], exp);
+                    free(srows); free(scols); free(got); free(got_pre);
+                    free(osd); free(pic0); free(pic1);
+                    return 1;
+                }
+            }
+        }
+        /* Explicitly verify 0x7e7f3e41 film-strip pixel in 1:1 output is neutral dark gray (NOT olive green!) */
+        if (si == 0) {
+            uint32_t px = got[5 * ow + 14];
+            int r = (int)((px >> 16) & 0xffu), g = (int)((px >> 8) & 0xffu), b = (int)(px & 0xffu);
+            if (r < 55 || r > 70 || g < 55 || g > 70 || b < 55 || b > 70 || (g - r) > 5 || (g - b) > 5) {
+                fprintf(stderr, "FAIL yyuv422 film-strip sprocket not neutral gray: RGB=(%d,%d,%d)\n", r, g, b);
+                free(srows); free(scols); free(got); free(got_pre);
+                free(osd); free(pic0); free(pic1);
+                return 1;
+            }
+        }
+        free(srows); free(scols); free(got); free(got_pre);
+    }
+    free(osd); free(pic0); free(pic1);
+    return 0;
+}
+
 int main(void) {
     printf("[test_render_bridge] abi=%d simd=%d backend=%s\n",
            fuji_render_abi_version(), fuji_render_simd_level(), fuji_render_backend_name());
@@ -579,6 +700,7 @@ int main(void) {
     if (test_linear_gradient_v2() != 0) return 1;
     if (test_composite_planes_matrix_v2() != 0) return 1;
     if (test_composite_lcdc_to_argb_pre() != 0) return 1;
+    if (test_composite_planes_yyuv422() != 0) return 1;
     if (test_isp_bayer_to_yuv_peaking_v2() != 0) return 1;
     if (test_isp_bayer_border_cfa_parity() != 0) return 1;
     printf("[test_render_bridge] ALL PASS\n");

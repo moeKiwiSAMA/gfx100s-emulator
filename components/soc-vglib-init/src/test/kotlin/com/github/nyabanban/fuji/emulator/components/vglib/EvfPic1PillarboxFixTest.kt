@@ -33,12 +33,12 @@ class EvfPic1PillarboxFixTest {
         val lcdOsd = ByteBuffer.allocate(lcdOsdBytes).order(ByteOrder.LITTLE_ENDIAN)
         val evfOsd = ByteBuffer.allocate(evfOsdBytes).order(ByteOrder.LITTLE_ENDIAN)
         val pic1 = ByteArray(pic1MaxBytes)
-        // Neutral white UYVY across PIC1
+        // Neutral white YYUV422 ([Y0, Y1, Cb, Cr]) across PIC1
         for (i in 0 until pic1MaxBytes step 4) {
-            pic1[i] = 0x80.toByte()
+            pic1[i] = 0xff.toByte()
             pic1[i + 1] = 0xff.toByte()
             pic1[i + 2] = 0x80.toByte()
-            pic1[i + 3] = 0xff.toByte()
+            pic1[i + 3] = 0x80.toByte()
         }
         // LCD OSD0: opaque red at (0,0)
         lcdOsd.putInt(0, 0xff0000ff.toInt())
@@ -443,12 +443,12 @@ class EvfPic1PillarboxFixTest {
             pic0Bytes[i + 2] = 0x80.toByte()
             pic0Bytes[i + 3] = 0x80.toByte()
         }
-        // PIC1 = bright white (Y=0xFF, U=0x80, V=0x80)
+        // PIC1 = bright white YYUV422 (Y0=0xFF, Y1=0xFF, U=0x80, V=0x80)
         for (i in 0 until pic1Bytes.size step 4) {
-            pic1Bytes[i] = 0x80.toByte()
+            pic1Bytes[i] = 0xff.toByte()
             pic1Bytes[i + 1] = 0xff.toByte()
             pic1Bytes[i + 2] = 0x80.toByte()
-            pic1Bytes[i + 3] = 0xff.toByte()
+            pic1Bytes[i + 3] = 0x80.toByte()
         }
         // OSD0: opaque red dot at (10, 10)
         lcdOsd.putInt((10 * 1024 + 10) * 4, 0xff0000ff.toInt())
@@ -547,10 +547,10 @@ class EvfPic1PillarboxFixTest {
             val rowOff = y * pic0Stride
             for (x in 0 until 1024 step 2) {
                 val p = rowOff + x * 2
-                pic0Bytes[p] = 0x80.toByte()
+                pic0Bytes[p] = 0xc8.toByte()
                 pic0Bytes[p + 1] = 0xc8.toByte()
                 pic0Bytes[p + 2] = 0x80.toByte()
-                pic0Bytes[p + 3] = 0xc8.toByte()
+                pic0Bytes[p + 3] = 0x80.toByte()
             }
         }
         // OSD0 bottom bar badge at (100, 720) = opaque white, rest transparent
@@ -642,10 +642,10 @@ class EvfPic1PillarboxFixTest {
             val rowBase = y * 2048
             for (x in 128 until 896 step 2) {
                 val p = rowBase + x * 2
-                pic1[p] = 0x80.toByte()
+                pic1[p] = 0xff.toByte()
                 pic1[p + 1] = 0xff.toByte()
                 pic1[p + 2] = 0x80.toByte()
-                pic1[p + 3] = 0xff.toByte()
+                pic1[p + 3] = 0x80.toByte()
             }
         }
         val comp = VglibInitFactory().create(
@@ -684,6 +684,15 @@ class EvfPic1PillarboxFixTest {
             assertEquals(0x000000, LcdcFirstScanout.yuv422UyvyToRgb(word, 0, true), "$name odd pixel must be pure black")
         }
 
+        // Also verify real-silicon YYUV422 50%-blended film-strip sprocket word 0x7e7f3e41 ([41 3e 7f 7e])
+        // decodes to neutral dark gray (not olive green!) in LcdcFirstScanout.yuv422YyuvToRgb.
+        val filmStripGray = byteArrayOf(0x41, 0x3e, 0x7f, 0x7e)
+        val grayEven = LcdcFirstScanout.yuv422YyuvToRgb(filmStripGray, 0, false)
+        val grayR = (grayEven ushr 16) and 0xff
+        val grayG = (grayEven ushr 8) and 0xff
+        val grayB = grayEven and 0xff
+        assertTrue(grayR in 60..68 && grayG in 60..68 && grayB in 60..68, "0x7e7f3e41 must decode neutral dark gray, got ($grayR,$grayG,$grayB)")
+
         // End-to-end 1024x768 1:1 Playback buffer with 0x80800000 left margin, white center, 0x00008080 right margin
         val (ctx, displays, buffers) = setupDualDisplay()
         val (main, _) = displays
@@ -696,7 +705,7 @@ class EvfPic1PillarboxFixTest {
             }
             for (x in 128 until 896 step 2) {
                 val p = rowBase + x * 2
-                pic1[p] = 0x80.toByte(); pic1[p + 1] = 0xff.toByte(); pic1[p + 2] = 0x80.toByte(); pic1[p + 3] = 0xff.toByte()
+                pic1[p] = 0xff.toByte(); pic1[p + 1] = 0xff.toByte(); pic1[p + 2] = 0x80.toByte(); pic1[p + 3] = 0x80.toByte()
             }
             for (x in 896 until 1024 step 2) {
                 val p = rowBase + x * 2
@@ -756,8 +765,8 @@ class EvfPic1PillarboxFixTest {
             for (x in 0 until srcW step 2) {
                 val p = rowOff + x * 2
                 if (x in 100 until 260 && y in 100 until 220) {
-                    pic1Src[p] = 0x80.toByte(); pic1Src[p + 1] = 0xff.toByte()
-                    pic1Src[p + 2] = 0x80.toByte(); pic1Src[p + 3] = 0xff.toByte()
+                    pic1Src[p] = 0xff.toByte(); pic1Src[p + 1] = 0xff.toByte()
+                    pic1Src[p + 2] = 0x80.toByte(); pic1Src[p + 3] = 0x80.toByte()
                 } else {
                     pic1Src[p] = 0x00; pic1Src[p + 1] = 0x00
                     pic1Src[p + 2] = 0x80.toByte(); pic1Src[p + 3] = 0x80.toByte()

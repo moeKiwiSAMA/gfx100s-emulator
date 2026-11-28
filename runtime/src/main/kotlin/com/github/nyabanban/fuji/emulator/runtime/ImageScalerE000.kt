@@ -326,7 +326,7 @@ internal class ImageScalerE000 private constructor(
 
         fun sampleY(bx: Int, by: Int): Int {
             if (stepX == 1 && stepY == 1) {
-                val off = by * srcStrideBytes + (bx and 1.inv()) * 2 + if ((bx and 1) != 0) 3 else 1
+                val off = by * srcStrideBytes + (bx and 1.inv()) * 2 + (bx and 1)
                 return if (off < src.size) src[off].toInt() and 0xff else 0
             }
             val xEnd = minOf(bx + stepX, cropX + cropW)
@@ -336,7 +336,7 @@ internal class ImageScalerE000 private constructor(
             for (yy in by until yEnd) {
                 val rowOff = yy * srcStrideBytes
                 for (xx in bx until xEnd) {
-                    val off = rowOff + (xx and 1.inv()) * 2 + if ((xx and 1) != 0) 3 else 1
+                    val off = rowOff + (xx and 1.inv()) * 2 + (xx and 1)
                     if (off < src.size) sum += src[off].toInt() and 0xff
                     count++
                 }
@@ -345,26 +345,6 @@ internal class ImageScalerE000 private constructor(
         }
 
         fun sampleU(bx: Int, by: Int): Int {
-            if (stepX == 1 && stepY == 1) {
-                val off = by * srcStrideBytes + (bx and 1.inv()) * 2
-                return if (off < src.size) src[off].toInt() and 0xff else 128
-            }
-            val xEnd = minOf(bx + stepX, cropX + cropW)
-            val yEnd = minOf(by + stepY, cropY + cropH)
-            var sum = 0
-            var count = 0
-            for (yy in by until yEnd) {
-                val rowOff = yy * srcStrideBytes
-                for (xx in bx until xEnd) {
-                    val off = rowOff + (xx and 1.inv()) * 2
-                    sum += if (off < src.size) src[off].toInt() and 0xff else 128
-                    count++
-                }
-            }
-            return if (count == 0) 128 else sum / count
-        }
-
-        fun sampleV(bx: Int, by: Int): Int {
             if (stepX == 1 && stepY == 1) {
                 val colOff = (bx and 1.inv()) * 2 + 2
                 val off = by * srcStrideBytes + colOff
@@ -378,6 +358,28 @@ internal class ImageScalerE000 private constructor(
                 val rowOff = yy * srcStrideBytes
                 for (xx in bx until xEnd) {
                     val colOff = (xx and 1.inv()) * 2 + 2
+                    val off = rowOff + colOff
+                    sum += if (colOff < srcStrideBytes && off < src.size) src[off].toInt() and 0xff else 128
+                    count++
+                }
+            }
+            return if (count == 0) 128 else sum / count
+        }
+
+        fun sampleV(bx: Int, by: Int): Int {
+            if (stepX == 1 && stepY == 1) {
+                val colOff = (bx and 1.inv()) * 2 + 3
+                val off = by * srcStrideBytes + colOff
+                return if (colOff < srcStrideBytes && off < src.size) src[off].toInt() and 0xff else 128
+            }
+            val xEnd = minOf(bx + stepX, cropX + cropW)
+            val yEnd = minOf(by + stepY, cropY + cropH)
+            var sum = 0
+            var count = 0
+            for (yy in by until yEnd) {
+                val rowOff = yy * srcStrideBytes
+                for (xx in bx until xEnd) {
+                    val colOff = (xx and 1.inv()) * 2 + 3
                     val off = rowOff + colOff
                     sum += if (colOff < srcStrideBytes && off < src.size) src[off].toInt() and 0xff else 128
                     count++
@@ -420,12 +422,12 @@ internal class ImageScalerE000 private constructor(
                     val outU1 = bilinear(sampleU(x1a, y0), sampleU(x1b, y0), sampleU(x1a, y1), sampleU(x1b, y1), fx1, fy)
                     val outV1 = bilinear(sampleV(x1a, y0), sampleV(x1b, y0), sampleV(x1a, y1), sampleV(x1b, y1), fx1, fy)
 
-                    rowBuf[p] = ((outU0 + outU1) / 2).coerceIn(0, 255).toByte()
-                    rowBuf[p + 1] = outY0.toByte()
-                    rowBuf[p + 2] = ((outV0 + outV1) / 2).coerceIn(0, 255).toByte()
-                    rowBuf[p + 3] = outY1.toByte()
+                    rowBuf[p] = outY0.toByte()
+                    rowBuf[p + 1] = outY1.toByte()
+                    rowBuf[p + 2] = ((outU0 + outU1) / 2).coerceIn(0, 255).toByte()
+                    rowBuf[p + 3] = ((outV0 + outV1) / 2).coerceIn(0, 255).toByte()
                 } else {
-                    rowBuf[p] = outU0.toByte()
+                    rowBuf[p] = outY0.toByte()
                     rowBuf[p + 1] = outY0.toByte()
                 }
                 dx += 2
@@ -456,23 +458,24 @@ internal class ImageScalerE000 private constructor(
         while (dx < dstW) {
             val x0 = sxMap[dx]
             val pair0 = srcRowOff + (x0 and 1.inv()) * 2
-            val u0 = if (pair0 < src.size) src[pair0] else 128.toByte()
-            val y0Off = pair0 + if ((x0 and 1) != 0) 3 else 1
+            val y0Off = pair0 + (x0 and 1)
             val y0 = if (y0Off < src.size) src[y0Off] else 0
+            val uOff = pair0 + 2
+            val u0 = if (uOff < src.size) src[uOff] else 128.toByte()
             val p = dstRowOff + dx * 2
             if (dx + 1 < dstW) {
                 val x1 = sxMap[dx + 1]
                 val pair1 = srcRowOff + (x1 and 1.inv()) * 2
-                val vOff = pair0 + 2
+                val vOff = pair0 + 3
                 val v0 = if (vOff < src.size) src[vOff] else 128.toByte()
-                val y1Off = pair1 + if ((x1 and 1) != 0) 3 else 1
+                val y1Off = pair1 + (x1 and 1)
                 val y1 = if (y1Off < src.size) src[y1Off] else 0
-                output[p] = u0
-                output[p + 1] = y0
-                output[p + 2] = v0
-                output[p + 3] = y1
+                output[p] = y0
+                output[p + 1] = y1
+                output[p + 2] = u0
+                output[p + 3] = v0
             } else {
-                output[p] = u0
+                output[p] = y0
                 output[p + 1] = y0
             }
             dx += 2
@@ -597,10 +600,10 @@ internal class ImageScalerE000 private constructor(
                     val cb = (tileWords.getInt(tileB + delta) ushr 12) and 255
                     return ((ca + cb + 1) / 2).toByte()
                 }
-                playbackUyvy[dst++] = chroma(0)
                 playbackUyvy[dst++] = y0.toByte()
-                playbackUyvy[dst++] = chroma(4)
                 playbackUyvy[dst++] = y1.toByte()
+                playbackUyvy[dst++] = chroma(0)
+                playbackUyvy[dst++] = chroma(4)
             }
         }
         val rowsPerWrite = if (dstStride == rowBytes) DMA_CHUNK_BYTES / rowBytes else 1
@@ -640,11 +643,11 @@ internal class ImageScalerE000 private constructor(
             for (dx in 0 until width step 2) {
                 val x0 = xOffsets[dx]
                 val x1 = xOffsets[minOf(dx + 1, width - 1)]
-                val y0 = x0 * 2 + 1
-                val y1 = x1 * 2 + 1
-                val chroma = (x0 and -2) * 2
+                val y0 = (x0 and -2) * 2 + (x0 and 1)
+                val y1 = (x1 and -2) * 2 + (x1 and 1)
+                val chroma = (x0 and -2) * 2 + 2
                 val cb = ((src[top + chroma].toInt() and 255) + (src[bottom + chroma].toInt() and 255) + 1) / 2
-                val cr = ((src[top + chroma + 2].toInt() and 255) + (src[bottom + chroma + 2].toInt() and 255) + 1) / 2
+                val cr = ((src[top + chroma + 1].toInt() and 255) + (src[bottom + chroma + 1].toInt() and 255) + 1) / 2
                 fun pack(line: Int, c: Int): Int = ((src[line + y0].toInt() and 255) shl 2) or
                     (c shl 12) or ((src[line + y1].toInt() and 255) shl 22)
                 row.putInt(pack(top, cb))
@@ -968,7 +971,7 @@ internal class ImageScalerE000 private constructor(
  * bilinear/nearest scaling or decimation, preventing U=0 / Y1=0x80 interpolation into
  * olive-green vertical stripes during Playback 9/100-frame grid transitions (BUG-V3-8-4).
  */
-internal fun normalizeMilbeautBlackMarginWords(buf: ByteArray, length: Int = buf.size) {
+internal fun normalizeMilbeautBlackMarginWords(buf: ByteArray, length: Int = buf.size, yyuv422: Boolean = true) {
     var i = 0
     val limit = length and 3.inv()
     while (i < limit) {
@@ -976,14 +979,25 @@ internal fun normalizeMilbeautBlackMarginWords(buf: ByteArray, length: Int = buf
         val b1 = buf[i + 1].toInt() and 0xff
         val b2 = buf[i + 2].toInt() and 0xff
         val b3 = buf[i + 3].toInt() and 0xff
-        if ((b0 or b1 or b2 or b3) == 0 ||
-            (b0 == 0 && b1 == 0 && b2 == 0x80 && b3 == 0x80) ||
-            (b0 == 0x80 && b1 == 0x80 && b2 == 0 && b3 == 0)
-        ) {
-            buf[i] = 0x80.toByte()
-            buf[i + 1] = 0
-            buf[i + 2] = 0x80.toByte()
-            buf[i + 3] = 0
+        if (yyuv422) {
+            if ((b0 or b1 or b2 or b3) == 0 ||
+                (b0 == 0x80 && b1 == 0x80 && b2 == 0 && b3 == 0)
+            ) {
+                buf[i] = 0
+                buf[i + 1] = 0
+                buf[i + 2] = 0x80.toByte()
+                buf[i + 3] = 0x80.toByte()
+            }
+        } else {
+            if ((b0 or b1 or b2 or b3) == 0 ||
+                (b0 == 0 && b1 == 0 && b2 == 0x80 && b3 == 0x80) ||
+                (b0 == 0x80 && b1 == 0x80 && b2 == 0 && b3 == 0)
+            ) {
+                buf[i] = 0x80.toByte()
+                buf[i + 1] = 0
+                buf[i + 2] = 0x80.toByte()
+                buf[i + 3] = 0
+            }
         }
         i += 4
     }

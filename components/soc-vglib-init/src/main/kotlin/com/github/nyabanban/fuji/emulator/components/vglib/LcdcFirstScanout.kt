@@ -39,6 +39,8 @@ internal class LcdcFirstScanout(
         const val LAYER_EN_OSD0 = 0x00010000L
         const val BLANK_BLACK_ARGB = 0xff000000.toInt()
         const val BLANK_GRAY_ARGB = 0xff808080.toInt()
+        /** `cfg[19]` bit 8 in `fuji_render.h`: PIC0/PIC1 packed 4:2:2 layout is real-silicon Milbeaut YYUV422 (`[Y0,Y1,Cb,Cr]`). */
+        const val CFG_FLAG_YYUV422 = 1 shl 8
         private const val SOURCE_WIDTH = 1024
         private const val SOURCE_HEIGHT = 768
         private const val STRIDE = SOURCE_WIDTH * 4
@@ -108,6 +110,27 @@ internal class LcdcFirstScanout(
             return (r shl 16) or (g shl 8) or b
         }
 
+        internal fun yuv422YyuvToRgb(bytes: ByteArray, pairOffset: Int, oddPixel: Boolean): Int {
+            val y0 = bytes[pairOffset].toInt() and 0xff
+            val y1 = bytes[pairOffset + 1].toInt() and 0xff
+            val u = bytes[pairOffset + 2].toInt() and 0xff
+            val v = bytes[pairOffset + 3].toInt() and 0xff
+            // Unwritten zero-filled DRAM (0x00000000) and legacy 0x00008080 ([80 80 00 00]) map to pure black.
+            // Real-silicon GFX100S 2.13 Milbeaut 0x80800000 ([00 00 80 80]) is ALREADY native YYUV422 black (Y=0, Cb=128, Cr=128)!
+            if ((y0 or y1 or u or v) == 0 ||
+                (y0 == 0x80 && y1 == 0x80 && u == 0 && v == 0)
+            ) {
+                return 0
+            }
+            val y = if (oddPixel) y1 else y0
+            val d = u - 128
+            val e = v - 128
+            val r = ((256 * y + 359 * e + 128) shr 8).coerceIn(0, 255)
+            val g = ((256 * y - 88 * d - 183 * e + 128) shr 8).coerceIn(0, 255)
+            val b = ((256 * y + 454 * d + 128) shr 8).coerceIn(0, 255)
+            return (r shl 16) or (g shl 8) or b
+        }
+
         internal fun resampleUyvyQ12(
             src: ByteArray,
             srcW: Int,
@@ -118,6 +141,7 @@ internal class LcdcFirstScanout(
             dst: ByteArray,
             dstW: Int,
             dstH: Int,
+            yyuv422: Boolean = true,
         ) {
             val maxSrcX = srcW - 1
             val maxSrcY = srcH - 1
@@ -133,35 +157,66 @@ internal class LcdcFirstScanout(
                     val p0 = srcRow + (sx0 and 1.inv()) * 2
                     val p1 = srcRow + (sx1 and 1.inv()) * 2
 
-                    var u0 = src[p0].toInt() and 0xff
-                    var y0a = src[p0 + 1].toInt() and 0xff
-                    var v0 = src[p0 + 2].toInt() and 0xff
-                    var y0b = src[p0 + 3].toInt() and 0xff
-                    if ((u0 or y0a or v0 or y0b) == 0 ||
-                        (u0 == 0 && y0a == 0 && v0 == 0x80 && y0b == 0x80) ||
-                        (u0 == 0x80 && y0a == 0x80 && v0 == 0 && y0b == 0)
-                    ) {
-                        u0 = 0x80; y0a = 0; v0 = 0x80; y0b = 0
+                    var u0: Int
+                    var y0a: Int
+                    var v0: Int
+                    var y0b: Int
+                    var u1: Int
+                    var y1a: Int
+                    var v1: Int
+                    var y1b: Int
+                    if (yyuv422) {
+                        y0a = src[p0].toInt() and 0xff
+                        y0b = src[p0 + 1].toInt() and 0xff
+                        u0 = src[p0 + 2].toInt() and 0xff
+                        v0 = src[p0 + 3].toInt() and 0xff
+                        if ((y0a or y0b or u0 or v0) == 0 || (y0a == 0x80 && y0b == 0x80 && u0 == 0 && v0 == 0)) {
+                            u0 = 0x80; y0a = 0; v0 = 0x80; y0b = 0
+                        }
+                        y1a = src[p1].toInt() and 0xff
+                        y1b = src[p1 + 1].toInt() and 0xff
+                        u1 = src[p1 + 2].toInt() and 0xff
+                        v1 = src[p1 + 3].toInt() and 0xff
+                        if ((y1a or y1b or u1 or v1) == 0 || (y1a == 0x80 && y1b == 0x80 && u1 == 0 && v1 == 0)) {
+                            u1 = 0x80; y1a = 0; v1 = 0x80; y1b = 0
+                        }
+                    } else {
+                        u0 = src[p0].toInt() and 0xff
+                        y0a = src[p0 + 1].toInt() and 0xff
+                        v0 = src[p0 + 2].toInt() and 0xff
+                        y0b = src[p0 + 3].toInt() and 0xff
+                        if ((u0 or y0a or v0 or y0b) == 0 ||
+                            (u0 == 0 && y0a == 0 && v0 == 0x80 && y0b == 0x80) ||
+                            (u0 == 0x80 && y0a == 0x80 && v0 == 0 && y0b == 0)
+                        ) {
+                            u0 = 0x80; y0a = 0; v0 = 0x80; y0b = 0
+                        }
+                        u1 = src[p1].toInt() and 0xff
+                        y1a = src[p1 + 1].toInt() and 0xff
+                        v1 = src[p1 + 2].toInt() and 0xff
+                        y1b = src[p1 + 3].toInt() and 0xff
+                        if ((u1 or y1a or v1 or y1b) == 0 ||
+                            (u1 == 0 && y1a == 0 && v1 == 0x80 && y1b == 0x80) ||
+                            (u1 == 0x80 && y1a == 0x80 && v1 == 0 && y1b == 0)
+                        ) {
+                            u1 = 0x80; y1a = 0; v1 = 0x80; y1b = 0
+                        }
                     }
                     val outY0 = if ((sx0 and 1) != 0) y0b else y0a
-
-                    var u1 = src[p1].toInt() and 0xff
-                    var y1a = src[p1 + 1].toInt() and 0xff
-                    var v1 = src[p1 + 2].toInt() and 0xff
-                    var y1b = src[p1 + 3].toInt() and 0xff
-                    if ((u1 or y1a or v1 or y1b) == 0 ||
-                        (u1 == 0 && y1a == 0 && v1 == 0x80 && y1b == 0x80) ||
-                        (u1 == 0x80 && y1a == 0x80 && v1 == 0 && y1b == 0)
-                    ) {
-                        u1 = 0x80; y1a = 0; v1 = 0x80; y1b = 0
-                    }
                     val outY1 = if ((sx1 and 1) != 0) y1b else y1a
 
                     val outP = dstRow + dx * 2
-                    dst[outP] = ((u0 + u1) ushr 1).toByte()
-                    dst[outP + 1] = outY0.toByte()
-                    dst[outP + 2] = ((v0 + v1) ushr 1).toByte()
-                    dst[outP + 3] = outY1.toByte()
+                    if (yyuv422) {
+                        dst[outP] = outY0.toByte()
+                        dst[outP + 1] = outY1.toByte()
+                        dst[outP + 2] = ((u0 + u1) ushr 1).toByte()
+                        dst[outP + 3] = ((v0 + v1) ushr 1).toByte()
+                    } else {
+                        dst[outP] = ((u0 + u1) ushr 1).toByte()
+                        dst[outP + 1] = outY0.toByte()
+                        dst[outP + 2] = ((v0 + v1) ushr 1).toByte()
+                        dst[outP + 3] = outY1.toByte()
+                    }
                     dx += 2
                 }
             }
@@ -919,6 +974,7 @@ internal class LcdcFirstScanout(
         opaqueOsdBackdrop: Boolean,
         backdropArgb: Int,
         matrixMode: Int,
+        picYyuv422: Boolean = true,
     ): IntArray {
         val cfg = compositeCfgScratch
         cfg[0] = osdBaseOffset
@@ -940,7 +996,7 @@ internal class LcdcFirstScanout(
         cfg[16] = canvasHeight
         cfg[17] = targetWidth
         cfg[18] = targetHeight
-        cfg[19] = matrixMode
+        cfg[19] = (matrixMode and 0xFF) or (if (picYyuv422) CFG_FLAG_YYUV422 else 0)
         return cfg
     }
 
@@ -975,6 +1031,7 @@ internal class LcdcFirstScanout(
         matrixMode: Int,
         outputSegment: MemorySegment,
         allowNative: Boolean = true,
+        picYyuv422: Boolean = true,
     ): Boolean {
         ensureSourceMapping(canvasWidth, canvasHeight)
         val osdBytes = osdPayload?.array()
@@ -985,6 +1042,7 @@ internal class LcdcFirstScanout(
                 pic0X, pic0Y, pic0Width, pic0Height, pic0StrideBytes,
                 pic1X, pic1Y, pic1Width, pic1Height, pic1StrideBytes,
                 pic1Alpha, opaqueOsdBackdrop, backdropArgb, matrixMode,
+                picYyuv422 = picYyuv422,
             )
             val nativeRes = NativeRenderBridge.compositeLcdcToArgbPre(
                 osdBytes = osdBytes,
@@ -1026,6 +1084,7 @@ internal class LcdcFirstScanout(
             matrixMode = matrixMode,
             output = tmp,
             allowNative = false,
+            picYyuv422 = picYyuv422,
         )
         MemorySegment.copy(tmp, 0, outputSegment, ValueLayout.JAVA_INT_UNALIGNED, 0L, count)
         return allOpaque
@@ -1058,6 +1117,7 @@ internal class LcdcFirstScanout(
         matrixMode: Int,
         output: IntArray,
         allowNative: Boolean = true,
+        picYyuv422: Boolean = true,
     ): Boolean {
         ensureSourceMapping(canvasWidth, canvasHeight)
         val osdBytes = osdPayload?.array()
@@ -1068,6 +1128,7 @@ internal class LcdcFirstScanout(
                 pic0X, pic0Y, pic0Width, pic0Height, pic0StrideBytes,
                 pic1X, pic1Y, pic1Width, pic1Height, pic1StrideBytes,
                 pic1Alpha, opaqueOsdBackdrop, backdropArgb, matrixMode,
+                picYyuv422 = picYyuv422,
             )
             val nativeRes = NativeRenderBridge.compositeLcdcToArgbPre(
                 osdBytes = osdBytes,
@@ -1107,6 +1168,7 @@ internal class LcdcFirstScanout(
             matrixMode = matrixMode,
             output = output,
             allowNative = false,
+            picYyuv422 = picYyuv422,
         )
         var allOpaque = true
         val count = targetWidth * targetHeight
@@ -1152,32 +1214,19 @@ internal class LcdcFirstScanout(
         matrixMode: Int,
         output: IntArray,
         allowNative: Boolean = true,
+        picYyuv422: Boolean = true,
     ) {
         ensureSourceMapping(canvasWidth, canvasHeight)
         val osdBytes = osdPayload?.array()
         val osdBaseOffset = osdPayload?.arrayOffset() ?: 0
         if (allowNative) {
-            val cfg = compositeCfgScratch
-            cfg[0] = osdBaseOffset
-            cfg[1] = osdStrideBytes
-            cfg[2] = pic0X
-            cfg[3] = pic0Y
-            cfg[4] = pic0Width
-            cfg[5] = pic0Height
-            cfg[6] = pic0StrideBytes
-            cfg[7] = pic1X
-            cfg[8] = pic1Y
-            cfg[9] = pic1Width
-            cfg[10] = pic1Height
-            cfg[11] = pic1StrideBytes
-            cfg[12] = pic1Alpha
-            cfg[13] = if (opaqueOsdBackdrop) 1 else 0
-            cfg[14] = backdropArgb
-            cfg[15] = canvasWidth
-            cfg[16] = canvasHeight
-            cfg[17] = targetWidth
-            cfg[18] = targetHeight
-            cfg[19] = matrixMode
+            val cfg = populateCompositeCfg(
+                osdBaseOffset, osdStrideBytes, canvasWidth, canvasHeight,
+                pic0X, pic0Y, pic0Width, pic0Height, pic0StrideBytes,
+                pic1X, pic1Y, pic1Width, pic1Height, pic1StrideBytes,
+                pic1Alpha, opaqueOsdBackdrop, backdropArgb, matrixMode,
+                picYyuv422 = picYyuv422,
+            )
             if (NativeRenderBridge.compositePlanesWithMatrix(
                     osdBytes = osdBytes,
                     pic0Bytes = pic0Bytes,
@@ -1197,13 +1246,14 @@ internal class LcdcFirstScanout(
                 osdPayload, osdStrideBytes, canvasWidth, canvasHeight,
                 pic0Bytes, pic0X, pic0Y, pic0Width, pic0Height, pic0StrideBytes,
                 pic1Bytes, pic1X, pic1Y, pic1Width, pic1Height, pic1StrideBytes, pic1Alpha,
-                opaqueOsdBackdrop, output, backdropArgb,
+                opaqueOsdBackdrop, output, backdropArgb, picYyuv422 = picYyuv422,
             )
         } else {
             compositePic1AndOsd0(
                 osdPayload, osdStrideBytes, canvasWidth, canvasHeight,
                 pic1Bytes, pic1X, pic1Y, pic1Width, pic1Height, pic1StrideBytes, pic1Alpha,
                 opaqueOsdBackdrop, output, allowNative = allowNative, backdropArgb = backdropArgb,
+                picYyuv422 = picYyuv422,
             )
         }
         if (matrixMode != 0 && colorMatrixQ10 != null) {
@@ -1369,6 +1419,7 @@ internal class LcdcFirstScanout(
         opaqueOsdBackdrop: Boolean,
         output: IntArray,
         backdropArgb: Int = BLANK_BLACK_ARGB,
+        picYyuv422: Boolean = true,
     ) {
         val outWidth = targetWidth
         val outHeight = targetHeight
@@ -1408,12 +1459,21 @@ internal class LcdcFirstScanout(
                 if (inPic0Y && sourceColumn in pic0X until pic0Right) {
                     val localX = sourceColumn - pic0X
                     val pairOffset = pic0RowOffset + (localX and 1.inv()) * 2
-                    bg = (0xff shl 24) or yuv422UyvyToRgb(pic0Bytes, pairOffset, (localX and 1) != 0)
+                    val rgb = if (picYyuv422) {
+                        yuv422YyuvToRgb(pic0Bytes, pairOffset, (localX and 1) != 0)
+                    } else {
+                        yuv422UyvyToRgb(pic0Bytes, pairOffset, (localX and 1) != 0)
+                    }
+                    bg = (0xff shl 24) or rgb
                 }
                 if (inPic1Y && sourceColumn in pic1X until pic1Right) {
                     val localX = sourceColumn - pic1X
                     val pairOffset = pic1RowOffset + (localX and 1.inv()) * 2
-                    val rgb = yuv422UyvyToRgb(srcPic1, pairOffset, (localX and 1) != 0)
+                    val rgb = if (picYyuv422) {
+                        yuv422YyuvToRgb(srcPic1, pairOffset, (localX and 1) != 0)
+                    } else {
+                        yuv422UyvyToRgb(srcPic1, pairOffset, (localX and 1) != 0)
+                    }
                     bg = if (pic1Alpha >= 255) {
                         (0xff shl 24) or rgb
                     } else {
@@ -1453,12 +1513,13 @@ internal class LcdcFirstScanout(
         output: IntArray,
         allowNative: Boolean = true,
         backdropArgb: Int = BLANK_BLACK_ARGB,
+        picYyuv422: Boolean = true,
     ) {
         val outWidth = targetWidth
         val outHeight = targetHeight
         val osdBytes = osdPayload?.array()
         val osdBaseOffset = osdPayload?.arrayOffset() ?: 0
-        if (allowNative && backdropArgb == BLANK_BLACK_ARGB && NativeRenderBridge.compositePic1AndOsd0(
+        if (allowNative && !picYyuv422 && backdropArgb == BLANK_BLACK_ARGB && NativeRenderBridge.compositePic1AndOsd0(
                 osdBytes = osdBytes,
                 osdBaseOffset = osdBaseOffset,
                 osdStrideBytes = osdStrideBytes,
@@ -1507,7 +1568,11 @@ internal class LcdcFirstScanout(
                     if (sourceColumn in pic1X until pic1Right) {
                         val localX = sourceColumn - pic1X
                         val pairOffset = picRowOffset + (localX and 1.inv()) * 2
-                        val rgb = yuv422UyvyToRgb(srcPic, pairOffset, (localX and 1) != 0)
+                        val rgb = if (picYyuv422) {
+                            yuv422YyuvToRgb(srcPic, pairOffset, (localX and 1) != 0)
+                        } else {
+                            yuv422UyvyToRgb(srcPic, pairOffset, (localX and 1) != 0)
+                        }
                         bg = if (pic1Alpha >= 255) {
                             (0xff shl 24) or rgb
                         } else {
@@ -1556,7 +1621,11 @@ internal class LcdcFirstScanout(
                 if (sourceColumn in pic1X until pic1Right) {
                     val localX = sourceColumn - pic1X
                     val pairOffset = picRowOffset + (localX and 1.inv()) * 2
-                    val rgb = yuv422UyvyToRgb(srcPic, pairOffset, (localX and 1) != 0)
+                    val rgb = if (picYyuv422) {
+                        yuv422YyuvToRgb(srcPic, pairOffset, (localX and 1) != 0)
+                    } else {
+                        yuv422UyvyToRgb(srcPic, pairOffset, (localX and 1) != 0)
+                    }
                     bg = if (pic1Alpha >= 255) {
                         (0xff shl 24) or rgb
                     } else {

@@ -211,11 +211,19 @@ class VulkanNativeOpticsBridge private constructor(
 
     val supportsFacePreviewResize: Boolean get() = resizeFacePreviewFn != null
 
-    fun resizeFacePreview(ctx: MemorySegment, source: MemorySegment, sourceStrideBytes: Int, destination: MemorySegment, yyuv: Boolean): Boolean {
+    fun resizeFacePreview(
+        ctx: MemorySegment,
+        source: MemorySegment,
+        sourceStrideBytes: Int,
+        destination: MemorySegment,
+        yyuv: Boolean,
+        yyuvIn: Boolean = false,
+    ): Boolean {
         val fn = resizeFacePreviewFn ?: return false
         if (!source.isNative || !destination.isNative || destination.isReadOnly) return false
+        val flags = (if (yyuv) 1 else 0) or (if (yyuvIn) 2 else 0)
         val rc = fn.invokeExact(ctx, source, source.byteSize(), sourceStrideBytes, destination,
-            destination.byteSize(), if (yyuv) 1 else 0, MemorySegment.NULL) as Int
+            destination.byteSize(), flags, MemorySegment.NULL) as Int
         return rc == FUJI_VK_OK
     }
 

@@ -418,8 +418,8 @@ class SocIspMovieCaptureV3Test {
         assertEquals(true, info1["pumped"])
         // Check vivid chroma deviation from neutral 128 in Color mode (row 4, pixel pair 4)
         val colorOff = 4 * stride + 4 * 4
-        val colorU = ram[colorOff].toInt() and 0xFF
-        val colorV = ram[colorOff + 2].toInt() and 0xFF
+        val colorU = ram[colorOff + 2].toInt() and 0xFF
+        val colorV = ram[colorOff + 3].toInt() and 0xFF
         assertTrue(
             kotlin.math.abs(colorV - 128) >= 20 || kotlin.math.abs(colorU - 128) >= 20,
             "STD color mode must preserve chroma (U=$colorU, V=$colorV)",
@@ -440,8 +440,8 @@ class SocIspMovieCaptureV3Test {
         isp82.beforeInstruction(ctx.tick)
 
         assertEquals(2L, comp.state()["stillDmaPumps"])
-        val monoU = ram[colorOff].toInt() and 0xFF
-        val monoV = ram[colorOff + 2].toInt() and 0xFF
+        val monoU = ram[colorOff + 2].toInt() and 0xFF
+        val monoV = ram[colorOff + 3].toInt() and 0xFF
         assertEquals(128, monoU, "Monochrome Still ISP mode must neutralize U chroma to 128")
         assertEquals(128, monoV, "Monochrome Still ISP mode must neutralize V chroma to 128")
         comp.close()

@@ -806,14 +806,20 @@ class VulkanOpticalBackend(
             bridge?.supportsFacePreviewResize == true &&
             deviceInfo?.deviceTypeName() != "CPU"
 
-    fun resizeFacePreview(source: MemorySegment, sourceStrideBytes: Int, destination: MemorySegment, yyuv: Boolean): Boolean {
+    fun resizeFacePreview(
+        source: MemorySegment,
+        sourceStrideBytes: Int,
+        destination: MemorySegment,
+        yyuv: Boolean,
+        yyuvIn: Boolean = false,
+    ): Boolean {
         // Non-blocking tryLock ensures the main ARM emulation thread never stalls behind an
         // in-flight AsyncOpticsWorker GPU frame; ImageScalerF000's integer CPU fast path is
         // byte-identical and completes in <1 ms when the GPU worker holds renderLock.
         if (!renderLock.tryLock()) return false
         return try {
             active == ActiveOpticsBackend.VULKAN && vkContext != MemorySegment.NULL &&
-                bridge?.resizeFacePreview(vkContext, source, sourceStrideBytes, destination, yyuv) == true
+                bridge?.resizeFacePreview(vkContext, source, sourceStrideBytes, destination, yyuv, yyuvIn) == true
         } finally {
             renderLock.unlock()
         }

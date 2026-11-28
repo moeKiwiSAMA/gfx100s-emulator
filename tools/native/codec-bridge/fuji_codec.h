@@ -136,6 +136,24 @@ FUJI_CODEC_EXPORT int32_t fuji_jpeg_decode_to_uyvy(
 );
 
 /**
+ * Decodes a JPEG bitstream directly into aligned packed Milbeaut YYUV422 ([Y0, Y1, Cb, Cr],
+ * LE u32 0xCrCbY1Y0). Same geometry and metadata contract as fuji_jpeg_decode_to_uyvy().
+ */
+FUJI_CODEC_EXPORT int32_t fuji_jpeg_decode_to_yyuv(
+    const uint8_t* src_jpeg,
+    int32_t src_jpeg_len,
+    int32_t downscale_shift,
+    int32_t crop_enabled,
+    int32_t crop_x0,
+    int32_t crop_x1,
+    int32_t crop_y0,
+    int32_t crop_y1,
+    uint8_t* dst_yyuv,
+    int32_t dst_capacity,
+    int32_t* out_meta
+);
+
+/**
  * Encodes packed UYVY422 (MemYc) directly into a 4:2:2 JPEG bitstream with zero RGB
  * round-trip (via libjpeg-turbo raw planar YUV422 FDCT or TurboJPEG tjCompressFromYUVPlanes).
  * Maps Milbeaut unwritten/black fill words (0x00000000, [00 00 80 80], [80 80 00 00])
@@ -148,6 +166,21 @@ FUJI_CODEC_EXPORT int32_t fuji_jpeg_decode_to_uyvy(
  */
 FUJI_CODEC_EXPORT int32_t fuji_jpeg_encode_uyvy_alloc(
     const uint8_t* src_uyvy,
+    int32_t width,
+    int32_t height,
+    int32_t src_stride_bytes,
+    int32_t quality,
+    int32_t max_bytes,
+    uint8_t** out_buf,
+    int32_t* out_actual_size
+);
+
+/**
+ * Encodes packed Milbeaut YYUV422 ([Y0, Y1, Cb, Cr], LE u32 0xCrCbY1Y0) directly into a 4:2:2
+ * JPEG bitstream with zero RGB round-trip. Same allocation/overflow contract as fuji_jpeg_encode_uyvy_alloc().
+ */
+FUJI_CODEC_EXPORT int32_t fuji_jpeg_encode_yyuv_alloc(
+    const uint8_t* src_yyuv,
     int32_t width,
     int32_t height,
     int32_t src_stride_bytes,

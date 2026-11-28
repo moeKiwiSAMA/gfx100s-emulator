@@ -2646,7 +2646,7 @@ FUJI_VK_EXPORT int32_t fuji_vk_resize_1024_to_640_422(
     uint8_t* destination, size_t destination_bytes, uint32_t yyuv, double* timings_ms) {
     constexpr size_t out_bytes = 640u * 360u * 2u;
     if (!ctx || !source || !destination || src_stride < 2048u || src_stride > 0x3ffffu ||
-        (src_stride & 3u) || yyuv > 1u || destination_bytes < out_bytes)
+        (src_stride & 3u) || yyuv > 3u || destination_bytes < out_bytes)
         return FUJI_VK_ERR_INVALID_ARG;
     const size_t in_bytes = static_cast<size_t>(575u) * src_stride + 2048u;
     if (source_bytes < in_bytes) return FUJI_VK_ERR_INVALID_ARG;

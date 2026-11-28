@@ -355,25 +355,25 @@ class ImageLiveViewBanksTest {
         liveBus.access(++seq, 0xfff730d4L, 4, true, 0x1005_0000L)
         assertEquals(1, writes)
 
-        // Verify BT.601 UYVY output: top row (y=10) is white (U=128, Y0=255, V=128, Y1=255)
+        // Verify BT.601 YYUV422 output: top row (y=10) is white (Y0=255, Y1=255, U=128, V=128)
         val topOff = 10 * stride
-        assertEquals(128, ram[topOff].toInt() and 0xff)
+        assertEquals(255, ram[topOff].toInt() and 0xff)
         assertEquals(255, ram[topOff + 1].toInt() and 0xff)
         assertEquals(128, ram[topOff + 2].toInt() and 0xff)
-        assertEquals(255, ram[topOff + 3].toInt() and 0xff)
+        assertEquals(128, ram[topOff + 3].toInt() and 0xff)
 
-        // Bottom row (y=400) is black (U=128, Y0=0, V=128, Y1=0)
+        // Bottom row (y=400) is black (Y0=0, Y1=0, U=128, V=128)
         val botOff = 400 * stride
-        assertEquals(128, ram[botOff].toInt() and 0xff)
+        assertEquals(0, ram[botOff].toInt() and 0xff)
         assertEquals(0, ram[botOff + 1].toInt() and 0xff)
         assertEquals(128, ram[botOff + 2].toInt() and 0xff)
-        assertEquals(0, ram[botOff + 3].toInt() and 0xff)
+        assertEquals(128, ram[botOff + 3].toInt() and 0xff)
 
         // Exhausted (loop=false) -> retains last valid frame without writing
         exhausted = true
         assertFalse(liveBus.pumpLiveViewDma(900_000_002L))
         assertEquals(1, writes)
-        assertEquals(255, ram[topOff + 1].toInt() and 0xff)
+        assertEquals(255, ram[topOff].toInt() and 0xff)
 
         // Clearing bit 28 stops DMA even when sensor has frames
         exhausted = false
@@ -520,7 +520,7 @@ class ImageLiveViewBanksTest {
             for (y in 0 until dstH) {
                 for (x in 0 until dstW) {
                     val pairOff = y * stride + (x and 1.inv()) * 2
-                    val luma = ram[pairOff + if ((x and 1) != 0) 3 else 1].toInt() and 0xff
+                    val luma = ram[pairOff + (x and 1)].toInt() and 0xff
                     if (luma > 200) {
                         if (x < minX) minX = x
                         if (x > maxX) maxX = x

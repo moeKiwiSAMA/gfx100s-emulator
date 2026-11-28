@@ -79,24 +79,26 @@ class LcdcZebraAndFlogViewAssistTest {
             while (x + 1 < w) {
                 val lv = (if (x < w / 2) darkY else brightY).toByte()
                 val off = rowOff + x * 2
-                buf[off] = 0x80.toByte()
+                buf[off] = lv
                 buf[off + 1] = lv
                 buf[off + 2] = 0x80.toByte()
-                buf[off + 3] = lv
+                buf[off + 3] = 0x80.toByte()
                 x += 2
             }
         }
         return buf
     }
 
+    private fun yyuvLumaAt(buf: ByteArray, w: Int, x: Int, y: Int): Int =
+        buf[y * w * 2 + (x and 1.inv()) * 2 + (x and 1)].toInt() and 0xFF
+
     private fun lumaStd(uyvy: ByteArray, w: Int, h: Int): Double {
         var sum = 0.0
         var sumSq = 0.0
         val n = w * h
         for (y in 0 until h) {
-            val rowOff = y * w * 2
             for (x in 0 until w) {
-                val lv = (uyvy[rowOff + x * 2 + 1].toInt() and 0xFF).toDouble()
+                val lv = yyuvLumaAt(uyvy, w, x, y).toDouble()
                 sum += lv
                 sumSq += lv * lv
             }
@@ -138,13 +140,13 @@ class LcdcZebraAndFlogViewAssistTest {
         var rightDiagMatch = 0
         for (y in 0 until h) {
             for (x in 0 until w) {
-                val lv = rightBuf[y * w * 2 + x * 2 + 1].toInt() and 0xFF
+                val lv = yyuvLumaAt(rightBuf, w, x, y)
                 if (x < w / 2) {
                     if (lv == 0) darkStriped++
                 } else {
                     if (lv == 0) brightStriped++
                     if (y + 1 < h && x > w / 2) {
-                        val lvDiag = rightBuf[(y + 1) * w * 2 + (x - 1) * 2 + 1].toInt() and 0xFF
+                        val lvDiag = yyuvLumaAt(rightBuf, w, x - 1, y + 1)
                         if (lv == 0 && lvDiag == 0) rightDiagMatch++
                     }
                 }
@@ -163,11 +165,11 @@ class LcdcZebraAndFlogViewAssistTest {
         var diffRightLeft = 0
         for (y in 0 until h) {
             for (x in w / 2 until w) {
-                val lv = leftBuf[y * w * 2 + x * 2 + 1].toInt() and 0xFF
-                val rv = rightBuf[y * w * 2 + x * 2 + 1].toInt() and 0xFF
+                val lv = yyuvLumaAt(leftBuf, w, x, y)
+                val rv = yyuvLumaAt(rightBuf, w, x, y)
                 if (lv != rv) diffRightLeft++
                 if (y + 1 < h && x + 1 < w) {
-                    val lvDiag = leftBuf[(y + 1) * w * 2 + (x + 1) * 2 + 1].toInt() and 0xFF
+                    val lvDiag = yyuvLumaAt(leftBuf, w, x + 1, y + 1)
                     if (lv == 0 && lvDiag == 0) leftDiagMatch++
                 }
             }
@@ -187,7 +189,7 @@ class LcdcZebraAndFlogViewAssistTest {
         proc.processUyvyPlaneInPlace(buf245, w, h, w * 2, false, z100, 0)
         var clippedStripes = 0
         for (y in 0 until h) for (x in w / 2 until w) {
-            if ((buf245[y * w * 2 + x * 2 + 1].toInt() and 0xFF) == 0) clippedStripes++
+            if (yyuvLumaAt(buf245, w, x, y) == 0) clippedStripes++
         }
         assertTrue(clippedStripes > 600, "Clipped Y=245 highlights must still stripe at 100% IRE (got $clippedStripes)")
     }
@@ -217,10 +219,10 @@ class LcdcZebraAndFlogViewAssistTest {
                 val lv0 = 24 + (x * 168) / (w - 1)
                 val lv1 = 24 + ((x + 1) * 168) / (w - 1)
                 val off = rowOff + x * 2
-                flatFlog[off] = 0x80.toByte()
-                flatFlog[off + 1] = lv0.toByte()
+                flatFlog[off] = lv0.toByte()
+                flatFlog[off + 1] = lv1.toByte()
                 flatFlog[off + 2] = 0x80.toByte()
-                flatFlog[off + 3] = lv1.toByte()
+                flatFlog[off + 3] = 0x80.toByte()
                 x += 2
             }
         }
@@ -229,9 +231,9 @@ class LcdcZebraAndFlogViewAssistTest {
         proc.processUyvyPlaneInPlace(assisted, w, h, w * 2, applyViewAssist = true, zebra = LcdcPicturePostProcessor.ZebraConfig.OFF, frameIndex = 0)
         val stdAfter = lumaStd(assisted, w, h)
 
-        val shadowOut = assisted[1].toInt() and 0xFF
-        val midOut = assisted[(w / 2) * 2 + 1].toInt() and 0xFF
-        val hiOut = assisted[(w - 1) * 2 + 1].toInt() and 0xFF
+        val shadowOut = yyuvLumaAt(assisted, w, 0, 0)
+        val midOut = yyuvLumaAt(assisted, w, w / 2, 0)
+        val hiOut = yyuvLumaAt(assisted, w, w - 1, 0)
 
         assertTrue(shadowOut <= 8, "F-Log 9.4% black floor (24) must pull down to BT.709 black (got $shadowOut)")
         assertTrue(midOut in 95..135, "F-Log mid-gray must stay well-exposed in BT.709 (got $midOut)")
@@ -247,7 +249,7 @@ class LcdcZebraAndFlogViewAssistTest {
         proc.processUyvyPlaneInPlace(combined, w, h, w * 2, applyViewAssist = true, zebra = zRight, frameIndex = 0)
         var pureBlackZebra = 0
         for (y in 0 until h) for (x in (w * 3) / 4 until w) {
-            if ((combined[y * w * 2 + x * 2 + 1].toInt() and 0xFF) == 0) pureBlackZebra++
+            if (yyuvLumaAt(combined, w, x, y) == 0) pureBlackZebra++
         }
         assertTrue(pureBlackZebra > 100, "Zebra stripes must stay crisp pure black even with F-Log View Assist ON (got $pureBlackZebra)")
 

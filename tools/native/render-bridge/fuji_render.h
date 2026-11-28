@@ -24,6 +24,11 @@ extern "C" {
 #define FUJI_RENDER_SIMD_AVX2   2
 #define FUJI_RENDER_SIMD_AVX512 3
 
+/* Bit flag in cfg[19] for fuji_render_composite_planes_matrix / fuji_render_composite_lcdc_to_argb_pre:
+ * when set, PIC0/PIC1 packed 4:2:2 buffers use real-silicon Milbeaut YYUV422 ([Y0, Y1, Cb, Cr],
+ * LE u32 0xCrCbY1Y0) instead of legacy UYVY422 ([Cb, Y0, Cr, Y1]). */
+#define FUJI_RENDER_CFG_FLAG_YYUV422 (1 << 8)
+
 FUJI_RENDER_EXPORT int32_t     fuji_render_abi_version(void);
 FUJI_RENDER_EXPORT int32_t     fuji_render_simd_level(void);
 FUJI_RENDER_EXPORT const char* fuji_render_backend_name(void);

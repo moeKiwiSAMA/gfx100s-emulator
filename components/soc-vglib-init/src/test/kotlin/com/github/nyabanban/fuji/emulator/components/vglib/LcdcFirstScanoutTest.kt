@@ -317,12 +317,12 @@ class LcdcFirstScanoutTest {
             override fun write(address: Long, source: ByteBuffer) = error("Unexpected write")
         }
 
-        // Fill PIC1 with neutral white Y=255, U=128, V=128 (UYVY: U=128, Y0=255, V=128, Y1=255)
+        // Fill PIC1 with neutral white Y=255, U=128, V=128 (YYUV422: Y0=255, Y1=255, U=128, V=128)
         for (i in 0 until pic1Size step 4) {
-            pic1Data[i] = 0x80.toByte()
+            pic1Data[i] = 0xff.toByte()
             pic1Data[i + 1] = 0xff.toByte()
             pic1Data[i + 2] = 0x80.toByte()
-            pic1Data[i + 3] = 0xff.toByte()
+            pic1Data[i + 3] = 0x80.toByte()
         }
         // OSD0 top-left (y=0, x=0): opaque red LE RRGGBBAA = 0xFF0000FF; center (y=384, x=512): 50% green 0x00FF0080
         osd0Data.putInt(0, 0xff0000ff.toInt())
@@ -427,10 +427,10 @@ class LcdcFirstScanoutTest {
         val pic1Size = pic1Stride * pic1H
         val pic1Data = ByteArray(pic1Size)
         for (i in 0 until pic1Size step 4) {
-            pic1Data[i] = 0x80.toByte()
+            pic1Data[i] = 0xff.toByte()
             pic1Data[i + 1] = 0xff.toByte()
             pic1Data[i + 2] = 0x80.toByte()
-            pic1Data[i + 3] = 0xff.toByte()
+            pic1Data[i + 3] = 0x80.toByte()
         }
         context.entries["cpu.memory"] = object : DmaMemory {
             override fun check(address: Long, size: Long, write: Boolean) {
@@ -759,10 +759,10 @@ class LcdcFirstScanoutTest {
         val pic1Size = pic1Stride * pic1H
         val pic1Data = ByteArray(pic1Size)
         for (i in 0 until 576 * pic1Stride step 4) {
-            pic1Data[i] = 0x80.toByte()
+            pic1Data[i] = 0xff.toByte()
             pic1Data[i + 1] = 0xff.toByte()
             pic1Data[i + 2] = 0x80.toByte()
-            pic1Data[i + 3] = 0xff.toByte()
+            pic1Data[i + 3] = 0x80.toByte()
         }
 
         context.entries["cpu.memory"] = object : DmaMemory {

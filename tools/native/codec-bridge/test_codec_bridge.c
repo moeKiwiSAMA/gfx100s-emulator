@@ -210,6 +210,48 @@ static void test_jpeg_roundtrip(void) {
         fail("Corrupt JPEG must fail cleanly");
     }
 
+    /* Test Milbeaut YYUV422 ([Y0, Y1, Cb, Cr]) encode/decode round-trip + black margin sanitization */
+    uint8_t* yyuv = (uint8_t*)malloc((size_t)stride * (size_t)h);
+    if (!yyuv) fail("OOM yyuv");
+    for (int32_t y = 0; y < h; ++y) {
+        for (int32_t x = 0; x < w; x += 2) {
+            uint8_t* p = yyuv + (size_t)y * (size_t)stride + (size_t)x * 2u;
+            if (x < 16) {
+                /* 0x80800000 native YYUV422 neutral black margin ([00 00 80 80]) */
+                p[0] = 0x00; p[1] = 0x00; p[2] = 0x80; p[3] = 0x80;
+            } else if (x < 32) {
+                /* 0x7e7f3e41 50%-blended film-strip neutral dark gray ([41 3e 7f 7e]) */
+                p[0] = 0x41; p[1] = 0x3e; p[2] = 0x7f; p[3] = 0x7e;
+            } else {
+                /* Yellowish interior: Y=210, Cb=50, Cr=150 */
+                p[0] = 210; p[1] = 210; p[2] = 50; p[3] = 150;
+            }
+        }
+    }
+    uint8_t* yyuv_jpeg = NULL;
+    int32_t yyuv_sz = fuji_jpeg_encode_yyuv_alloc(yyuv, w, h, stride, 95, 256 * 1024, &yyuv_jpeg, &actual);
+    if (yyuv_sz <= 100 || !yyuv_jpeg || yyuv_sz != actual) fail("fuji_jpeg_encode_yyuv_alloc failed");
+    uint8_t* yyuv_dec = (uint8_t*)malloc((size_t)stride * (size_t)h);
+    int32_t yyuv_meta[5] = {0};
+    if (fuji_jpeg_decode_to_yyuv(yyuv_jpeg, yyuv_sz, 0, 0, 0, 0, 0, 0, yyuv_dec, stride * h, yyuv_meta) != stride * h) {
+        fail("fuji_jpeg_decode_to_yyuv failed");
+    }
+    const uint8_t* ym = yyuv_dec + (size_t)(h / 2) * (size_t)yyuv_meta[2] + (size_t)6 * 2u;
+    if (ym[0] > 8 || ym[1] > 8 || abs((int)ym[2] - 128) > 8 || abs((int)ym[3] - 128) > 8) {
+        fail("YYUV422 0x80800000 black margin decoded non-black");
+    }
+    const uint8_t* yf = yyuv_dec + (size_t)(h / 2) * (size_t)yyuv_meta[2] + (size_t)24 * 2u;
+    if (abs((int)yf[0] - 64) > 10 || abs((int)yf[2] - 128) > 8 || abs((int)yf[3] - 128) > 8) {
+        fail("YYUV422 0x7e7f3e41 film-strip gray drifted");
+    }
+    const uint8_t* yi = yyuv_dec + (size_t)(h / 2) * (size_t)yyuv_meta[2] + (size_t)(w * 3 / 4) * 2u;
+    if (abs((int)yi[0] - 210) > 10 || abs((int)yi[2] - 50) > 10 || abs((int)yi[3] - 150) > 10) {
+        fail("YYUV422 interior yellow drifted");
+    }
+    fuji_codec_free(yyuv_jpeg);
+    free(yyuv);
+    free(yyuv_dec);
+
     fuji_codec_free(jpeg);
     fuji_codec_free(blk_jpeg);
     fuji_codec_free(bgr_jpeg);

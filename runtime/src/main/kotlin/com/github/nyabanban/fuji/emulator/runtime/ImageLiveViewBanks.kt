@@ -223,7 +223,12 @@ internal class ImageLiveViewBanks private constructor(
             dstW: Int,
             dstH: Int,
             stride: Int,
+            yyuv422: Boolean = true,
         ) {
+            val iY0 = if (yyuv422) 0 else 1
+            val iY1 = if (yyuv422) 1 else 3
+            val iU = if (yyuv422) 2 else 0
+            val iV = if (yyuv422) 3 else 2
             val sameDims = srcW == dstW && srcH == dstH
             val fitW: Int
             val fitH: Int
@@ -252,10 +257,10 @@ internal class ImageLiveViewBanks private constructor(
                     var x = 0
                     while (x < dstW) {
                         val outIdx = rowOff + x * 2
-                        dst[outIdx] = 0x80.toByte()
-                        dst[outIdx + 1] = 0
-                        dst[outIdx + 2] = 0x80.toByte()
-                        dst[outIdx + 3] = 0
+                        dst[outIdx + iU] = 0x80.toByte()
+                        dst[outIdx + iY0] = 0
+                        dst[outIdx + iV] = 0x80.toByte()
+                        dst[outIdx + iY1] = 0
                         x += 2
                     }
                 } else {
@@ -269,10 +274,10 @@ internal class ImageLiveViewBanks private constructor(
                         val inX1 = (x + 1) in offX until endX
                         val outIdx = rowOff + x * 2
                         if (!inX0 && !inX1) {
-                            dst[outIdx] = 0x80.toByte()
-                            dst[outIdx + 1] = 0
-                            dst[outIdx + 2] = 0x80.toByte()
-                            dst[outIdx + 3] = 0
+                            dst[outIdx + iU] = 0x80.toByte()
+                            dst[outIdx + iY0] = 0
+                            dst[outIdx + iV] = 0x80.toByte()
+                            dst[outIdx + iY1] = 0
                         } else {
                             var r0 = 0
                             var g0 = 0
@@ -316,10 +321,10 @@ internal class ImageLiveViewBanks private constructor(
                             }
                             val u = (((-43 * avgR - 85 * avgG + 128 * avgB + 128) shr 8) + 128).coerceIn(0, 255)
                             val v = (((128 * avgR - 107 * avgG - 21 * avgB + 128) shr 8) + 128).coerceIn(0, 255)
-                            dst[outIdx] = u.toByte()
-                            dst[outIdx + 1] = y0.toByte()
-                            dst[outIdx + 2] = v.toByte()
-                            dst[outIdx + 3] = y1.toByte()
+                            dst[outIdx + iU] = u.toByte()
+                            dst[outIdx + iY0] = y0.toByte()
+                            dst[outIdx + iV] = v.toByte()
+                            dst[outIdx + iY1] = y1.toByte()
                         }
                         x += 2
                     }

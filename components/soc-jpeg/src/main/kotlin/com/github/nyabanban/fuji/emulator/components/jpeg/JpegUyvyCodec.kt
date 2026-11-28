@@ -110,6 +110,7 @@ internal object JpegUyvyCodec {
         cropXEnd: Int,
         cropYStart: Int,
         cropYEnd: Int,
+        yyuv422: Boolean = true,
     ): DecodeDirectResult? {
         if (!NativeCodecBridge.hasJpeg) return null
         if (memJpegSize < 4) return DecodeDirectResult.Error("Missing JPEG SOI marker")
@@ -162,6 +163,7 @@ internal object JpegUyvyCodec {
                 cropY1 = cropYEnd,
                 dstUyvy = dstSeg,
                 dstCapacity = probe.totalBytes,
+                yyuv422 = yyuv422,
             )
         ) {
             is NativeCodecBridge.JpegDecodeDirectOutcome.Success -> {
@@ -198,6 +200,7 @@ internal object JpegUyvyCodec {
         qscale: Int,
         maxBytes: Long,
         qualityOverride: Float? = null,
+        yyuv422: Boolean = true,
         directDstWriter: (nativeJpeg: MemorySegment, actualBytes: Int) -> Boolean,
     ): EncodeDirectResult? {
         if (!NativeCodecBridge.hasJpeg) return null
@@ -223,6 +226,7 @@ internal object JpegUyvyCodec {
                 srcStrideBytes = pitch,
                 quality = qualityInt,
                 maxBytes = maxBytes,
+                yyuv422 = yyuv422,
                 directDstWriter = directDstWriter,
             )
         ) {
@@ -249,6 +253,7 @@ internal object JpegUyvyCodec {
         cropYStart: Int,
         cropYEnd: Int,
         useNative: Boolean = true,
+        yyuv422: Boolean = true,
     ): DecodeResult {
         if (jpegBytes.size < 4 || jpegBytes[0] != 0xFF.toByte() || jpegBytes[1] != 0xD8.toByte()) {
             return DecodeResult.Error("Missing JPEG SOI marker")
@@ -267,6 +272,7 @@ internal object JpegUyvyCodec {
                     cropXEnd = cropXEnd,
                     cropYStart = cropYStart,
                     cropYEnd = cropYEnd,
+                    yyuv422 = yyuv422,
                 )
                 if (nativeRes != null) return nativeRes
             } else {
@@ -352,7 +358,7 @@ internal object JpegUyvyCodec {
                         return DecodeResult.Error("MemYc capacity $memYcSize too small for $totalBytes bytes")
                     }
 
-                    val uyvy = encodeBufferedImageToUyvy(decoded, outW, outH, alignedW, alignedH, strideBytes)
+                    val uyvy = encodeBufferedImageToUyvy(decoded, outW, outH, alignedW, alignedH, strideBytes, yyuv422 = yyuv422)
                     DecodeResult.Success(
                         uyvyBytes = uyvy,
                         width = outW,
@@ -380,6 +386,7 @@ internal object JpegUyvyCodec {
         cropXEnd: Int,
         cropYStart: Int,
         cropYEnd: Int,
+        yyuv422: Boolean,
     ): DecodeResult? {
         val (probeRc, probe) = NativeCodecBridge.jpegProbeHeader(
             jpegBytes = jpegBytes,
@@ -417,6 +424,7 @@ internal object JpegUyvyCodec {
                 cropY0 = cropYStart,
                 cropY1 = cropYEnd,
                 expectedTotalBytes = probe.totalBytes,
+                yyuv422 = yyuv422,
             )
         ) {
             is NativeCodecBridge.JpegDecodeOutcome.Success -> {
@@ -446,10 +454,15 @@ internal object JpegUyvyCodec {
         alignedW: Int,
         alignedH: Int,
         strideBytes: Int,
+        yyuv422: Boolean = true,
     ): ByteArray {
         val out = ByteArray(strideBytes * alignedH)
         val evenOutW = outW and 1.inv()
         val dataBuf = image.raster.dataBuffer
+        val iY0 = if (yyuv422) 0 else 1
+        val iY1 = if (yyuv422) 1 else 3
+        val iU = if (yyuv422) 2 else 0
+        val iV = if (yyuv422) 3 else 2
 
         // Fast bulk DataBuffer paths (avoids per-row BufferedImage.getRGB color-model overhead)
         val imgType = image.type
@@ -473,10 +486,10 @@ internal object JpegUyvyCodec {
                     val u = (((-43 * (r0 + r1) - 85 * (g0 + g1) + 128 * (b0 + b1) + 256) shr 9) + 128).coerceIn(0, 255)
                     val v = (((128 * (r0 + r1) - 107 * (g0 + g1) - 21 * (b0 + b1) + 256) shr 9) + 128).coerceIn(0, 255)
                     val p = rowOff + x * 2
-                    out[p] = u.toByte()
-                    out[p + 1] = y0.toByte()
-                    out[p + 2] = v.toByte()
-                    out[p + 3] = y1.toByte()
+                    out[p + iU] = u.toByte()
+                    out[p + iY0] = y0.toByte()
+                    out[p + iV] = v.toByte()
+                    out[p + iY1] = y1.toByte()
                     x += 2
                 }
                 if (evenOutW < outW) {
@@ -488,18 +501,18 @@ internal object JpegUyvyCodec {
                     val u = (((-43 * (2 * r0) - 85 * (2 * g0) + 128 * (2 * b0) + 256) shr 9) + 128).coerceIn(0, 255)
                     val v = (((128 * (2 * r0) - 107 * (2 * g0) - 21 * (2 * b0) + 256) shr 9) + 128).coerceIn(0, 255)
                     val p = rowOff + evenOutW * 2
-                    out[p] = u.toByte()
-                    out[p + 1] = y0.toByte()
-                    out[p + 2] = v.toByte()
-                    out[p + 3] = 0
+                    out[p + iU] = u.toByte()
+                    out[p + iY0] = y0.toByte()
+                    out[p + iV] = v.toByte()
+                    out[p + iY1] = 0
                     x = evenOutW + 2
                 }
                 while (x < alignedW) {
                     val p = rowOff + x * 2
-                    out[p] = 0x80.toByte()
-                    out[p + 1] = 0
-                    out[p + 2] = 0x80.toByte()
-                    out[p + 3] = 0
+                    out[p + iU] = 0x80.toByte()
+                    out[p + iY0] = 0
+                    out[p + iV] = 0x80.toByte()
+                    out[p + iY1] = 0
                     x += 2
                 }
             }
@@ -511,26 +524,26 @@ internal object JpegUyvyCodec {
                 var x = 0
                 while (x < evenOutW) {
                     val p = rowOff + x * 2
-                    out[p] = 0x80.toByte()
-                    out[p + 1] = gray[sRow + x]
-                    out[p + 2] = 0x80.toByte()
-                    out[p + 3] = gray[sRow + x + 1]
+                    out[p + iU] = 0x80.toByte()
+                    out[p + iY0] = gray[sRow + x]
+                    out[p + iV] = 0x80.toByte()
+                    out[p + iY1] = gray[sRow + x + 1]
                     x += 2
                 }
                 if (evenOutW < outW) {
                     val p = rowOff + evenOutW * 2
-                    out[p] = 0x80.toByte()
-                    out[p + 1] = gray[sRow + evenOutW]
-                    out[p + 2] = 0x80.toByte()
-                    out[p + 3] = 0
+                    out[p + iU] = 0x80.toByte()
+                    out[p + iY0] = gray[sRow + evenOutW]
+                    out[p + iV] = 0x80.toByte()
+                    out[p + iY1] = 0
                     x = evenOutW + 2
                 }
                 while (x < alignedW) {
                     val p = rowOff + x * 2
-                    out[p] = 0x80.toByte()
-                    out[p + 1] = 0
-                    out[p + 2] = 0x80.toByte()
-                    out[p + 3] = 0
+                    out[p + iU] = 0x80.toByte()
+                    out[p + iY0] = 0
+                    out[p + iV] = 0x80.toByte()
+                    out[p + iY1] = 0
                     x += 2
                 }
             }
@@ -556,10 +569,10 @@ internal object JpegUyvyCodec {
                     val u = (((-43 * (r0 + r1) - 85 * (g0 + g1) + 128 * (b0 + b1) + 256) shr 9) + 128).coerceIn(0, 255)
                     val v = (((128 * (r0 + r1) - 107 * (g0 + g1) - 21 * (b0 + b1) + 256) shr 9) + 128).coerceIn(0, 255)
                     val p = rowOff + x * 2
-                    out[p] = u.toByte()
-                    out[p + 1] = y0.toByte()
-                    out[p + 2] = v.toByte()
-                    out[p + 3] = y1.toByte()
+                    out[p + iU] = u.toByte()
+                    out[p + iY0] = y0.toByte()
+                    out[p + iV] = v.toByte()
+                    out[p + iY1] = y1.toByte()
                     x += 2
                 }
                 if (evenOutW < outW) {
@@ -571,18 +584,18 @@ internal object JpegUyvyCodec {
                     val u = (((-43 * (2 * r0) - 85 * (2 * g0) + 128 * (2 * b0) + 256) shr 9) + 128).coerceIn(0, 255)
                     val v = (((128 * (2 * r0) - 107 * (2 * g0) - 21 * (2 * b0) + 256) shr 9) + 128).coerceIn(0, 255)
                     val p = rowOff + evenOutW * 2
-                    out[p] = u.toByte()
-                    out[p + 1] = y0.toByte()
-                    out[p + 2] = v.toByte()
-                    out[p + 3] = 0
+                    out[p + iU] = u.toByte()
+                    out[p + iY0] = y0.toByte()
+                    out[p + iV] = v.toByte()
+                    out[p + iY1] = 0
                     x = evenOutW + 2
                 }
                 while (x < alignedW) {
                     val p = rowOff + x * 2
-                    out[p] = 0x80.toByte()
-                    out[p + 1] = 0
-                    out[p + 2] = 0x80.toByte()
-                    out[p + 3] = 0
+                    out[p + iU] = 0x80.toByte()
+                    out[p + iY0] = 0
+                    out[p + iV] = 0x80.toByte()
+                    out[p + iY1] = 0
                     x += 2
                 }
             }
@@ -608,10 +621,10 @@ internal object JpegUyvyCodec {
                     val v = (((128 * (r0 + r1) - 107 * (g0 + g1) - 21 * (b0 + b1) + 256) shr 9) + 128).coerceIn(0, 255)
 
                     val p = rowOff + x * 2
-                    out[p] = u.toByte()
-                    out[p + 1] = y0.toByte()
-                    out[p + 2] = v.toByte()
-                    out[p + 3] = y1.toByte()
+                    out[p + iU] = u.toByte()
+                    out[p + iY0] = y0.toByte()
+                    out[p + iV] = v.toByte()
+                    out[p + iY1] = y1.toByte()
                     x += 2
                 }
                 if (evenOutW < outW) {
@@ -623,18 +636,18 @@ internal object JpegUyvyCodec {
                     val u = (((-43 * (2 * r0) - 85 * (2 * g0) + 128 * (2 * b0) + 256) shr 9) + 128).coerceIn(0, 255)
                     val v = (((128 * (2 * r0) - 107 * (2 * g0) - 21 * (2 * b0) + 256) shr 9) + 128).coerceIn(0, 255)
                     val p = rowOff + evenOutW * 2
-                    out[p] = u.toByte()
-                    out[p + 1] = y0.toByte()
-                    out[p + 2] = v.toByte()
-                    out[p + 3] = 0
+                    out[p + iU] = u.toByte()
+                    out[p + iY0] = y0.toByte()
+                    out[p + iV] = v.toByte()
+                    out[p + iY1] = 0
                     x = evenOutW + 2
                 }
                 while (x < alignedW) {
                     val p = rowOff + x * 2
-                    out[p] = 0x80.toByte()
-                    out[p + 1] = 0
-                    out[p + 2] = 0x80.toByte()
-                    out[p + 3] = 0
+                    out[p + iU] = 0x80.toByte()
+                    out[p + iY0] = 0
+                    out[p + iV] = 0x80.toByte()
+                    out[p + iY1] = 0
                     x += 2
                 }
             }
@@ -644,10 +657,10 @@ internal object JpegUyvyCodec {
             var x = 0
             while (x < alignedW) {
                 val p = rowOff + x * 2
-                out[p] = 0x80.toByte()
-                out[p + 1] = 0
-                out[p + 2] = 0x80.toByte()
-                out[p + 3] = 0
+                out[p + iU] = 0x80.toByte()
+                out[p + iY0] = 0
+                out[p + iV] = 0x80.toByte()
+                out[p + iY1] = 0
                 x += 2
             }
         }
@@ -699,6 +712,7 @@ internal object JpegUyvyCodec {
         maxBytes: Long,
         qualityOverride: Float? = null,
         useNative: Boolean = true,
+        yyuv422: Boolean = true,
     ): EncodeResult {
         if (width <= 0 || height <= 0 || width > MAX_OUTPUT_DIMENSION || height > MAX_OUTPUT_DIMENSION) {
             return EncodeResult.Error("Invalid encode dimensions: ${width}x$height")
@@ -717,7 +731,7 @@ internal object JpegUyvyCodec {
         if (useNative) {
             if (NativeCodecBridge.hasJpeg) {
                 val qualityInt = (qualityF * 100.0f).roundToInt().coerceIn(5, 98)
-                when (val outcome = NativeCodecBridge.jpegEncodeUyvy(uyvyBytes, width, height, pitch, qualityInt, maxBytes)) {
+                when (val outcome = NativeCodecBridge.jpegEncodeUyvy(uyvyBytes, width, height, pitch, qualityInt, maxBytes, yyuv422 = yyuv422)) {
                     is NativeCodecBridge.JpegEncodeOutcome.Success ->
                         return EncodeResult.Success(outcome.jpegBytes, width, height)
                     is NativeCodecBridge.JpegEncodeOutcome.Overflow ->
@@ -740,23 +754,30 @@ internal object JpegUyvyCodec {
             val bgr = (image.raster.dataBuffer as DataBufferByte).data
             val evenW = width and 1.inv()
             val dstRowBytes = width * 3
+            val iY0 = if (yyuv422) 0 else 1
+            val iY1 = if (yyuv422) 1 else 3
+            val iU = if (yyuv422) 2 else 0
+            val iV = if (yyuv422) 3 else 2
             for (y in 0 until height) {
                 val rowOff = y * pitch
                 val dstRow = y * dstRowBytes
                 var x = 0
                 while (x < evenW) {
                     val pairOff = rowOff + x * 2
-                    val u = uyvyBytes[pairOff].toInt() and 0xFF
-                    val y0 = uyvyBytes[pairOff + 1].toInt() and 0xFF
-                    val v = uyvyBytes[pairOff + 2].toInt() and 0xFF
-                    val y1 = uyvyBytes[pairOff + 3].toInt() and 0xFF
+                    val u = uyvyBytes[pairOff + iU].toInt() and 0xFF
+                    val y0 = uyvyBytes[pairOff + iY0].toInt() and 0xFF
+                    val v = uyvyBytes[pairOff + iV].toInt() and 0xFF
+                    val y1 = uyvyBytes[pairOff + iY1].toInt() and 0xFF
                     val dOff = dstRow + x * 3
-                    // Map unwritten zero DRAM (0x00000000) and Milbeaut Playback black fill words
-                    // (0x80800000 [00 00 80 80], 0x00008080 [80 80 00 00]) to pure black instead of BT.601 green.
-                    if ((u or y0 or v or y1) == 0 ||
-                        (u == 0 && y0 == 0 && v == 0x80 && y1 == 0x80) ||
-                        (u == 0x80 && y0 == 0x80 && v == 0 && y1 == 0)
-                    ) {
+                    // Map unwritten zero DRAM (0x00000000) and Milbeaut Playback black fill words to pure black.
+                    val isBlackSentinel = if (yyuv422) {
+                        (y0 or y1 or u or v) == 0 || (y0 == 0x80 && y1 == 0x80 && u == 0 && v == 0)
+                    } else {
+                        (u or y0 or v or y1) == 0 ||
+                            (u == 0 && y0 == 0 && v == 0x80 && y1 == 0x80) ||
+                            (u == 0x80 && y0 == 0x80 && v == 0 && y1 == 0)
+                    }
+                    if (isBlackSentinel) {
                         bgr[dOff] = 0
                         bgr[dOff + 1] = 0
                         bgr[dOff + 2] = 0
@@ -783,15 +804,19 @@ internal object JpegUyvyCodec {
                 }
                 if (evenW < width) {
                     val pairOff = rowOff + evenW * 2
-                    val u = uyvyBytes[pairOff].toInt() and 0xFF
-                    val y0 = uyvyBytes[pairOff + 1].toInt() and 0xFF
-                    val v = uyvyBytes[pairOff + 2].toInt() and 0xFF
-                    val y1 = if (pairOff + 3 < uyvyBytes.size) uyvyBytes[pairOff + 3].toInt() and 0xFF else 0
+                    val u = uyvyBytes[pairOff + iU].toInt() and 0xFF
+                    val y0 = uyvyBytes[pairOff + iY0].toInt() and 0xFF
+                    val v = uyvyBytes[pairOff + iV].toInt() and 0xFF
+                    val y1 = if (pairOff + iY1 < uyvyBytes.size) uyvyBytes[pairOff + iY1].toInt() and 0xFF else 0
                     val dOff = dstRow + evenW * 3
-                    if ((u or y0 or v or y1) == 0 ||
-                        (u == 0 && y0 == 0 && v == 0x80 && y1 == 0x80) ||
-                        (u == 0x80 && y0 == 0x80 && v == 0 && y1 == 0)
-                    ) {
+                    val isBlackSentinel = if (yyuv422) {
+                        (y0 or y1 or u or v) == 0 || (y0 == 0x80 && y1 == 0x80 && u == 0 && v == 0)
+                    } else {
+                        (u or y0 or v or y1) == 0 ||
+                            (u == 0 && y0 == 0 && v == 0x80 && y1 == 0x80) ||
+                            (u == 0x80 && y0 == 0x80 && v == 0 && y1 == 0)
+                    }
+                    if (isBlackSentinel) {
                         bgr[dOff] = 0
                         bgr[dOff + 1] = 0
                         bgr[dOff + 2] = 0

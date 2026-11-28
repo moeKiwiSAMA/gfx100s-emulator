@@ -13,7 +13,9 @@ def shader():
     params = b.uniform_struct([b.t_u32] * 4, 2)
     pair, row = b.gid(0), b.gid(1)
     stride = b.load_ubo(params, 0, False)
-    yyuv = b.une(b.load_ubo(params, 1, False), b.u32(0))
+    fmt = b.load_ubo(params, 1, False)
+    yyuv = b.une(b.uand(fmt, b.u32(1)), b.u32(0))
+    yyuv_in = b.une(b.uand(fmt, b.u32(2)), b.u32(0))
 
     def div(value, n):
         return b.op(OP_UDIV, b.t_u32, value, b.u32(n))
@@ -27,10 +29,22 @@ def shader():
     def source(x, y):
         i = b.uadd(b.umul(y, stride), b.ushr(x, b.u32(1)))
         w = b.load_ssbo(src, src_ptr, b.t_u32, i)
-        black = b.lor(b.ueq(w, b.u32(0)), b.lor(b.ueq(w, b.u32(0x80800000)), b.ueq(w, b.u32(0x00008080))))
-        w = b.sel_u(black, b.u32(0x00800080), w)
-        y_shift = b.sel_u(b.ueq(b.uand(x, b.u32(1)), b.u32(0)), b.u32(8), b.u32(24))
-        return [b.uand(b.ushr(w, y_shift), b.u32(255)), b.uand(w, b.u32(255)), b.uand(b.ushr(w, b.u32(16)), b.u32(255))]
+        is_even = b.ueq(b.uand(x, b.u32(1)), b.u32(0))
+        # UYVY input ([U, Y0, V, Y1])
+        black_uy = b.lor(b.ueq(w, b.u32(0)), b.lor(b.ueq(w, b.u32(0x80800000)), b.ueq(w, b.u32(0x00008080))))
+        w_uy = b.sel_u(black_uy, b.u32(0x00800080), w)
+        y_shift_uy = b.sel_u(is_even, b.u32(8), b.u32(24))
+        y_uy = b.uand(b.ushr(w_uy, y_shift_uy), b.u32(255))
+        u_uy = b.uand(w_uy, b.u32(255))
+        v_uy = b.uand(b.ushr(w_uy, b.u32(16)), b.u32(255))
+        # Real-silicon Milbeaut YYUV422 input ([Y0, Y1, Cb, Cr], 0x80800000 is natively black)
+        black_yy = b.lor(b.ueq(w, b.u32(0)), b.ueq(w, b.u32(0x00008080)))
+        w_yy = b.sel_u(black_yy, b.u32(0x80800000), w)
+        y_shift_yy = b.sel_u(is_even, b.u32(0), b.u32(8))
+        y_yy = b.uand(b.ushr(w_yy, y_shift_yy), b.u32(255))
+        u_yy = b.uand(b.ushr(w_yy, b.u32(16)), b.u32(255))
+        v_yy = b.uand(b.ushr(w_yy, b.u32(24)), b.u32(255))
+        return [b.sel_u(yyuv_in, y_yy, y_uy), b.sel_u(yyuv_in, u_yy, u_uy), b.sel_u(yyuv_in, v_yy, v_uy)]
 
     y0, y1, wy = coords(row, 575, 359)
     def resample(x):

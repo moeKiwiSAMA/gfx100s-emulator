@@ -55,7 +55,7 @@ class MfDualDisplayAndFocusCheckZoomTest {
         val rowOff = (height / 2) * stride
         var bright = 0
         for (x in 0 until width) {
-            val yVal = buf[rowOff + x * 2 + 1].toInt() and 0xFF
+            val yVal = buf[rowOff + (x and 1.inv()) * 2 + (x and 1)].toInt() and 0xFF
             if (yVal > 170) bright++
         }
         return bright
@@ -68,8 +68,8 @@ class MfDualDisplayAndFocusCheckZoomTest {
             val rowOff = y * stride
             var x = 8
             while (x < width - 8) {
-                val u = buf[rowOff + x * 2].toInt() and 0xFF
-                val v = buf[rowOff + x * 2 + 2].toInt() and 0xFF
+                val u = buf[rowOff + x * 2 + 2].toInt() and 0xFF
+                val v = buf[rowOff + x * 2 + 3].toInt() and 0xFF
                 sum += maxOf(abs(u - 128), abs(v - 128))
                 count++
                 x += 2

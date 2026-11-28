@@ -145,6 +145,7 @@ internal class LcdcPicturePostProcessor {
         applyViewAssist: Boolean,
         zebra: ZebraConfig,
         frameIndex: Int,
+        yyuv422: Boolean = true,
     ) {
         if (!applyViewAssist && !zebra.enabled) return
         val zebraOn = zebra.enabled
@@ -163,24 +164,29 @@ internal class LcdcPicturePostProcessor {
         val m10 = matrixQ10[3]; val m11 = matrixQ10[4]; val m12 = matrixQ10[5]
         val m20 = matrixQ10[6]; val m21 = matrixQ10[7]; val m22 = matrixQ10[8]
 
+        val idxY0 = if (yyuv422) 0 else 1
+        val idxY1 = if (yyuv422) 1 else 3
+        val idxU = if (yyuv422) 2 else 0
+        val idxV = if (yyuv422) 3 else 2
+
         for (y in 0 until height) {
             val rowOff = y * strideBytes
             var x = 0
             while (x + 1 < width) {
                 val off = rowOff + (x shl 1)
-                val uIn = uyvy[off].toInt() and 0xFF
-                val y0In = uyvy[off + 1].toInt() and 0xFF
-                val vIn = uyvy[off + 2].toInt() and 0xFF
-                val y1In = uyvy[off + 3].toInt() and 0xFF
+                val uIn = uyvy[off + idxU].toInt() and 0xFF
+                val y0In = uyvy[off + idxY0].toInt() and 0xFF
+                val vIn = uyvy[off + idxV].toInt() and 0xFF
+                val y1In = uyvy[off + idxY1].toInt() and 0xFF
 
                 val z0 = zebraOn && y0In >= zThresh && isZebraStripe(zMode, x, y, zPeriod, zWidth, blinkOn)
                 val z1 = zebraOn && y1In >= zThresh && isZebraStripe(zMode, x + 1, y, zPeriod, zWidth, blinkOn)
 
                 if (z0 && z1) {
-                    uyvy[off] = zU
-                    uyvy[off + 1] = zY
-                    uyvy[off + 2] = zV
-                    uyvy[off + 3] = zY
+                    uyvy[off + idxU] = zU
+                    uyvy[off + idxY0] = zY
+                    uyvy[off + idxV] = zV
+                    uyvy[off + idxY1] = zY
                     x += 2
                     continue
                 }
@@ -216,15 +222,15 @@ internal class LcdcPicturePostProcessor {
                     val outU = clamp255(((-43 * avgR - 85 * avgG + 128 * avgB + 128) shr 8) + 128)
                     val outV = clamp255(((128 * avgR - 107 * avgG - 21 * avgB + 128) shr 8) + 128)
 
-                    uyvy[off] = if (z0 || z1) zU else outU.toByte()
-                    uyvy[off + 1] = if (z0) zY else outY0.toByte()
-                    uyvy[off + 2] = if (z0 || z1) zV else outV.toByte()
-                    uyvy[off + 3] = if (z1) zY else outY1.toByte()
+                    uyvy[off + idxU] = if (z0 || z1) zU else outU.toByte()
+                    uyvy[off + idxY0] = if (z0) zY else outY0.toByte()
+                    uyvy[off + idxV] = if (z0 || z1) zV else outV.toByte()
+                    uyvy[off + idxY1] = if (z1) zY else outY1.toByte()
                 } else if (z0 || z1) {
-                    if (z0) uyvy[off + 1] = zY
-                    if (z1) uyvy[off + 3] = zY
-                    uyvy[off] = zU
-                    uyvy[off + 2] = zV
+                    if (z0) uyvy[off + idxY0] = zY
+                    if (z1) uyvy[off + idxY1] = zY
+                    uyvy[off + idxU] = zU
+                    uyvy[off + idxV] = zV
                 }
                 x += 2
             }

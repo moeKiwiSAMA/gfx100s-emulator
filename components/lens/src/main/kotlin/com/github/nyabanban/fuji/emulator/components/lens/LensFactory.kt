@@ -814,7 +814,13 @@ class LensFactory : ComponentFactory {
                 source: java.lang.foreign.MemorySegment, sourceStrideBytes: Int,
                 destination: java.lang.foreign.MemorySegment, yyuv: Boolean,
             ): Boolean =
-                computeBackend?.resizeFacePreview(source, sourceStrideBytes, destination, yyuv) == true
+                computeBackend?.resizeFacePreview(source, sourceStrideBytes, destination, yyuv, yyuvIn = false) == true
+
+            override fun resizeFacePreview(
+                source: java.lang.foreign.MemorySegment, sourceStrideBytes: Int,
+                destination: java.lang.foreign.MemorySegment, yyuv: Boolean, yyuvIn: Boolean,
+            ): Boolean =
+                computeBackend?.resizeFacePreview(source, sourceStrideBytes, destination, yyuv, yyuvIn) == true
 
             override fun tryFilterGpuScene3dToIspYuv(
                 spec: GpuScene3dRenderSpec,

@@ -29,12 +29,12 @@ class Lcdc1ActiveOutputGateTest {
         val main = ArgbFrameBuffer(1024, 768)
         val osdData = ByteBuffer.allocate(osdSize).order(ByteOrder.LITTLE_ENDIAN)
         val pic1Data = ByteArray(pic1Size)
-        // Fill PIC1 with neutral white UYVY (U=0x80, Y=0xFF, V=0x80, Y=0xFF)
+        // Fill PIC1 with neutral white YYUV422 (Y0=0xFF, Y1=0xFF, U=0x80, V=0x80)
         for (i in 0 until pic1Size step 4) {
-            pic1Data[i] = 0x80.toByte()
+            pic1Data[i] = 0xff.toByte()
             pic1Data[i + 1] = 0xff.toByte()
             pic1Data[i + 2] = 0x80.toByte()
-            pic1Data[i + 3] = 0xff.toByte()
+            pic1Data[i + 3] = 0x80.toByte()
         }
         // Floating card pixel at (0,0) = opaque red (0xFF0000FF) and at (100,200) = nudged near-black (0x040404FF)
         osdData.putInt(0, 0xff0000ff.toInt())

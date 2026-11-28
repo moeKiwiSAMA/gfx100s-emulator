@@ -110,7 +110,7 @@ class RetchResamplerTest {
         set(0x68, 0x8000)
         set(0x78, 0x8000)
         RetchResampler.execute(words, memory)
-        assertContentEquals(byteArrayOf(60, 16, 180.toByte(), 56, 60, 96, 180.toByte(), 136.toByte()),
+        assertContentEquals(byteArrayOf(16, 56, 60, 180.toByte(), 96, 136.toByte(), 60, 180.toByte()),
             ram.copyOfRange(0x110, 0x118))
         set(0x08, 0)
         set(0x10, 0x110)
@@ -120,7 +120,7 @@ class RetchResamplerTest {
         set(0x30, 0x120)
         set(0x44, 0x10002)
         RetchResampler.execute(words, memory)
-        assertContentEquals(byteArrayOf(0x55, 60, 36, 180.toByte(), 116, 0x55), ram.copyOfRange(0x11f, 0x125))
+        assertContentEquals(byteArrayOf(0x55, 36, 116, 60, 180.toByte(), 0x55), ram.copyOfRange(0x11f, 0x125))
         assertEquals(if (mapped) listOf(0x110L to 8L, 0x120L to 4L) else emptyList(), dirty)
     }
 

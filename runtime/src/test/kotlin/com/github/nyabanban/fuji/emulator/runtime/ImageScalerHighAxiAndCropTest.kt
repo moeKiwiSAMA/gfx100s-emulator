@@ -191,7 +191,7 @@ class ImageScalerHighAxiAndCropTest {
         assertEquals(expectedExp.iso, exposures.single().iso, "Must forward live IMX461 ISO")
 
         // Left side of destination must be bright because we cropped strictly into the bright right half!
-        val leftY = dstBuf[(dstH / 2) * dstStride + 20 * 2 + 1].toInt() and 0xFF
+        val leftY = dstBuf[(dstH / 2) * dstStride + 20 * 2].toInt() and 0xFF
         assertTrue(leftY > 180, "Expected cropped right-half bright luma > 180 on left side of dst, got $leftY")
     }
 
@@ -203,7 +203,7 @@ class ImageScalerHighAxiAndCropTest {
             val rawInput = random.nextBytes(srcSpan)
             // Inject all three Milbeaut black margin sentinel words at start of row 0.
             byteArrayOf(0, 0, 0, 0, 0, 0, -128, -128, -128, -128, 0, 0).copyInto(rawInput, 0)
-            // Normalized reference copy matching ImageScalerF000.normalizeMilbeautBlackMarginWords.
+            // Normalized reference copy matching ImageScalerE000.normalizeMilbeautBlackMarginWords(..., yyuv422 = true).
             val normalized = rawInput.copyOf()
             var p = 0
             while (p + 3 < normalized.size) {
@@ -212,13 +212,12 @@ class ImageScalerHighAxiAndCropTest {
                 val b2 = normalized[p + 2].toInt() and 0xff
                 val b3 = normalized[p + 3].toInt() and 0xff
                 if ((b0 or b1 or b2 or b3) == 0 ||
-                    (b0 == 0 && b1 == 0 && b2 == 0x80 && b3 == 0x80) ||
                     (b0 == 0x80 && b1 == 0x80 && b2 == 0 && b3 == 0)
                 ) {
-                    normalized[p] = 0x80.toByte()
+                    normalized[p] = 0
                     normalized[p + 1] = 0
                     normalized[p + 2] = 0x80.toByte()
-                    normalized[p + 3] = 0
+                    normalized[p + 3] = 0x80.toByte()
                 }
                 p += 4
             }
@@ -226,10 +225,10 @@ class ImageScalerHighAxiAndCropTest {
                 val expected = ByteArray(640 * 360 * 2)
                 fun samplePixel(x: Int, y: Int): Triple<Int, Int, Int> {
                     val row = y * srcStride
-                    val yVal = normalized[row + 2 * x + 1].toInt() and 0xff
                     val uvOff = row + (x and 1.inv()) * 2
-                    val u = normalized[uvOff].toInt() and 0xff
-                    val v = normalized[uvOff + 2].toInt() and 0xff
+                    val yVal = normalized[uvOff + (x and 1)].toInt() and 0xff
+                    val u = normalized[uvOff + 2].toInt() and 0xff
+                    val v = normalized[uvOff + 3].toInt() and 0xff
                     return Triple(yVal, u, v)
                 }
                 fun bilinear(c00: Int, c10: Int, c01: Int, c11: Int, fx: Double, fy: Double): Int {
@@ -264,17 +263,10 @@ class ImageScalerHighAxiAndCropTest {
                         val u = (f0.second + f1.second) / 2
                         val v = (f0.third + f1.third) / 2
                         val out = dy * 1280 + dx * 2
-                        if (yyuvOut) {
-                            expected[out] = f0.first.toByte()
-                            expected[out + 1] = f1.first.toByte()
-                            expected[out + 2] = u.toByte()
-                            expected[out + 3] = v.toByte()
-                        } else {
-                            expected[out] = u.toByte()
-                            expected[out + 1] = f0.first.toByte()
-                            expected[out + 2] = v.toByte()
-                            expected[out + 3] = f1.first.toByte()
-                        }
+                        expected[out] = f0.first.toByte()
+                        expected[out + 1] = f1.first.toByte()
+                        expected[out + 2] = u.toByte()
+                        expected[out + 3] = v.toByte()
                         dx += 2
                     }
                 }

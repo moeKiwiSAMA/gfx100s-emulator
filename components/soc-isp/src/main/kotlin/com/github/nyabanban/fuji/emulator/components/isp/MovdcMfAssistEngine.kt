@@ -243,26 +243,26 @@ internal object MovdcMfAssistEngine {
                     else -> o0
                 }
 
-                // Packed BT.601 UYVY: [U0, Y0, V0, Y1]
-                outRow[p + 1] = src0[base0 + p + 1]
-                outRow[p + 3] = src1[base1 + p + 3]
+                // Real-silicon Milbeaut packed YYUV422: [Y0, Y1, Cb, Cr]
+                outRow[p] = src0[base0 + p]
+                outRow[p + 1] = src1[base1 + p + 1]
                 if (mono0 && mono1) {
-                    outRow[p] = 0x80.toByte()
                     outRow[p + 2] = 0x80.toByte()
+                    outRow[p + 3] = 0x80.toByte()
                 } else if (mono0) {
                     // Boundary pair: blend neutral chroma with active color neighbor
-                    val u = ((0x80 + (src1[base1 + p].toInt() and 0xFF)) ushr 1).toByte()
-                    val v = ((0x80 + (src1[base1 + p + 2].toInt() and 0xFF)) ushr 1).toByte()
-                    outRow[p] = u
-                    outRow[p + 2] = v
+                    val u = ((0x80 + (src1[base1 + p + 2].toInt() and 0xFF)) ushr 1).toByte()
+                    val v = ((0x80 + (src1[base1 + p + 3].toInt() and 0xFF)) ushr 1).toByte()
+                    outRow[p + 2] = u
+                    outRow[p + 3] = v
                 } else if (mono1) {
-                    val u = ((0x80 + (src0[base0 + p].toInt() and 0xFF)) ushr 1).toByte()
-                    val v = ((0x80 + (src0[base0 + p + 2].toInt() and 0xFF)) ushr 1).toByte()
-                    outRow[p] = u
-                    outRow[p + 2] = v
+                    val u = ((0x80 + (src0[base0 + p + 2].toInt() and 0xFF)) ushr 1).toByte()
+                    val v = ((0x80 + (src0[base0 + p + 3].toInt() and 0xFF)) ushr 1).toByte()
+                    outRow[p + 2] = u
+                    outRow[p + 3] = v
                 } else {
-                    outRow[p] = src0[base0 + p]
                     outRow[p + 2] = src0[base0 + p + 2]
+                    outRow[p + 3] = src0[base0 + p + 3]
                 }
                 x += 2
             }
@@ -384,16 +384,16 @@ internal object MovdcMfAssistEngine {
                     val wk = activeWeights[k]
                     val plane = planes[k]
                     val off = y * activeStrides[k] + p
-                    uSum += wk * ((plane[off].toInt() and 0xFF) - 128)
-                    y0Sum += wk * (plane[off + 1].toInt() and 0xFF)
-                    vSum += wk * ((plane[off + 2].toInt() and 0xFF) - 128)
-                    y1Sum += wk * (plane[off + 3].toInt() and 0xFF)
+                    y0Sum += wk * (plane[off].toInt() and 0xFF)
+                    y1Sum += wk * (plane[off + 1].toInt() and 0xFF)
+                    uSum += wk * ((plane[off + 2].toInt() and 0xFF) - 128)
+                    vSum += wk * ((plane[off + 3].toInt() and 0xFF) - 128)
                 }
                 val dp = dstRowOff + p
-                outBuf[dp] = (128 + ((uSum + 128) shr 8)).coerceIn(0, 255).toByte()
-                outBuf[dp + 1] = ((y0Sum + 128) shr 8).coerceIn(0, 255).toByte()
-                outBuf[dp + 2] = (128 + ((vSum + 128) shr 8)).coerceIn(0, 255).toByte()
-                outBuf[dp + 3] = ((y1Sum + 128) shr 8).coerceIn(0, 255).toByte()
+                outBuf[dp] = ((y0Sum + 128) shr 8).coerceIn(0, 255).toByte()
+                outBuf[dp + 1] = ((y1Sum + 128) shr 8).coerceIn(0, 255).toByte()
+                outBuf[dp + 2] = (128 + ((uSum + 128) shr 8)).coerceIn(0, 255).toByte()
+                outBuf[dp + 3] = (128 + ((vSum + 128) shr 8)).coerceIn(0, 255).toByte()
                 x += 2
             }
             if (!packedOut) {
@@ -441,16 +441,16 @@ internal object MovdcMfAssistEngine {
         val x1 = x1Raw.coerceIn(0, maxX)
         val pair0 = srcRowOff + ((x0 and 1.inv()) shl 1)
         val pair1 = srcRowOff + ((x1 and 1.inv()) shl 1)
-        val y0 = src[pair0 + if ((x0 and 1) != 0) 3 else 1]
-        val y1 = src[pair1 + if ((x1 and 1) != 0) 3 else 1]
-        val u0 = src[pair0].toInt() and 0xFF
-        val v0 = src[pair0 + 2].toInt() and 0xFF
-        val u1 = src[pair1].toInt() and 0xFF
-        val v1 = src[pair1 + 2].toInt() and 0xFF
-        dst[dstOff] = ((u0 + u1) ushr 1).toByte()
-        dst[dstOff + 1] = y0
-        dst[dstOff + 2] = ((v0 + v1) ushr 1).toByte()
-        dst[dstOff + 3] = y1
+        val y0 = src[pair0 + (x0 and 1)]
+        val y1 = src[pair1 + (x1 and 1)]
+        val u0 = src[pair0 + 2].toInt() and 0xFF
+        val v0 = src[pair0 + 3].toInt() and 0xFF
+        val u1 = src[pair1 + 2].toInt() and 0xFF
+        val v1 = src[pair1 + 3].toInt() and 0xFF
+        dst[dstOff] = y0
+        dst[dstOff + 1] = y1
+        dst[dstOff + 2] = ((u0 + u1) ushr 1).toByte()
+        dst[dstOff + 3] = ((v0 + v1) ushr 1).toByte()
     }
 
     private fun checkRegion(memory: DmaMemory, addr: Long, length: Long, write: Boolean): Boolean =

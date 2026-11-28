@@ -230,19 +230,19 @@ class ImageScalerF000Test {
                     else -> Triple(240, 110, 160)
                 }
                 val p = rowOff + x * 2
-                buf[p] = uVal.toByte()
+                buf[p] = yVal.toByte()
                 buf[p + 1] = yVal.toByte()
-                buf[p + 2] = vVal.toByte()
-                buf[p + 3] = yVal.toByte()
+                buf[p + 2] = uVal.toByte()
+                buf[p + 3] = vVal.toByte()
             }
         }
     }
 
     private fun readUyvyPixel(buf: ByteArray, x: Int, y: Int, stride: Int): Triple<Int, Int, Int> {
         val off = y * stride + (x and 1.inv()) * 2
-        val u = buf[off].toInt() and 0xff
-        val luma = buf[off + if ((x and 1) != 0) 3 else 1].toInt() and 0xff
-        val v = buf[off + 2].toInt() and 0xff
+        val luma = buf[off + (x and 1)].toInt() and 0xff
+        val u = buf[off + 2].toInt() and 0xff
+        val v = buf[off + 3].toInt() and 0xff
         return Triple(luma, u, v)
     }
 
@@ -492,15 +492,15 @@ class ImageScalerF000Test {
         dma.map(srcAddr, srcStride * srcH)
         dma.map(dstAddr, dstStride * dstH)
 
-        // Uniform red UYVY (Y=89, U=94, V=228) across entire 4x4 source
+        // Uniform red YYUV422 (Y=89, U=94, V=228) across entire 4x4 source
         val src = dma.bytes(srcAddr)
         for (y in 0 until srcH) {
             for (x in 0 until srcW step 2) {
                 val p = y * srcStride + x * 2
-                src[p] = 94.toByte()
+                src[p] = 89.toByte()
                 src[p + 1] = 89.toByte()
-                src[p + 2] = 228.toByte()
-                src[p + 3] = 89.toByte()
+                src[p + 2] = 94.toByte()
+                src[p + 3] = 228.toByte()
             }
         }
 
@@ -554,21 +554,21 @@ class ImageScalerF000Test {
         dma.map(srcAddr, srcStride * srcH)
         dma.map(dstAddr, dstStride * dstH)
 
-        // Fill 8x8 source with green (Y=150, U=44, V=21), then set pixel (0,0) pair to red (Y=89, U=94, V=228)
+        // Fill 8x8 source with green (Y=150, U=44, V=21), then set pixel (0,0) pair to red (Y0=89, Y1=150, U=94, V=228)
         val src = dma.bytes(srcAddr)
         for (y in 0 until srcH) {
             for (x in 0 until srcW step 2) {
                 val p = y * srcStride + x * 2
-                src[p] = 44.toByte()
+                src[p] = 150.toByte()
                 src[p + 1] = 150.toByte()
-                src[p + 2] = 21.toByte()
-                src[p + 3] = 150.toByte()
+                src[p + 2] = 44.toByte()
+                src[p + 3] = 21.toByte()
             }
         }
-        src[0] = 94.toByte()
-        src[1] = 89.toByte()
-        src[2] = 228.toByte()
-        src[3] = 150.toByte()
+        src[0] = 89.toByte()
+        src[1] = 150.toByte()
+        src[2] = 94.toByte()
+        src[3] = 228.toByte()
 
         val sink = object : InterruptSink { override fun setLine(irq: Int, high: Boolean) { irqLog += irq to high } }
         val ctx = object : DiscoveryContext {

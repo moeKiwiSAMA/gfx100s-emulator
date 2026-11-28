@@ -131,8 +131,13 @@ internal object MfAssistPeakingFilter {
         height: Int,
         stride: Int,
         config: PeakingConfig,
+        yyuv422: Boolean = false,
     ): Int {
         if (!config.enabled || width < 4 || height < 3 || stride < width * 2) return 0
+        val iY0 = if (yyuv422) 0 else 1
+        val iY1 = if (yyuv422) 1 else 3
+        val iCb = if (yyuv422) 2 else 0
+        val iCr = if (yyuv422) 3 else 2
         val yPlane = ByteArray(width * height)
         for (y in 0 until height) {
             val rowOff = y * stride
@@ -140,8 +145,8 @@ internal object MfAssistPeakingFilter {
             var x = 0
             while (x + 1 < width) {
                 val p = rowOff + (x shl 1)
-                yPlane[yOff + x] = frame[p + 1]
-                yPlane[yOff + x + 1] = frame[p + 3]
+                yPlane[yOff + x] = frame[p + iY0]
+                yPlane[yOff + x + 1] = frame[p + iY1]
                 x += 2
             }
         }
@@ -167,14 +172,14 @@ internal object MfAssistPeakingFilter {
                     edgeMagnitude(yPlane, rowPrev2, rowPrev1, rowCurr, rowNext1, rowNext2, x + 1) > thr
                 if (peak0 || peak1) {
                     val p = dstRow + (x shl 1)
-                    frame[p] = hiCb
-                    frame[p + 2] = hiCr
+                    frame[p + iCb] = hiCb
+                    frame[p + iCr] = hiCr
                     if (peak0) {
-                        frame[p + 1] = hiY
+                        frame[p + iY0] = hiY
                         stampedPixels++
                     }
                     if (peak1) {
-                        frame[p + 3] = hiY
+                        frame[p + iY1] = hiY
                         stampedPixels++
                     }
                 }

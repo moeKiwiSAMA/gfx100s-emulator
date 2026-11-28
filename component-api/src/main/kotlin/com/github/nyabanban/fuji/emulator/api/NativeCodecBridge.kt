@@ -125,7 +125,9 @@ object NativeCodecBridge {
         val lsrawDecodeBayer: MethodHandle,
         val jpegProbeHeader: MethodHandle,
         val jpegDecodeToUyvy: MethodHandle,
+        val jpegDecodeToYyuv: MethodHandle?,
         val jpegEncodeUyvyAlloc: MethodHandle,
+        val jpegEncodeYyuvAlloc: MethodHandle?,
         val jpegEncodeBgr24Alloc: MethodHandle,
         val jpegEncodeScaledBgr24: MethodHandle,
     )
@@ -367,37 +369,39 @@ object NativeCodecBridge {
                     ValueLayout.ADDRESS,  // out_meta
                 ),
             )
-            val jpegDecode = linker.downcallHandle(
-                lookup.find("fuji_jpeg_decode_to_uyvy").orElseThrow(),
-                FunctionDescriptor.of(
-                    ValueLayout.JAVA_INT,
-                    ValueLayout.ADDRESS,  // src_jpeg
-                    ValueLayout.JAVA_INT, // src_jpeg_len
-                    ValueLayout.JAVA_INT, // downscale_shift
-                    ValueLayout.JAVA_INT, // crop_enabled
-                    ValueLayout.JAVA_INT, // crop_x0
-                    ValueLayout.JAVA_INT, // crop_x1
-                    ValueLayout.JAVA_INT, // crop_y0
-                    ValueLayout.JAVA_INT, // crop_y1
-                    ValueLayout.ADDRESS,  // dst_uyvy
-                    ValueLayout.JAVA_INT, // dst_capacity
-                    ValueLayout.ADDRESS,  // out_meta
-                ),
+            val jpegDecodeDesc = FunctionDescriptor.of(
+                ValueLayout.JAVA_INT,
+                ValueLayout.ADDRESS,  // src_jpeg
+                ValueLayout.JAVA_INT, // src_jpeg_len
+                ValueLayout.JAVA_INT, // downscale_shift
+                ValueLayout.JAVA_INT, // crop_enabled
+                ValueLayout.JAVA_INT, // crop_x0
+                ValueLayout.JAVA_INT, // crop_x1
+                ValueLayout.JAVA_INT, // crop_y0
+                ValueLayout.JAVA_INT, // crop_y1
+                ValueLayout.ADDRESS,  // dst_422
+                ValueLayout.JAVA_INT, // dst_capacity
+                ValueLayout.ADDRESS,  // out_meta
             )
-            val jpegEncUyvy = linker.downcallHandle(
-                lookup.find("fuji_jpeg_encode_uyvy_alloc").orElseThrow(),
-                FunctionDescriptor.of(
-                    ValueLayout.JAVA_INT,
-                    ValueLayout.ADDRESS,  // src_uyvy
-                    ValueLayout.JAVA_INT, // width
-                    ValueLayout.JAVA_INT, // height
-                    ValueLayout.JAVA_INT, // src_stride_bytes
-                    ValueLayout.JAVA_INT, // quality
-                    ValueLayout.JAVA_INT, // max_bytes
-                    ValueLayout.ADDRESS,  // out_buf (uint8_t**)
-                    ValueLayout.ADDRESS,  // out_actual_size (int32_t*)
-                ),
+            val jpegDecode = linker.downcallHandle(lookup.find("fuji_jpeg_decode_to_uyvy").orElseThrow(), jpegDecodeDesc)
+            val jpegDecodeYyuv = lookup.find("fuji_jpeg_decode_to_yyuv").map {
+                linker.downcallHandle(it, jpegDecodeDesc)
+            }.orElse(null)
+            val jpegEnc422Desc = FunctionDescriptor.of(
+                ValueLayout.JAVA_INT,
+                ValueLayout.ADDRESS,  // src_422
+                ValueLayout.JAVA_INT, // width
+                ValueLayout.JAVA_INT, // height
+                ValueLayout.JAVA_INT, // src_stride_bytes
+                ValueLayout.JAVA_INT, // quality
+                ValueLayout.JAVA_INT, // max_bytes
+                ValueLayout.ADDRESS,  // out_buf (uint8_t**)
+                ValueLayout.ADDRESS,  // out_actual_size (int32_t*)
             )
+            val jpegEncUyvy = linker.downcallHandle(lookup.find("fuji_jpeg_encode_uyvy_alloc").orElseThrow(), jpegEnc422Desc)
+            val jpegEncYyuv = lookup.find("fuji_jpeg_encode_yyuv_alloc").map {
+                linker.downcallHandle(it, jpegEnc422Desc)
+            }.orElse(null)
             val jpegEncBgr = linker.downcallHandle(
                 lookup.find("fuji_jpeg_encode_bgr24_alloc").orElseThrow(),
                 FunctionDescriptor.of(
@@ -443,7 +447,9 @@ object NativeCodecBridge {
                 lsrawDecodeBayer = lsrawDecode,
                 jpegProbeHeader = jpegProbe,
                 jpegDecodeToUyvy = jpegDecode,
+                jpegDecodeToYyuv = jpegDecodeYyuv,
                 jpegEncodeUyvyAlloc = jpegEncUyvy,
+                jpegEncodeYyuvAlloc = jpegEncYyuv,
                 jpegEncodeBgr24Alloc = jpegEncBgr,
                 jpegEncodeScaledBgr24 = jpegEncScaledBgr,
             )
@@ -574,6 +580,7 @@ object NativeCodecBridge {
      * off-heap [dstUyvy] [MemorySegment] via native `libjpeg-turbo` with zero intermediate heap
      * buffers.
      */
+    @JvmOverloads
     fun jpegDecodeToUyvySegment(
         srcJpeg: MemorySegment,
         srcJpegLen: Int,
@@ -585,13 +592,15 @@ object NativeCodecBridge {
         cropY1: Int,
         dstUyvy: MemorySegment,
         dstCapacity: Int,
+        yyuv422: Boolean = false,
     ): JpegDecodeDirectOutcome {
         val h = handles ?: return JpegDecodeDirectOutcome.Error(ERR_NO_BACKEND)
         if ((h.capabilities and CAP_JPEG_DECODE_ANY) == 0) {
             return JpegDecodeDirectOutcome.Error(ERR_NO_BACKEND)
         }
+        val fn = if (yyuv422) (h.jpegDecodeToYyuv ?: return JpegDecodeDirectOutcome.Error(ERR_NO_BACKEND)) else h.jpegDecodeToUyvy
         val metaSeg = directCallScratch.get()
-        val rc = h.jpegDecodeToUyvy.invokeExact(
+        val rc = fn.invokeExact(
             srcJpeg,
             srcJpegLen,
             downscaleShift,
@@ -615,7 +624,7 @@ object NativeCodecBridge {
     }
 
     /**
-     * Encodes packed UYVY422 directly from an off-heap [srcUyvy] [MemorySegment] via native
+     * Encodes packed 4:2:2 directly from an off-heap [srcUyvy] [MemorySegment] via native
      * `libjpeg-turbo` with zero source copy. When [directDstWriter] returns `true`, the native
      * JPEG buffer is copied directly into guest RAM without allocating an intermediate `ByteArray`.
      */
@@ -626,19 +635,21 @@ object NativeCodecBridge {
         srcStrideBytes: Int,
         quality: Int,
         maxBytes: Long,
+        yyuv422: Boolean = false,
         directDstWriter: (nativeJpeg: MemorySegment, actualBytes: Int) -> Boolean,
     ): JpegEncodeSegmentOutcome {
         val h = handles ?: return JpegEncodeSegmentOutcome.Error(ERR_NO_BACKEND)
         if ((h.capabilities and CAP_JPEG_ANY) == 0) {
             return JpegEncodeSegmentOutcome.Error(ERR_NO_BACKEND)
         }
+        val fn = if (yyuv422) (h.jpegEncodeYyuvAlloc ?: return JpegEncodeSegmentOutcome.Error(ERR_NO_BACKEND)) else h.jpegEncodeUyvyAlloc
         val cappedMax = if (maxBytes <= 0L) 0 else maxBytes.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
         val scratch = directCallScratch.get()
         val outBufPtr = scratch.asSlice(32L, ValueLayout.ADDRESS.byteSize())
         val outActualPtr = scratch.asSlice(40L, ValueLayout.JAVA_INT.byteSize())
         outBufPtr.set(ValueLayout.ADDRESS, 0L, MemorySegment.NULL)
         outActualPtr.set(ValueLayout.JAVA_INT, 0L, 0)
-        val rc = h.jpegEncodeUyvyAlloc.invokeExact(
+        val rc = fn.invokeExact(
             srcUyvy,
             width,
             height,
@@ -719,6 +730,7 @@ object NativeCodecBridge {
     /**
      * Decodes a JPEG bitstream directly into packed aligned UYVY422 using native `libjpeg-turbo`.
      */
+    @JvmOverloads
     fun jpegDecodeToUyvy(
         jpegBytes: ByteArray,
         downscaleShift: Int,
@@ -728,17 +740,19 @@ object NativeCodecBridge {
         cropY0: Int,
         cropY1: Int,
         expectedTotalBytes: Int,
+        yyuv422: Boolean = false,
     ): JpegDecodeOutcome {
         val h = handles ?: return JpegDecodeOutcome.Error(ERR_NO_BACKEND)
         if ((h.capabilities and CAP_JPEG_DECODE_ANY) == 0) {
             return JpegDecodeOutcome.Error(ERR_NO_BACKEND)
         }
+        val fn = if (yyuv422) (h.jpegDecodeToYyuv ?: return JpegDecodeOutcome.Error(ERR_NO_BACKEND)) else h.jpegDecodeToUyvy
         Arena.ofConfined().use { arena ->
             val srcSeg = arena.allocate(jpegBytes.size.toLong())
             MemorySegment.copy(jpegBytes, 0, srcSeg, ValueLayout.JAVA_BYTE, 0L, jpegBytes.size)
             val dstSeg = arena.allocate(expectedTotalBytes.toLong())
             val metaSeg = arena.allocate(ValueLayout.JAVA_INT, 5L)
-            val rc = h.jpegDecodeToUyvy.invokeExact(
+            val rc = fn.invokeExact(
                 srcSeg,
                 jpegBytes.size,
                 downscaleShift,
@@ -765,9 +779,10 @@ object NativeCodecBridge {
     }
 
     /**
-     * Encodes packed UYVY422 (MemYc) directly to a 4:2:2 JPEG bitstream via native `libjpeg-turbo`
+     * Encodes packed 4:2:2 (MemYc) directly to a 4:2:2 JPEG bitstream via native `libjpeg-turbo`
      * with zero RGB round-trip and exact Milbeaut black-fill sanitization.
      */
+    @JvmOverloads
     fun jpegEncodeUyvy(
         uyvyBytes: ByteArray,
         width: Int,
@@ -775,11 +790,13 @@ object NativeCodecBridge {
         srcStrideBytes: Int,
         quality: Int,
         maxBytes: Long,
+        yyuv422: Boolean = false,
     ): JpegEncodeOutcome {
         val h = handles ?: return JpegEncodeOutcome.Error(ERR_NO_BACKEND)
         if ((h.capabilities and CAP_JPEG_ANY) == 0) {
             return JpegEncodeOutcome.Error(ERR_NO_BACKEND)
         }
+        val fn = if (yyuv422) (h.jpegEncodeYyuvAlloc ?: return JpegEncodeOutcome.Error(ERR_NO_BACKEND)) else h.jpegEncodeUyvyAlloc
         val cappedMax = if (maxBytes <= 0L) 0 else maxBytes.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
         val copyLen = minOf(uyvyBytes.size.toLong(), (height - 1).toLong() * srcStrideBytes.toLong() + width.toLong() * 2L).toInt()
         Arena.ofConfined().use { arena ->
@@ -787,7 +804,7 @@ object NativeCodecBridge {
             MemorySegment.copy(uyvyBytes, 0, srcSeg, ValueLayout.JAVA_BYTE, 0L, copyLen)
             val outBufPtr = arena.allocate(ValueLayout.ADDRESS)
             val outActualPtr = arena.allocate(ValueLayout.JAVA_INT)
-            val rc = h.jpegEncodeUyvyAlloc.invokeExact(
+            val rc = fn.invokeExact(
                 srcSeg,
                 width,
                 height,

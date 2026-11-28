@@ -153,6 +153,27 @@ static inline uint32_t uyvy_pair_to_rgb(const uint8_t* pair, int odd_pixel) {
     return (r << 16) | (g << 8) | b;
 }
 
+static inline uint32_t yyuv_pair_to_rgb(const uint8_t* pair, int odd_pixel) {
+    uint32_t word = load_u32_le(pair);
+    /* Unwritten zero DRAM (0x00000000) and alternate-endian black (0x00008080) -> black.
+     * Native Milbeaut black 0x80800000 ([Y0=0, Y1=0, Cb=0x80, Cr=0x80]) naturally decodes to RGB 0. */
+    if (word == 0u || word == 0x00008080u) return 0u;
+    int32_t y = (int32_t)(odd_pixel ? ((word >> 8) & 0xffu) : (word & 0xffu));
+    int32_t u = (int32_t)((word >> 16) & 0xffu);
+    int32_t v = (int32_t)((word >> 24) & 0xffu);
+    int32_t d = u - 128;
+    int32_t e = v - 128;
+    int32_t y256 = y << 8;
+    uint32_t r = clamp_u8_from_scaled8(y256 + 359 * e + 128);
+    uint32_t g = clamp_u8_from_scaled8(y256 - 88 * d - 183 * e + 128);
+    uint32_t b = clamp_u8_from_scaled8(y256 + 454 * d + 128);
+    return (r << 16) | (g << 8) | b;
+}
+
+static inline uint32_t pic422_pair_to_rgb(const uint8_t* pair, int odd_pixel, int32_t pic_yyuv422) {
+    return pic_yyuv422 ? yyuv_pair_to_rgb(pair, odd_pixel) : uyvy_pair_to_rgb(pair, odd_pixel);
+}
+
 static inline void uyvy_pair_to_two_rgb(const uint8_t* pair, uint32_t* rgb0, uint32_t* rgb1) {
     uint32_t word = load_u32_le(pair);
     if (is_uyvy_black_margin_word(word)) {
@@ -2165,8 +2186,16 @@ static inline __m256i apply_color_matrix_8_avx2(__m256i px, const int32_t* c, in
 }
 
 __attribute__((target("avx2")))
-static inline __m256i uyvy4_to_rgb8_avx2(const uint8_t* uyvy16) {
+static inline __m256i uyvy4_to_rgb8_avx2(const uint8_t* uyvy16, int32_t pic_yyuv422) {
     __m128i raw128 = _mm_loadu_si128((const __m128i*)uyvy16);
+    if (pic_yyuv422) {
+        const __m128i shuf_yyuv_to_uyvy = _mm_setr_epi8(
+            2, 0, 3, 1,  6, 4, 7, 5,  10, 8, 11, 9,  14, 12, 15, 13
+        );
+        __m128i alt_blk = _mm_cmpeq_epi32(raw128, _mm_set1_epi32((int)0x00008080u));
+        raw128 = _mm_andnot_si128(alt_blk, raw128);
+        raw128 = _mm_shuffle_epi8(raw128, shuf_yyuv_to_uyvy);
+    }
     const __m128i mask_ff_128 = _mm_set1_epi32(0xff);
     const __m128i c128_128 = _mm_set1_epi32(128);
     __m128i u4 = _mm_and_si128(raw128, mask_ff_128);
@@ -2180,13 +2209,15 @@ static inline __m256i uyvy4_to_rgb8_avx2(const uint8_t* uyvy16) {
     __m256i dg8 = _mm256_inserti128_si256(_mm256_castsi128_si256(_mm_unpacklo_epi32(dg4, dg4)), _mm_unpackhi_epi32(dg4, dg4), 1);
     __m256i db8 = _mm256_inserti128_si256(_mm256_castsi128_si256(_mm_unpacklo_epi32(db4, db4)), _mm_unpackhi_epi32(db4, db4), 1);
     __m256i mp = _mm256_inserti128_si256(_mm256_castsi128_si256(_mm_unpacklo_epi32(raw128, raw128)), _mm_unpackhi_epi32(raw128, raw128), 1);
-    __m256i is_zero = _mm256_or_si256(
-        _mm256_cmpeq_epi32(mp, _mm256_setzero_si256()),
-        _mm256_or_si256(
-            _mm256_cmpeq_epi32(mp, _mm256_set1_epi32((int)0x80800000u)),
-            _mm256_cmpeq_epi32(mp, _mm256_set1_epi32((int)0x00008080u))
-        )
-    );
+    __m256i is_zero = pic_yyuv422
+        ? _mm256_cmpeq_epi32(mp, _mm256_setzero_si256())
+        : _mm256_or_si256(
+            _mm256_cmpeq_epi32(mp, _mm256_setzero_si256()),
+            _mm256_or_si256(
+                _mm256_cmpeq_epi32(mp, _mm256_set1_epi32((int)0x80800000u)),
+                _mm256_cmpeq_epi32(mp, _mm256_set1_epi32((int)0x00008080u))
+            )
+        );
     const __m256i mask_ff = _mm256_set1_epi32(0xff);
     const __m256i zero = _mm256_setzero_si256();
     __m256i y = _mm256_blend_epi32(_mm256_and_si256(_mm256_srli_epi32(mp, 8), mask_ff), _mm256_srli_epi32(mp, 24), 0xAA);
@@ -2225,7 +2256,8 @@ static int32_t composite_planes_matrix_avx2_impl(
     int32_t out_width, int32_t out_height,
     const int32_t* cmat, int32_t mmode,
     uint32_t* output_argb,
-    int32_t to_argb_pre
+    int32_t to_argb_pre,
+    int32_t pic_yyuv422
 ) {
     const __m256i shuf = _mm256_setr_epi8(
         1, 2, 3, 0,  5, 6, 7, 4,  9, 10, 11, 8,  13, 14, 15, 12,
@@ -2297,10 +2329,10 @@ static int32_t composite_planes_matrix_avx2_impl(
                             continue;
                         }
                         __m256i bg = p0_all_in
-                            ? _mm256_or_si256(alpha_mask, uyvy4_to_rgb8_avx2(p0_row + (col - p0x) * 2))
+                            ? _mm256_or_si256(alpha_mask, uyvy4_to_rgb8_avx2(p0_row + (col - p0x) * 2, pic_yyuv422))
                             : v_backdrop;
                         if (p1_all_in) {
-                            __m256i p1_rgb = uyvy4_to_rgb8_avx2(p1_row + (col - p1x) * 2);
+                            __m256i p1_rgb = uyvy4_to_rgb8_avx2(p1_row + (col - p1x) * 2, pic_yyuv422);
                             bg = (p1_alpha >= 255)
                                 ? _mm256_or_si256(alpha_mask, p1_rgb)
                                 : blend8_argb_over_bg_avx2(_mm256_or_si256(v_p1_alpha_hi, p1_rgb), bg);
@@ -2311,10 +2343,10 @@ static int32_t composite_planes_matrix_avx2_impl(
                         _mm256_storeu_si256((__m256i*)(drow + col), res);
                     } else {
                         __m256i bg = p0_all_in
-                            ? _mm256_or_si256(alpha_mask, uyvy4_to_rgb8_avx2(p0_row + (col - p0x) * 2))
+                            ? _mm256_or_si256(alpha_mask, uyvy4_to_rgb8_avx2(p0_row + (col - p0x) * 2, pic_yyuv422))
                             : v_backdrop;
                         if (p1_all_in) {
-                            __m256i p1_rgb = uyvy4_to_rgb8_avx2(p1_row + (col - p1x) * 2);
+                            __m256i p1_rgb = uyvy4_to_rgb8_avx2(p1_row + (col - p1x) * 2, pic_yyuv422);
                             bg = (p1_alpha >= 255)
                                 ? _mm256_or_si256(alpha_mask, p1_rgb)
                                 : blend8_argb_over_bg_avx2(_mm256_or_si256(v_p1_alpha_hi, p1_rgb), bg);
@@ -2340,11 +2372,11 @@ static int32_t composite_planes_matrix_avx2_impl(
                 uint32_t bg = backdrop_argb;
                 if (in_p0_y && col >= p0x && col < p0r) {
                     int32_t lx = col - p0x;
-                    bg = 0xff000000u | uyvy_pair_to_rgb(p0_row + ((lx & ~1) * 2), lx & 1);
+                    bg = 0xff000000u | pic422_pair_to_rgb(p0_row + ((lx & ~1) * 2), lx & 1, pic_yyuv422);
                 }
                 if (in_p1_y && col >= p1x && col < p1r) {
                     int32_t lx = col - p1x;
-                    uint32_t rgb = uyvy_pair_to_rgb(p1_row + ((lx & ~1) * 2), lx & 1);
+                    uint32_t rgb = pic422_pair_to_rgb(p1_row + ((lx & ~1) * 2), lx & 1, pic_yyuv422);
                     bg = blend_pic1_rgb_over_bg_scalar(rgb, p1_alpha, bg);
                 }
                 uint32_t out = (osd_a == 0u) ? bg : blend_osd_over_bg(osd_argb, bg);
@@ -2385,11 +2417,11 @@ static int32_t composite_planes_matrix_avx2_impl(
             uint32_t bg = backdrop_argb;
             if (in_p0_y && scol >= p0x && scol < p0r) {
                 int32_t lx = scol - p0x;
-                bg = 0xff000000u | uyvy_pair_to_rgb(p0_row + ((lx & ~1) * 2), lx & 1);
+                bg = 0xff000000u | pic422_pair_to_rgb(p0_row + ((lx & ~1) * 2), lx & 1, pic_yyuv422);
             }
             if (in_p1_y && scol >= p1x && scol < p1r) {
                 int32_t lx = scol - p1x;
-                uint32_t rgb = uyvy_pair_to_rgb(p1_row + ((lx & ~1) * 2), lx & 1);
+                uint32_t rgb = pic422_pair_to_rgb(p1_row + ((lx & ~1) * 2), lx & 1, pic_yyuv422);
                 bg = blend_pic1_rgb_over_bg_scalar(rgb, p1_alpha, bg);
             }
             uint32_t out = (osd_a == 0u) ? bg : blend_osd_over_bg(osd_argb, bg);
@@ -2481,9 +2513,18 @@ static inline __m512i blend16_argb_over_bg_avx512(__m512i argb, __m512i bg) {
 }
 
 FUJI_AVX512_TARGET
-static inline __m512i uyvy8_to_rgb16_avx512(const uint8_t* uyvy32) {
-    /* Load 8 UYVY macro-pixels (32 bytes = 16 pixels) */
+static inline __m512i uyvy8_to_rgb16_avx512(const uint8_t* uyvy32, int32_t pic_yyuv422) {
+    /* Load 8 packed 4:2:2 macro-pixels (32 bytes = 16 pixels) */
     __m256i raw256 = _mm256_loadu_si256((const __m256i*)uyvy32);
+    if (pic_yyuv422) {
+        const __m256i shuf_yyuv_to_uyvy = _mm256_setr_epi8(
+            2, 0, 3, 1,  6, 4, 7, 5,  10, 8, 11, 9,  14, 12, 15, 13,
+            2, 0, 3, 1,  6, 4, 7, 5,  10, 8, 11, 9,  14, 12, 15, 13
+        );
+        __m256i alt_blk = _mm256_cmpeq_epi32(raw256, _mm256_set1_epi32((int)0x00008080u));
+        raw256 = _mm256_andnot_si256(alt_blk, raw256);
+        raw256 = _mm256_shuffle_epi8(raw256, shuf_yyuv_to_uyvy);
+    }
     const __m256i mask_ff_256 = _mm256_set1_epi32(0xff);
     const __m256i c128_256 = _mm256_set1_epi32(128);
     __m256i u8 = _mm256_and_si256(raw256, mask_ff_256);
@@ -2502,10 +2543,11 @@ static inline __m512i uyvy8_to_rgb16_avx512(const uint8_t* uyvy32) {
 
     const __m512i zero = _mm512_setzero_si512();
     const __m512i mask_ff = _mm512_set1_epi32(0xff);
-    __mmask16 is_zero =
-        _mm512_cmpeq_epi32_mask(mp, zero) |
-        _mm512_cmpeq_epi32_mask(mp, _mm512_set1_epi32((int)0x80800000u)) |
-        _mm512_cmpeq_epi32_mask(mp, _mm512_set1_epi32((int)0x00008080u));
+    __mmask16 is_zero = pic_yyuv422
+        ? _mm512_cmpeq_epi32_mask(mp, zero)
+        : (_mm512_cmpeq_epi32_mask(mp, zero) |
+           _mm512_cmpeq_epi32_mask(mp, _mm512_set1_epi32((int)0x80800000u)) |
+           _mm512_cmpeq_epi32_mask(mp, _mm512_set1_epi32((int)0x00008080u)));
 
     __m512i y_even = _mm512_and_si512(_mm512_srli_epi32(mp, 8), mask_ff);
     __m512i y_odd  = _mm512_srli_epi32(mp, 24);
@@ -2528,7 +2570,8 @@ static int32_t composite_planes_matrix_avx512_impl(
     int32_t out_width, int32_t out_height,
     const int32_t* cmat, int32_t mmode,
     uint32_t* output_argb,
-    int32_t to_argb_pre
+    int32_t to_argb_pre,
+    int32_t pic_yyuv422
 ) {
     const __m512i alpha_mask = _mm512_set1_epi32((int)0xff000000u);
     const __m512i zero = _mm512_setzero_si512();
@@ -2596,10 +2639,10 @@ static int32_t composite_planes_matrix_avx512_impl(
                             continue;
                         }
                         __m512i bg = p0_all_in
-                            ? _mm512_or_si512(alpha_mask, uyvy8_to_rgb16_avx512(p0_row + (col - p0x) * 2))
+                            ? _mm512_or_si512(alpha_mask, uyvy8_to_rgb16_avx512(p0_row + (col - p0x) * 2, pic_yyuv422))
                             : v_backdrop;
                         if (p1_all_in) {
-                            __m512i p1_rgb = uyvy8_to_rgb16_avx512(p1_row + (col - p1x) * 2);
+                            __m512i p1_rgb = uyvy8_to_rgb16_avx512(p1_row + (col - p1x) * 2, pic_yyuv422);
                             bg = (p1_alpha >= 255)
                                 ? _mm512_or_si512(alpha_mask, p1_rgb)
                                 : blend16_argb_over_bg_avx512(_mm512_or_si512(v_p1_alpha_hi, p1_rgb), bg);
@@ -2610,10 +2653,10 @@ static int32_t composite_planes_matrix_avx512_impl(
                         _mm512_storeu_si512((void*)(drow + col), res);
                     } else {
                         __m512i bg = p0_all_in
-                            ? _mm512_or_si512(alpha_mask, uyvy8_to_rgb16_avx512(p0_row + (col - p0x) * 2))
+                            ? _mm512_or_si512(alpha_mask, uyvy8_to_rgb16_avx512(p0_row + (col - p0x) * 2, pic_yyuv422))
                             : v_backdrop;
                         if (p1_all_in) {
-                            __m512i p1_rgb = uyvy8_to_rgb16_avx512(p1_row + (col - p1x) * 2);
+                            __m512i p1_rgb = uyvy8_to_rgb16_avx512(p1_row + (col - p1x) * 2, pic_yyuv422);
                             bg = (p1_alpha >= 255)
                                 ? _mm512_or_si512(alpha_mask, p1_rgb)
                                 : blend16_argb_over_bg_avx512(_mm512_or_si512(v_p1_alpha_hi, p1_rgb), bg);
@@ -2638,11 +2681,11 @@ static int32_t composite_planes_matrix_avx512_impl(
                 uint32_t bg = backdrop_argb;
                 if (in_p0_y && col >= p0x && col < p0r) {
                     int32_t lx = col - p0x;
-                    bg = 0xff000000u | uyvy_pair_to_rgb(p0_row + ((lx & ~1) * 2), lx & 1);
+                    bg = 0xff000000u | pic422_pair_to_rgb(p0_row + ((lx & ~1) * 2), lx & 1, pic_yyuv422);
                 }
                 if (in_p1_y && col >= p1x && col < p1r) {
                     int32_t lx = col - p1x;
-                    uint32_t rgb = uyvy_pair_to_rgb(p1_row + ((lx & ~1) * 2), lx & 1);
+                    uint32_t rgb = pic422_pair_to_rgb(p1_row + ((lx & ~1) * 2), lx & 1, pic_yyuv422);
                     bg = blend_pic1_rgb_over_bg_scalar(rgb, p1_alpha, bg);
                 }
                 uint32_t out = (osd_a == 0u) ? bg : blend_osd_over_bg(osd_argb, bg);
@@ -2657,6 +2700,9 @@ static int32_t composite_planes_matrix_avx512_impl(
     /* Scaled nearest-neighbor AVX-512 path (16 pixels/iter gather + blend + fused color matrix) */
     const __m512i mask_ff = _mm512_set1_epi32(0xff);
     const __m512i c128 = _mm512_set1_epi32(128);
+    const __m512i shuf_yyuv_512 = _mm512_broadcast_i32x4(_mm_setr_epi8(
+        2, 0, 3, 1,  6, 4, 7, 5,  10, 8, 11, 9,  14, 12, 15, 13
+    ));
     const int32_t lim16 = out_width & ~15;
     int32_t stack_p0_off[2048], stack_p0_odd[2048], stack_p0_in[2048];
     int32_t stack_p1_off[2048], stack_p1_odd[2048], stack_p1_in[2048];
@@ -2731,9 +2777,16 @@ static int32_t composite_planes_matrix_avx512_impl(
                     __m512i off0 = _mm512_loadu_si512((const void*)(p0_off + col));
                     __mmask16 odd0 = _mm512_cmpneq_epi32_mask(_mm512_loadu_si512((const void*)(p0_odd + col)), zero);
                     __m512i mp = _mm512_mask_i32gather_epi32(zero, k0, off0, (const void*)p0_row, 1);
-                    __mmask16 is_z = _mm512_cmpeq_epi32_mask(mp, zero) |
-                        _mm512_cmpeq_epi32_mask(mp, _mm512_set1_epi32((int)0x80800000u)) |
-                        _mm512_cmpeq_epi32_mask(mp, _mm512_set1_epi32((int)0x00008080u));
+                    if (pic_yyuv422) {
+                        __mmask16 alt0 = _mm512_cmpeq_epi32_mask(mp, _mm512_set1_epi32((int)0x00008080u));
+                        mp = _mm512_mask_mov_epi32(mp, alt0, zero);
+                        mp = _mm512_shuffle_epi8(mp, shuf_yyuv_512);
+                    }
+                    __mmask16 is_z = pic_yyuv422
+                        ? _mm512_cmpeq_epi32_mask(mp, zero)
+                        : (_mm512_cmpeq_epi32_mask(mp, zero) |
+                           _mm512_cmpeq_epi32_mask(mp, _mm512_set1_epi32((int)0x80800000u)) |
+                           _mm512_cmpeq_epi32_mask(mp, _mm512_set1_epi32((int)0x00008080u)));
                     __m512i u = _mm512_and_si512(mp, mask_ff);
                     __m512i v = _mm512_and_si512(_mm512_srli_epi32(mp, 16), mask_ff);
                     __m512i y = _mm512_mask_blend_epi32(odd0, _mm512_and_si512(_mm512_srli_epi32(mp, 8), mask_ff), _mm512_srli_epi32(mp, 24));
@@ -2755,9 +2808,16 @@ static int32_t composite_planes_matrix_avx512_impl(
                     __m512i off1 = _mm512_loadu_si512((const void*)(p1_off + col));
                     __mmask16 odd1 = _mm512_cmpneq_epi32_mask(_mm512_loadu_si512((const void*)(p1_odd + col)), zero);
                     __m512i mp = _mm512_mask_i32gather_epi32(zero, k1, off1, (const void*)p1_row, 1);
-                    __mmask16 is_z = _mm512_cmpeq_epi32_mask(mp, zero) |
-                        _mm512_cmpeq_epi32_mask(mp, _mm512_set1_epi32((int)0x80800000u)) |
-                        _mm512_cmpeq_epi32_mask(mp, _mm512_set1_epi32((int)0x00008080u));
+                    if (pic_yyuv422) {
+                        __mmask16 alt1 = _mm512_cmpeq_epi32_mask(mp, _mm512_set1_epi32((int)0x00008080u));
+                        mp = _mm512_mask_mov_epi32(mp, alt1, zero);
+                        mp = _mm512_shuffle_epi8(mp, shuf_yyuv_512);
+                    }
+                    __mmask16 is_z = pic_yyuv422
+                        ? _mm512_cmpeq_epi32_mask(mp, zero)
+                        : (_mm512_cmpeq_epi32_mask(mp, zero) |
+                           _mm512_cmpeq_epi32_mask(mp, _mm512_set1_epi32((int)0x80800000u)) |
+                           _mm512_cmpeq_epi32_mask(mp, _mm512_set1_epi32((int)0x00008080u)));
                     __m512i u = _mm512_and_si512(mp, mask_ff);
                     __m512i v = _mm512_and_si512(_mm512_srli_epi32(mp, 16), mask_ff);
                     __m512i y = _mm512_mask_blend_epi32(odd1, _mm512_and_si512(_mm512_srli_epi32(mp, 8), mask_ff), _mm512_srli_epi32(mp, 24));
@@ -2797,10 +2857,10 @@ static int32_t composite_planes_matrix_avx512_impl(
             }
             uint32_t bg = backdrop_argb;
             if (in_p0_y && p0_in[col]) {
-                bg = 0xff000000u | uyvy_pair_to_rgb(p0_row + p0_off[col], p0_odd[col]);
+                bg = 0xff000000u | pic422_pair_to_rgb(p0_row + p0_off[col], p0_odd[col], pic_yyuv422);
             }
             if (in_p1_y && p1_in[col]) {
-                uint32_t rgb = uyvy_pair_to_rgb(p1_row + p1_off[col], p1_odd[col]);
+                uint32_t rgb = pic422_pair_to_rgb(p1_row + p1_off[col], p1_odd[col], pic_yyuv422);
                 bg = blend_pic1_rgb_over_bg_scalar(rgb, p1_alpha, bg);
             }
             uint32_t out = (osd_a == 0u) ? bg : blend_osd_over_bg(osd_argb, bg);
@@ -2832,7 +2892,7 @@ static void composite_planes_matrix_avx512(
         pic0_bytes, p0x, p0y, p0r, p0b, p0s, p0_active,
         pic1_bytes, p1x, p1y, p1r, p1b, p1s, p1_alpha, p1_active,
         backdrop_argb, native_1to1, source_rows, source_cols,
-        out_width, out_height, cmat, mmode, output_argb, 0
+        out_width, out_height, cmat, mmode, output_argb, 0, 0
     );
 }
 #endif
@@ -2869,7 +2929,9 @@ static int32_t composite_planes_matrix_dispatch(
     const int32_t canvas_height       = cfg[16];
     const int32_t out_width           = cfg[17];
     const int32_t out_height          = cfg[18];
-    const int32_t matrix_mode         = (color_matrix_q10 != NULL) ? cfg[19] : 0;
+    const int32_t raw_mode            = cfg[19];
+    const int32_t matrix_mode         = (color_matrix_q10 != NULL) ? (raw_mode & 0xFF) : 0;
+    const int32_t pic_yyuv422         = ((raw_mode & FUJI_RENDER_CFG_FLAG_YYUV422) != 0) ? 1 : 0;
     if (out_width <= 0 || out_height <= 0) return 1;
 
     const int32_t suppress_pics = (osd_bytes != NULL && opaque_osd_backdrop != 0);
@@ -2891,7 +2953,7 @@ static int32_t composite_planes_matrix_dispatch(
             pic0_bytes, pic0_x, pic0_y, p0_right, p0_bottom, pic0_stride_bytes, p0_active,
             pic1_bytes, pic1_x, pic1_y, p1_right, p1_bottom, pic1_stride_bytes, pic1_alpha, p1_active,
             backdrop_argb, native_1to1, source_rows, source_cols,
-            out_width, out_height, color_matrix_q10, matrix_mode, output_argb, to_argb_pre
+            out_width, out_height, color_matrix_q10, matrix_mode, output_argb, to_argb_pre, pic_yyuv422
         );
     }
 #endif
@@ -2901,7 +2963,7 @@ static int32_t composite_planes_matrix_dispatch(
             pic0_bytes, pic0_x, pic0_y, p0_right, p0_bottom, pic0_stride_bytes, p0_active,
             pic1_bytes, pic1_x, pic1_y, p1_right, p1_bottom, pic1_stride_bytes, pic1_alpha, p1_active,
             backdrop_argb, native_1to1, source_rows, source_cols,
-            out_width, out_height, color_matrix_q10, matrix_mode, output_argb, to_argb_pre
+            out_width, out_height, color_matrix_q10, matrix_mode, output_argb, to_argb_pre, pic_yyuv422
         );
     }
 #endif
@@ -2938,11 +3000,11 @@ static int32_t composite_planes_matrix_dispatch(
             uint32_t bg = backdrop_argb;
             if (in_p0_y && scol >= pic0_x && scol < p0_right) {
                 int32_t lx = scol - pic0_x;
-                bg = 0xff000000u | uyvy_pair_to_rgb(p0_row + ((lx & ~1) * 2), lx & 1);
+                bg = 0xff000000u | pic422_pair_to_rgb(p0_row + ((lx & ~1) * 2), lx & 1, pic_yyuv422);
             }
             if (in_p1_y && scol >= pic1_x && scol < p1_right) {
                 int32_t lx = scol - pic1_x;
-                uint32_t rgb = uyvy_pair_to_rgb(p1_row + ((lx & ~1) * 2), lx & 1);
+                uint32_t rgb = pic422_pair_to_rgb(p1_row + ((lx & ~1) * 2), lx & 1, pic_yyuv422);
                 bg = blend_pic1_rgb_over_bg_scalar(rgb, pic1_alpha, bg);
             }
             uint32_t out = (osd_a == 0u) ? bg : blend_osd_over_bg(osd_argb, bg);

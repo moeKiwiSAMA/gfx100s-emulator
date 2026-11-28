@@ -154,8 +154,8 @@ class ImageScalerE000Test {
         for (y in 0 until height) {
             val start = y * outputStride
             val srcRow = y * sourceStride
-            assertEquals(source[srcRow + 1], output[start + 1])
-            assertEquals(source[srcRow + sourceStride - 1], output[start + width * 2 - 1])
+            assertEquals(source[srcRow], output[start])
+            assertEquals(source[srcRow + sourceStride - 3], output[start + width * 2 - 3])
             assertEquals(0x55, output[start + width * 2].toInt())
         }
     }
@@ -176,14 +176,14 @@ class ImageScalerE000Test {
             for (y in 0 until srcH) {
                 val yVal = (16 + (y * 200) / (srcH - 1)).toByte()
                 val rowOff = y * srcStride
-                source[rowOff] = 0x80.toByte()
+                source[rowOff] = yVal
                 source[rowOff + 1] = yVal
                 source[rowOff + 2] = 0x80.toByte()
-                source[rowOff + 3] = yVal
-                source[rowOff + srcStride - 4] = 0x80.toByte()
+                source[rowOff + 3] = 0x80.toByte()
+                source[rowOff + srcStride - 4] = yVal
                 source[rowOff + srcStride - 3] = yVal
                 source[rowOff + srcStride - 2] = 0x80.toByte()
-                source[rowOff + srcStride - 1] = yVal
+                source[rowOff + srcStride - 1] = 0x80.toByte()
             }
 
             val scaler = ImageScalerE000(ImageScalerE000.IRQ132_PROFILE)
@@ -203,8 +203,8 @@ class ImageScalerE000Test {
             scaler.beforeInstruction(ImageScalerE000.COMPLETION_DELAY_TICKS, dma) { completed = true }
             assertTrue(completed)
             val output = dma.bytes(dst)
-            assertEquals(16, output[1].toInt() and 0xff)
-            assertEquals(216, output[(dstH - 1) * dstStride + 1].toInt() and 0xff)
+            assertEquals(16, output[0].toInt() and 0xff)
+            assertEquals(216, output[(dstH - 1) * dstStride].toInt() and 0xff)
         }
     }
 
@@ -295,7 +295,7 @@ class ImageScalerE000Test {
         for (y in rows) for (x in columns) {
             assertEquals(Triple(luma(x + 1, y + 1), 64, 151), readUyvyPixel(result, x, y, dstStride))
         }
-        assertEquals(result[height * dstStride - 3], result[height * dstStride - 1])
+        assertEquals(result[height * dstStride - 4], result[height * dstStride - 3])
         assertTrue(result.takeLast(8).all { it == 0x55.toByte() })
     }
 
@@ -312,19 +312,19 @@ class ImageScalerE000Test {
                     else -> Triple(240, 110, 160)
                 }
                 val p = rowOff + x * 2
-                buf[p] = uVal.toByte()
+                buf[p] = yVal.toByte()
                 buf[p + 1] = yVal.toByte()
-                buf[p + 2] = vVal.toByte()
-                buf[p + 3] = yVal.toByte()
+                buf[p + 2] = uVal.toByte()
+                buf[p + 3] = vVal.toByte()
             }
         }
     }
 
     private fun readUyvyPixel(buf: ByteArray, x: Int, y: Int, stride: Int): Triple<Int, Int, Int> {
         val off = y * stride + (x and 1.inv()) * 2
-        val u = buf[off].toInt() and 0xff
-        val luma = buf[off + if ((x and 1) != 0) 3 else 1].toInt() and 0xff
-        val v = buf[off + 2].toInt() and 0xff
+        val luma = buf[off + (x and 1)].toInt() and 0xff
+        val u = buf[off + 2].toInt() and 0xff
+        val v = buf[off + 3].toInt() and 0xff
         return Triple(luma, u, v)
     }
 
@@ -538,9 +538,9 @@ class ImageScalerE000Test {
         val dst = 0x1_a72c_0000L
         dma.map(src, 6144 * 1080)
         fillUyvyQuadrants(dma.bytes(src), 1920, 1080, 6144)
-        // Asymmetric 2x2 patch distinguishes all four luma lanes and both chroma averages.
-        byteArrayOf(47, 17, 83, 31).copyInto(dma.bytes(src), 0)
-        byteArrayOf(93, 207.toByte(), 191.toByte(), 233.toByte()).copyInto(dma.bytes(src), 6144)
+        // Asymmetric 2x2 patch distinguishes all four luma lanes and both chroma averages (YYUV422 [Y0, Y1, U, V]).
+        byteArrayOf(17, 31, 47, 83).copyInto(dma.bytes(src), 0)
+        byteArrayOf(207.toByte(), 233.toByte(), 93, 191.toByte()).copyInto(dma.bytes(src), 6144)
         dma.map(dst, 8192 * 540)
         dma.bytes(dst).fill(0x55)
         // Live Movie 1080p RESZ format (E008=0x131: srcFmt=1, dstFmt=3) targeting 34-bit AXI high-DDR
@@ -589,9 +589,9 @@ class ImageScalerE000Test {
         b.access(seq++, 0xfff7e004L, 4, true, 1L)
         b.beforeInstruction(currentTick + 2 * ImageScalerE000.COMPLETION_DELAY_TICKS)
         val previewRows = dma.bytes(playbackTarget).map { it.toInt() and 255 }.chunked(12)
-        assertEquals(listOf(70, 17, 137, 17, 70, 31, 137, 31, 85, 85, 85, 85), previewRows[0])
+        assertEquals(listOf(17, 17, 70, 137, 31, 31, 70, 137, 85, 85, 85, 85), previewRows[0])
         assertEquals(previewRows[0], previewRows[1])
-        assertEquals(listOf(70, 207, 137, 207, 70, 233, 137, 233, 85, 85, 85, 85), previewRows[2])
+        assertEquals(listOf(207, 207, 70, 137, 233, 233, 70, 137, 85, 85, 85, 85), previewRows[2])
         b.access(seq++, 0xfff7e10cL, 4, true, 1L)
         b.access(seq++, 0xfff7e008L, 4, true, 0x131L)
 
@@ -866,8 +866,8 @@ class ImageScalerE000Test {
                 val p = row + x * 2
                 when {
                     x in 80 until 160 && y in 60 until 120 -> {
-                        srcBuf[p] = 0x80.toByte(); srcBuf[p + 1] = 0xf0.toByte()
-                        srcBuf[p + 2] = 0x80.toByte(); srcBuf[p + 3] = 0xf0.toByte()
+                        srcBuf[p] = 0xf0.toByte(); srcBuf[p + 1] = 0xf0.toByte()
+                        srcBuf[p + 2] = 0x80.toByte(); srcBuf[p + 3] = 0x80.toByte()
                     }
                     y < 80 -> { // 0x80800000 LE = [00 00 80 80]
                         srcBuf[p] = 0x00; srcBuf[p + 1] = 0x00

@@ -172,7 +172,7 @@ class MfAssistPeakingAndMovdcTest {
         val base = 0x3000_0000L
         val mem = FlatDmaMemory(base, 4 * 1024 * 1024)
 
-        // Create a 64×48 packed UYVY LiveView Ch1 buffer with a vivid red vertical bar at x=32..35
+        // Create a 64×48 packed YYUV422 LiveView Ch1 buffer with a vivid red vertical bar at x=32..35
         val lvW = 64
         val lvH = 48
         val lvStride = 160 // intentionally padded (> lvW * 2) to verify strided ROI writes
@@ -181,10 +181,10 @@ class MfAssistPeakingAndMovdcTest {
             for (x in 0 until lvW step 2) {
                 val p = (lvAddr - base).toInt() + y * lvStride + x * 2
                 val onBar = x in 30..35
-                mem.bytes[p] = (if (onBar) 0x55 else 0xA0).toByte() // U
-                mem.bytes[p + 1] = (if (onBar) 230 else 40).toByte() // Y0
-                mem.bytes[p + 2] = (if (onBar) 0xF0 else 0x60).toByte() // V
-                mem.bytes[p + 3] = (if (onBar) 230 else 40).toByte() // Y1
+                mem.bytes[p] = (if (onBar) 230 else 40).toByte() // Y0
+                mem.bytes[p + 1] = (if (onBar) 230 else 40).toByte() // Y1
+                mem.bytes[p + 2] = (if (onBar) 0x55 else 0xA0).toByte() // U
+                mem.bytes[p + 3] = (if (onBar) 0xF0 else 0x60).toByte() // V
             }
         }
 
@@ -215,7 +215,7 @@ class MfAssistPeakingAndMovdcTest {
             var cnt = 0L
             val rOff = (bufAddr - base).toInt() + row * movdcStride
             for (x in 0 until lvW) {
-                val yVal = mem.bytes[rOff + (x and 1.inv()) * 2 + if ((x and 1) != 0) 3 else 1].toInt() and 0xFF
+                val yVal = mem.bytes[rOff + (x and 1.inv()) * 2 + (x and 1)].toInt() and 0xFF
                 if (yVal > 180) {
                     sumX += x
                     cnt++
@@ -259,13 +259,13 @@ class MfAssistPeakingAndMovdcTest {
         assertTrue(MovdcMfAssistEngine.onCompanionBB000Complete(bbWords, mem))
         // Band 0 (y=6) must be monochrome (U=V=0x80) and shifted like outA; Band 1 (y=18) monochrome & shifted like outB
         val band0Off = (outCompAddr - base).toInt() + 6 * lvStride + 10 * 2
-        assertEquals(0x80, mem.bytes[band0Off].toInt() and 0xFF, "Mono Split must desaturate U=0x80")
-        assertEquals(0x80, mem.bytes[band0Off + 2].toInt() and 0xFF, "Mono Split must desaturate V=0x80")
+        assertEquals(0x80, mem.bytes[band0Off + 2].toInt() and 0xFF, "Mono Split must desaturate U=0x80")
+        assertEquals(0x80, mem.bytes[band0Off + 3].toInt() and 0xFF, "Mono Split must desaturate V=0x80")
         fun findCompCenterX(row: Int): Double {
             var s = 0L; var c = 0L
             val rOff = (outCompAddr - base).toInt() + row * lvStride
             for (x in 0 until roiW) {
-                val yv = mem.bytes[rOff + (x and 1.inv()) * 2 + if ((x and 1) != 0) 3 else 1].toInt() and 0xFF
+                val yv = mem.bytes[rOff + (x and 1.inv()) * 2 + (x and 1)].toInt() and 0xFF
                 if (yv > 180) { s += x; c++ }
             }
             return if (c == 0L) -1.0 else s.toDouble() / c
@@ -279,8 +279,8 @@ class MfAssistPeakingAndMovdcTest {
         }
         assertTrue(MovdcMfAssistEngine.onCompanionBB000Complete(bbWords, mem))
         val colorBand0Bg = (outCompAddr - base).toInt() + 6 * lvStride + 2 * 2
-        assertEquals(0xA0, mem.bytes[colorBand0Bg].toInt() and 0xFF, "Color Split must preserve U chroma")
-        assertEquals(0x60, mem.bytes[colorBand0Bg + 2].toInt() and 0xFF, "Color Split must preserve V chroma")
+        assertEquals(0xA0, mem.bytes[colorBand0Bg + 2].toInt() and 0xFF, "Color Split must preserve U chroma")
+        assertEquals(0x60, mem.bytes[colorBand0Bg + 3].toInt() and 0xFF, "Color Split must preserve V chroma")
         assertTrue(findCompCenterX(6) > findCompCenterX(18) + 4.0, "Color Split alternating bands must show opposite horizontal split")
 
         // 4. COMPANION_BB000 Microprism (0x00 outside circle, 0x01/0x02 checkerboard inside circle)
@@ -300,13 +300,13 @@ class MfAssistPeakingAndMovdcTest {
         // Corner (2, 2) is outside circle (0x00) -> exact passthrough from in0
         val cornerOut = (outCompAddr - base).toInt() + 2 * lvStride + 2 * 2
         val cornerIn0 = (lvAddr - base).toInt() + 2 * lvStride + 2 * 2
-        assertEquals(mem.bytes[cornerIn0], mem.bytes[cornerOut], "Microprism outside circle must pass through in0 U")
-        assertEquals(mem.bytes[cornerIn0 + 1], mem.bytes[cornerOut + 1], "Microprism outside circle must pass through in0 Y")
+        assertEquals(mem.bytes[cornerIn0], mem.bytes[cornerOut], "Microprism outside circle must pass through in0 Y0")
+        assertEquals(mem.bytes[cornerIn0 + 2], mem.bytes[cornerOut + 2], "Microprism outside circle must pass through in0 U")
         // Inside circle (y=20 vs y=24, alternating checkerboard rows) must differ in shifted luma
         var prismDiffs = 0
         for (x in (cx - 12) until (cx + 12)) {
-            val y20 = mem.bytes[(outCompAddr - base).toInt() + 21 * lvStride + (x and 1.inv()) * 2 + if ((x and 1) != 0) 3 else 1]
-            val y24 = mem.bytes[(outCompAddr - base).toInt() + 25 * lvStride + (x and 1.inv()) * 2 + if ((x and 1) != 0) 3 else 1]
+            val y20 = mem.bytes[(outCompAddr - base).toInt() + 21 * lvStride + (x and 1.inv()) * 2 + (x and 1)]
+            val y24 = mem.bytes[(outCompAddr - base).toInt() + 25 * lvStride + (x and 1.inv()) * 2 + (x and 1)]
             if (y20 != y24) prismDiffs++
         }
         assertTrue(prismDiffs > 4, "Microprism checkerboard inside circle must produce phase-shifted tile disparity (diffs=$prismDiffs)")
@@ -332,10 +332,10 @@ class MfAssistPeakingAndMovdcTest {
                 val rowOff = baseOff + y * byteStride
                 for (x in 0 until width step 2) {
                     val p = rowOff + x * 2
-                    mem.bytes[p] = u.toByte()
-                    mem.bytes[p + 1] = y0.toByte()
-                    mem.bytes[p + 2] = v.toByte()
-                    mem.bytes[p + 3] = y1.toByte()
+                    mem.bytes[p] = y0.toByte()
+                    mem.bytes[p + 1] = y1.toByte()
+                    mem.bytes[p + 2] = u.toByte()
+                    mem.bytes[p + 3] = v.toByte()
                 }
             }
         }
@@ -367,26 +367,26 @@ class MfAssistPeakingAndMovdcTest {
         bbWords[0x58 / 4] = 0x0000_0000L
         assertTrue(MovdcMfAssistEngine.onCompanionBB000Complete(bbWords, mem))
         val outOff = (outAddr - base).toInt() + 5 * byteStride + 4 * 2
-        assertEquals(160, mem.bytes[outOff].toInt() and 0xFF)
-        assertEquals(100, mem.bytes[outOff + 1].toInt() and 0xFF)
-        assertEquals(96, mem.bytes[outOff + 2].toInt() and 0xFF)
-        assertEquals(120, mem.bytes[outOff + 3].toInt() and 0xFF)
+        assertEquals(100, mem.bytes[outOff].toInt() and 0xFF)
+        assertEquals(120, mem.bytes[outOff + 1].toInt() and 0xFF)
+        assertEquals(160, mem.bytes[outOff + 2].toInt() and 0xFF)
+        assertEquals(96, mem.bytes[outOff + 3].toInt() and 0xFF)
         assertEquals(0x5A.toByte(), mem.bytes[guardOff], "Padding outside active width must not be clobbered")
 
         // 2. 4-frame equal Q8 temporal average (w0=w1=w2=w3 = 64 = 0x40 -> 0.25 each)
         bbWords[0x54 / 4] = 0x0040_0040L
         bbWords[0x58 / 4] = 0x0040_0040L
         assertTrue(MovdcMfAssistEngine.onCompanionBB000Complete(bbWords, mem))
-        assertEquals(130, mem.bytes[outOff].toInt() and 0xFF) // (160+120+100+140)/4 = 130
-        assertEquals(160, mem.bytes[outOff + 1].toInt() and 0xFF) // (100+140+180+220)/4 = 160
-        assertEquals(126, mem.bytes[outOff + 2].toInt() and 0xFF) // (96+136+156+116)/4 = 126
-        assertEquals(180, mem.bytes[outOff + 3].toInt() and 0xFF) // (120+160+200+240)/4 = 180
+        assertEquals(160, mem.bytes[outOff].toInt() and 0xFF) // (100+140+180+220)/4 = 160
+        assertEquals(180, mem.bytes[outOff + 1].toInt() and 0xFF) // (120+160+200+240)/4 = 180
+        assertEquals(130, mem.bytes[outOff + 2].toInt() and 0xFF) // (160+120+100+140)/4 = 130
+        assertEquals(126, mem.bytes[outOff + 3].toInt() and 0xFF) // (96+136+156+116)/4 = 126
 
         // 3. 2-frame low-light gain sum (w0=256, w1=256) saturates cleanly at 255
         bbWords[0x54 / 4] = 0x0100_0100L
         bbWords[0x58 / 4] = 0x0000_0000L
         assertTrue(MovdcMfAssistEngine.onCompanionBB000Complete(bbWords, mem))
-        assertEquals(240, mem.bytes[outOff + 1].toInt() and 0xFF) // 100 + 140 = 240
-        assertEquals(255, mem.bytes[outOff + 3].toInt() and 0xFF) // 120 + 160 = 280 -> clamped to 255
+        assertEquals(240, mem.bytes[outOff].toInt() and 0xFF) // 100 + 140 = 240
+        assertEquals(255, mem.bytes[outOff + 1].toInt() and 0xFF) // 120 + 160 = 280 -> clamped to 255
     }
 }
