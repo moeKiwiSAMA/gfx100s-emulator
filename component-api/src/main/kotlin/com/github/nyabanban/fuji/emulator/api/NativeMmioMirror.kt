@@ -37,9 +37,11 @@ data class MmioMirrorWindowSpec(
     val portName: String,
     val windowSize: Long,
     val slots: List<MmioMirrorSlotSpec>,
+    val addressOffset: Long = 0L,
 ) {
     init {
         require(portName.isNotBlank()) { "MMIO mirror window portName must not be blank" }
+        require(addressOffset >= 0L) { "MMIO mirror addressOffset must be non-negative: $addressOffset" }
         require(windowSize in 1L..0x1_0000_0000L) { "MMIO mirror windowSize out of range: $windowSize" }
         require(slots.size in 1..MAX_SLOTS) { "MMIO mirror slot count must be in 1..$MAX_SLOTS (got ${slots.size})" }
         val seen = HashSet<Long>(slots.size * 2)

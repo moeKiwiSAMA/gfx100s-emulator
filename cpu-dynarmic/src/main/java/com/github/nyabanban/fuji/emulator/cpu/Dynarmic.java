@@ -67,6 +67,7 @@ public final class Dynarmic implements ArmCpuBackend {
     public static final int AUTO_EXCP_UNDEF = 1 << 1;
     public static final int AUTO_EXCP_PABT = 1 << 2;
     public static final int AUTO_EXCP_DABT = 1 << 3;
+    public static final int AUTO_EXCP_IRQ = 1 << 4;
     public static final int AUTO_EXCP_ALL = AUTO_EXCP_SVC | AUTO_EXCP_UNDEF | AUTO_EXCP_PABT | AUTO_EXCP_DABT;
 
     /** Fixed 64-byte FujiDynRunResult struct offsets. */
@@ -730,13 +731,59 @@ public final class Dynarmic implements ArmCpuBackend {
         return null;
     }
 
+    private MappedRegion[] mappedHighRegions = new MappedRegion[0];
+    private MappedRegion lastMappedHigh;
+
+    private void addHighRegion(long base, long size, MemorySegment segment) {
+        MappedRegion[] prev = mappedHighRegions;
+        MappedRegion[] next = new MappedRegion[prev.length + 1];
+        int insert = 0;
+        while (insert < prev.length && prev[insert].base < base) {
+            next[insert] = prev[insert];
+            insert++;
+        }
+        next[insert] = new MappedRegion(base, size, segment);
+        System.arraycopy(prev, insert, next, insert + 1, prev.length - insert);
+        mappedHighRegions = next;
+        lastMappedHigh = next[insert];
+    }
+
+    private MappedRegion findHighRegion(long address, long size) {
+        MappedRegion cached = lastMappedHigh;
+        if (cached != null && address >= cached.base && size <= cached.end - address) {
+            return cached.segment.equals(MemorySegment.NULL) ? null : cached;
+        }
+        MappedRegion[] regions = mappedHighRegions;
+        int low = 0;
+        int high = regions.length - 1;
+        while (low <= high) {
+            int mid = (low + high) >>> 1;
+            MappedRegion r = regions[mid];
+            if (address < r.base) high = mid - 1;
+            else if (address >= r.end) low = mid + 1;
+            else {
+                lastMappedHigh = r;
+                return (size <= r.end - address && !r.segment.equals(MemorySegment.NULL)) ? r : null;
+            }
+        }
+        return null;
+    }
+
     /**
      * Returns a bounded off-heap {@link MemorySegment} covering {@code [address, address + size)}
-     * when the range lies inside a single host-RW-backed 32-bit guest RAM region (dual-view
-     * fastmem or OS-backed RAM arena), or {@code null} when slow-path access is required.
+     * when the range lies inside a single host-RW-backed 32-bit or 40-bit guest RAM region
+     * (dual-view fastmem or OS-backed RAM arena), or {@code null} when slow-path access is required.
      */
     public MemorySegment sliceDirectRam(long address, long size) {
-        if (size <= 0L || address < 0L || address >= 0x1_0000_0000L || size > 0x1_0000_0000L - address) {
+        if (size <= 0L || address < 0L) {
+            return null;
+        }
+        if (address >= 0x1_0000_0000L) {
+            if (address >= (1L << 40) || size > (1L << 40) - address) return null;
+            MappedRegion hr = findHighRegion(address, size);
+            return hr != null ? hr.segment.asSlice(address - hr.base, size) : null;
+        }
+        if (size > 0x1_0000_0000L - address) {
             return null;
         }
         MappedRegion r = findRegion(address, size);
@@ -924,8 +971,10 @@ public final class Dynarmic implements ArmCpuBackend {
                 "Page-aligned 40-bit high-PA RAM range required (>=4 GiB): base=0x" + Long.toHexString(physBase) + " size=" + size);
         }
         try {
-            check((int) mapRam64Fn.invokeExact(engine, physBase, size, MemorySegment.NULL, permissions));
+            MemorySegment backing = OsZeroRamAllocator.allocate(ramArena, size, osZeroRamFallbacks);
+            check((int) mapRam64Fn.invokeExact(engine, physBase, size, backing, permissions));
             mappedHighRamRanges.add(new long[] { physBase, size });
+            addHighRegion(physBase, size, backing);
         } catch (Throwable e) {
             throw failure(e);
         }
@@ -958,6 +1007,17 @@ public final class Dynarmic implements ArmCpuBackend {
         int size = buffer.remaining();
         if (size == 0) return;
         if (!write && buffer.isReadOnly()) throw new java.nio.ReadOnlyBufferException();
+        MemorySegment direct = sliceDirectRam(address, size);
+        if (direct != null) {
+            MemorySegment bytes = MemorySegment.ofBuffer(buffer);
+            if (write) {
+                MemorySegment.copy(bytes, 0, direct, 0, size);
+            } else {
+                MemorySegment.copy(direct, 0, bytes, 0, size);
+            }
+            buffer.position(buffer.limit());
+            return;
+        }
         MemorySegment bytes = MemorySegment.ofBuffer(buffer);
         try {
             if (bytes.isNative()) {
@@ -2237,6 +2297,8 @@ public final class Dynarmic implements ArmCpuBackend {
                 }
             }
             mappedHighRamRanges.clear();
+            mappedHighRegions = new MappedRegion[0];
+            lastMappedHigh = null;
             ramArena.close();
             ramArena = Arena.ofConfined();
             for (long[] mmio : mappedMmioRanges) {

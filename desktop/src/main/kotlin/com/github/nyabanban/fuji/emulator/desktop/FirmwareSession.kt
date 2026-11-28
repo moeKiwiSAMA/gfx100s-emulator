@@ -383,6 +383,8 @@ class FirmwareSession(
     private var cpuInterrupts: com.github.nyabanban.fuji.emulator.api.CpuInterruptPort? = null
     private var fastRunEndTick = 0L
     private var fastMultiQuantumActive = false
+    private var fastInlineTimerActive = false
+    private var fastAutoIrqActive = false
     private var stepInProgress=false
     private var additionalRamReceipt:Map<String,Any?>?=null
     private val tracePoints by lazy {
@@ -819,26 +821,74 @@ class FirmwareSession(
             configuredComponentProfiles(host,activeWindows.map { it.id }.toSet()),
             additionalRamProfile=host.components().single{it.descriptor.id=="system-memory"}.component.state()["additionalRamProfile"] as? String ?: "")
         discoveryBus=catalogRuntime.createBus(object:DiscoveryContext {
+            private var cachedIrqSink: com.github.nyabanban.fuji.emulator.api.InterruptSink? = null
+            private var cachedIrqSinkResolved = false
+            private var cachedSensor: com.github.nyabanban.fuji.emulator.api.SensorPort? = null
+            private var cachedSensorResolved = false
+            private var cachedFaceScaler: com.github.nyabanban.fuji.emulator.api.FacePreviewScalerPort? = null
+            private var cachedFaceScalerResolved = false
+            private var cachedDmaMem: DmaMemory? = null
+            private var cachedMount: com.github.nyabanban.fuji.emulator.api.MountPort? = null
+            private var cachedMountResolved = false
+            private var cachedLens: com.github.nyabanban.fuji.emulator.api.LensPort? = null
+            private var cachedLensResolved = false
+            private var cachedExposure: com.github.nyabanban.fuji.emulator.api.Imx461ExposurePort? = null
+            private var cachedExposureResolved = false
+
             override fun core()=currentCoreIndex()
             override fun tick()=virtualTick
             override fun pc()=pc
             override fun lr()=activeBackend?.register(ArmReg.LR) ?: 0L
             override fun imageIrq106Active() = imageIrq106InFlight(host)
             override fun imageIrq106LineActive() = imageIrq106LineActive(host)
-            override fun interruptSink() = host.ports.find("soc-gic.lines", com.github.nyabanban.fuji.emulator.api.InterruptSink::class.java)
-            override fun sensorPort() = host.ports.find("cmos", com.github.nyabanban.fuji.emulator.api.SensorPort::class.java)
-            override fun facePreviewScaler() = host.ports.find(
-                "lens.uniresz", com.github.nyabanban.fuji.emulator.api.FacePreviewScalerPort::class.java,
-            )
-            override fun dmaMemory() = host.ports.find("cpu.memory", DmaMemory::class.java)
-            override fun lensParameters() =
-                host.ports.find("mount", com.github.nyabanban.fuji.emulator.api.MountPort::class.java)?.attachedLens()
-                    ?: host.ports.find("lens", com.github.nyabanban.fuji.emulator.api.LensPort::class.java)?.parameters()
-            override fun exposurePort() =
-                host.ports.find(
-                    com.github.nyabanban.fuji.emulator.api.Imx461ExposurePort.PORT_ID,
-                    com.github.nyabanban.fuji.emulator.api.Imx461ExposurePort::class.java,
-                )
+            override fun interruptSink(): com.github.nyabanban.fuji.emulator.api.InterruptSink? {
+                if (!cachedIrqSinkResolved) {
+                    cachedIrqSink = host.ports.find("soc-gic.lines", com.github.nyabanban.fuji.emulator.api.InterruptSink::class.java)
+                    cachedIrqSinkResolved = true
+                }
+                return cachedIrqSink
+            }
+            override fun sensorPort(): com.github.nyabanban.fuji.emulator.api.SensorPort? {
+                if (!cachedSensorResolved) {
+                    cachedSensor = host.ports.find("cmos", com.github.nyabanban.fuji.emulator.api.SensorPort::class.java)
+                    cachedSensorResolved = true
+                }
+                return cachedSensor
+            }
+            override fun facePreviewScaler(): com.github.nyabanban.fuji.emulator.api.FacePreviewScalerPort? {
+                if (!cachedFaceScalerResolved) {
+                    cachedFaceScaler = host.ports.find(
+                        "lens.uniresz", com.github.nyabanban.fuji.emulator.api.FacePreviewScalerPort::class.java,
+                    )
+                    cachedFaceScalerResolved = true
+                }
+                return cachedFaceScaler
+            }
+            override fun dmaMemory(): DmaMemory? =
+                cachedDmaMem ?: host.ports.find("cpu.memory", DmaMemory::class.java)?.also { cachedDmaMem = it }
+            override fun lensParameters(): com.github.nyabanban.fuji.emulator.api.LensParameters? {
+                if (!cachedMountResolved) {
+                    cachedMount = host.ports.find("mount", com.github.nyabanban.fuji.emulator.api.MountPort::class.java)
+                    cachedMountResolved = true
+                }
+                val fromMount = cachedMount?.attachedLens()
+                if (fromMount != null) return fromMount
+                if (!cachedLensResolved) {
+                    cachedLens = host.ports.find("lens", com.github.nyabanban.fuji.emulator.api.LensPort::class.java)
+                    cachedLensResolved = true
+                }
+                return cachedLens?.parameters()
+            }
+            override fun exposurePort(): com.github.nyabanban.fuji.emulator.api.Imx461ExposurePort? {
+                if (!cachedExposureResolved) {
+                    cachedExposure = host.ports.find(
+                        com.github.nyabanban.fuji.emulator.api.Imx461ExposurePort.PORT_ID,
+                        com.github.nyabanban.fuji.emulator.api.Imx461ExposurePort::class.java,
+                    )
+                    cachedExposureResolved = true
+                }
+                return cachedExposure
+            }
             override fun hasImageRequest82(selector: Int) = activeBackend?.readMemory(0x028f2000L, 3)
                 ?.contentEquals(byteArrayOf(0x82.toByte(), 0, selector.toByte())) == true
             override fun imageCommandBytes(address: Long, length: Int): ByteArray? {
@@ -1298,7 +1348,7 @@ class FirmwareSession(
                 }
                 override fun sliceDirect(address: Long, size: Long, write: Boolean): java.lang.foreign.MemorySegment? {
                     check(address, size, write)
-                    return if (address >= 0x1_0000_0000L) null else dyn.sliceDirectRam(address, size)
+                    return dyn.sliceDirectRam(address, size)
                 }
                 override fun notifyDirectWrite(address: Long, size: Long) {
                     if (address < 0x1_0000_0000L && size > 0L) {
@@ -1354,7 +1404,22 @@ class FirmwareSession(
                     idleRouter?.invalidateSchedule()
                     dynShadow.onHostEvent(dyn, event.source, event.kind)
                 } else if (event.source == "buttons") {
+                    idleRouter?.invalidateSchedule()
+                    if (event.values["power"] == false) {
+                        sawPowerSwitchOffDuringBoot = true
+                    }
                     dynShadow.onHostEvent(dyn, event.source, event.kind)
+                } else if (event.source == "cmos" || event.source == "tmd2772" ||
+                    event.source == "i2c-bus" || event.source == "bcm43438" ||
+                    event.source == "sdcard-reader" || event.source == "lens" || event.source == "mount"
+                ) {
+                    idleRouter?.invalidateSchedule()
+                }
+            }
+            if (relaxedMode && onSubMcuColdReset != null) {
+                val initButtons = host.ports.find("buttons", com.github.nyabanban.fuji.emulator.api.ButtonPort::class.java)
+                if (initButtons != null && !initButtons.pressed("power")) {
+                    sawPowerSwitchOffDuringBoot = true
                 }
             }
             irqSubscription = AutoCloseable {
@@ -1370,17 +1435,26 @@ class FirmwareSession(
                     val prevPhase = if (profiling) telemetry.currentPhase else 0
                     if (profiling) telemetry.currentPhase = FirmwareTelemetry.PHASE_MMIO_UPCALL
                     try {
+                        var tickedShortenedDeadline = false
                         if (dyn.isRunning) {
                             val fastTick = dyn.currentVirtualTick()
                             if (fastTick != virtualTick) {
                                 virtualTick = fastTick
                                 host.advanceTick(virtualTick)
-                                val dueSched = router.refreshNextScheduledTick()
+                                val dueSched = if (fastInlineTimerActive) {
+                                    router.nextScheduledTickExcluding(dynShadow.timerDevice)
+                                } else {
+                                    router.refreshNextScheduledTick()
+                                }
                                 if (dueSched != Long.MAX_VALUE && dueSched <= virtualTick) {
                                     router.beforeInstruction(virtualTick)
                                     dynShadow.onScheduledDevicesTicked(dyn)
                                     if (dynShadow.timerIrqShadowEnabled) {
-                                        dynShadow.updateNextOtherDeadline(router.nextScheduledTickExcluding(dynShadow.timerDevice))
+                                        val postOther = router.nextScheduledTickExcluding(dynShadow.timerDevice)
+                                        dynShadow.updateNextOtherDeadline(postOther)
+                                        if (fastInlineTimerActive && postOther != Long.MAX_VALUE && postOther < fastRunEndTick) {
+                                            tickedShortenedDeadline = true
+                                        }
                                     }
                                 }
                             }
@@ -1394,7 +1468,7 @@ class FirmwareSession(
                                 telemetry.currentCore = activeCore
                             }
                         }
-                        val prevNextSched = router.refreshNextScheduledTick()
+                        val prevNextSched = if (fastInlineTimerActive) 0L else router.refreshNextScheduledTick()
                         val result = router.read(physicalAddress, size)
                         reads++
                         recordTransaction(false, physicalAddress, size, result)
@@ -1402,21 +1476,33 @@ class FirmwareSession(
                         dynShadow.onMmioRead(dyn, physicalAddress, size, result)
                         if (dyn.isRunning) {
                             val coreIdx = currentCoreIndex()
-                            val nextSched = router.refreshNextScheduledTick()
-                            val otherDeadlineShortened = if (dynShadow.timerIrqShadowEnabled) {
-                                val otherSched = router.nextScheduledTickExcluding(dynShadow.timerDevice)
-                                dynShadow.updateNextOtherDeadline(otherSched)
-                                otherSched != Long.MAX_VALUE && (otherSched - 1L) < fastRunEndTick
-                            } else false
-                            val irqNow = interrupts?.hasPending() == true
+                            val deadlineShortened = if (fastInlineTimerActive) {
+                                tickedShortenedDeadline || if (router.isScheduleDirty()) {
+                                    val otherSched = router.nextScheduledTickExcluding(dynShadow.timerDevice)
+                                    val earlierOther = dynShadow.updateNextOtherDeadline(otherSched)
+                                    otherSched != Long.MAX_VALUE && (
+                                        otherSched <= virtualTick ||
+                                            (earlierOther && otherSched < fastRunEndTick)
+                                        )
+                                } else false
+                            } else {
+                                val nextSched = router.refreshNextScheduledTick()
+                                val otherDeadlineShortened = if (dynShadow.timerIrqShadowEnabled) {
+                                    val otherSched = router.nextScheduledTickExcluding(dynShadow.timerDevice)
+                                    dynShadow.updateNextOtherDeadline(otherSched)
+                                    otherSched != Long.MAX_VALUE && (otherSched - 1L) < fastRunEndTick
+                                } else false
+                                otherDeadlineShortened || (
+                                    nextSched != Long.MAX_VALUE && (
+                                        (nextSched - 1L) < fastRunEndTick || nextSched < prevNextSched
+                                        )
+                                    )
+                            }
+                            val fastIrq = dynShadow.coreHasPendingIrqFast(coreIdx)
+                            val irqNow = if (fastIrq >= 0) fastIrq != 0 else (interrupts?.hasPending() == true)
                             dyn.setIrqPendingIfChanged(coreIdx, irqNow)
                             if (fastClusterBatchActive) dynCluster?.updateBatchCoreIrq(coreIdx, irqNow)
-                            val irqUnmasked = irqNow && (dyn.getCpsr(coreIdx) and 0x80L) == 0L
-                            val deadlineShortened = otherDeadlineShortened || (
-                                nextSched != Long.MAX_VALUE && (
-                                    (nextSched - 1L) < fastRunEndTick || nextSched < prevNextSched
-                                    )
-                                )
+                            val irqUnmasked = !fastAutoIrqActive && irqNow && (dyn.getCpsr(coreIdx) and 0x80L) == 0L
                             if (irqUnmasked || deadlineShortened) {
                                 dyn.haltRun()
                             }
@@ -1440,17 +1526,26 @@ class FirmwareSession(
                     val prevPhase = if (profiling) telemetry.currentPhase else 0
                     if (profiling) telemetry.currentPhase = FirmwareTelemetry.PHASE_MMIO_UPCALL
                     try {
+                        var tickedShortenedDeadline = false
                         if (dyn.isRunning) {
                             val fastTick = dyn.currentVirtualTick()
                             if (fastTick != virtualTick) {
                                 virtualTick = fastTick
                                 host.advanceTick(virtualTick)
-                                val dueSched = router.refreshNextScheduledTick()
+                                val dueSched = if (fastInlineTimerActive) {
+                                    router.nextScheduledTickExcluding(dynShadow.timerDevice)
+                                } else {
+                                    router.refreshNextScheduledTick()
+                                }
                                 if (dueSched != Long.MAX_VALUE && dueSched <= virtualTick) {
                                     router.beforeInstruction(virtualTick)
                                     dynShadow.onScheduledDevicesTicked(dyn)
                                     if (dynShadow.timerIrqShadowEnabled) {
-                                        dynShadow.updateNextOtherDeadline(router.nextScheduledTickExcluding(dynShadow.timerDevice))
+                                        val postOther = router.nextScheduledTickExcluding(dynShadow.timerDevice)
+                                        dynShadow.updateNextOtherDeadline(postOther)
+                                        if (fastInlineTimerActive && postOther != Long.MAX_VALUE && postOther < fastRunEndTick) {
+                                            tickedShortenedDeadline = true
+                                        }
                                     }
                                 }
                             }
@@ -1467,7 +1562,7 @@ class FirmwareSession(
                         if (physicalAddress == 0xFFFA9600L && size == 4 && (value and 1L) != 0L) {
                             pumpLiveViewDmaFromLcdcCommit()
                         }
-                        val prevNextSched = router.refreshNextScheduledTick()
+                        val prevNextSched = if (fastInlineTimerActive) 0L else router.refreshNextScheduledTick()
                         router.write(physicalAddress, size, value)
                         writes++
                         recordTransaction(true, physicalAddress, size, value)
@@ -1476,23 +1571,51 @@ class FirmwareSession(
                         dynShadow.onMmioWrite(dyn, physicalAddress, size)
                         if (dyn.isRunning) {
                             val coreIdx = currentCoreIndex()
-                            val nextSched = router.refreshNextScheduledTick()
-                            val otherDeadlineShortened = if (dynShadow.timerIrqShadowEnabled) {
-                                val otherSched = router.nextScheduledTickExcluding(dynShadow.timerDevice)
-                                dynShadow.updateNextOtherDeadline(otherSched)
-                                otherSched != Long.MAX_VALUE && (otherSched - 1L) < fastRunEndTick
-                            } else false
-                            val irqNow = interrupts?.hasPending() == true
+                            val deadlineShortened = if (fastInlineTimerActive) {
+                                tickedShortenedDeadline || if (router.isScheduleDirty()) {
+                                    val otherSched = router.nextScheduledTickExcluding(dynShadow.timerDevice)
+                                    val earlierOther = dynShadow.updateNextOtherDeadline(otherSched)
+                                    val otherShort = otherSched != Long.MAX_VALUE && (
+                                        otherSched <= virtualTick ||
+                                            (earlierOther && otherSched < fastRunEndTick)
+                                        )
+                                    val immediateTimer = if (!otherShort && dynShadow.isTimerAddress(physicalAddress)) {
+                                        val t = dynShadow.timerDevice?.nextInterestedTick() ?: Long.MAX_VALUE
+                                        t <= virtualTick
+                                    } else false
+                                    otherShort || immediateTimer
+                                } else false
+                            } else {
+                                val nextSched = router.refreshNextScheduledTick()
+                                val otherDeadlineShortened = if (dynShadow.timerIrqShadowEnabled) {
+                                    val otherSched = router.nextScheduledTickExcluding(dynShadow.timerDevice)
+                                    dynShadow.updateNextOtherDeadline(otherSched)
+                                    otherSched != Long.MAX_VALUE && (otherSched - 1L) < fastRunEndTick
+                                } else false
+                                otherDeadlineShortened || (
+                                    nextSched != Long.MAX_VALUE && (
+                                        (nextSched - 1L) < fastRunEndTick || nextSched < prevNextSched
+                                        )
+                                    )
+                            }
+                            val fastMask = if (fastClusterBatchActive) dynShadow.allCoresPendingIrqMaskFast() else -1
+                            val irqNow = if (fastMask >= 0) {
+                                (fastMask and (1 shl coreIdx)) != 0
+                            } else {
+                                val fastIrq = dynShadow.coreHasPendingIrqFast(coreIdx)
+                                if (fastIrq >= 0) fastIrq != 0 else (interrupts?.hasPending() == true)
+                            }
                             dyn.setIrqPendingIfChanged(coreIdx, irqNow)
                             if (fastClusterBatchActive) dynCluster?.updateBatchCoreIrq(coreIdx, irqNow)
-                            val irqUnmasked = irqNow && (dyn.getCpsr(coreIdx) and 0x80L) == 0L
-                            val deadlineShortened = otherDeadlineShortened || (
-                                nextSched != Long.MAX_VALUE && (
-                                    (nextSched - 1L) < fastRunEndTick || nextSched < prevNextSched
-                                    )
-                                )
-                            val otherCoreWoken = if (fastClusterBatchActive) {
-                                dynCluster!!.anyOtherCoreIrqGained(coreIdx)
+                            val irqUnmasked = !fastAutoIrqActive && irqNow && (dyn.getCpsr(coreIdx) and 0x80L) == 0L
+                            val otherCoreWoken = if (fastAutoIrqActive && fastClusterBatchActive) {
+                                false
+                            } else if (fastClusterBatchActive) {
+                                if (fastMask >= 0) {
+                                    dynCluster!!.anyOtherCoreIrqGainedFromMask(coreIdx, fastMask)
+                                } else {
+                                    dynCluster!!.anyOtherCoreIrqGained(coreIdx)
+                                }
                             } else {
                                 dynCluster != null && fastMultiQuantumActive && dynCluster!!.anyOtherCoreWoken()
                             }
@@ -1549,6 +1672,15 @@ class FirmwareSession(
             stage4Ranges = buildStageRanges(activeWindows, setOf("soc-vglib-init"))
             mmioPageLabels = buildMmioPageLabels(activeWindows)
             dynShadow.initialize(host, dyn, activeWindows, relaxedMode)
+            dynCluster?.setFastPendingIrqMaskProvider(
+                if (dynShadow.gicShadowEnabled) dynShadow::allCoresPendingIrqMaskFast else null,
+            )
+            fastAutoIrqActive = relaxedMode && dynShadow.gicShadowEnabled && tracePoints.isEmpty()
+            if (fastAutoIrqActive) {
+                dyn.setAutoExceptions(
+                    Dynarmic.AUTO_EXCP_SVC or Dynarmic.AUTO_EXCP_UNDEF or Dynarmic.AUTO_EXCP_PABT or Dynarmic.AUTO_EXCP_IRQ,
+                )
+            }
             // Model 4-core Cortex-A7 SMP clock scaling (vtickDiv=7 for 4-core relaxed Dynarmic:
             // ~94.5 MHz/core when all 4 cores are active, ~378 MHz single-core vs 54 MHz APB timer).
             // Clears both BUG-29 Boot #2 create_task(0x22) watchdog race AND BUG-V3-9-2 boot-hold
@@ -1677,9 +1809,11 @@ class FirmwareSession(
             }
             if (liveDma.pumpLiveViewDma(virtualTick)) {
                 lastLcdcLiveViewPumpTick = virtualTick
+                idleRouter?.invalidateSchedule()
             }
         } else {
             discoveryBus?.pumpLiveViewDma(virtualTick)
+            idleRouter?.invalidateSchedule()
         }
     }
     private fun observeMmioStage(address: Long) {
@@ -1764,7 +1898,8 @@ class FirmwareSession(
             nextSched = router.refreshNextScheduledTick()
             tickedAtCurrentTick = true
         }
-        if (dc?.needsSwitch() == true && !dc.switch()) {
+        val didSwitch = dc?.needsSwitch() == true
+        if (didSwitch && !dc.switch()) {
             val wfiStart = if (profiling) System.nanoTime() else 0L
             val beforeIdleTick = virtualTick
             if (profiling) telemetry.currentPhase = FirmwareTelemetry.PHASE_WFI_JUMP
@@ -1791,7 +1926,9 @@ class FirmwareSession(
         }
         val core = dc?.current ?: 0
         dyn.selectCore(core)
-        nextSched = router.refreshNextScheduledTick()
+        if (didSwitch) {
+            nextSched = router.refreshNextScheduledTick()
+        }
         if (nextSched != Long.MAX_VALUE && nextSched <= virtualTick + 1L) {
             val fireTick = maxOf(virtualTick, nextSched)
             if (fireTick > virtualTick) {
@@ -1808,18 +1945,6 @@ class FirmwareSession(
                 }
                 dynShadow.onScheduledDevicesTicked(dyn)
                 nextSched = router.refreshNextScheduledTick()
-            }
-        }
-        val pendingBefore = cpuInterrupts?.chooseOrNegative() ?: -1
-        var irqDelivered = false
-        if (pendingBefore >= 0 && (dyn.getCpsr(core) and 0x80L) == 0L) {
-            if (dyn.deliverIrq(core)) {
-                dyn.clearExclusive(core)
-                val newPc = dyn.getReg(core, 15)
-                irqEntries.addFast(pendingBefore, virtualTick, pc, newPc, hasCluster(), core)
-                irqCount++
-                pc = newPc
-                irqDelivered = true
             }
         }
         val useInlineTimer = dynShadow.timerIrqShadowEnabled && !router.hasAlwaysTickDevices()
@@ -1849,6 +1974,21 @@ class FirmwareSession(
             maxByBudget > 1L &&
             dc.canRunNativeBatch(maxByBudget) &&
             (dc.hasAnotherRunnableCore() || useInlineTimer)
+        var pendingBefore = -1
+        var irqDelivered = false
+        if (!fastAutoIrqActive || !useNativeBatch) {
+            pendingBefore = cpuInterrupts?.chooseOrNegative() ?: -1
+            if (pendingBefore >= 0 && (dyn.getCpsr(core) and 0x80L) == 0L) {
+                if (dyn.deliverIrq(core)) {
+                    dyn.clearExclusive(core)
+                    val newPc = dyn.getReg(core, 15)
+                    irqEntries.addFast(pendingBefore, virtualTick, pc, newPc, hasCluster(), core)
+                    irqCount++
+                    pc = newPc
+                    irqDelivered = true
+                }
+            }
+        }
         val runBudget = if (useNativeBatch) {
             maxByBudget
         } else {
@@ -1882,17 +2022,19 @@ class FirmwareSession(
         val resFastMmioHits: Long
         val sliceStartNanos = if (profiling) {
             sliceMmioNanos = 0L
-            telemetry.currentPc = dyn.getReg(core, 15)
+            telemetry.currentPc = pc
             telemetry.currentCore = core
             telemetry.currentPhase = FirmwareTelemetry.PHASE_CPU_NATIVE
             System.nanoTime()
         } else 0L
         if (useNativeBatch) {
             fastClusterBatchActive = true
+            fastInlineTimerActive = useInlineTimer
             val cres = try {
                 dc.runNativeBatch(runBudget, virtualTick)
             } finally {
                 fastClusterBatchActive = false
+                fastInlineTimerActive = false
                 if (profiling) {
                     val totalNanos = (System.nanoTime() - sliceStartNanos).coerceAtLeast(0L)
                     telemetry.cpuNativeNanos += (totalNanos - sliceMmioNanos).coerceAtLeast(0L)
@@ -2052,14 +2194,8 @@ class FirmwareSession(
             stopped = true
             reason = "instruction-limit"
         }
-        if (!stopped && relaxedMode && onSubMcuColdReset != null && !socPoweredOff) {
-            val buttons = host.ports.find("buttons", com.github.nyabanban.fuji.emulator.api.ButtonPort::class.java)
-            if (buttons != null && !buttons.pressed("power")) {
-                sawPowerSwitchOffDuringBoot = true
-            }
-            if (powerHoldDeasserted) {
-                evaluateSubMcuPowerOffLatch()
-            }
+        if (!stopped && relaxedMode && onSubMcuColdReset != null && !socPoweredOff && powerHoldDeasserted) {
+            evaluateSubMcuPowerOffLatch()
         }
         return !stopped
     }
@@ -2233,6 +2369,8 @@ class FirmwareSession(
         fastRunEndTick = 0L
         fastMultiQuantumActive = false
         fastClusterBatchActive = false
+        fastInlineTimerActive = false
+        fastAutoIrqActive = false
         additionalRamReceipt = null
         checkpoints.clear()
         checkpointCount = 0L

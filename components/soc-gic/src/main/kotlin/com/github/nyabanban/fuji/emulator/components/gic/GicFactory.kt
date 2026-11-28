@@ -44,6 +44,9 @@ object GicV2ShadowLayout {
 
     const val DIRTY_SPI_PEND_ACT = 1
     const val DIRTY_SPI_PRIO = 2
+    const val DIRTY_SPI_ENABLE = 4
+    const val DIRTY_SPI_TARGETS = 8
+    const val DIRTY_SPI_EDGE = 16
     const val MAX_NATIVE_STACK = 32
 
     internal val LITTLE_INT: ValueLayout.OfInt = ValueLayout.JAVA_INT.withOrder(ByteOrder.LITTLE_ENDIAN)
@@ -543,10 +546,28 @@ class GicFactory : ComponentFactory {
                 shared.syncSharedBitsFromNative(seg, GicV2ShadowLayout.OFF_SHARED_ACTIVE, shared.activeBits, shared.active)
                 shared.changed()
             }
+            if ((dirtySpi and GicV2ShadowLayout.DIRTY_SPI_ENABLE) != 0) {
+                shared.syncSharedBitsFromNative(seg, GicV2ShadowLayout.OFF_SHARED_ENABLED, shared.enabledBits, shared.enabled)
+                shared.changed()
+            }
             if ((dirtySpi and GicV2ShadowLayout.DIRTY_SPI_PRIO) != 0) {
                 for (i in 0 until 480) {
                     shared.priority[i] = seg.get(ValueLayout.JAVA_BYTE, GicV2ShadowLayout.OFF_SHARED_PRIORITY + i.toLong()).toInt() and 0xFF
                 }
+                shared.changed()
+            }
+            if ((dirtySpi and GicV2ShadowLayout.DIRTY_SPI_TARGETS) != 0) {
+                for (i in 0 until 480) {
+                    val t = seg.get(ValueLayout.JAVA_BYTE, GicV2ShadowLayout.OFF_SHARED_TARGETS + i.toLong()).toInt() and 0xFF
+                    if (shared.targets[i] != t) {
+                        shared.targets[i] = t
+                        shared.setTargetBits(i + 32, t)
+                    }
+                }
+                shared.changed()
+            }
+            if ((dirtySpi and GicV2ShadowLayout.DIRTY_SPI_EDGE) != 0) {
+                shared.syncSharedBitsFromNative(seg, GicV2ShadowLayout.OFF_SHARED_EDGE, shared.edgeBits, shared.edge)
                 shared.changed()
             }
             if (dirtySpi != 0) seg.set(GicV2ShadowLayout.LITTLE_INT, GicV2ShadowLayout.OFF_DIRTY_SPI_MASK, 0)
@@ -910,10 +931,28 @@ class GicFactory : ComponentFactory {
                 shared.syncSharedBitsFromNative(seg, GicV2ShadowLayout.OFF_SHARED_ACTIVE, shared.activeBits, shared.active)
                 shared.changed()
             }
+            if ((dirtySpi and GicV2ShadowLayout.DIRTY_SPI_ENABLE) != 0) {
+                shared.syncSharedBitsFromNative(seg, GicV2ShadowLayout.OFF_SHARED_ENABLED, shared.enabledBits, shared.enabled)
+                shared.changed()
+            }
             if ((dirtySpi and GicV2ShadowLayout.DIRTY_SPI_PRIO) != 0) {
                 for (i in 0 until 480) {
                     shared.priority[i] = seg.get(ValueLayout.JAVA_BYTE, GicV2ShadowLayout.OFF_SHARED_PRIORITY + i.toLong()).toInt() and 0xFF
                 }
+                shared.changed()
+            }
+            if ((dirtySpi and GicV2ShadowLayout.DIRTY_SPI_TARGETS) != 0) {
+                for (i in 0 until 480) {
+                    val t = seg.get(ValueLayout.JAVA_BYTE, GicV2ShadowLayout.OFF_SHARED_TARGETS + i.toLong()).toInt() and 0xFF
+                    if (shared.targets[i] != t) {
+                        shared.targets[i] = t
+                        shared.setTargetBits(i + 32, t)
+                    }
+                }
+                shared.changed()
+            }
+            if ((dirtySpi and GicV2ShadowLayout.DIRTY_SPI_EDGE) != 0) {
+                shared.syncSharedBitsFromNative(seg, GicV2ShadowLayout.OFF_SHARED_EDGE, shared.edgeBits, shared.edge)
                 shared.changed()
             }
             if (dirtySpi != 0) seg.set(GicV2ShadowLayout.LITTLE_INT, GicV2ShadowLayout.OFF_DIRTY_SPI_MASK, 0)

@@ -212,10 +212,16 @@ internal class ImageScalerF000 private constructor(
 
         val srcSize = srcSpan.toInt()
         if (sourceScratch.capacity() < srcSize) sourceScratch = ByteBuffer.allocate(srcSize)
-        sourceScratch.clear().limit(srcSize)
-        memory.read(srcAddr, sourceScratch)
-        require(sourceScratch.position() == srcSize) { "Incomplete UniResz source DMA read" }
         val src = sourceScratch.array()
+        val directMem = memory as? DirectGuestRamPort
+        val directSrc = directMem?.sliceDirect(srcAddr, srcSpan, write = false)
+        if (directSrc != null) {
+            java.lang.foreign.MemorySegment.copy(directSrc, java.lang.foreign.ValueLayout.JAVA_BYTE, 0L, src, 0, srcSize)
+        } else {
+            sourceScratch.clear().limit(srcSize)
+            memory.read(srcAddr, sourceScratch)
+            require(sourceScratch.position() == srcSize) { "Incomplete UniResz source DMA read" }
+        }
         normalizeMilbeautBlackMarginWords(src, srcSize)
 
         val stepX = 1 shl hDecim
@@ -233,7 +239,13 @@ internal class ImageScalerF000 private constructor(
             dstW == 640 && dstH == 360 && stepX == 1 && stepY == 1 && packedOutput
         ) {
             scaleFacePreview1024x576To640x360(src, srcStrideBytes, output, yyuv422Out)
-            memory.write(dstAddr, destinationScratch.clear().limit(dstSize))
+            val directDst = directMem?.sliceDirect(dstAddr, dstSpan, write = true)
+            if (directDst != null) {
+                java.lang.foreign.MemorySegment.copy(output, 0, directDst, java.lang.foreign.ValueLayout.JAVA_BYTE, 0L, dstSize)
+                directMem.notifyDirectWrite(dstAddr, dstSpan)
+            } else {
+                memory.write(dstAddr, destinationScratch.clear().limit(dstSize))
+            }
             return
         }
         val maxSrcX = cropX + cropW - 1
@@ -381,13 +393,13 @@ internal class ImageScalerF000 private constructor(
                 val bUvOff0 = x1Uv[dx]
                 val topY0 = (src[r0 + aYOff0].toInt() and 0xff) * cx0 + (src[r0 + bYOff0].toInt() and 0xff) * wx0
                 val botY0 = (src[r1 + aYOff0].toInt() and 0xff) * cx0 + (src[r1 + bYOff0].toInt() and 0xff) * wx0
-                val outY0 = (topY0 * cy + botY0 * wy + FACE_HALF) / FACE_DENOM
+                val outY0 = (((topY0 * cy + botY0 * wy + FACE_HALF).toLong() * FACE_RECIP) ushr FACE_SHIFT).toInt()
                 val topU0 = (src[r0 + aUvOff0].toInt() and 0xff) * cx0 + (src[r0 + bUvOff0].toInt() and 0xff) * wx0
                 val botU0 = (src[r1 + aUvOff0].toInt() and 0xff) * cx0 + (src[r1 + bUvOff0].toInt() and 0xff) * wx0
-                val outU0 = (topU0 * cy + botU0 * wy + FACE_HALF) / FACE_DENOM
+                val outU0 = (((topU0 * cy + botU0 * wy + FACE_HALF).toLong() * FACE_RECIP) ushr FACE_SHIFT).toInt()
                 val topV0 = (src[r0 + aUvOff0 + 1].toInt() and 0xff) * cx0 + (src[r0 + bUvOff0 + 1].toInt() and 0xff) * wx0
                 val botV0 = (src[r1 + aUvOff0 + 1].toInt() and 0xff) * cx0 + (src[r1 + bUvOff0 + 1].toInt() and 0xff) * wx0
-                val outV0 = (topV0 * cy + botV0 * wy + FACE_HALF) / FACE_DENOM
+                val outV0 = (((topV0 * cy + botV0 * wy + FACE_HALF).toLong() * FACE_RECIP) ushr FACE_SHIFT).toInt()
 
                 val dx1 = dx + 1
                 val wx1 = wxArr[dx1]
@@ -398,27 +410,22 @@ internal class ImageScalerF000 private constructor(
                 val bUvOff1 = x1Uv[dx1]
                 val topY1 = (src[r0 + aYOff1].toInt() and 0xff) * cx1 + (src[r0 + bYOff1].toInt() and 0xff) * wx1
                 val botY1 = (src[r1 + aYOff1].toInt() and 0xff) * cx1 + (src[r1 + bYOff1].toInt() and 0xff) * wx1
-                val outY1 = (topY1 * cy + botY1 * wy + FACE_HALF) / FACE_DENOM
+                val outY1 = (((topY1 * cy + botY1 * wy + FACE_HALF).toLong() * FACE_RECIP) ushr FACE_SHIFT).toInt()
                 val topU1 = (src[r0 + aUvOff1].toInt() and 0xff) * cx1 + (src[r0 + bUvOff1].toInt() and 0xff) * wx1
                 val botU1 = (src[r1 + aUvOff1].toInt() and 0xff) * cx1 + (src[r1 + bUvOff1].toInt() and 0xff) * wx1
-                val outU1 = (topU1 * cy + botU1 * wy + FACE_HALF) / FACE_DENOM
+                val outU1 = (((topU1 * cy + botU1 * wy + FACE_HALF).toLong() * FACE_RECIP) ushr FACE_SHIFT).toInt()
                 val topV1 = (src[r0 + aUvOff1 + 1].toInt() and 0xff) * cx1 + (src[r0 + bUvOff1 + 1].toInt() and 0xff) * wx1
                 val botV1 = (src[r1 + aUvOff1 + 1].toInt() and 0xff) * cx1 + (src[r1 + bUvOff1 + 1].toInt() and 0xff) * wx1
-                val outV1 = (topV1 * cy + botV1 * wy + FACE_HALF) / FACE_DENOM
+                val outV1 = (((topV1 * cy + botV1 * wy + FACE_HALF).toLong() * FACE_RECIP) ushr FACE_SHIFT).toInt()
 
                 val u = (outU0 + outU1) ushr 1
                 val v = (outV0 + outV1) ushr 1
-                if (yyuv422Out) {
-                    output[outPos] = outY0.toByte()
-                    output[outPos + 1] = outY1.toByte()
-                    output[outPos + 2] = u.toByte()
-                    output[outPos + 3] = v.toByte()
+                val packed = if (yyuv422Out) {
+                    outY0 or (outY1 shl 8) or (u shl 16) or (v shl 24)
                 } else {
-                    output[outPos] = u.toByte()
-                    output[outPos + 1] = outY0.toByte()
-                    output[outPos + 2] = v.toByte()
-                    output[outPos + 3] = outY1.toByte()
+                    u or (outY0 shl 8) or (v shl 16) or (outY1 shl 24)
                 }
+                FACE_INT_LE_HANDLE.set(output, outPos, packed)
                 outPos += 4
                 dx += 2
             }
@@ -614,6 +621,12 @@ internal class ImageScalerF000 private constructor(
 
         private const val FACE_DENOM = 639 * 359
         private const val FACE_HALF = FACE_DENOM / 2
+        // Exact unsigned reciprocal for n in [0, 255 * FACE_DENOM + FACE_HALF] (= 58,611,955):
+        // ((n * FACE_RECIP) ushr FACE_SHIFT) == n / FACE_DENOM for every integer in range.
+        private const val FACE_SHIFT = 45
+        private const val FACE_RECIP = (1L shl FACE_SHIFT) / FACE_DENOM.toLong() + 1L
+        private val FACE_INT_LE_HANDLE: java.lang.invoke.VarHandle =
+            java.lang.invoke.MethodHandles.byteArrayViewVarHandle(IntArray::class.java, java.nio.ByteOrder.LITTLE_ENDIAN)
         private val FACE_X0_Y_OFF = IntArray(640) { dx ->
             val sx = (dx * 1023) / 639
             ((sx and 1.inv()) shl 1) + (sx and 1)

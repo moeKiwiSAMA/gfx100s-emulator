@@ -77,6 +77,7 @@ internal class NativeMmioShadowCoordinator {
     private var gicCpuBase: Long = 0L
     private var gicCpuEnd: Long = 0L
     private var gicShadowArena: Arena? = null
+    private var gicShadowSeg: MemorySegment? = null
     private var gicVersionCell: LongArray? = null
     private var gicBindHandle: MethodHandle? = null
     private var gicSyncHandle: MethodHandle? = null
@@ -179,6 +180,7 @@ internal class NativeMmioShadowCoordinator {
             try { arena.close() } catch (_: Throwable) {}
         }
         gicShadowArena = null
+        gicShadowSeg = null
         ispBindStatsShadowHandle?.let { mh ->
             try { mh.invoke(null as MemorySegment?) } catch (_: Throwable) {}
         }
@@ -447,6 +449,7 @@ internal class NativeMmioShadowCoordinator {
                         gicCpuBase = gicCpuWindow.address
                         gicCpuEnd = gicCpuWindow.address + gicCpuWindow.size
                         gicShadowArena = arena
+                        gicShadowSeg = seg
                         gicVersionCell = verMh.invokeExact() as LongArray
                         gicBindHandle = bindMh
                         gicSyncHandle = syncMh
@@ -461,6 +464,7 @@ internal class NativeMmioShadowCoordinator {
                 } catch (_: Throwable) {
                     gicShadowArena?.let { a -> try { a.close() } catch (_: Throwable) {} }
                     gicShadowArena = null
+                    gicShadowSeg = null
                     gicShadowEnabled = false
                 }
             }
@@ -543,12 +547,14 @@ internal class NativeMmioShadowCoordinator {
                 var boundAnyForComponent = false
                 for (spec in specs) {
                     val win = windowByPort[spec.portName] ?: continue
-                    if (win.size < spec.windowSize) continue
+                    if (spec.addressOffset + spec.windowSize > win.size) continue
                     val targetArena = arena ?: Arena.ofConfined().also { arena = it }
                     val seg = targetArena.allocate(MmioMirrorHandle.requiredBytes(spec.slots.size), 8L)
                     val handle = MmioMirrorHandle(spec, seg)
                     mirrorPort.attachMmioMirror(spec.portName, handle)
-                    if (dyn.registerMmioMirror(win.address, win.size, seg)) {
+                    val regBase = win.address + spec.addressOffset
+                    val regSize = if (spec.addressOffset == 0L && spec.windowSize == win.size) win.size else spec.windowSize
+                    if (dyn.registerMmioMirror(regBase, regSize, seg)) {
                         mirrorWindows++
                         mirrorSlots += spec.slots.size
                         boundAnyForComponent = true
@@ -611,6 +617,27 @@ internal class NativeMmioShadowCoordinator {
         if (!timerIrqShadowEnabled) return
         val irqSeg = timerIrqShadowSeg ?: return
         irqSeg.set(LITTLE_INT, TIMER_IRQ_OFF_ACTIVE, 0)
+    }
+
+    fun isTimerAddress(physicalAddress: Long): Boolean =
+        timerShadowEnabled && physicalAddress >= timerBase && physicalAddress < timerEnd
+
+    fun coreHasPendingIrqFast(core: Int): Int {
+        val seg = gicShadowSeg ?: return -1
+        if (seg.get(LITTLE_INT, 0L) == 0) return -1
+        return if (seg.get(LITTLE_INT, GIC_SHADOW_OFF_CORES + core.toLong() * GIC_SHADOW_CORE_STRIDE) != 0) 1 else 0
+    }
+
+    fun allCoresPendingIrqMaskFast(): Int {
+        val seg = gicShadowSeg ?: return -1
+        if (seg.get(LITTLE_INT, 0L) == 0) return -1
+        var mask = 0
+        for (c in 0..3) {
+            if (seg.get(LITTLE_INT, GIC_SHADOW_OFF_CORES + c.toLong() * GIC_SHADOW_CORE_STRIDE) != 0) {
+                mask = mask or (1 shl c)
+            }
+        }
+        return mask
     }
 
     fun pullInlineTimerExpiriesIfDirty(): Boolean {
@@ -852,6 +879,8 @@ internal class NativeMmioShadowCoordinator {
 
     companion object {
         private const val GIC_SHADOW_SIZE = 0x9A0L
+        private const val GIC_SHADOW_OFF_CORES = 0x620L
+        private const val GIC_SHADOW_CORE_STRIDE = 0xE0L
         private const val TIMER_IRQ_OFF_ACTIVE = 0x00L
         private const val TIMER_IRQ_OFF_DIRTY = 0x04L
         private const val TIMER_IRQ_OFF_LAST_FIRE = 0x08L

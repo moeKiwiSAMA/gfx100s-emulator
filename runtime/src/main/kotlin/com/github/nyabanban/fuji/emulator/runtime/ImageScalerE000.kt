@@ -7,6 +7,10 @@ import com.github.nyabanban.fuji.emulator.api.Imx461ExposurePort
 import com.github.nyabanban.fuji.emulator.api.LensParameters
 import com.github.nyabanban.fuji.emulator.api.SensorPort
 import org.slf4j.LoggerFactory
+import java.lang.foreign.MemorySegment
+import java.lang.foreign.ValueLayout
+import java.lang.invoke.MethodHandles
+import java.lang.invoke.VarHandle
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.Arrays
@@ -484,6 +488,10 @@ internal class ImageScalerE000 private constructor(
 
     private var movieSource = ByteArray(0)
     private var movieTileRow = ByteArray(0)
+    private var movieTileCacheKey = Long.MIN_VALUE
+    private var movieTileX0Off = IntArray(0)
+    private var movieTileX1Off = IntArray(0)
+    private var movieTileChromaOff = IntArray(0)
 
     private var playbackUyvy = ByteArray(0)
 
@@ -630,32 +638,123 @@ internal class ImageScalerE000 private constructor(
         val srcBase = srcAddr + cropY.toLong() * srcStride
         memory.check(srcBase, srcSpan, false)
         memory.check(dstAddr, dstSpan, true)
-        if (movieSource.size < srcSpan) movieSource = ByteArray(srcSpan.toInt())
-        if (movieTileRow.size < tileRowBytes) movieTileRow = ByteArray(tileRowBytes)
-        val src = movieSource
-        memory.read(srcBase, ByteBuffer.wrap(src, 0, srcSpan.toInt()))
-        val row = ByteBuffer.wrap(movieTileRow, 0, tileRowBytes).order(ByteOrder.LITTLE_ENDIAN)
-        val xOffsets = IntArray(width) { x -> (cropX + x.toLong() * cropW / width).toInt() }
-        for (dy in 0 until height step 2) {
-            val top = (dy.toLong() * cropH / height).toInt() * srcStride
-            val bottom = (minOf(dy + 1, height - 1).toLong() * cropH / height).toInt() * srcStride
-            row.position(0)
-            for (dx in 0 until width step 2) {
-                val x0 = xOffsets[dx]
-                val x1 = xOffsets[minOf(dx + 1, width - 1)]
-                val y0 = (x0 and -2) * 2 + (x0 and 1)
-                val y1 = (x1 and -2) * 2 + (x1 and 1)
-                val chroma = (x0 and -2) * 2 + 2
-                val cb = ((src[top + chroma].toInt() and 255) + (src[bottom + chroma].toInt() and 255) + 1) / 2
-                val cr = ((src[top + chroma + 1].toInt() and 255) + (src[bottom + chroma + 1].toInt() and 255) + 1) / 2
-                fun pack(line: Int, c: Int): Int = ((src[line + y0].toInt() and 255) shl 2) or
-                    (c shl 12) or ((src[line + y1].toInt() and 255) shl 22)
-                row.putInt(pack(top, cb))
-                row.putInt(pack(bottom, cr))
-            }
-            row.flip()
-            memory.write(dstAddr + (dy / 2).toLong() * dstStride, row)
+        val direct = memory as? DirectGuestRamPort
+        val directSrc = direct?.sliceDirect(srcBase, srcSpan, write = false)
+        val directDst = direct?.sliceDirect(dstAddr, dstSpan, write = true)
+        val src: ByteArray
+        if (directSrc != null) {
+            if (movieSource.size < srcSpan) movieSource = ByteArray(srcSpan.toInt())
+            src = movieSource
+            MemorySegment.copy(directSrc, ValueLayout.JAVA_BYTE, 0L, src, 0, srcSpan.toInt())
+        } else {
+            if (movieSource.size < srcSpan) movieSource = ByteArray(srcSpan.toInt())
+            src = movieSource
+            memory.read(srcBase, ByteBuffer.wrap(src, 0, srcSpan.toInt()))
         }
+        val pairCount = (width + 1) ushr 1
+        val hLong = height.toLong()
+        val cropHLong = cropH.toLong()
+        if (movieTileRow.size < tileRowBytes) movieTileRow = ByteArray(tileRowBytes)
+        val rowArr = movieTileRow
+        val dstStrideLong = dstStride.toLong()
+        val oneToOneX = cropW == width && (cropX and 1) == 0 && (width and 1) == 0
+        if (oneToOneX) {
+            val cropByteOff = cropX shl 1
+            var dy = 0
+            var rowDstBase = 0L
+            while (dy < height) {
+                val top = (dy.toLong() * cropHLong / hLong).toInt() * srcStride + cropByteOff
+                val bottom = (minOf(dy + 1, height - 1).toLong() * cropHLong / hLong).toInt() * srcStride + cropByteOff
+                var sTop = top
+                var sBot = bottom
+                var pos = 0
+                for (p in 0 until pairCount) {
+                    val tw = INT_LE_ARRAY_HANDLE.get(src, sTop) as Int
+                    val bw = INT_LE_ARRAY_HANDLE.get(src, sBot) as Int
+                    sTop += 4
+                    sBot += 4
+                    // YYUV422 packed [Y0, Y1, Cb, Cr] -> LE 32-bit word 0xCr_Cb_Y1_Y0
+                    val cb = (((tw ushr 16) and 0xff) + ((bw ushr 16) and 0xff) + 1) ushr 1
+                    val cr = ((tw ushr 24) + (bw ushr 24) + 1) ushr 1
+                    val w0 = ((tw and 0xff) shl 2) or (cb shl 12) or (((tw ushr 8) and 0xff) shl 22)
+                    val w1 = ((bw and 0xff) shl 2) or (cr shl 12) or (((bw ushr 8) and 0xff) shl 22)
+                    LONG_LE_ARRAY_HANDLE.set(rowArr, pos, (w0.toLong() and 0xffffffffL) or (w1.toLong() shl 32))
+                    pos += 8
+                }
+                if (directDst != null) {
+                    MemorySegment.copy(rowArr, 0, directDst, ValueLayout.JAVA_BYTE, rowDstBase, tileRowBytes)
+                    rowDstBase += dstStrideLong
+                } else {
+                    memory.write(dstAddr + (dy ushr 1).toLong() * dstStrideLong, ByteBuffer.wrap(rowArr, 0, tileRowBytes))
+                }
+                dy += 2
+            }
+            if (directDst != null) direct.notifyDirectWrite(dstAddr, dstSpan)
+            return
+        }
+        val cacheKey = (cropX.toLong() shl 32) or ((cropW.toLong() and 0xffffL) shl 16) or (width.toLong() and 0xffffL)
+        if (movieTileCacheKey != cacheKey || movieTileX0Off.size < pairCount) {
+            movieTileX0Off = IntArray(pairCount)
+            movieTileX1Off = IntArray(pairCount)
+            movieTileChromaOff = IntArray(pairCount)
+            val wLong = width.toLong()
+            val cropWLong = cropW.toLong()
+            for (p in 0 until pairCount) {
+                val dx = p shl 1
+                val x0 = (cropX + dx.toLong() * cropWLong / wLong).toInt()
+                val x1 = (cropX + minOf(dx + 1, width - 1).toLong() * cropWLong / wLong).toInt()
+                movieTileX0Off[p] = ((x0 and -2) shl 1) + (x0 and 1)
+                movieTileX1Off[p] = ((x1 and -2) shl 1) + (x1 and 1)
+                movieTileChromaOff[p] = ((x0 and -2) shl 1) + 2
+            }
+            movieTileCacheKey = cacheKey
+        }
+        val x0Off = movieTileX0Off
+        val x1Off = movieTileX1Off
+        val chromaOff = movieTileChromaOff
+        var dy = 0
+        var rowDstBase = 0L
+        while (dy < height) {
+            val top = (dy.toLong() * cropHLong / hLong).toInt() * srcStride
+            val bottom = (minOf(dy + 1, height - 1).toLong() * cropHLong / hLong).toInt() * srcStride
+            var pos = 0
+            if (top == bottom) {
+                for (p in 0 until pairCount) {
+                    val ch = top + chromaOff[p]
+                    val y0Val = src[top + x0Off[p]].toInt() and 255
+                    val y1Val = src[top + x1Off[p]].toInt() and 255
+                    val cb = src[ch].toInt() and 255
+                    val cr = src[ch + 1].toInt() and 255
+                    val yBase = (y0Val shl 2) or (y1Val shl 22)
+                    val w0 = yBase or (cb shl 12)
+                    val w1 = yBase or (cr shl 12)
+                    LONG_LE_ARRAY_HANDLE.set(rowArr, pos, (w0.toLong() and 0xffffffffL) or (w1.toLong() shl 32))
+                    pos += 8
+                }
+            } else {
+                for (p in 0 until pairCount) {
+                    val y0 = x0Off[p]
+                    val y1 = x1Off[p]
+                    val ch = chromaOff[p]
+                    val topCh = top + ch
+                    val botCh = bottom + ch
+                    val cb = ((src[topCh].toInt() and 255) + (src[botCh].toInt() and 255) + 1) ushr 1
+                    val cr = ((src[topCh + 1].toInt() and 255) + (src[botCh + 1].toInt() and 255) + 1) ushr 1
+                    val w0 = ((src[top + y0].toInt() and 255) shl 2) or (cb shl 12) or ((src[top + y1].toInt() and 255) shl 22)
+                    val w1 = ((src[bottom + y0].toInt() and 255) shl 2) or (cr shl 12) or ((src[bottom + y1].toInt() and 255) shl 22)
+                    LONG_LE_ARRAY_HANDLE.set(rowArr, pos, (w0.toLong() and 0xffffffffL) or (w1.toLong() shl 32))
+                    pos += 8
+                }
+            }
+            if (directDst != null) {
+                MemorySegment.copy(rowArr, 0, directDst, ValueLayout.JAVA_BYTE, rowDstBase, tileRowBytes)
+                rowDstBase += dstStrideLong
+            } else {
+                memory.write(dstAddr + (dy ushr 1).toLong() * dstStrideLong, ByteBuffer.wrap(rowArr, 0, tileRowBytes))
+            }
+            dy += 2
+        }
+        if (directDst != null) direct.notifyDirectWrite(dstAddr, dstSpan)
     }
 
     private fun synthesizeHighAxiSourceToUyvyDst(
@@ -971,34 +1070,27 @@ internal class ImageScalerE000 private constructor(
  * bilinear/nearest scaling or decimation, preventing U=0 / Y1=0x80 interpolation into
  * olive-green vertical stripes during Playback 9/100-frame grid transitions (BUG-V3-8-4).
  */
+private val INT_LE_ARRAY_HANDLE: VarHandle = MethodHandles.byteArrayViewVarHandle(IntArray::class.java, ByteOrder.LITTLE_ENDIAN)
+private val LONG_LE_ARRAY_HANDLE: VarHandle = MethodHandles.byteArrayViewVarHandle(LongArray::class.java, ByteOrder.LITTLE_ENDIAN)
+
 internal fun normalizeMilbeautBlackMarginWords(buf: ByteArray, length: Int = buf.size, yyuv422: Boolean = true) {
     var i = 0
     val limit = length and 3.inv()
-    while (i < limit) {
-        val b0 = buf[i].toInt() and 0xff
-        val b1 = buf[i + 1].toInt() and 0xff
-        val b2 = buf[i + 2].toInt() and 0xff
-        val b3 = buf[i + 3].toInt() and 0xff
-        if (yyuv422) {
-            if ((b0 or b1 or b2 or b3) == 0 ||
-                (b0 == 0x80 && b1 == 0x80 && b2 == 0 && b3 == 0)
-            ) {
-                buf[i] = 0
-                buf[i + 1] = 0
-                buf[i + 2] = 0x80.toByte()
-                buf[i + 3] = 0x80.toByte()
+    if (yyuv422) {
+        while (i < limit) {
+            val w = INT_LE_ARRAY_HANDLE.get(buf, i) as Int
+            if (w == 0 || w == 0x0000_8080) {
+                INT_LE_ARRAY_HANDLE.set(buf, i, 0x8080_0000u.toInt())
             }
-        } else {
-            if ((b0 or b1 or b2 or b3) == 0 ||
-                (b0 == 0 && b1 == 0 && b2 == 0x80 && b3 == 0x80) ||
-                (b0 == 0x80 && b1 == 0x80 && b2 == 0 && b3 == 0)
-            ) {
-                buf[i] = 0x80.toByte()
-                buf[i + 1] = 0
-                buf[i + 2] = 0x80.toByte()
-                buf[i + 3] = 0
-            }
+            i += 4
         }
-        i += 4
+    } else {
+        while (i < limit) {
+            val w = INT_LE_ARRAY_HANDLE.get(buf, i) as Int
+            if (w == 0 || w == 0x8080_0000u.toInt() || w == 0x0000_8080) {
+                INT_LE_ARRAY_HANDLE.set(buf, i, 0x0080_0080)
+            }
+            i += 4
+        }
     }
 }

@@ -156,14 +156,14 @@ class MaliV61DecodeTest {
         assertTrue(reads.isEmpty())
         val changed = picture(104, 2000)
         assertEquals(listOf(0), reads)
-        val prior = requireNotNull(changed.pcmBlocks?.get(0))
+        val prior = requireNotNull(changed.copyPcmBlockBytes(0))
         val repeated = picture(104, 0)
         assertEquals(listOf(0), reads)
-        assertTrue(repeated.pcmBlocks?.get(0) === prior)
+        assertTrue(prior.contentEquals(repeated.copyPcmBlockBytes(0)))
         marker += 4
         val refreshed = picture(104, 0)
         assertEquals(listOf(0), reads)
-        assertEquals(null, refreshed.pcmBlocks?.get(0))
+        assertEquals(null, refreshed.copyPcmBlockBytes(0))
     }
 
     @Test

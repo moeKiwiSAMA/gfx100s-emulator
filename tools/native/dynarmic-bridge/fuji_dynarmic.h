@@ -73,6 +73,7 @@ typedef enum FujiDynStopReason {
 #define FUJI_DYN_AUTO_EXCP_UNDEF (1u << 1)
 #define FUJI_DYN_AUTO_EXCP_PABT  (1u << 2)
 #define FUJI_DYN_AUTO_EXCP_DABT  (1u << 3)
+#define FUJI_DYN_AUTO_EXCP_IRQ   (1u << 4)
 #define FUJI_DYN_AUTO_EXCP_ALL   (FUJI_DYN_AUTO_EXCP_SVC | FUJI_DYN_AUTO_EXCP_UNDEF | FUJI_DYN_AUTO_EXCP_PABT | FUJI_DYN_AUTO_EXCP_DABT)
 
 /* Fixed 64-byte ABI result struct filled by fuji_dyn_run_fast */

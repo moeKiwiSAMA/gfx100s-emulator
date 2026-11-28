@@ -2559,6 +2559,168 @@ static void test_vfp_fpexc_lazy_undef_and_cache_invalidation(FujiDynEngine* eng)
     std::printf("  [PASS] 24. VFP/ASIMD FPEXC.EN=0 trapping, conditional NOP, PL1/CPACR checks & lazy VFP switching\n");
 }
 
+static void test_auto_irq_and_gicd_fastpath(FujiDynEngine* eng, TestMmioState* mmio) {
+    for (uint32_t c = 0u; c < 4u; ++c) fuji_dyn_reset_core(eng, c);
+    fuji_dyn_clear_cache(eng);
+
+    constexpr uint32_t GICD_BASE = 0x40001000u;
+    constexpr uint32_t GICC_BASE = 0x40002000u;
+    constexpr uint32_t VEC_BASE  = 0x00070000u;
+    constexpr uint32_t CODE_PA   = 0x00071000u;
+    constexpr uint32_t CNT_PA    = 0x00072000u;
+
+    /* Vector table at VEC_BASE: IRQ vector (+0x18) branches to VEC_BASE + 0x40 */
+    uint32_t vec[32]{};
+    vec[6] = 0xEA000008u; /* +0x18: b +0x40 ((0x40 - 0x20)/4 = 8) */
+    /* IRQ handler @ VEC_BASE + 0x40:
+     *   r8 = GICC_BASE, r9 = CNT_PA
+     *   ldr r10, [r8, #0x0C]    ; GICC_IAR
+     *   ldr r11, [r9, #0]       ; counter
+     *   add r11, r11, #1
+     *   str r11, [r9, #0]
+     *   str r10, [r9, #4]       ; last acked irq
+     *   str r10, [r8, #0x10]    ; GICC_EOIR
+     *   subs pc, lr, #4 */
+    vec[16] = 0xE598A00Cu;
+    vec[17] = 0xE599B000u;
+    vec[18] = 0xE28BB001u;
+    vec[19] = 0xE589B000u;
+    vec[20] = 0xE589A004u;
+    vec[21] = 0xE588A010u;
+    vec[22] = 0xE25EF004u;
+    CHECK(fuji_dyn_mem_write(eng, VEC_BASE, vec, sizeof(vec)) == 0, "write auto-irq vec");
+    uint32_t zero_cnt[4]{};
+    CHECK(fuji_dyn_mem_write(eng, CNT_PA, zero_cnt, sizeof(zero_cnt)) == 0, "zero cnt");
+
+    /* Core 0 test code @ CODE_PA:
+     *   r0 = GICD_BASE
+     *   r1 = 1 (SPI 64 bit / target core 0)
+     *   r2 = 2 (SPI 64 edge-triggered in GICD_ICFGR[4])
+     *   strb r1, [r0, #0x840]    ; GICD_ITARGETSR[64] = 0x01
+     *   str  r2, [r0, #0xC10]    ; GICD_ICFGR[4] = 0x02 (SPI 64 edge)
+     *   ldr  r5, [r0, #0xC10]    ; readback GICD_ICFGR[4] -> r5 == 2
+     *   str  r1, [r0, #0x108]    ; GICD_ISENABLER[2] = 1 (enable SPI 64)
+     *   str  r1, [r0, #0x208]    ; GICD_ISPENDR[2]   = 1 (pend SPI 64)
+     *   cpsie i                  ; unmask IRQ -> AUTO_EXCP_IRQ delivers SPI 64 inline!
+     *   nop
+     *   str  r1, [r0, #0x188]    ; GICD_ICENABLER[2] = 1 (disable SPI 64)
+     *   str  r1, [r0, #0x288]    ; GICD_ICPENDR[2]   = 1 (clear pending SPI 64)
+     *   wfi */
+    const uint32_t code0[] = {
+        0xE5C01840u, /* strb r1, [r0, #0x840] */
+        0xE5802C10u, /* str  r2, [r0, #0xC10] */
+        0xE5905C10u, /* ldr  r5, [r0, #0xC10] */
+        0xE5801108u, /* str  r1, [r0, #0x108] */
+        0xE5801208u, /* str  r1, [r0, #0x208] */
+        0xF1080080u, /* cpsie i */
+        0xE320F000u, /* nop */
+        0xE5801188u, /* str  r1, [r0, #0x188] */
+        0xE5801288u, /* str  r1, [r0, #0x288] */
+        0xE320F003u, /* wfi */
+    };
+    CHECK(fuji_dyn_mem_write(eng, CODE_PA, code0, sizeof(code0)) == 0, "write auto-irq code0");
+
+    FujiDynGicShadow gic{};
+    gic.active = 1u;
+    gic.core_count = 4u;
+    gic.dist_ctrl = 1u;
+    for (uint32_t c = 0u; c < 4u; ++c) {
+        gic.cores[c].cpu_ctrl = 1u;
+        gic.cores[c].pmr = 0xFFu;
+        gic.cores[c].bpr = 0u;
+    }
+    fuji_dyn_set_gic_shadow_ptr(eng, GICD_BASE, GICC_BASE, &gic);
+    fuji_dyn_set_auto_exceptions(eng, FUJI_DYN_AUTO_EXCP_IRQ);
+
+    fuji_dyn_set_cp15(eng, 0u, 0u, 12u, 0u, 0u, VEC_BASE); /* VBAR */
+    fuji_dyn_set_cpsr(eng, 0u, 0x000001D3u); /* SVC, I=1 */
+    fuji_dyn_set_reg(eng, 0u, 0u, GICD_BASE);
+    fuji_dyn_set_reg(eng, 0u, 1u, 1u);
+    fuji_dyn_set_reg(eng, 0u, 2u, 2u);
+    fuji_dyn_set_reg(eng, 0u, 5u, 0u);
+    fuji_dyn_set_reg(eng, 0u, 8u, GICC_BASE);
+    fuji_dyn_set_reg(eng, 0u, 9u, CNT_PA);
+    fuji_dyn_set_reg(eng, 0u, 13u, 0x0007F000u);
+    fuji_dyn_set_banked_reg(eng, 0u, 0x12u, 13u, 0x0007E000u); /* SP_irq */
+    fuji_dyn_set_reg(eng, 0u, 15u, CODE_PA);
+
+    mmio->read_count = 0;
+    mmio->write_count = 0;
+    FujiDynRunResult res{};
+    CHECK(fuji_dyn_run_fast(eng, 0u, 1000u, 0u, 0u, &res) == 0, "auto-irq run_fast");
+    CHECK(res.stop_reason == FUJI_DYN_STOP_WFI, "auto-irq must deliver inline and reach WFI");
+    CHECK(mmio->read_count == 0 && mmio->write_count == 0, "GICD_ITARGETSR/ICFGR/ISENABLER/ICENABLER/ISPENDR/ICPENDR must have 0 upcalls");
+    CHECK(fuji_dyn_get_reg(eng, 0u, 5u) == 2u, "GICD_ICFGR readback mismatch");
+    CHECK(read_u32(eng, CNT_PA + 0u) == 1u, "AUTO_EXCP_IRQ must increment handler counter");
+    CHECK(read_u32(eng, CNT_PA + 4u) == 64u, "AUTO_EXCP_IRQ must ack SPI 64");
+    CHECK(gic.shared_targets[64u - 32u] == 1u, "GICD_ITARGETSR shadow update mismatch");
+    CHECK((gic.shared_edge[1] & 1ull) == 1ull, "GICD_ICFGR shadow update mismatch");
+    CHECK((gic.shared_enabled[1] & 1ull) == 0ull, "GICD_ICENABLER shadow update mismatch");
+    CHECK((gic.dirty_spi_mask & ((1u << 2) | (1u << 3) | (1u << 4))) == ((1u << 2) | (1u << 3) | (1u << 4)),
+          "dirty_spi_mask must mark ENABLE + TARGETS + EDGE");
+
+    /* Part B: 2-core SMP-MT inline AUTO_EXCP_IRQ delivery via cross-core SPI 65 */
+    constexpr uint32_t CODE1_PA = 0x00071100u;
+    CHECK(fuji_dyn_mem_write(eng, CNT_PA, zero_cnt, sizeof(zero_cnt)) == 0, "zero cnt mt");
+    /* Core 0 loops until [CNT_PA] != 0 with IRQs unmasked, then WFI */
+    const uint32_t mt_code0[] = {
+        0xF1080080u, /* cpsie i */
+        0xE5990000u, /* ldr r0, [r9] */
+        0xE3500000u, /* cmp r0, #0 */
+        0x0AFFFFFCu, /* beq -8 */
+        0xE320F003u, /* wfi */
+    };
+    /* Core 1 enables & pends SPI 65 (targeted to core 0), then WFI */
+    const uint32_t mt_code1[] = {
+        0xE5C01841u, /* strb r1, [r0, #0x841] ; ITARGETSR[65] = 0x01 */
+        0xE5802108u, /* str  r2, [r0, #0x108] ; ISENABLER[2]  = 0x02 */
+        0xE5802208u, /* str  r2, [r0, #0x208] ; ISPENDR[2]    = 0x02 */
+        0xE320F003u, /* wfi */
+    };
+    CHECK(fuji_dyn_mem_write(eng, CODE_PA, mt_code0, sizeof(mt_code0)) == 0, "write mt_code0");
+    CHECK(fuji_dyn_mem_write(eng, CODE1_PA, mt_code1, sizeof(mt_code1)) == 0, "write mt_code1");
+    fuji_dyn_clear_cache(eng);
+
+    gic.shared_edge[1] |= (1ull << 1); /* SPI 65 edge-triggered */
+    for (uint32_t c = 0u; c < 2u; ++c) {
+        fuji_dyn_reset_core(eng, c);
+        fuji_dyn_set_cp15(eng, c, 0u, 12u, 0u, 0u, VEC_BASE);
+        fuji_dyn_set_cpsr(eng, c, 0x000001D3u);
+        fuji_dyn_set_reg(eng, c, 8u, GICC_BASE);
+        fuji_dyn_set_reg(eng, c, 9u, CNT_PA);
+        fuji_dyn_set_reg(eng, c, 13u, 0x0007F000u - c * 0x400u);
+        fuji_dyn_set_banked_reg(eng, c, 0x12u, 13u, 0x0007E000u - c * 0x400u);
+    }
+    fuji_dyn_set_reg(eng, 0u, 15u, CODE_PA);
+    fuji_dyn_set_reg(eng, 1u, 0u, GICD_BASE);
+    fuji_dyn_set_reg(eng, 1u, 1u, 1u);
+    fuji_dyn_set_reg(eng, 1u, 2u, 2u);
+    fuji_dyn_set_reg(eng, 1u, 15u, CODE1_PA);
+
+    fuji_dyn_set_smp_host_threads(eng, 1u);
+    FujiDynClusterRequest creq{};
+    creq.max_total_ticks = 40000u;
+    creq.start_vtick = 0u;
+    creq.runnable_mask = 0x3u;
+    creq.irq_pending_mask = 0u;
+    creq.start_core = 0u;
+    creq.start_used = 0u;
+    creq.quantum = 1024u;
+    FujiDynClusterResult cres{};
+    mmio->read_count = 0;
+    mmio->write_count = 0;
+    CHECK(fuji_dyn_run_cluster_fast(eng, &creq, &cres) == 0, "mt auto-irq cluster run");
+    CHECK(cres.stop_reason == FUJI_DYN_STOP_ALL_WAITING, "mt auto-irq must deliver inline and reach ALL_WAITING");
+    CHECK(mmio->read_count == 0 && mmio->write_count == 0, "mt auto-irq must have 0 upcalls");
+    CHECK(read_u32(eng, CNT_PA + 0u) == 1u && read_u32(eng, CNT_PA + 4u) == 65u, "mt auto-irq SPI 65 handler mismatch");
+
+    fuji_dyn_set_smp_host_threads(eng, 0u);
+    fuji_dyn_clear_gic_shadow(eng);
+    fuji_dyn_set_auto_exceptions(eng, 0u);
+    for (uint32_t c = 0u; c < 4u; ++c) fuji_dyn_reset_core(eng, c);
+    std::printf("  [PASS] 25. AUTO_EXCP_IRQ (ST + SMP-MT) & GICD_ITARGETSR/ICFGR/ISENABLER/ISPENDR zero-upcall fastpath\n");
+}
+
 int main() {
     CHECK(fuji_dyn_abi_version() == FUJI_DYN_ABI_VERSION, "ABI version mismatch");
     FujiDynEngine* eng = fuji_dyn_create(4, 0xFFFF0000u);
@@ -2597,9 +2759,10 @@ int main() {
     test_declarative_mmio_mirror_bank(eng, &mmio);
     test_64bit_alignment_normal_nc_device_and_strexd(eng);
     test_vfp_fpexc_lazy_undef_and_cache_invalidation(eng);
+    test_auto_irq_and_gicd_fastpath(eng, &mmio);
     bench_mips(eng);
 
     fuji_dyn_destroy(eng);
-    std::printf("[DYNARMIC-BRIDGE] ALL 25/25 SELF-TESTS PASSED!\n");
+    std::printf("[DYNARMIC-BRIDGE] ALL 26/26 SELF-TESTS PASSED!\n");
     return 0;
 }

@@ -12,10 +12,62 @@ internal class AvcReferenceFrame(
     trackChroma: Boolean = false,
 ) {
     val macroblockColumns = (width + 15) / 16
+    private val totalMacroblocks = macroblockColumns * ((height + 15) / 16)
     // Bottom and right 4x4 luma borders, then Cb and Cr for the next coded macroblock.
-    val edges = ByteArray(if (keepReference) macroblockColumns * ((height + 15) / 16) * 10 else 0)
-    val chromaEdges = if (keepReference && trackChroma) ByteArray(macroblockColumns * ((height + 15) / 16) * 32) else null
-    val pcmBlocks = if (keepReference && trackChroma) arrayOfNulls<ByteArray>(macroblockColumns * ((height + 15) / 16)) else null
+    val edges = ByteArray(if (keepReference) totalMacroblocks * 10 else 0)
+    val chromaEdges = if (keepReference && trackChroma) ByteArray(totalMacroblocks * 32) else null
+    // Flat slab storing 384-byte 8-bit I_PCM macroblocks without per-MB ByteArray allocations.
+    private val pcmOffsets = if (keepReference && trackChroma) IntArray(totalMacroblocks) { -1 } else null
+    private var pcmSlab = ByteArray(0)
+    private var pcmSlabUsed = 0
+
+    fun hasPcmBlock(block: Int): Boolean = pcmOffsets?.get(block)?.let { it >= 0 } == true
+
+    internal fun copyPcmBlockBytes(block: Int): ByteArray? {
+        val off = pcmOffsets?.get(block) ?: return null
+        if (off < 0) return null
+        return pcmSlab.copyOfRange(off, off + PCM_BLOCK_BYTES)
+    }
+
+    fun matchesPcmBlock(block: Int, pixels: ShortArray): Boolean {
+        val off = pcmOffsets?.get(block) ?: return false
+        if (off < 0) return false
+        val slab = pcmSlab
+        for (i in 0 until PCM_BLOCK_BYTES) {
+            if ((pixels[i].toInt() ushr 2).toByte() != slab[off + i]) return false
+        }
+        return true
+    }
+
+    fun copyPcmBlockFrom(block: Int, source: AvcReferenceFrame) {
+        val dstOffsets = pcmOffsets ?: return
+        val srcOff = source.pcmOffsets?.get(block) ?: return
+        if (srcOff < 0) return
+        val dstOff = allocatePcmSlot()
+        System.arraycopy(source.pcmSlab, srcOff, pcmSlab, dstOff, PCM_BLOCK_BYTES)
+        dstOffsets[block] = dstOff
+    }
+
+    fun storePcmBlock(block: Int, pixels: ShortArray) {
+        val dstOffsets = pcmOffsets ?: return
+        val dstOff = allocatePcmSlot()
+        val slab = pcmSlab
+        for (i in 0 until PCM_BLOCK_BYTES) {
+            slab[dstOff + i] = (pixels[i].toInt() ushr 2).toByte()
+        }
+        dstOffsets[block] = dstOff
+    }
+
+    private fun allocatePcmSlot(): Int {
+        val needed = pcmSlabUsed + PCM_BLOCK_BYTES
+        if (needed > pcmSlab.size) {
+            val nextCap = maxOf(needed, maxOf(pcmSlab.size * 2, PCM_BLOCK_BYTES * 64))
+            pcmSlab = pcmSlab.copyOf(nextCap)
+        }
+        val off = pcmSlabUsed
+        pcmSlabUsed = needed
+        return off
+    }
 
     fun saveEdges(block: Int, above: IntArray, firstCol: Int, left: IntArray, cb: Int, cr: Int) {
         if (edges.isEmpty()) return
@@ -42,6 +94,8 @@ internal class AvcReferenceFrame(
     }
 
     companion object {
+        const val PCM_BLOCK_BYTES = 384
+
         fun matchesPcm(pixels: ShortArray, reference: ByteArray): Boolean {
             for (i in pixels.indices) if ((pixels[i].toInt() ushr 2).toByte() != reference[i]) return false
             return true

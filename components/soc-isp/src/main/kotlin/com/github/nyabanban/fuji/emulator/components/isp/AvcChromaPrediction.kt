@@ -5,50 +5,77 @@ internal class AvcChromaPrediction(columns: Int) {
     private val top = ByteArray(columns * 16)
     private val left = ByteArray(16)
 
+    private fun variation(edge: ByteArray, start: Int): Int {
+        var total = 0
+        var prev = edge[start].toInt() and 0xFF
+        for (i in 1..7) {
+            val cur = edge[start + i].toInt() and 0xFF
+            val d = cur - prev
+            total += if (d >= 0) d else -d
+            prev = cur
+        }
+        val start1 = start + 8
+        prev = edge[start1].toInt() and 0xFF
+        for (i in 1..7) {
+            val cur = edge[start1 + i].toInt() and 0xFF
+            val d = cur - prev
+            total += if (d >= 0) d else -d
+            prev = cur
+        }
+        return total
+    }
+
     fun mode(mx: Int, my: Int): Int {
         if (mx == 0) return if (my == 0) 0 else 2
         if (my == 0) return 1
-        fun variation(edge: ByteArray, start: Int): Int {
-            var total = 0
-            for (plane in 0..1) for (i in 1..7) {
-                val j = start + plane * 8 + i
-                total += kotlin.math.abs(edge[j].toUByte().toInt() - edge[j - 1].toUByte().toInt())
-            }
-            return total
-        }
-        return if (variation(left, 0) <= variation(top, mx * 16)) 1 else 2
+        return if (variation(left, 0) <= variation(top, mx shl 4)) 1 else 2
     }
 
     fun mean(mx: Int, plane: Int, mode: Int): Int {
         if (mode == 0) return 128
         val edge = if (mode == 1) left else top
-        val start = (if (mode == 1) 0 else mx * 16) + plane * 8
-        var sum = 0
-        for (i in start until start + 8) sum += edge[i].toUByte().toInt()
-        return (sum + 4) / 8
+        val start = (if (mode == 1) 0 else mx shl 4) + (plane shl 3)
+        val sum = (edge[start].toInt() and 0xFF) +
+            (edge[start + 1].toInt() and 0xFF) +
+            (edge[start + 2].toInt() and 0xFF) +
+            (edge[start + 3].toInt() and 0xFF) +
+            (edge[start + 4].toInt() and 0xFF) +
+            (edge[start + 5].toInt() and 0xFF) +
+            (edge[start + 6].toInt() and 0xFF) +
+            (edge[start + 7].toInt() and 0xFF)
+        return (sum + 4) ushr 3
     }
 
     fun reconstruct(mx: Int, plane: Int, mode: Int, residual: Int) {
-        val base = mx * 16 + plane * 8
-        val side = plane * 8
-        for (i in 0 until 8) {
-            val prediction = when (mode) {
-                1 -> left[side + i].toUByte().toInt()
-                2 -> top[base + i].toUByte().toInt()
-                else -> 128
+        val base = (mx shl 4) + (plane shl 3)
+        val side = plane shl 3
+        if (mode == 1) {
+            for (i in 0 until 8) {
+                val v = ((left[side + i].toInt() and 0xFF) + residual).coerceIn(0, 255).toByte()
+                left[side + i] = v
             }
-            val value = (prediction + residual).coerceIn(0, 255).toByte()
-            if (mode == 1) left[side + i] = value else top[base + i] = value
+            top.fill(left[side + 7], base, base + 8)
+        } else if (mode == 2) {
+            for (i in 0 until 8) {
+                val v = ((top[base + i].toInt() and 0xFF) + residual).coerceIn(0, 255).toByte()
+                top[base + i] = v
+            }
+            left.fill(top[base + 7], side, side + 8)
+        } else {
+            val v = (128 + residual).coerceIn(0, 255).toByte()
+            top.fill(v, base, base + 8)
+            left.fill(v, side, side + 8)
         }
-        if (mode == 1) top.fill(left[side + 7], base, base + 8)
-        else left.fill(top[base + 7], side, side + 8)
     }
 
     fun raw(mx: Int, pixels: ShortArray) {
-        for (plane in 0..1) for (i in 0 until 8) {
-            val src = 256 + plane * 64
-            top[mx * 16 + plane * 8 + i] = (pixels[src + 56 + i].toInt() ushr 2).toByte()
-            left[plane * 8 + i] = (pixels[src + i * 8 + 7].toInt() ushr 2).toByte()
+        val topBase0 = mx shl 4
+        val topBase1 = topBase0 + 8
+        for (i in 0 until 8) {
+            top[topBase0 + i] = (pixels[312 + i].toInt() ushr 2).toByte()
+            left[i] = (pixels[256 + (i shl 3) + 7].toInt() ushr 2).toByte()
+            top[topBase1 + i] = (pixels[376 + i].toInt() ushr 2).toByte()
+            left[8 + i] = (pixels[320 + (i shl 3) + 7].toInt() ushr 2).toByte()
         }
     }
 

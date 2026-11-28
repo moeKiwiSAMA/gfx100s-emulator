@@ -1,8 +1,11 @@
 package com.github.nyabanban.fuji.emulator.components.isp
 
+import com.github.nyabanban.fuji.emulator.api.DirectGuestRamPort
 import com.github.nyabanban.fuji.emulator.api.DmaMemory
 import com.github.nyabanban.fuji.emulator.api.InterruptSink
 import com.github.nyabanban.fuji.emulator.api.TickAwareMmioDevice
+import java.lang.foreign.MemorySegment
+import java.lang.foreign.ValueLayout
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.ArrayDeque
@@ -47,6 +50,7 @@ internal class MaliV61VpuEngine(
         const val WINDOW_SIZE = 0x300L
         const val IRQ_LINE = 138
         const val COMPLETION_DELAY_TICKS = 64L
+        private val LITTLE_INT: ValueLayout.OfInt = ValueLayout.JAVA_INT_UNALIGNED.withOrder(ByteOrder.LITTLE_ENDIAN)
 
         const val VERSION_WORD = 0x5661_0002L // Mali-V61 proto v2.4
         const val NCORES_WORD = 0x0001_0000L
@@ -250,6 +254,61 @@ internal class MaliV61VpuEngine(
     private val mvePageBuf = ByteArray(4096)
     private val mvePageView = ByteBuffer.wrap(mvePageBuf)
     private var pcmStrip = ByteBuffer.allocate(0)
+    // Per-doorbell direct-mapped 256-entry MVE VA->PA + direct MemorySegment TLB (cleared per doorbell).
+    private var tlbL1Base = -1L
+    private var tlbGen = 1
+    private val tlbTags = LongArray(256)
+    private val tlbGens = IntArray(256)
+    private val tlbPagePa = LongArray(256)
+    private val tlbReadSeg = arrayOfNulls<MemorySegment>(256)
+    private val tlbWriteSeg = arrayOfNulls<MemorySegment>(256)
+
+    private fun invalidateMveTlb() {
+        tlbGen++
+        if (tlbGen == 0) {
+            tlbGens.fill(0)
+            tlbGen = 1
+        }
+        tlbReadSeg.fill(null)
+        tlbWriteSeg.fill(null)
+    }
+
+    private fun lookupMvePagePa(mem: DmaMemory, l1Base: Long, pageVa: Long): Long {
+        if (l1Base != tlbL1Base) {
+            tlbL1Base = l1Base
+            invalidateMveTlb()
+        }
+        val vpage = (pageVa ushr 12) and 0xFFFFFL
+        val slot = (vpage.toInt()) and 255
+        if (tlbGens[slot] == tlbGen && tlbTags[slot] == vpage) {
+            return tlbPagePa[slot]
+        }
+        val pa = translateMveVaUncached(mem, l1Base, pageVa) ?: return -1L
+        tlbTags[slot] = vpage
+        tlbGens[slot] = tlbGen
+        tlbPagePa[slot] = pa
+        tlbReadSeg[slot] = null
+        tlbWriteSeg[slot] = null
+        return pa
+    }
+
+    private fun lookupMvePageSegment(mem: DmaMemory, l1Base: Long, pageVa: Long, write: Boolean): MemorySegment? {
+        val direct = mem as? DirectGuestRamPort ?: return null
+        val pa = lookupMvePagePa(mem, l1Base, pageVa)
+        if (pa < 0L) return null
+        val slot = ((pageVa ushr 12).toInt()) and 255
+        val cached = if (write) tlbWriteSeg[slot] else tlbReadSeg[slot]
+        if (cached != null) return cached
+        val seg = try {
+            direct.sliceDirect(pa, 4096L, write = write)
+        } catch (_: Throwable) {
+            null
+        }
+        if (seg != null) {
+            if (write) tlbWriteSeg[slot] = seg else tlbReadSeg[slot] = seg
+        }
+        return seg
+    }
 
     init {
         resetState(notify = false)
@@ -315,6 +374,21 @@ internal class MaliV61VpuEngine(
     }
 
     private fun readU32(mem: DmaMemory, pa: Long): Long? {
+        if (mem is DirectGuestRamPort) {
+            return try {
+                val seg = mem.sliceDirect(pa, 4L, write = false)
+                if (seg != null) {
+                    seg.get(LITTLE_INT, 0L).toLong() and 0xFFFF_FFFFL
+                } else {
+                    mem.check(pa, 4L, false)
+                    wordBuf.clear()
+                    mem.read(pa, wordBuf)
+                    wordBuf.getInt(0).toLong() and 0xFFFF_FFFFL
+                }
+            } catch (_: Throwable) {
+                null
+            }
+        }
         return try {
             mem.check(pa, 4L, false)
             wordBuf.clear()
@@ -326,6 +400,23 @@ internal class MaliV61VpuEngine(
     }
 
     private fun writeU32(mem: DmaMemory, pa: Long, value: Int): Boolean {
+        if (mem is DirectGuestRamPort) {
+            return try {
+                val seg = mem.sliceDirect(pa, 4L, write = true)
+                if (seg != null) {
+                    seg.set(LITTLE_INT, 0L, value)
+                    true
+                } else {
+                    mem.check(pa, 4L, true)
+                    wordBuf.clear()
+                    wordBuf.putInt(0, value)
+                    mem.write(pa, wordBuf)
+                    true
+                }
+            } catch (_: Throwable) {
+                false
+            }
+        }
         return try {
             mem.check(pa, 4L, true)
             wordBuf.clear()
@@ -361,7 +452,7 @@ internal class MaliV61VpuEngine(
     }
 
     /** Translate an MVE 32-bit virtual address via the LSID's 2-level MMU page table (`MMU_CTRL`). */
-    private fun translateMveVa(mem: DmaMemory, l1Base: Long, mveVa: Long): Long? {
+    private fun translateMveVaUncached(mem: DmaMemory, l1Base: Long, mveVa: Long): Long? {
         val va = mveVa and 0xFFFF_FFFFL
         val l1Idx = (va ushr 22) and 0x3FFL
         val l1Entry = readU32(mem, l1Base + (l1Idx shl 2)) ?: return null
@@ -374,15 +465,33 @@ internal class MaliV61VpuEngine(
         return pagePa or (va and 0xFFFL)
     }
 
+    private fun translateMveVa(mem: DmaMemory, l1Base: Long, mveVa: Long): Long? {
+        val va = mveVa and 0xFFFF_FFFFL
+        val pagePa = lookupMvePagePa(mem, l1Base, va and 0xFFFF_F000L)
+        return if (pagePa < 0L) null else pagePa or (va and 0xFFFL)
+    }
+
     private fun writeMveBytes(mem: DmaMemory, l1Base: Long, mveVa: Long, src: ByteArray, length: Int = src.size): Boolean {
         if (length !in 0..src.size || mveVa < 0 || mveVa + length > 0x1_0000_0000L) return false
+        val direct = mem as? DirectGuestRamPort
         var remaining = length
         var srcOff = 0
         var va = mveVa and 0xFFFF_FFFFL
         while (remaining > 0) {
+            val pageBase = va and 0xFFFF_F000L
+            val pageOff = (va and 0xFFFL).toInt()
+            val chunk = minOf(remaining, 0x1000 - pageOff)
+            if (direct != null) {
+                val seg = lookupMvePageSegment(mem, l1Base, pageBase, write = true)
+                if (seg != null) {
+                    MemorySegment.copy(src, srcOff, seg, ValueLayout.JAVA_BYTE, pageOff.toLong(), chunk)
+                    srcOff += chunk
+                    va = (va + chunk.toLong()) and 0xFFFF_FFFFL
+                    remaining -= chunk
+                    continue
+                }
+            }
             val pa = translateMveVa(mem, l1Base, va) ?: return false
-            val pageRem = (0x1000L - (va and 0xFFFL)).toInt()
-            val chunk = minOf(remaining, pageRem)
             try {
                 mem.check(pa, chunk.toLong(), true)
                 mem.write(pa, ByteBuffer.wrap(src, srcOff, chunk))
@@ -411,10 +520,25 @@ internal class MaliV61VpuEngine(
         var address = base
         val limit = destination.limit()
         if (address < 0 || address + destination.remaining() > 0x1_0000_0000L) return false
+        val direct = mem as? DirectGuestRamPort
+        val dstArr = if (destination.hasArray()) destination.array() else null
+        val dstArrOff = if (dstArr != null) destination.arrayOffset() else 0
         try {
             while (destination.position() < limit) {
+                val pageBase = address and 0xFFFF_F000L
+                val pageOff = (address and 0xFFFL).toInt()
+                val count = minOf(limit - destination.position(), 4096 - pageOff)
+                if (direct != null && dstArr != null) {
+                    val seg = lookupMvePageSegment(mem, l1Base, pageBase, write = false)
+                    if (seg != null) {
+                        val pos = destination.position()
+                        MemorySegment.copy(seg, ValueLayout.JAVA_BYTE, pageOff.toLong(), dstArr, dstArrOff + pos, count)
+                        destination.position(pos + count)
+                        address += count
+                        continue
+                    }
+                }
                 val physical = translateMveVa(mem, l1Base, address) ?: return false
-                val count = minOf(limit - destination.position(), 4096 - (address.toInt() and 4095))
                 val end = destination.position() + count
                 destination.limit(end)
                 mem.check(physical, count.toLong(), false)
@@ -486,6 +610,7 @@ internal class MaliV61VpuEngine(
         if ((mmuCtrl and 3L) == 0L) return
         val l1Base = (mmuCtrl and 0x3FFF_FFFCL) shl 10
         if (l1Base == 0L) return
+        invalidateMveTlb()
 
         val msgInPa = translateMveVa(mem, l1Base, MVE_VA_MSG_IN) ?: return
         val msgOutPa = translateMveVa(mem, l1Base, MVE_VA_MSG_OUT) ?: return
@@ -988,6 +1113,7 @@ internal class MaliV61VpuEngine(
         val crArr = ByteArray(total)
         val oneByte = ByteArray(1)
         var cachedPageBase = -1L
+        var cachedPageSeg: MemorySegment? = null
         var cachedPageValid = false
         fun readCachedByte(va: Long): Int {
             val uVa = va and 0xFFFF_FFFFL
@@ -995,18 +1121,25 @@ internal class MaliV61VpuEngine(
             val pageOff = (uVa and 0xFFFL).toInt()
             if (pageBase != cachedPageBase) {
                 cachedPageBase = pageBase
-                cachedPageValid = false
-                val pagePa = translateMveVa(mem, l1Base, pageBase)
-                if (pagePa != null) {
-                    cachedPageValid = try {
-                        mem.check(pagePa, 4096L, false)
-                        mem.read(pagePa, mvePageView.clear())
-                        true
-                    } catch (_: Throwable) {
-                        false
+                cachedPageSeg = lookupMvePageSegment(mem, l1Base, pageBase, write = false)
+                if (cachedPageSeg != null) {
+                    cachedPageValid = false
+                } else {
+                    cachedPageValid = false
+                    val pagePa = translateMveVa(mem, l1Base, pageBase)
+                    if (pagePa != null) {
+                        cachedPageValid = try {
+                            mem.check(pagePa, 4096L, false)
+                            mem.read(pagePa, mvePageView.clear())
+                            true
+                        } catch (_: Throwable) {
+                            false
+                        }
                     }
                 }
             }
+            val seg = cachedPageSeg
+            if (seg != null) return seg.get(ValueLayout.JAVA_BYTE, pageOff.toLong()).toInt() and 0xFF
             return if (cachedPageValid) {
                 mvePageBuf[pageOff].toInt() and 0xFF
             } else {

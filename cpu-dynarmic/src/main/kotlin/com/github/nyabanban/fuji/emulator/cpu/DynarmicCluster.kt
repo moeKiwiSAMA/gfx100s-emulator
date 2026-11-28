@@ -28,12 +28,18 @@ class DynarmicCluster(
     private var nativeEventMaskDirty: Boolean = true
     private var lastSyncedEventMask: Int = -1
     private var lastBatchIrqPendingMask: Int = 0
+    private var fastPendingIrqMaskProvider: (() -> Int)? = null
     private val fastHasPendingForCore: MethodHandle? = try {
         MethodHandles.publicLookup()
             .findVirtual(interrupts.javaClass, "hasPendingForCore", MethodType.methodType(Boolean::class.javaPrimitiveType, Int::class.javaPrimitiveType))
             .bindTo(interrupts)
     } catch (_: Throwable) {
         null
+    }
+
+    /** Installs an O(1) 4-core pending-IRQ bitmask reader (bits 0..3; `< 0` falls back to [interrupts]). */
+    fun setFastPendingIrqMaskProvider(provider: (() -> Int)?) {
+        fastPendingIrqMaskProvider = provider
     }
 
     init {
@@ -80,8 +86,9 @@ class DynarmicCluster(
         var irqPendingMask = 0
         var wfeWaitingMask = 0
         var wfiWaitingMask = 0
+        val prePendingMask = fastPendingIrqMaskProvider?.invoke() ?: -1
         for (c in 0..3) {
-            val hasIrq = coreHasPendingIrq(c)
+            val hasIrq = if (prePendingMask >= 0) (prePendingMask and (1 shl c)) != 0 else coreHasPendingIrq(c)
             if (hasIrq) irqPendingMask = irqPendingMask or (1 shl c)
             val w = waiting[c]
             val runnable = when (w) {
@@ -119,6 +126,8 @@ class DynarmicCluster(
         if (lastSyncedEventMask != 0 || res.wfeEnteredMask != 0 || res.sevMask != 0) {
             syncEventsFromNative()
         }
+        val needPostIrqCheck = res.wfiEnteredMask != 0 || res.wfeEnteredMask != 0
+        val postPendingMask = if (needPostIrqCheck) (fastPendingIrqMaskProvider?.invoke() ?: -1) else -1
         var runningTotal = attempts.sum()
         for (c in 0..3) {
             val delta = res.coreExecuted[c]
@@ -132,7 +141,8 @@ class DynarmicCluster(
                 if (waiting[c] == "wfi") waiting[c] = null
             }
             if ((res.wfiEnteredMask and (1 shl c)) != 0) {
-                if (!coreHasPendingIrq(c)) waiting[c] = "wfi"
+                val hasIrq = if (postPendingMask >= 0) (postPendingMask and (1 shl c)) != 0 else coreHasPendingIrq(c)
+                if (!hasIrq) waiting[c] = "wfi"
                 eventCount++
             }
         }
@@ -156,7 +166,8 @@ class DynarmicCluster(
                 // that entered WFE *after* an inline SEV in the same batch.
                 for (c in 0..3) {
                     if ((res.wfeEnteredMask and (1 shl c)) != 0) {
-                        if (!event[c] && !coreHasPendingIrq(c)) waiting[c] = "wfe"
+                        val hasIrq = if (postPendingMask >= 0) (postPendingMask and (1 shl c)) != 0 else coreHasPendingIrq(c)
+                        if (!event[c] && !hasIrq) waiting[c] = "wfe"
                         eventCount++
                     } else if (waiting[c] == "wfe" && (res.wfiEnteredMask and (1 shl c)) == 0) {
                         waiting[c] = null
@@ -167,7 +178,8 @@ class DynarmicCluster(
         } else {
             for (c in 0..3) {
                 if ((res.wfeEnteredMask and (1 shl c)) != 0) {
-                    if (!event[c] && !coreHasPendingIrq(c)) waiting[c] = "wfe"
+                    val hasIrq = if (postPendingMask >= 0) (postPendingMask and (1 shl c)) != 0 else coreHasPendingIrq(c)
+                    if (!event[c] && !hasIrq) waiting[c] = "wfe"
                     eventCount++
                 }
             }
@@ -260,6 +272,10 @@ class DynarmicCluster(
         return false
     }
 
+    /** Zero-allocation fastpath of [anyOtherCoreIrqGained] using a pre-read 4-core pending bitmask. */
+    fun anyOtherCoreIrqGainedFromMask(activeCore: Int, currentPendingMask: Int): Boolean =
+        (currentPendingMask and lastBatchIrqPendingMask.inv() and (1 shl activeCore).inv()) != 0
+
     /** Returns true if at least one core other than [current] is immediately runnable. */
     fun hasAnotherRunnableCore(): Boolean {
         for (other in 0..3) {
@@ -273,6 +289,10 @@ class DynarmicCluster(
     }
 
     private fun coreHasPendingIrq(core: Int): Boolean {
+        val fastMask = fastPendingIrqMaskProvider?.invoke() ?: -1
+        if (fastMask >= 0) {
+            return (fastMask and (1 shl core)) != 0
+        }
         val fast = fastHasPendingForCore
         if (fast != null) {
             return fast.invokeExact(core) as Boolean
@@ -333,6 +353,7 @@ class DynarmicCluster(
         if (lastSyncedEventMask != 0 || waiting[0] == "wfe" || waiting[1] == "wfe" || waiting[2] == "wfe" || waiting[3] == "wfe") {
             syncEventsFromNative()
         }
+        val fastMask = fastPendingIrqMaskProvider?.invoke() ?: -1
         for (delta in 1..4) {
             val next = (current + delta) % 4
             if (waiting[next] == "reset") {
@@ -342,8 +363,12 @@ class DynarmicCluster(
                 waiting[next] = null
                 eventCount++
             }
-            interrupts.selectCore(next)
-            val wake = interrupts.hasPending()
+            val wake = if (fastMask >= 0) {
+                (fastMask and (1 shl next)) != 0
+            } else {
+                interrupts.selectCore(next)
+                interrupts.hasPending()
+            }
             if (waiting[next] != null && !wake && !(waiting[next] == "wfe" && event[next])) continue
             if (waiting[next] == "wfe") {
                 event[next] = false
@@ -353,10 +378,11 @@ class DynarmicCluster(
             waiting[next] = null
             used = 0L
             current = next
+            interrupts.selectCore(next)
             dyn.selectCore(next)
             return true
         }
-        interrupts.selectCore(current)
+        if (fastMask < 0) interrupts.selectCore(current)
         dyn.selectCore(current)
         return false
     }

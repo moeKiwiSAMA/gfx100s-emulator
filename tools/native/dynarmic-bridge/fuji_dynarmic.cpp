@@ -1277,14 +1277,186 @@ struct FujiDynEngine {
     FujiDynTimerShadow* rw_timer_shadow = nullptr;
     FujiDynTimerIrqShadow* timer_irq_shadow = nullptr;
 
+    inline bool try_gic_v3_read(uint32_t core, uint32_t phys_addr, uint32_t sz, uint32_t& out_val) {
+        if (!gic_fastpath.is_active()) return false;
+        if (gic_fastpath.try_read(core, phys_addr, sz, out_val)) return true;
+
+        /* DYN-V3 inline GICD_ICFGR (0xC00..0xC7C) read fastpath */
+        GicV2ShadowState* sp = gic_fastpath.shadow();
+        if (!sp || core >= sp->core_count || sz != 4u) return false;
+        const uint32_t dist_off = phys_addr - gic_fastpath.gicd_base();
+        if (dist_off >= 0xC00u && dist_off < 0xC80u && (dist_off & 3u) == 0u) {
+            const uint32_t first = ((dist_off - 0xC00u) >> 2) * 16u;
+            uint32_t edge16 = 0u;
+            if (first < 32u) {
+                edge16 = (sp->cores[core].local_edge >> first) & 0xFFFFu;
+            } else {
+                const uint32_t w = first >> 6;
+                const uint32_t sh = first & 63u;
+                edge16 = static_cast<uint32_t>((sp->shared_edge[w] >> sh) & 0xFFFFull);
+            }
+            uint32_t current = 0u;
+            while (edge16 != 0u) {
+                const uint32_t b = static_cast<uint32_t>(std::countr_zero(edge16));
+                edge16 &= (edge16 - 1u);
+                current |= (2u << (b * 2u));
+            }
+            out_val = current;
+            ++sp->fast_hits;
+            return true;
+        }
+        return false;
+    }
+
     inline bool try_gic_v3_write(uint32_t core, uint32_t phys_addr, uint32_t sz, uint32_t val) {
         if (!gic_fastpath.is_active()) return false;
         if (gic_fastpath.try_write(core, phys_addr, sz, val)) return true;
 
-        /* DYN-V3 inline GICD_SGIR (0xF00) and GICD_CPENDSGIR (0xF10..0xF1C) fastpath */
+        /* DYN-V3 inline GICD_ITARGETSR (0x800..0x9FF), GICD_ICFGR (0xC00..0xC7F),
+         * GICD_ISENABLER/ICENABLER/ISPENDR/ICPENDR (0x100..0x2BC),
+         * GICD_SGIR (0xF00), and GICD_CPENDSGIR (0xF10..0xF1C) fastpath */
         GicV2ShadowState* sp = gic_fastpath.shadow();
-        if (!sp || core >= sp->core_count || sp->core_count <= 1u || sz != 4u) return false;
+        if (!sp || core >= sp->core_count) return false;
         const uint32_t dist_off = phys_addr - gic_fastpath.gicd_base();
+        if (dist_off >= 0x800u && dist_off < 0xA00u) {
+            if ((sz != 1u && sz != 2u && sz != 4u) || (dist_off & (sz - 1u)) != 0u) return false;
+            const uint32_t first = dist_off - 0x800u;
+            if (first + sz > 512u) return false;
+            const uint32_t field_mask = (1u << sp->core_count) - 1u;
+            uint32_t refresh_mask = 0u;
+            bool changed = false;
+            for (uint32_t i = 0u; i < sz; ++i) {
+                const uint32_t irq = first + i;
+                if (irq >= 32u) {
+                    const uint32_t idx = irq - 32u;
+                    const uint8_t next_t = static_cast<uint8_t>((val >> (i * 8u)) & field_mask);
+                    const uint8_t old_t = sp->shared_targets[idx];
+                    if (next_t != old_t) {
+                        sp->shared_targets[idx] = next_t;
+                        const uint32_t w = irq >> 6;
+                        const uint64_t bit = 1ull << (irq & 63u);
+                        for (uint32_t c = 0u; c < GIC_V2_MAX_CORES; ++c) {
+                            if ((next_t & (1u << c)) != 0u) sp->target_core_bits[c][w] |= bit;
+                            else sp->target_core_bits[c][w] &= ~bit;
+                        }
+                        sp->dirty_spi_mask |= (1u << 3);
+                        refresh_mask |= static_cast<uint32_t>(old_t | next_t);
+                        changed = true;
+                    }
+                }
+            }
+            if (changed) {
+                ++sp->native_seq;
+                if (refresh_mask != 0u) {
+                    GicV2Fastpath::refresh_mask_pending(*sp, refresh_mask);
+                }
+            }
+            ++sp->fast_hits;
+            return true;
+        }
+        if (sz != 4u) return false;
+        if (dist_off >= 0xC00u && dist_off < 0xC80u && (dist_off & 3u) == 0u) {
+            if ((val & 0x55555555u) != 0u) return false;
+            const uint32_t first = ((dist_off - 0xC00u) >> 2) * 16u;
+            uint32_t new_edge16 = 0u;
+            for (uint32_t b = 0u; b < 16u; ++b) {
+                if ((val & (2u << (b * 2u))) != 0u) new_edge16 |= (1u << b);
+            }
+            if (first < 32u) {
+                GicV2CoreShadow& c = sp->cores[core];
+                const uint32_t old_edge16 = (c.local_edge >> first) & 0xFFFFu;
+                const uint32_t diff16 = new_edge16 ^ old_edge16;
+                if (diff16 != 0u) {
+                    const uint32_t act16 = (c.local_active >> first) & 0xFFFFu;
+                    if (act16 != 0u) return false; /* Match GicFactory active-config check */
+                    c.local_edge = (c.local_edge & ~(0xFFFFu << first)) | (new_edge16 << first);
+                    c.dirty_flag = 1u;
+                    ++sp->native_seq;
+                    GicV2Fastpath::refresh_core_pending(*sp, core);
+                }
+            } else {
+                const uint32_t w = first >> 6;
+                const uint32_t sh = first & 63u;
+                const uint32_t old_edge16 = static_cast<uint32_t>((sp->shared_edge[w] >> sh) & 0xFFFFull);
+                const uint32_t diff16 = new_edge16 ^ old_edge16;
+                if (diff16 != 0u) {
+                    const uint32_t act16 = static_cast<uint32_t>((sp->shared_active[w] >> sh) & 0xFFFFull);
+                    if (act16 != 0u) {
+                        const uint32_t en16 = static_cast<uint32_t>((sp->shared_enabled[w] >> sh) & 0xFFFFull);
+                        const uint32_t pend16 = static_cast<uint32_t>((sp->shared_pending[w] >> sh) & 0xFFFFull);
+                        const uint32_t lvl16 = static_cast<uint32_t>((sp->shared_levels[w] >> sh) & 0xFFFFull);
+                        if ((diff16 & (act16 | en16 | pend16 | lvl16)) != 0u) return false;
+                    }
+                    sp->shared_edge[w] = (sp->shared_edge[w] & ~(0xFFFFull << sh)) |
+                                         (static_cast<uint64_t>(new_edge16) << sh);
+                    sp->dirty_spi_mask |= (1u << 4);
+                    uint32_t refresh_mask = 0u;
+                    uint32_t d = diff16;
+                    while (d != 0u) {
+                        const uint32_t b = static_cast<uint32_t>(std::countr_zero(d));
+                        d &= (d - 1u);
+                        refresh_mask |= static_cast<uint32_t>(sp->shared_targets[first + b - 32u]);
+                    }
+                    ++sp->native_seq;
+                    if (refresh_mask != 0u) {
+                        GicV2Fastpath::refresh_mask_pending(*sp, refresh_mask);
+                    }
+                }
+            }
+            ++sp->fast_hits;
+            return true;
+        }
+        if (dist_off < 0x1000u && (dist_off & 3u) == 0u) {
+            const uint32_t start = dist_off & 0xF80u;
+            if ((start == 0x100u || start == 0x180u || start == 0x200u || start == 0x280u) &&
+                dist_off < start + 64u) {
+                const uint32_t first = (dist_off - start) << 3;
+                const bool is_enable = (start == 0x100u || start == 0x180u);
+                const bool set_val = (start == 0x100u || start == 0x200u);
+                uint32_t bits = val;
+                if (first == 0u) bits &= 0xFFFF0000u; /* SGI 0..15 ignored per GicFactory.kt */
+                if (bits != 0u) {
+                    if (first == 0u) {
+                        GicV2CoreShadow& c = sp->cores[core];
+                        uint32_t& target_word = is_enable ? c.local_enabled : c.local_pending;
+                        const uint32_t next_word = set_val ? (target_word | bits) : (target_word & ~bits);
+                        if (next_word != target_word) {
+                            target_word = next_word;
+                            c.dirty_flag = 1u;
+                            ++sp->native_seq;
+                            GicV2Fastpath::refresh_core_pending(*sp, core);
+                        }
+                    } else {
+                        const uint32_t w = first >> 6;
+                        const uint32_t sh = first & 32u;
+                        const uint64_t mask64 = static_cast<uint64_t>(bits) << sh;
+                        uint64_t& target_word = is_enable ? sp->shared_enabled[w] : sp->shared_pending[w];
+                        const uint64_t next_word = set_val ? (target_word | mask64) : (target_word & ~mask64);
+                        if (next_word != target_word) {
+                            uint64_t diff = next_word ^ target_word;
+                            target_word = next_word;
+                            sp->dirty_spi_mask |= is_enable ? (1u << 2) : GIC_V2_DIRTY_SPI_PEND_ACT;
+                            uint32_t refresh_mask = 0u;
+                            while (diff != 0ull) {
+                                const uint32_t b = static_cast<uint32_t>(std::countr_zero(diff));
+                                diff &= (diff - 1ull);
+                                const uint32_t irq = (w << 6) | b;
+                                if (irq >= 32u) {
+                                    refresh_mask |= static_cast<uint32_t>(sp->shared_targets[irq - 32u]);
+                                }
+                            }
+                            ++sp->native_seq;
+                            if (refresh_mask != 0u) {
+                                GicV2Fastpath::refresh_mask_pending(*sp, refresh_mask);
+                            }
+                        }
+                    }
+                }
+                ++sp->fast_hits;
+                return true;
+            }
+        }
+        if (sp->core_count <= 1u) return false;
         if (dist_off == 0xF00u) {
             const uint32_t filter = (val >> 24) & 3u;
             if ((val & ~0x03FF000Fu) != 0u || filter == 3u) return false;
@@ -1564,13 +1736,19 @@ struct FujiDynEngine {
             return false;
         }
     } fetched_words;
-    /* 128 KiB 4 KiB-page code-translated bitmap + compact watched list */
+    /* 128 KiB 4 KiB-page code-translated bitmap + compact watched list + O(1) bounding box */
     alignas(8) std::array<uint64_t, 16384> code_pages{};
     std::vector<uint32_t> watched_code_pages;
+    std::atomic<uint32_t> code_page_min{0xFFFFFFFFu};
+    std::atomic<uint32_t> code_page_max{0u};
     std::atomic<bool> code_pages_dirty{false};
 
     inline bool mark_code_page(uint32_t addr) {
         const uint32_t page = addr >> 12;
+        uint32_t cur_min = code_page_min.load(std::memory_order_relaxed);
+        while (page < cur_min && !code_page_min.compare_exchange_weak(cur_min, page, std::memory_order_release, std::memory_order_relaxed)) {}
+        uint32_t cur_max = code_page_max.load(std::memory_order_relaxed);
+        while (page > cur_max && !code_page_max.compare_exchange_weak(cur_max, page, std::memory_order_release, std::memory_order_relaxed)) {}
         const uint64_t bit = 1ull << (page & 63u);
         std::atomic_ref<uint64_t> word(code_pages[page >> 6]);
         const uint64_t prev = word.fetch_or(bit, std::memory_order_acq_rel);
@@ -1592,6 +1770,9 @@ struct FujiDynEngine {
         const uint32_t first_p = base >> 12;
         const uint64_t end_addr = static_cast<uint64_t>(base) + size - 1ull;
         const uint32_t last_p = static_cast<uint32_t>(end_addr > 0xFFFFFFFFull ? 0xFFFFFu : (end_addr >> 12));
+        const uint32_t min_p = code_page_min.load(std::memory_order_acquire);
+        const uint32_t max_p = code_page_max.load(std::memory_order_acquire);
+        if (last_p < min_p || first_p > max_p) return false;
         const uint32_t w0 = first_p >> 6;
         const uint32_t w1 = last_p >> 6;
         for (uint32_t w = w0; w <= w1; ++w) {
@@ -1621,6 +1802,8 @@ struct FujiDynEngine {
                 .fetch_and(~(1ull << (page & 63u)), std::memory_order_release);
         }
         watched_code_pages.clear();
+        code_page_min.store(0xFFFFFFFFu, std::memory_order_release);
+        code_page_max.store(0u, std::memory_order_release);
         code_pages_dirty.store(false, std::memory_order_release);
     }
 
@@ -1629,6 +1812,9 @@ struct FujiDynEngine {
         const uint32_t first_p = base >> 12;
         const uint64_t end_addr = static_cast<uint64_t>(base) + size - 1ull;
         const uint32_t last_p = static_cast<uint32_t>(end_addr > 0xFFFFFFFFull ? 0xFFFFFu : (end_addr >> 12));
+        const uint32_t min_p = code_page_min.load(std::memory_order_acquire);
+        const uint32_t max_p = code_page_max.load(std::memory_order_acquire);
+        if (last_p < min_p || first_p > max_p) return false;
         const uint32_t w0 = first_p >> 6;
         const uint32_t w1 = last_p >> 6;
         bool any = false;
@@ -1640,6 +1826,7 @@ struct FujiDynEngine {
                 if (hi < 63u) mask &= ((1ull << (hi + 1u)) - 1ull);
             }
             std::atomic_ref<uint64_t> word(code_pages[w]);
+            if ((word.load(std::memory_order_relaxed) & mask) == 0ull) continue;
             const uint64_t cur = word.fetch_and(~mask, std::memory_order_acq_rel);
             if ((cur & mask) != 0ull) {
                 any = true;
@@ -2811,12 +2998,12 @@ struct CoreState final : public Dynarmic::A32::UserCallbacks {
                 if (mt) {
                     MtLockInactiveGuard inact(this, true);
                     std::lock_guard<std::mutex> lk(engine->gic_lock);
-                    gic_hit = engine->gic_fastpath.try_read(core_id, phys_addr, sz, gic_val);
+                    gic_hit = engine->try_gic_v3_read(core_id, phys_addr, sz, gic_val);
                     if (gic_hit) {
                         other_woken = sync_gic_irq_pending_all_locked(woken_mask);
                     }
                 } else {
-                    gic_hit = engine->gic_fastpath.try_read(core_id, phys_addr, sz, gic_val);
+                    gic_hit = engine->try_gic_v3_read(core_id, phys_addr, sz, gic_val);
                     if (gic_hit) {
                         other_woken = sync_gic_irq_pending_all_locked(woken_mask);
                     }
@@ -3756,9 +3943,22 @@ struct CoreState final : public Dynarmic::A32::UserCallbacks {
         if (!deliver_irq(jit->Regs(), cpsr, banked, cp15)) return -1; /* IRQ masked */
         jit->SetCpsr(cpsr);
         sync_vfp_enable_state();
+        engine->exclusive_monitor->ClearProcessor(core_id);
         jit->ClearExclusiveState();
         if (was_user) { mmu.flush(); engine->fastmem.invalidate_core(core_id); }
         publish_live_state();
+        return 0;
+    }
+
+    int32_t deliver_irq_internal_mt() {
+        uint32_t cpsr = jit->Cpsr();
+        bool was_user = (cpsr & CPSR_M_MASK) == FUJI_DYN_MODE_USR;
+        if (!deliver_irq(jit->Regs(), cpsr, banked, cp15)) return -1; /* IRQ masked */
+        jit->SetCpsr(cpsr);
+        sync_vfp_enable_state();
+        engine->exclusive_monitor->ClearProcessor(core_id);
+        jit->ClearExclusiveState();
+        if (was_user) { mmu.flush(); engine->fastmem.invalidate_core(core_id); }
         return 0;
     }
 
@@ -3926,15 +4126,32 @@ static void execute_core_mt_epoch(FujiDynEngine* engine, CoreState* c,
     c->svc_imm = 0u;
     c->mmu_ctrl_changed = false;
 
+    auto consume_auto_irq = [&]() {
+        if (c->stop_latched && c->stop_reason == FUJI_DYN_STOP_IRQ &&
+            (engine->auto_excp_mask & FUJI_DYN_AUTO_EXCP_IRQ) != 0u &&
+            engine->gic_fastpath.is_active() && c->run_budget > 0u) {
+            if (c->load_irq_pending() != 0u && (c->jit->Cpsr() & CPSR_I_BIT) == 0u) {
+                c->deliver_irq_internal_mt();
+            }
+            c->stop_latched = false;
+            c->stop_reason = FUJI_DYN_STOP_QUANTUM;
+        }
+    };
+
     c->process_pending_xcore_ops();
+    consume_auto_irq();
     if (c->stop_latched) {
         return;
     }
 
     if (c->load_irq_pending() != 0u && (c->jit->Cpsr() & CPSR_I_BIT) == 0u) {
-        c->stop_latched = true;
-        c->stop_reason = FUJI_DYN_STOP_IRQ;
-        return;
+        if ((engine->auto_excp_mask & FUJI_DYN_AUTO_EXCP_IRQ) != 0u && engine->gic_fastpath.is_active() && budget > 0u) {
+            c->deliver_irq_internal_mt();
+        } else {
+            c->stop_latched = true;
+            c->stop_reason = FUJI_DYN_STOP_IRQ;
+            return;
+        }
     }
 
     if (budget == 0u) {
@@ -3966,6 +4183,7 @@ static void execute_core_mt_epoch(FujiDynEngine* engine, CoreState* c,
 
     while (!c->stop_latched && c->run_executed < c->run_budget && !engine->mt_should_stop_epoch()) {
         c->process_pending_xcore_ops();
+        consume_auto_irq();
         if (c->stop_latched) break;
         c->sync_fastmem_safe(false);
         c->jit->ClearHalt(Dynarmic::HaltReason::UserDefined1 |
@@ -3977,6 +4195,7 @@ static void execute_core_mt_epoch(FujiDynEngine* engine, CoreState* c,
             }
             if (c->pending_xcore_ops.load(std::memory_order_seq_cst) != 0u) {
                 c->process_pending_xcore_ops();
+                consume_auto_irq();
             }
             if (c->stop_latched || c->run_executed >= c->run_budget || engine->mt_should_stop_epoch()) {
                 break;
@@ -3984,8 +4203,19 @@ static void execute_core_mt_epoch(FujiDynEngine* engine, CoreState* c,
         } else {
             if (c->pending_xcore_ops.load(std::memory_order_seq_cst) != 0u) {
                 c->process_pending_xcore_ops();
+                consume_auto_irq();
             }
             if (c->stop_latched || engine->mt_should_stop_epoch()) {
+                break;
+            }
+        }
+        if (c->load_irq_pending() != 0u && (c->jit->Cpsr() & CPSR_I_BIT) == 0u) {
+            if ((engine->auto_excp_mask & FUJI_DYN_AUTO_EXCP_IRQ) != 0u && engine->gic_fastpath.is_active()) {
+                c->deliver_irq_internal_mt();
+            } else {
+                c->stop_latched = true;
+                c->stop_reason = FUJI_DYN_STOP_IRQ;
+                engine->request_mt_epoch_stop(c->core_id);
                 break;
             }
         }
@@ -4004,6 +4234,16 @@ static void execute_core_mt_epoch(FujiDynEngine* engine, CoreState* c,
                 c->deliver_dabt_internal(c->fault_addr, c->fault_status);
                 c->stop_latched = false;
                 c->dabt_latched = false;
+                c->stop_reason = FUJI_DYN_STOP_QUANTUM;
+                continue;
+            }
+            if (c->stop_reason == FUJI_DYN_STOP_IRQ &&
+                (engine->auto_excp_mask & FUJI_DYN_AUTO_EXCP_IRQ) != 0u &&
+                engine->gic_fastpath.is_active()) {
+                if (c->load_irq_pending() != 0u && (c->jit->Cpsr() & CPSR_I_BIT) == 0u) {
+                    c->deliver_irq_internal_mt();
+                }
+                c->stop_latched = false;
                 c->stop_reason = FUJI_DYN_STOP_QUANTUM;
                 continue;
             }
@@ -4572,6 +4812,7 @@ FUJI_DYN_EXPORT int32_t fuji_dyn_mem_write64(FujiDynEngine* engine, uint64_t phy
 
 FUJI_DYN_EXPORT void fuji_dyn_invalidate_range(FujiDynEngine* engine, uint32_t phys_base, uint32_t size) {
     if (!engine || size == 0) return;
+    if (!engine->has_code_pages(phys_base, size)) return;
     if (engine->mt_epoch_active.load(std::memory_order_acquire)) {
         {
             std::lock_guard<std::mutex> lk(engine->meta_lock);
@@ -4716,15 +4957,25 @@ FUJI_DYN_EXPORT int32_t fuji_dyn_run_fast(FujiDynEngine* engine, uint32_t core,
     c->svc_imm = 0;
     c->mmu_ctrl_changed = false;
     c->process_pending_xcore_ops();
+    if (c->stop_latched && c->stop_reason == FUJI_DYN_STOP_IRQ &&
+        (engine->auto_excp_mask & FUJI_DYN_AUTO_EXCP_IRQ) != 0u &&
+        engine->gic_fastpath.is_active() && max_ticks > 0u) {
+        c->stop_latched = false;
+        c->stop_reason = FUJI_DYN_STOP_QUANTUM;
+    }
 
     /* Immediate unmasked IRQ check before executing any instruction */
     if (effective_irq != 0u && (c->jit->Cpsr() & CPSR_I_BIT) == 0u) {
-        out->executed_ticks = 0;
-        out->virtual_tick = current_vtick;
-        out->stop_pc = c->jit->Regs()[15];
-        out->stop_cpsr = c->jit->Cpsr();
-        out->stop_reason = FUJI_DYN_STOP_IRQ;
-        return 0;
+        if ((engine->auto_excp_mask & FUJI_DYN_AUTO_EXCP_IRQ) != 0u && engine->gic_fastpath.is_active() && max_ticks > 0u) {
+            c->deliver_irq_internal();
+        } else {
+            out->executed_ticks = 0;
+            out->virtual_tick = current_vtick;
+            out->stop_pc = c->jit->Regs()[15];
+            out->stop_cpsr = c->jit->Cpsr();
+            out->stop_reason = FUJI_DYN_STOP_IRQ;
+            return 0;
+        }
     }
 
     if (max_ticks == 0u) {
@@ -4774,6 +5025,16 @@ FUJI_DYN_EXPORT int32_t fuji_dyn_run_fast(FujiDynEngine* engine, uint32_t core,
                 c->deliver_dabt_internal(c->fault_addr, c->fault_status);
                 c->stop_latched = false;
                 c->dabt_latched = false;
+                c->stop_reason = FUJI_DYN_STOP_QUANTUM;
+                continue;
+            }
+            if (c->stop_reason == FUJI_DYN_STOP_IRQ &&
+                (engine->auto_excp_mask & FUJI_DYN_AUTO_EXCP_IRQ) != 0u &&
+                engine->gic_fastpath.is_active()) {
+                if (c->load_irq_pending() != 0u && (c->jit->Cpsr() & CPSR_I_BIT) == 0u) {
+                    c->deliver_irq_internal();
+                }
+                c->stop_latched = false;
                 c->stop_reason = FUJI_DYN_STOP_QUANTUM;
                 continue;
             }
@@ -5535,9 +5796,16 @@ FUJI_DYN_EXPORT int32_t fuji_dyn_run_cluster_fast(FujiDynEngine* engine, const F
             engine->mt_epoch_mask.store(0u, std::memory_order_release);
 
             /* All workers are now quiescent: flush any deferred cross-core TLB/ICache ops on all cores */
+            const bool auto_irq_post =
+                (engine->auto_excp_mask & FUJI_DYN_AUTO_EXCP_IRQ) != 0u && engine->gic_fastpath.is_active();
             for (uint32_t i = 0u; i < ncores; ++i) {
                 if (engine->cores[i]) {
-                    engine->cores[i]->process_pending_xcore_ops();
+                    CoreState* pc = engine->cores[i].get();
+                    pc->process_pending_xcore_ops();
+                    if (auto_irq_post && pc->stop_latched && pc->stop_reason == FUJI_DYN_STOP_IRQ) {
+                        pc->stop_latched = false;
+                        pc->stop_reason = FUJI_DYN_STOP_QUANTUM;
+                    }
                 }
             }
 

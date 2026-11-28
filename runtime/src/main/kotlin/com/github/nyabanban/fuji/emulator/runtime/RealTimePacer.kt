@@ -79,11 +79,11 @@ class RealTimePacer(
     }
 
     fun reanchor(virtualTick: Long) {
+        wakeRequested = false
+        nativeWaiter?.reset()
         wallAnchorNanos = nanoClock()
         virtualAnchorTick = virtualTick
         anchored = true
-        wakeRequested = false
-        nativeWaiter?.reset()
     }
 
     /** Immediately wakes a parked pacing thread (e.g., on button press, HTTP control, or pause/stop). */
@@ -122,8 +122,10 @@ class RealTimePacer(
             wallAnchorNanos = now
             virtualAnchorTick = virtualTick
             anchored = true
-            wakeRequested = false
-            nativeWaiter?.reset()
+            if (wakeRequested) {
+                wakeRequested = false
+                nativeWaiter?.reset()
+            }
             return 0L
         }
         val expectedElapsedNanos = ((virtualTick - virtualAnchorTick).toDouble() * nanosPerVirtualTick).toLong()
@@ -133,13 +135,17 @@ class RealTimePacer(
             wallAnchorNanos = now
             virtualAnchorTick = virtualTick
             resyncCount++
-            wakeRequested = false
-            nativeWaiter?.reset()
+            if (wakeRequested) {
+                wakeRequested = false
+                nativeWaiter?.reset()
+            }
             return 0L
         }
         if (leadNanos <= minSleepNanos || shouldAbort()) {
-            wakeRequested = false
-            nativeWaiter?.reset()
+            if (wakeRequested) {
+                wakeRequested = false
+                nativeWaiter?.reset()
+            }
             return 0L
         }
         if (wakeRequested) {
@@ -209,8 +215,10 @@ class RealTimePacer(
             wallAnchorNanos = now
             virtualAnchorTick = virtualTick
             anchored = true
-            wakeRequested = false
-            nativeWaiter?.reset()
+            if (wakeRequested) {
+                wakeRequested = false
+                nativeWaiter?.reset()
+            }
             return 0L
         }
         val expectedElapsedNanos = ((virtualTick - virtualAnchorTick).toDouble() * nanosPerVirtualTick).toLong()
@@ -220,14 +228,18 @@ class RealTimePacer(
             wallAnchorNanos = now
             virtualAnchorTick = virtualTick
             resyncCount++
-            wakeRequested = false
-            nativeWaiter?.reset()
+            if (wakeRequested) {
+                wakeRequested = false
+                nativeWaiter?.reset()
+            }
             return 0L
         }
         val idleThreshold = minOf(minSleepNanos, DEFAULT_MIN_IDLE_SLEEP_NANOS)
         if (leadNanos <= idleThreshold || shouldAbort()) {
-            wakeRequested = false
-            nativeWaiter?.reset()
+            if (wakeRequested) {
+                wakeRequested = false
+                nativeWaiter?.reset()
+            }
             return 0L
         }
         if (wakeRequested) {

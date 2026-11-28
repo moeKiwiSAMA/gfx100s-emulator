@@ -1,6 +1,6 @@
 package com.github.nyabanban.fuji.emulator.components.isp
 
-import java.io.ByteArrayOutputStream
+import java.util.Arrays
 
 /**
  * Spec-compliant ITU-T H.264 (AVC) and H.265 (HEVC) NAL bitstream generator for [MaliV61VpuEngine].
@@ -21,44 +21,98 @@ import java.io.ByteArrayOutputStream
  */
 internal object MaliV61BitstreamEncoder {
     internal class BitWriter(nalHeader: ByteArray, initialSize: Int = 64) {
-        private val out = ByteArrayOutputStream(initialSize)
+        private var buf = ByteArray(maxOf(initialSize, nalHeader.size + 16))
+        private var pos = 0
         private var cur = 0
         private var bitsInCur = 0
         private var zeros = 0
-        val byteCount: Int get() = out.size()
+        val byteCount: Int get() = pos
+
+        init {
+            buf[0] = 0
+            buf[1] = 0
+            buf[2] = 0
+            buf[3] = 1
+            System.arraycopy(nalHeader, 0, buf, 4, nalHeader.size)
+            pos = 4 + nalHeader.size
+        }
+
+        private fun ensureCapacity(extra: Int) {
+            val needed = pos + extra
+            if (needed > buf.size) {
+                buf = Arrays.copyOf(buf, maxOf(needed, buf.size * 2))
+            }
+        }
+
+        private fun writePayloadByte(value: Int) {
+            val p = pos
+            if (p + 2 > buf.size) {
+                buf = Arrays.copyOf(buf, maxOf(p + 2, buf.size * 2))
+            }
+            var wp = p
+            var z = zeros
+            if (z == 2 && value <= 3) {
+                buf[wp++] = 3
+                z = 0
+            }
+            buf[wp++] = value.toByte()
+            pos = wp
+            zeros = if (value == 0) z + 1 else 0
+        }
 
         fun writePcm8(pixels: ShortArray) {
-            while (bitsInCur != 0) writeBit(0)
-            for (sample in pixels) writePayloadByte(sample.toInt() ushr 2)
+            if (bitsInCur != 0) {
+                writePayloadByte(cur shl (8 - bitsInCur))
+                cur = 0
+                bitsInCur = 0
+            }
+            val n = pixels.size
+            // Worst-case RBSP emulation prevention adds at most 1 byte per 2 zero bytes (< n/2 + 2).
+            ensureCapacity(n + (n ushr 1) + 4)
+            val b = buf
+            var wp = pos
+            var z = zeros
+            for (i in 0 until n) {
+                val v = pixels[i].toInt() ushr 2
+                if (z == 2 && v <= 3) {
+                    b[wp++] = 3
+                    z = 0
+                }
+                b[wp++] = v.toByte()
+                z = if (v == 0) z + 1 else 0
+            }
+            pos = wp
+            zeros = z
         }
 
         fun writePcm10(pixels: ShortArray) {
             // Four aligned 10-bit samples form five payload bytes before emulation prevention.
-            for (i in pixels.indices step 4) {
+            val n = pixels.size
+            val outBytes = (n ushr 2) * 5
+            ensureCapacity(outBytes + (outBytes ushr 1) + 4)
+            val b = buf
+            var wp = pos
+            var z = zeros
+            var i = 0
+            while (i < n) {
                 val a = pixels[i].toInt()
-                val b = pixels[i + 1].toInt()
-                val c = pixels[i + 2].toInt()
+                val c1 = pixels[i + 1].toInt()
+                val c2 = pixels[i + 2].toInt()
                 val d = pixels[i + 3].toInt()
-                writePayloadByte(a ushr 2)
-                writePayloadByte(((a and 3) shl 6) or (b ushr 4))
-                writePayloadByte(((b and 15) shl 4) or (c ushr 6))
-                writePayloadByte(((c and 63) shl 2) or (d ushr 8))
-                writePayloadByte(d and 255)
+                val v0 = a ushr 2
+                if (z == 2 && v0 <= 3) { b[wp++] = 3; z = 0 }; b[wp++] = v0.toByte(); z = if (v0 == 0) z + 1 else 0
+                val v1 = ((a and 3) shl 6) or (c1 ushr 4)
+                if (z == 2 && v1 <= 3) { b[wp++] = 3; z = 0 }; b[wp++] = v1.toByte(); z = if (v1 == 0) z + 1 else 0
+                val v2 = ((c1 and 15) shl 4) or (c2 ushr 6)
+                if (z == 2 && v2 <= 3) { b[wp++] = 3; z = 0 }; b[wp++] = v2.toByte(); z = if (v2 == 0) z + 1 else 0
+                val v3 = ((c2 and 63) shl 2) or (d ushr 8)
+                if (z == 2 && v3 <= 3) { b[wp++] = 3; z = 0 }; b[wp++] = v3.toByte(); z = if (v3 == 0) z + 1 else 0
+                val v4 = d and 255
+                if (z == 2 && v4 <= 3) { b[wp++] = 3; z = 0 }; b[wp++] = v4.toByte(); z = if (v4 == 0) z + 1 else 0
+                i += 4
             }
-        }
-
-        init {
-            out.write(byteArrayOf(0, 0, 0, 1))
-            out.write(nalHeader)
-        }
-
-        private fun writePayloadByte(value: Int) {
-            if (zeros == 2 && value <= 3) {
-                out.write(3)
-                zeros = 0
-            }
-            out.write(value)
-            zeros = if (value == 0) zeros + 1 else 0
+            pos = wp
+            zeros = z
         }
 
         fun writeBit(bit: Int) {
@@ -90,7 +144,7 @@ internal object MaliV61BitstreamEncoder {
             require(value >= 0)
             val codeNum = value + 1
             val bits = 32 - Integer.numberOfLeadingZeros(codeNum)
-            for (i in 0 until bits - 1) writeBit(0)
+            if (bits > 1) writeBits(0L, bits - 1)
             writeBits(codeNum.toLong(), bits)
         }
 
@@ -101,7 +155,11 @@ internal object MaliV61BitstreamEncoder {
 
         fun writeRbspTrailingBits() {
             writeBit(1)
-            while (bitsInCur != 0) writeBit(0)
+            if (bitsInCur != 0) {
+                writePayloadByte(cur shl (8 - bitsInCur))
+                cur = 0
+                bitsInCur = 0
+            }
         }
 
         fun toAnnexBNal(): ByteArray {
@@ -110,7 +168,7 @@ internal object MaliV61BitstreamEncoder {
                 cur = 0
                 bitsInCur = 0
             }
-            return out.toByteArray()
+            return Arrays.copyOf(buf, pos)
         }
     }
 
@@ -323,20 +381,20 @@ internal object MaliV61BitstreamEncoder {
                 val detailOffset = firstRow * mbW * 4 + firstCol
                 val targetY = if (hasLuma) (mbLumaAvg[idx].toInt() and 255) else 128
                 val canSpend = bw.byteCount + 385 <= targetBytes.toLong() * (idx + 1) / totalMbs
-                val priorPcm = previous?.pcmBlocks?.get(idx)
+                val hasPriorPcm = previous?.hasPcmBlock(idx) == true
                 val matchesReference = current != null && previous != null && current.matches(previous, idx, detailOffset)
                 // A coarsely unchanged CBR block with no prior PCM uses P_Skip without reading guest pixels.
                 val canPromote = canSpend && !constantRate && luma4x4 != null
-                val checkPromotion = matchesReference && priorPcm == null
+                val checkPromotion = matchesReference && !hasPriorPcm
                 val raw = pcmPixels?.takeIf {
                     if (checkPromotion) canPromote && pcm?.readDetailedBlock(mx, my, it, luma4x4, detailOffset, mbW * 4) == true
                     else (canSpend || matchesReference) && pcm?.readBlock(mx, my, it) == true
                 }
                 val promote = checkPromotion && raw != null
-                if (matchesReference && !promote && (priorPcm == null || (raw != null && AvcReferenceFrame.matchesPcm(raw, priorPcm)))) {
+                if (matchesReference && !promote && (!hasPriorPcm || (raw != null && previous.matchesPcmBlock(idx, raw)))) {
                     // P_Skip uses the colocated reference block (all motion vector predictors are zero).
                     previous.edges.copyInto(current.edges, edge, edge, edge + 10)
-                    current.pcmBlocks?.set(idx, priorPcm)
+                    if (hasPriorPcm) current.copyPcmBlockFrom(idx, previous)
                     for (col in 0 until 4) {
                         topLuma[firstCol + col] = previous.edges[edge + col].toInt() and 255
                         leftLuma[col] = previous.edges[edge + 4 + col].toInt() and 255
@@ -359,16 +417,27 @@ internal object MaliV61BitstreamEncoder {
                 // PCM carries all original samples at the selected bitrate, including detail below the 4x4 grid.
                 val pcmCandidate = raw?.takeIf { canSpend }
                 val usePcm = pcmCandidate != null && (constantRate || promote)
-                val hasDetail = !usePcm && luma4x4 != null && (0 until 16).any { block ->
-                    val offset = detailOffset + block / 4 * mbW * 4 + block % 4
-                    kotlin.math.abs((luma4x4[offset].toInt() and 255) - targetY) >= 4
+                var hasDetail = false
+                if (!usePcm && luma4x4 != null) {
+                    val stride4 = mbW shl 2
+                    var rOff = detailOffset
+                    outer@ for (by in 0 until 4) {
+                        for (bx in 0 until 4) {
+                            val d = (luma4x4[rOff + bx].toInt() and 255) - targetY
+                            if (d >= 4 || d <= -4) {
+                                hasDetail = true
+                                break@outer
+                            }
+                        }
+                        rOff += stride4
+                    }
                 }
                 val pixels = pcmCandidate?.takeIf { usePcm || hasDetail ||
                     (luma4x4 != null && AvcReferenceFrame.hasFineDetail(it, luma4x4, detailOffset, mbW * 4)) }
                 pcmAbove[mx] = pixels != null
                 pcmLeft = pixels != null
                 if (pixels != null) {
-                    current?.pcmBlocks?.set(idx, ByteArray(pixels.size) { (pixels[it].toInt() ushr 2).toByte() })
+                    current?.storePcmBlock(idx, pixels)
                     bw.writeUe(if (predictive) 30 else 25) // I_PCM macroblock
                     bw.writePcm8(pixels)
                     for (i in 0 until 4) {
@@ -395,7 +464,7 @@ internal object MaliV61BitstreamEncoder {
                     continue
                 }
                 var dcY = 0
-                if (hasDetail) {
+                if (hasDetail && luma4x4 != null) {
                     for (block in 0 until 16) {
                         // 8x8 raster order, then the four 4x4 blocks within each group.
                         val bx = ((block / 4) % 2) * 2 + block % 2

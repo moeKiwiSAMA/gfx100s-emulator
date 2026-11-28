@@ -117,48 +117,38 @@ class DmaFactory : ComponentFactory {
     override fun create(context: ComponentContext, config: Map<String, Any>): HardwareComponent = Dma(context, config)
     class Dma(context: ComponentContext, config: Map<String, Any>) : ScalarComponent("soc-dma", context, config), StatefulComponent, NativeMmioMirrorPort {
         private var registersMirror: MmioMirrorHandle? = null
+        private var registersMirrorHigh: MmioMirrorHandle? = null
         private var muxMirror: MmioMirrorHandle? = null
         private var requestsMirror: MmioMirrorHandle? = null
         private var ch7EnableMirror: MmioMirrorHandle? = null
         private val timerControlMirrors = arrayOfNulls<MmioMirrorHandle>(16)
 
-        private fun regSlotIndex(channelIdx: Int, regOffset: Int): Int {
-            if (channelIdx in 0..4) {
-                val sub = when (regOffset) {
-                    0x00 -> 0
-                    in 0x10..0x34 -> if ((regOffset and 3) == 0) 1 + ((regOffset - 0x10) ushr 2) else -1
-                    else -> -1
-                }
-                return if (sub >= 0) channelIdx * 11 + sub else -1
-            }
-            if (channelIdx in 5..8) {
-                val base = 55 + (channelIdx - 5) * 2
-                return when (regOffset) {
-                    0x28 -> base
-                    0x30 -> base + 1
-                    else -> -1
-                }
-            }
-            return -1
+        private fun regSubSlot(regOffset: Int): Int = when (regOffset) {
+            0x00 -> 0
+            in 0x10..0x34 -> if ((regOffset and 3) == 0) 1 + ((regOffset - 0x10) ushr 2) else -1
+            else -> -1
         }
 
         private fun syncChannelRegMirror(channelIdx: Int, regOffset: Int, value: Long) {
-            val slot = regSlotIndex(channelIdx, regOffset)
-            if (slot >= 0) registersMirror?.writeSlot(slot, value.toInt())
+            val sub = regSubSlot(regOffset)
+            if (sub < 0) return
+            if (channelIdx in 0..4) {
+                registersMirror?.writeSlot(channelIdx * 11 + sub, value.toInt())
+            } else if (channelIdx in 5..9) {
+                registersMirrorHigh?.writeSlot((channelIdx - 5) * 11 + sub, value.toInt())
+            }
         }
 
         private fun syncChannelMirror(channelIdx: Int) {
-            val h = registersMirror ?: return
+            val h = when (channelIdx) {
+                in 0..4 -> registersMirror
+                in 5..9 -> registersMirrorHigh
+                else -> null
+            } ?: return
+            val base = (if (channelIdx < 5) channelIdx else channelIdx - 5) * 11
             val r = channels[channelIdx].registers
-            if (channelIdx in 0..4) {
-                val base = channelIdx * 11
-                h.writeSlot(base, r[0].toInt())
-                for (k in 0..9) h.writeSlot(base + 1 + k, r[4 + k].toInt())
-            } else if (channelIdx in 5..8) {
-                val base = 55 + (channelIdx - 5) * 2
-                h.writeSlot(base, r[10].toInt())
-                h.writeSlot(base + 1, r[12].toInt())
-            }
+            h.writeSlot(base, r[0].toInt())
+            for (k in 0..9) h.writeSlot(base + 1 + k, r[4 + k].toInt())
         }
 
         private fun syncAllMirrors() {
@@ -169,11 +159,14 @@ class DmaFactory : ComponentFactory {
                     h.writeSlotRaw(base, r[0].toInt())
                     for (k in 0..9) h.writeSlotRaw(base + 1 + k, r[4 + k].toInt())
                 }
-                for (ch in 5..8) {
+                h.setValidMask(h.allSlotsMask)
+            }
+            registersMirrorHigh?.let { h ->
+                for (ch in 5..9) {
                     val r = channels[ch].registers
-                    val base = 55 + (ch - 5) * 2
-                    h.writeSlotRaw(base, r[10].toInt())
-                    h.writeSlotRaw(base + 1, r[12].toInt())
+                    val base = (ch - 5) * 11
+                    h.writeSlotRaw(base, r[0].toInt())
+                    for (k in 0..9) h.writeSlotRaw(base + 1 + k, r[4 + k].toInt())
                 }
                 h.setValidMask(h.allSlotsMask)
             }
@@ -192,18 +185,20 @@ class DmaFactory : ComponentFactory {
         }
 
         override fun describeMmioMirrorWindows(): List<MmioMirrorWindowSpec> = buildList {
-            val regSlots = ArrayList<MmioMirrorSlotSpec>(63)
+            val lowSlots = ArrayList<MmioMirrorSlotSpec>(55)
             for (ch in 0..4) {
                 val base = ch.toLong() shl 12
-                regSlots.add(MmioMirrorSlotSpec(base, 4))
-                for (off in 0x10..0x34 step 4) regSlots.add(MmioMirrorSlotSpec(base + off.toLong(), 4))
+                lowSlots.add(MmioMirrorSlotSpec(base, 4))
+                for (off in 0x10..0x34 step 4) lowSlots.add(MmioMirrorSlotSpec(base + off.toLong(), 4))
             }
-            for (ch in 5..8) {
+            val highSlots = ArrayList<MmioMirrorSlotSpec>(55)
+            for (ch in 0..4) {
                 val base = ch.toLong() shl 12
-                regSlots.add(MmioMirrorSlotSpec(base + 0x28L, 4))
-                regSlots.add(MmioMirrorSlotSpec(base + 0x30L, 4))
+                highSlots.add(MmioMirrorSlotSpec(base, 4))
+                for (off in 0x10..0x34 step 4) highSlots.add(MmioMirrorSlotSpec(base + off.toLong(), 4))
             }
-            add(MmioMirrorWindowSpec("$id.registers", 0x10000L, regSlots))
+            add(MmioMirrorWindowSpec("$id.registers", 0x5000L, lowSlots, addressOffset = 0x0000L))
+            add(MmioMirrorWindowSpec("$id.registers", 0x5000L, highSlots, addressOffset = 0x5000L))
             add(MmioMirrorWindowSpec("$id.mux", 0x20L, List(8) { i -> MmioMirrorSlotSpec(i * 4L, 4) }))
             add(MmioMirrorWindowSpec("$id.requests", 0x80L, List(32) { i -> MmioMirrorSlotSpec(i * 4L, 4) }))
             if (ch7Programming == RETAINED_ZERO_PROFILE || ch14TimerEnabled || anyOneshotTimerEnabled) {
@@ -216,7 +211,10 @@ class DmaFactory : ComponentFactory {
 
         override fun attachMmioMirror(portName: String, handle: MmioMirrorHandle) {
             when (portName) {
-                "$id.registers" -> { registersMirror = handle; syncAllMirrors() }
+                "$id.registers" -> {
+                    if (handle.spec.addressOffset == 0L) registersMirror = handle else registersMirrorHigh = handle
+                    syncAllMirrors()
+                }
                 "$id.mux" -> { muxMirror = handle; syncAllMirrors() }
                 "$id.requests" -> { requestsMirror = handle; syncAllMirrors() }
                 CH7_ENABLE_PORT -> { ch7EnableMirror = handle; handle.writeSlot(0, ch7EnableWord.toInt()) }
@@ -230,6 +228,7 @@ class DmaFactory : ComponentFactory {
 
         override fun detachMmioMirrors() {
             registersMirror?.invalidateAll(); registersMirror = null
+            registersMirrorHigh?.invalidateAll(); registersMirrorHigh = null
             muxMirror?.invalidateAll(); muxMirror = null
             requestsMirror?.invalidateAll(); requestsMirror = null
             ch7EnableMirror?.invalidateAll(); ch7EnableMirror = null
@@ -391,7 +390,7 @@ class DmaFactory : ComponentFactory {
         private val ch14TimerEnabled = config["channel14TimerProfile"] == CH14_TIMER_PROFILE
         private val timer0AllChannelsConfig = (config["timer0AllChannelsProfile"] as? String).orEmpty()
         private val timer0AllChannels = timer0AllChannelsConfig == TIMER0_ALL_CHANNELS_PROFILE
-        private val oneshotTimers: List<OneshotTimer> = listOf(0, 1, 2, 3, 5, 6, 8, 9, 10, 12, 13, 14, 15).map { ch ->
+        private val oneshotTimers: Array<OneshotTimer> = listOf(0, 1, 2, 3, 5, 6, 8, 9, 10, 12, 13, 14, 15).map { ch ->
             val settingKey = when (ch) {
                 0 -> "channel0Programming"
                 8 -> "channel8Programming"
@@ -412,7 +411,7 @@ class DmaFactory : ComponentFactory {
                 configuredValue = cfgVal,
                 enabled = (cfgVal == profileVal || timer0AllChannels) && !(ch == 14 && ch14TimerEnabled),
             )
-        }
+        }.toTypedArray()
         private val anyOneshotTimerEnabled: Boolean = oneshotTimers.any { it.enabled }
         private val anyProgrammingEnabled = ch4Programming.isNotEmpty() || ch7Programming.isNotEmpty() || ch11Programming.isNotEmpty() || anyOneshotTimerEnabled || timer0AllChannels
         private var ch4ControlWord = 0L
@@ -445,11 +444,13 @@ class DmaFactory : ComponentFactory {
         private val destinationRoutes=if(routesFile.isEmpty())null else DestinationRoutes(context,transmitName(),context.readData(routesFile))
         private fun destinationBindingFor(address:Long):DestinationRoutes.Binding? = destinationRoutes?.select(address) ?: if(destinationRoutes!=null)null else transmit()?.takeIf{it.matches(address)}?.let{DestinationRoutes.Binding(transmitName(),it)}
         private data class Submission(val deadline:Long?,val fromFlash:Boolean=false,val toPeer:Boolean=false,val binding:DestinationRoutes.Binding?=null,val audioRxPeerName:String?=null,val audioRxPeer:DmaSourcePeer?=null,val spi0:Spi0Dma?=null,val spi2:Spi2Dma?=null,val chainedRing:Boolean=false,val softwareChain:Boolean=false,val ringEnd:Long=0L,val ringChunkBytes:Long=0L)
-        private fun currentPendingMask(): Int {
-            var mask = 0
-            for (i in channels.indices) if (channels[i].pending) mask = mask or (1 shl i)
-            return mask
+        private var pendingBitmask = 0
+        private fun setChannelPending(channel: Channel, value: Boolean) {
+            channel.pending = value
+            val bit = 1 shl channel.index
+            pendingBitmask = if (value) (pendingBitmask or bit) else (pendingBitmask and bit.inv())
         }
+        private fun currentPendingMask(): Int = pendingBitmask
         private fun sync() {
             val mask = currentPendingMask()
             val prev = syncedPendingMask
@@ -862,7 +863,7 @@ class DmaFactory : ComponentFactory {
                     }
                     else -> error("unsupported standalone DMA control transition")
                 }
-                0x30 -> { r[index] = 0; channel.pending = false; syncChannelRegMirror(channelIndex, 0x30, 0L) }
+                0x30 -> { r[index] = 0; setChannelPending(channel, false); syncChannelRegMirror(channelIndex, 0x30, 0L) }
                 else -> { check(channel.submittedAt == null) { "DMA reconfiguration while active" }; r[index] = value; syncChannelRegMirror(channelIndex, register, value) }
             }
             // Sample source levels at beforeInstruction, consistently with completion events.
@@ -1572,7 +1573,7 @@ class DmaFactory : ComponentFactory {
             registers[10] = registers[10] and 0x10000000L.inv()
             channel.deadline = null
             channel.submittedAt = null
-            channel.pending = true
+            setChannelPending(channel, true)
             channel.completed++
         }
         override fun additionalMmioPorts(): List<String> = buildList {
@@ -2190,7 +2191,7 @@ class DmaFactory : ComponentFactory {
                 target.destinationBinding = validated.destinationBinding
                 target.audioRxPeerName = validated.audioRxPeerName
                 target.audioRxPeer = validated.audioRxPeer
-                target.pending = validated.pending
+                setChannelPending(target, validated.pending)
                 target.completed = validated.completed
             }
             events.clear()

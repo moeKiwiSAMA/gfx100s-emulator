@@ -129,15 +129,20 @@ class MmioRouter(
     private val tickAwareDevices: Array<TickAwareMmioDevice> = clocked.filterIsInstance<TickAwareMmioDevice>()
         .filter { !it.requiresEveryTick() }.toTypedArray()
     private val awareCount = tickAwareDevices.size
-    private val awareImpactMask: LongArray
+    private val awareImpactMaskLo: LongArray
+    private val awareImpactMaskHi: LongArray
+    private val awareImpactFull: BooleanArray
+    private val asyncPollDeviceIndices: IntArray
     private val windowScheduleMode = ByteArray(this.windows.size)
-    private val windowDirtyMask = LongArray(this.windows.size)
+    private val windowDirtyMaskLo = LongArray(this.windows.size)
+    private val windowDirtyMaskHi = LongArray(this.windows.size)
     private val deviceNextTicks = LongArray(awareCount) { Long.MAX_VALUE }
     private val heapDevice = IntArray(awareCount) { it }
     private val deviceHeapPos = IntArray(awareCount) { it }
     private val dueIndices = IntArray(awareCount)
     private val heapScanStack = IntArray(awareCount)
-    private var dirtyMask = 0L
+    private var dirtyMaskLo = 0L
+    private var dirtyMaskHi = 0L
     private var allDirty = true
     private var discoveryDirty = true
     private var discoveryNextTick = Long.MAX_VALUE
@@ -183,7 +188,8 @@ class MmioRouter(
         discoveryDirty = true
     }
     fun hasAlwaysTickDevices(): Boolean = alwaysTickDevices.isNotEmpty()
-    fun nextScheduledTickIfClean(): Long = if (allDirty || dirtyMask != 0L || discoveryDirty) 0L else nextScheduledTick
+    fun isScheduleDirty(): Boolean = allDirty || dirtyMaskLo != 0L || dirtyMaskHi != 0L || discoveryDirty
+    fun nextScheduledTickIfClean(): Long = if (allDirty || dirtyMaskLo != 0L || dirtyMaskHi != 0L || discoveryDirty) 0L else nextScheduledTick
 
     private fun siftUp(startPos: Int, dev: Int, tick: Long) {
         var pos = startPos
@@ -247,13 +253,21 @@ class MmioRouter(
                 updateDeviceTick(i, aware[i].nextInterestedTick())
             }
             allDirty = false
-            dirtyMask = 0L
+            dirtyMaskLo = 0L
+            dirtyMaskHi = 0L
         } else {
-            var mask = dirtyMask
-            dirtyMask = 0L
-            while (mask != 0L) {
-                val dev = java.lang.Long.numberOfTrailingZeros(mask)
-                mask = mask and (mask - 1L)
+            var maskLo = dirtyMaskLo
+            var maskHi = dirtyMaskHi
+            dirtyMaskLo = 0L
+            dirtyMaskHi = 0L
+            while (maskLo != 0L) {
+                val dev = java.lang.Long.numberOfTrailingZeros(maskLo)
+                maskLo = maskLo and (maskLo - 1L)
+                updateDeviceTick(dev, aware[dev].nextInterestedTick())
+            }
+            while (maskHi != 0L) {
+                val dev = 64 + java.lang.Long.numberOfTrailingZeros(maskHi)
+                maskHi = maskHi and (maskHi - 1L)
                 updateDeviceTick(dev, aware[dev].nextInterestedTick())
             }
         }
@@ -268,7 +282,10 @@ class MmioRouter(
     private fun markWindowDirty(idx: Int) {
         when (windowScheduleMode[idx]) {
             SCHEDULE_NONE -> Unit
-            SCHEDULE_SELF_MASK -> dirtyMask = dirtyMask or windowDirtyMask[idx]
+            SCHEDULE_SELF_MASK -> {
+                dirtyMaskLo = dirtyMaskLo or windowDirtyMaskLo[idx]
+                dirtyMaskHi = dirtyMaskHi or windowDirtyMaskHi[idx]
+            }
             else -> {
                 allDirty = true
                 discoveryDirty = true
@@ -276,8 +293,29 @@ class MmioRouter(
         }
     }
 
+    private fun pollAsyncDevices() {
+        val indices = asyncPollDeviceIndices
+        if (indices.isEmpty()) return
+        val aware = tickAwareDevices
+        val ticks = deviceNextTicks
+        var changed = false
+        for (i in indices.indices) {
+            val dev = indices[i]
+            val t = aware[dev].nextInterestedTick()
+            if (t != ticks[dev]) {
+                updateDeviceTick(dev, t)
+                changed = true
+            }
+        }
+        if (changed) {
+            val heapMin = if (awareCount > 0) ticks[heapDevice[0]] else Long.MAX_VALUE
+            nextScheduledTick = if (discoveryNextTick < heapMin) discoveryNextTick else heapMin
+        }
+    }
+
     fun refreshNextScheduledTick(): Long {
-        if (allDirty || dirtyMask != 0L || discoveryDirty) flushDirtySchedule()
+        if (allDirty || dirtyMaskLo != 0L || dirtyMaskHi != 0L || discoveryDirty) flushDirtySchedule()
+        pollAsyncDevices()
         return nextScheduledTick
     }
 
@@ -287,12 +325,25 @@ class MmioRouter(
      */
     fun nextScheduledTickExcluding(excluded: TickAwareMmioDevice?): Long {
         if (excluded == null) return refreshNextScheduledTick()
-        if (allDirty || dirtyMask != 0L || discoveryDirty) flushDirtySchedule()
+        if (allDirty || dirtyMaskLo != 0L || dirtyMaskHi != 0L || discoveryDirty) flushDirtySchedule()
+        pollAsyncDevices()
         var best = discoveryNextTick
-        for (i in 0 until awareCount) {
-            if (tickAwareDevices[i] === excluded) continue
-            val t = deviceNextTicks[i]
-            if (t < best) best = t
+        val n = awareCount
+        if (n > 0) {
+            val root = heapDevice[0]
+            if (tickAwareDevices[root] !== excluded) {
+                val t = deviceNextTicks[root]
+                if (t < best) best = t
+            } else {
+                if (n > 1) {
+                    val left = deviceNextTicks[heapDevice[1]]
+                    if (left < best) best = left
+                }
+                if (n > 2) {
+                    val right = deviceNextTicks[heapDevice[2]]
+                    if (right < best) best = right
+                }
+            }
         }
         return best
     }
@@ -302,63 +353,132 @@ class MmioRouter(
         this.windows.zipWithNext().forEach { (a, b) -> require(a.base + a.size <= b.base) { "overlapping MMIO windows" } }
         val awareIndexByPort = java.util.IdentityHashMap<MmioDevice, Int>(awareCount * 2)
         for (i in 0 until awareCount) awareIndexByPort[tickAwareDevices[i]] = i
-        val awareIdMask = HashMap<String, Long>()
-        var dmaFamilyMask = 0L
-        var shutterFamilyMask = 0L
-        val impact = LongArray(awareCount) { -1L }
-        if (awareCount <= 64) {
+        val awareIdMaskLo = HashMap<String, Long>()
+        val awareIdMaskHi = HashMap<String, Long>()
+        var dmaFamilyMaskLo = 0L
+        var dmaFamilyMaskHi = 0L
+        var shutterFamilyMaskLo = 0L
+        var shutterFamilyMaskHi = 0L
+        val impactLo = LongArray(awareCount)
+        val impactHi = LongArray(awareCount)
+        val impactFull = BooleanArray(awareCount) { true }
+        val asyncIndices = ArrayList<Int>(2)
+        if (awareCount <= 128) {
             for (w in this.windows) {
                 val aIdx = awareIndexByPort[w.port]
                 if (aIdx != null) {
-                    val bit = 1L shl aIdx
-                    awareIdMask[w.id] = (awareIdMask[w.id] ?: 0L) or bit
-                    if (w.id in DMA_FAMILY_DEVICES) dmaFamilyMask = dmaFamilyMask or bit
-                    if (w.id in SHUTTER_FAMILY_DEVICES) shutterFamilyMask = shutterFamilyMask or bit
+                    if (w.id in ASYNC_POLL_DEVICES && aIdx !in asyncIndices) asyncIndices += aIdx
+                    if (aIdx < 64) {
+                        val bit = 1L shl aIdx
+                        awareIdMaskLo[w.id] = (awareIdMaskLo[w.id] ?: 0L) or bit
+                        if (w.id in DMA_FAMILY_DEVICES) dmaFamilyMaskLo = dmaFamilyMaskLo or bit
+                        if (w.id in SHUTTER_FAMILY_DEVICES) shutterFamilyMaskLo = shutterFamilyMaskLo or bit
+                    } else {
+                        val bit = 1L shl (aIdx - 64)
+                        awareIdMaskHi[w.id] = (awareIdMaskHi[w.id] ?: 0L) or bit
+                        if (w.id in DMA_FAMILY_DEVICES) dmaFamilyMaskHi = dmaFamilyMaskHi or bit
+                        if (w.id in SHUTTER_FAMILY_DEVICES) shutterFamilyMaskHi = shutterFamilyMaskHi or bit
+                    }
                 }
             }
             for (w in this.windows) {
                 val aIdx = awareIndexByPort[w.port] ?: continue
                 when {
-                    w.id in SELF_CONTAINED_SCHEDULING_DEVICES -> impact[aIdx] = 1L shl aIdx
-                    w.id in DMA_FAMILY_DEVICES -> impact[aIdx] = dmaFamilyMask
-                    w.id in SHUTTER_FAMILY_DEVICES -> impact[aIdx] = shutterFamilyMask
+                    w.id in SELF_CONTAINED_SCHEDULING_DEVICES -> {
+                        impactFull[aIdx] = false
+                        impactLo[aIdx] = awareIdMaskLo[w.id] ?: 0L
+                        impactHi[aIdx] = awareIdMaskHi[w.id] ?: 0L
+                    }
+                    w.id in DMA_FAMILY_DEVICES -> {
+                        impactFull[aIdx] = false
+                        impactLo[aIdx] = dmaFamilyMaskLo
+                        impactHi[aIdx] = dmaFamilyMaskHi
+                    }
+                    w.id in SHUTTER_FAMILY_DEVICES -> {
+                        impactFull[aIdx] = false
+                        impactLo[aIdx] = shutterFamilyMaskLo
+                        impactHi[aIdx] = shutterFamilyMaskHi
+                    }
                 }
             }
         }
-        awareImpactMask = impact
+        awareImpactMaskLo = impactLo
+        awareImpactMaskHi = impactHi
+        awareImpactFull = impactFull
+        asyncPollDeviceIndices = asyncIndices.toIntArray()
+        val maliIdx = this.windows.firstOrNull { it.id == "soc-isp" && it.base == 0xFFE0_0000L }
+            ?.let { awareIndexByPort[it.port] }
+        val maliBitLo = if (maliIdx != null && maliIdx < 64) (1L shl maliIdx) else 0L
+        val maliBitHi = if (maliIdx != null && maliIdx >= 64) (1L shl (maliIdx - 64)) else 0L
         for (i in this.windows.indices) {
             val w = this.windows[i]
             if (w.id in PURE_READ_NON_SCHEDULING_DEVICES) windowReadMutatesSchedule[i] = false
             when {
                 w.port is RetainedMmioBank || w.id in PURE_NON_SCHEDULING_DEVICES ->
                     windowScheduleMode[i] = SCHEDULE_NONE
-                awareCount <= 64 && w.id in SELF_CONTAINED_SCHEDULING_DEVICES -> {
-                    val mask = awareIdMask[w.id] ?: 0L
-                    if (mask == 0L) {
+                awareCount <= 128 && w.id in SELF_CONTAINED_PER_PORT_DEVICES -> {
+                    val selfIdx = awareIndexByPort[w.port]
+                    if (selfIdx == null) {
                         windowScheduleMode[i] = SCHEDULE_NONE
                     } else {
                         windowScheduleMode[i] = SCHEDULE_SELF_MASK
-                        windowDirtyMask[i] = mask
+                        if (selfIdx < 64) windowDirtyMaskLo[i] = 1L shl selfIdx
+                        else windowDirtyMaskHi[i] = 1L shl (selfIdx - 64)
                     }
                 }
-                awareCount <= 64 && w.id in DMA_FAMILY_DEVICES -> {
-                    if (dmaFamilyMask == 0L) {
+                awareCount <= 128 && w.id == "soc-isp" -> {
+                    val selfIdx = awareIndexByPort[w.port]
+                    val maskLo: Long
+                    val maskHi: Long
+                    if (w.base == 0xFFE0_0000L) {
+                        maskLo = if (selfIdx != null && selfIdx < 64) (1L shl selfIdx) else 0L
+                        maskHi = if (selfIdx != null && selfIdx >= 64) (1L shl (selfIdx - 64)) else 0L
+                    } else {
+                        maskLo = (awareIdMaskLo[w.id] ?: 0L) and maliBitLo.inv()
+                        maskHi = (awareIdMaskHi[w.id] ?: 0L) and maliBitHi.inv()
+                    }
+                    if (maskLo == 0L && maskHi == 0L) {
                         windowScheduleMode[i] = SCHEDULE_NONE
                     } else {
                         windowScheduleMode[i] = SCHEDULE_SELF_MASK
-                        windowDirtyMask[i] = dmaFamilyMask
+                        windowDirtyMaskLo[i] = maskLo
+                        windowDirtyMaskHi[i] = maskHi
                     }
                 }
-                awareCount <= 64 && w.id in SHUTTER_FAMILY_DEVICES -> {
+                awareCount <= 128 && w.id in SELF_CONTAINED_SCHEDULING_DEVICES -> {
+                    val maskLo = awareIdMaskLo[w.id] ?: 0L
+                    val maskHi = awareIdMaskHi[w.id] ?: 0L
+                    if (maskLo == 0L && maskHi == 0L) {
+                        windowScheduleMode[i] = SCHEDULE_NONE
+                    } else {
+                        windowScheduleMode[i] = SCHEDULE_SELF_MASK
+                        windowDirtyMaskLo[i] = maskLo
+                        windowDirtyMaskHi[i] = maskHi
+                    }
+                }
+                awareCount <= 128 && w.id in DMA_FAMILY_DEVICES -> {
+                    if (dmaFamilyMaskLo == 0L && dmaFamilyMaskHi == 0L) {
+                        windowScheduleMode[i] = SCHEDULE_NONE
+                    } else {
+                        windowScheduleMode[i] = SCHEDULE_SELF_MASK
+                        windowDirtyMaskLo[i] = dmaFamilyMaskLo
+                        windowDirtyMaskHi[i] = dmaFamilyMaskHi
+                    }
+                }
+                awareCount <= 128 && w.id in SHUTTER_FAMILY_DEVICES -> {
                     // CCDTG can return the CCDIF to live-view timing during a C000 write.
-                    val mask = if (w.id == "soc-isp-cmd" && w.base == 0xfff6c000L) {
-                        shutterFamilyMask or (awareIdMask["soc-isp"] ?: 0L)
-                    } else shutterFamilyMask
-                    if (mask == 0L) {
+                    val maskLo = if (w.id == "soc-isp-cmd" && w.base == 0xfff6c000L) {
+                        shutterFamilyMaskLo or ((awareIdMaskLo["soc-isp"] ?: 0L) and maliBitLo.inv())
+                    } else shutterFamilyMaskLo
+                    val maskHi = if (w.id == "soc-isp-cmd" && w.base == 0xfff6c000L) {
+                        shutterFamilyMaskHi or ((awareIdMaskHi["soc-isp"] ?: 0L) and maliBitHi.inv())
+                    } else shutterFamilyMaskHi
+                    if (maskLo == 0L && maskHi == 0L) {
                         windowScheduleMode[i] = SCHEDULE_NONE
                     } else {
                         windowScheduleMode[i] = SCHEDULE_SELF_MASK
-                        windowDirtyMask[i] = mask
+                        windowDirtyMaskLo[i] = maskLo
+                        windowDirtyMaskHi[i] = maskHi
                     }
                 }
                 else -> windowScheduleMode[i] = SCHEDULE_ALL
@@ -545,11 +665,17 @@ class MmioRouter(
         private const val SCHEDULE_ALL: Byte = 2
         private val PURE_NON_SCHEDULING_DEVICES = setOf(
             "soc-gic", "soc-selection", "soc-system-control", "soc-keyed-io", "soc-hdmi", "soc-uart",
+            "soc-isp-setup",
         )
         private val PURE_READ_NON_SCHEDULING_DEVICES = setOf("soc-isp", "soc-gpio")
+        private val ASYNC_POLL_DEVICES = setOf("soc-sdio")
+        private val SELF_CONTAINED_PER_PORT_DEVICES = setOf(
+            "soc-jpeg", "soc-dram", "soc-configuration",
+        )
         private val SELF_CONTAINED_SCHEDULING_DEVICES = setOf(
             "soc-timer", "soc-adc", "soc-temperature", "soc-dram", "soc-method4",
             "soc-isp", "soc-vglib-init", "soc-i2c", "soc-jpeg", "soc-panel", "soc-configuration",
+            "soc-sdio",
         )
         private val DMA_FAMILY_DEVICES = setOf(
             "soc-dma", "soc-spi", "soc-flash", "soc-sd-host", "soc-serial-engine",
@@ -568,7 +694,7 @@ class MmioRouter(
         val scheduled = scheduledDevices
         for (i in scheduled.indices) {
             val at = scheduled[i].nextDeadline() ?: continue
-            require(at > now) { "scheduled MMIO deadline is not in the future" }
+            require(at > now) { "scheduled MMIO deadline is not in the future (dev=${scheduled[i].javaClass.simpleName} at=$at now=$now)" }
             if (!found || at < earliest) {
                 earliest = at
                 found = true
@@ -577,7 +703,7 @@ class MmioRouter(
         if (discovery != null) {
             val at = discovery.nextDeadlinePrimitive()
             if (at != Long.MAX_VALUE) {
-                require(at > now) { "scheduled discovery deadline is not in the future" }
+                require(at > now) { "scheduled discovery deadline is not in the future (at=$at now=$now)" }
                 if (!found || at < earliest) {
                     earliest = at
                     found = true
@@ -604,16 +730,18 @@ class MmioRouter(
             }
             return
         }
-        if (allDirty || dirtyMask != 0L || discoveryDirty) {
+        if (allDirty || dirtyMaskLo != 0L || dirtyMaskHi != 0L || discoveryDirty) {
             flushDirtySchedule()
         }
+        pollAsyncDevices()
         if (tick < nextScheduledTick) return
 
         val n = awareCount
         val aware = tickAwareDevices
         val ticks = deviceNextTicks
-        if (n <= 64) {
-            var dueMask = 0L
+        if (n <= 128) {
+            var dueMaskLo = 0L
+            var dueMaskHi = 0L
             if (n > 0 && ticks[heapDevice[0]] <= tick) {
                 var sp = 0
                 heapScanStack[sp++] = 0
@@ -621,7 +749,8 @@ class MmioRouter(
                     val pos = heapScanStack[--sp]
                     val dev = heapDevice[pos]
                     if (ticks[dev] <= tick) {
-                        dueMask = dueMask or (1L shl dev)
+                        if (dev < 64) dueMaskLo = dueMaskLo or (1L shl dev)
+                        else dueMaskHi = dueMaskHi or (1L shl (dev - 64))
                         val left = (pos shl 1) + 1
                         if (left < n) {
                             heapScanStack[sp++] = left
@@ -631,16 +760,24 @@ class MmioRouter(
                     }
                 }
             }
-            var remainingDue = dueMask
-            var refreshMask = dueMask
+            var remainingDueLo = dueMaskLo
+            var remainingDueHi = dueMaskHi
+            var refreshMaskLo = dueMaskLo
+            var refreshMaskHi = dueMaskHi
             var ranFullCrossDevice = false
             try {
-                while (remainingDue != 0L) {
-                    val dev = java.lang.Long.numberOfTrailingZeros(remainingDue)
-                    remainingDue = remainingDue and (remainingDue - 1L)
+                while (remainingDueLo != 0L || remainingDueHi != 0L) {
+                    val dev = if (remainingDueLo != 0L) {
+                        val b = java.lang.Long.numberOfTrailingZeros(remainingDueLo)
+                        remainingDueLo = remainingDueLo and (remainingDueLo - 1L)
+                        b
+                    } else {
+                        val b = java.lang.Long.numberOfTrailingZeros(remainingDueHi)
+                        remainingDueHi = remainingDueHi and (remainingDueHi - 1L)
+                        64 + b
+                    }
                     aware[dev].beforeInstruction(tick)
-                    val impact = awareImpactMask[dev]
-                    if (impact == -1L) {
+                    if (awareImpactFull[dev]) {
                         ranFullCrossDevice = true
                         for (j in (dev + 1) until n) {
                             if (aware[j].nextInterestedTick() <= tick) {
@@ -649,19 +786,56 @@ class MmioRouter(
                         }
                         break
                     }
-                    refreshMask = refreshMask or impact
-                    var laterPeers = if (dev < 63) (impact and (-1L shl (dev + 1)) and remainingDue.inv()) else 0L
-                    while (laterPeers != 0L) {
-                        val peer = java.lang.Long.numberOfTrailingZeros(laterPeers)
-                        laterPeers = laterPeers and (laterPeers - 1L)
-                        val peerNext = aware[peer].nextInterestedTick()
-                        updateDeviceTick(peer, peerNext)
-                        val peerBit = 1L shl peer
-                        if (peerNext <= tick) {
-                            remainingDue = remainingDue or peerBit
-                            refreshMask = refreshMask or peerBit
-                        } else {
-                            refreshMask = refreshMask and peerBit.inv()
+                    val impactLo = awareImpactMaskLo[dev]
+                    val impactHi = awareImpactMaskHi[dev]
+                    refreshMaskLo = refreshMaskLo or impactLo
+                    refreshMaskHi = refreshMaskHi or impactHi
+                    if (dev < 64) {
+                        var laterLo = if (dev < 63) (impactLo and (-1L shl (dev + 1)) and remainingDueLo.inv()) else 0L
+                        while (laterLo != 0L) {
+                            val peer = java.lang.Long.numberOfTrailingZeros(laterLo)
+                            laterLo = laterLo and (laterLo - 1L)
+                            val peerNext = aware[peer].nextInterestedTick()
+                            updateDeviceTick(peer, peerNext)
+                            val peerBit = 1L shl peer
+                            if (peerNext <= tick) {
+                                remainingDueLo = remainingDueLo or peerBit
+                                refreshMaskLo = refreshMaskLo or peerBit
+                            } else {
+                                refreshMaskLo = refreshMaskLo and peerBit.inv()
+                            }
+                        }
+                        var laterHi = impactHi and remainingDueHi.inv()
+                        while (laterHi != 0L) {
+                            val peerBitIdx = java.lang.Long.numberOfTrailingZeros(laterHi)
+                            laterHi = laterHi and (laterHi - 1L)
+                            val peer = 64 + peerBitIdx
+                            val peerNext = aware[peer].nextInterestedTick()
+                            updateDeviceTick(peer, peerNext)
+                            val peerBit = 1L shl peerBitIdx
+                            if (peerNext <= tick) {
+                                remainingDueHi = remainingDueHi or peerBit
+                                refreshMaskHi = refreshMaskHi or peerBit
+                            } else {
+                                refreshMaskHi = refreshMaskHi and peerBit.inv()
+                            }
+                        }
+                    } else {
+                        val bitIdx = dev - 64
+                        var laterHi = if (bitIdx < 63) (impactHi and (-1L shl (bitIdx + 1)) and remainingDueHi.inv()) else 0L
+                        while (laterHi != 0L) {
+                            val peerBitIdx = java.lang.Long.numberOfTrailingZeros(laterHi)
+                            laterHi = laterHi and (laterHi - 1L)
+                            val peer = 64 + peerBitIdx
+                            val peerNext = aware[peer].nextInterestedTick()
+                            updateDeviceTick(peer, peerNext)
+                            val peerBit = 1L shl peerBitIdx
+                            if (peerNext <= tick) {
+                                remainingDueHi = remainingDueHi or peerBit
+                                refreshMaskHi = refreshMaskHi or peerBit
+                            } else {
+                                refreshMaskHi = refreshMaskHi and peerBit.inv()
+                            }
                         }
                     }
                 }
@@ -681,9 +855,14 @@ class MmioRouter(
                 allDirty = true
                 flushDirtySchedule()
             } else {
-                while (refreshMask != 0L) {
-                    val dev = java.lang.Long.numberOfTrailingZeros(refreshMask)
-                    refreshMask = refreshMask and (refreshMask - 1L)
+                while (refreshMaskLo != 0L) {
+                    val dev = java.lang.Long.numberOfTrailingZeros(refreshMaskLo)
+                    refreshMaskLo = refreshMaskLo and (refreshMaskLo - 1L)
+                    updateDeviceTick(dev, aware[dev].nextInterestedTick())
+                }
+                while (refreshMaskHi != 0L) {
+                    val dev = 64 + java.lang.Long.numberOfTrailingZeros(refreshMaskHi)
+                    refreshMaskHi = refreshMaskHi and (refreshMaskHi - 1L)
                     updateDeviceTick(dev, aware[dev].nextInterestedTick())
                 }
                 val heapMin = if (n > 0) ticks[heapDevice[0]] else Long.MAX_VALUE

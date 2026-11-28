@@ -26,7 +26,7 @@ internal class ImageDmaMemory(
         var storage: ByteBuffer? = null
 
         fun buffer(): ByteBuffer = storage ?: run {
-            val allocatedArena = Arena.ofShared()
+            val allocatedArena = Arena.ofConfined()
             val allocatedSegment = allocatedArena.allocate(end - base, 64L)
             val allocatedBuffer = allocatedSegment.asByteBuffer()
             arena = allocatedArena
@@ -120,7 +120,7 @@ internal class ImageDmaMemory(
                 val file = ramDir.resolve("image-dma-$id.bin")
                 val hash = hashes[id] as? String ?: error("Missing SHA-256 for imaging DMA window $id")
                 EmulatorSnapshot.verifyRegularFileSha256(file, size, hash)
-                val arena = Arena.ofShared()
+                val arena = Arena.ofConfined()
                 try {
                     val segment = arena.allocate(size, 64L)
                     val buffer = segment.asByteBuffer()
