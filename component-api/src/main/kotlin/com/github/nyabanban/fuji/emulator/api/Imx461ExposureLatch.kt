@@ -96,19 +96,21 @@ class Imx461ExposureLatch(private val clock: EmulationClock? = null) {
             programmed.mdsel8 == next.mdsel8 &&
             programmed.modeFlags04 == next.modeFlags04 &&
             programmed.movieFrameRows == next.movieFrameRows &&
-            programmed.movieShr15 == next.movieShr15 &&
+            programmed.shr15 == next.shr15 &&
+            programmed.svr12 == next.svr12 &&
             programmed.vmax12 == next.vmax12
         if (timingUnchanged) {
-            // When PGC/HCG updates in a separate SPI burst before SHR2 in Movie mode,
-            // keep the completed exposure until readout settles so a split (old SHR2, new PGC/HCG)
-            // pair is neither rendered directly nor frozen into previousReadout by the paired SHR2 write.
+            // When PGC/HCG updates in a separate SPI burst before SHR1 in Movie mode,
+            // keep the completed exposure until readout settles so a split (old SHR1, new PGC/HCG)
+            // pair is neither rendered directly nor frozen into previousReadout by the paired SHR1 write.
             if (prior != null ||
-                !Imx461ExposurePort.isMovieShutterMode(next.mdsel8) || next.vmax12 !in 0..63
+                !Imx461ExposurePort.isMovieShutterMode(next.mdsel8) || next.vmax12 !in 0..63 ||
+                (programmed.pgc12 == next.pgc12 && programmed.hcgEnabled == next.hcgEnabled)
             ) {
                 return
             }
             val frameRows = Imx461ExposurePort.movieBaseFramePeriodUnits(next.mdsel8, next.modeFlags04, next.movieFrameRows)
-            val integration = ((next.vmax12 + 1L) * frameRows - next.movieShr15).coerceIn(1L, frameRows)
+            val integration = ((next.svr12 + 1L) * frameRows - next.shr15).coerceIn(1L, frameRows)
             val delay = (integration * GUEST_TICKS_PER_SECOND + MOVIE_SHUTTER_UNITS_PER_SECOND - 1L) / MOVIE_SHUTTER_UNITS_PER_SECOND
             previousReadout = programmed
             readoutReadyAt = now + delay
@@ -118,7 +120,7 @@ class Imx461ExposureLatch(private val clock: EmulationClock? = null) {
         previousReadout = null
         if (completed == null || !Imx461ExposurePort.isMovieShutterMode(next.mdsel8) || next.vmax12 !in 0..63) return
         val frameRows = Imx461ExposurePort.movieBaseFramePeriodUnits(next.mdsel8, next.modeFlags04, next.movieFrameRows)
-        val integration = ((next.vmax12 + 1L) * frameRows - next.movieShr15).coerceAtLeast(1L)
+        val integration = ((next.svr12 + 1L) * frameRows - next.shr15).coerceAtLeast(1L)
         // MMIO can request an LV0 image immediately after a shutter write, even within a frame.
         // Keep the completed sample until this integration can supply a readout, without extending
         // an already-pending deadline so continuous per-frame AE updates can never starve readout.

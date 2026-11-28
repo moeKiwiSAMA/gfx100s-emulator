@@ -469,18 +469,23 @@ class IspCmdFactoryTest {
         ram.bytes[0] = 0x82.toByte(); ram.bytes[1] = 0; ram.bytes[2] = Imx461SpiShadow.REG_SHR_0.toByte()
         assertEquals(0x00AA0000L, rReply.read(0x1cL, 4))
 
-        // Switch the sensor to FHD 29.97p using the pulse period retained by CCDTG.
+        // Switch the sensor to FHD 29.97p using the pulse period retained by CCDTG (1288 rows).
+        // Live GFX100S 2.13 programs primary Movie shutter SHR1 (0x0016/17) = 0x0388 (904 -> 384 rows = 1/100 s = 2477 ns),
+        // while secondary SHR2 (0x0023/24) = 0x0502 (1282) is the short-exposure path and must not hijack exposure.
         val ccdtg = requireNotNull(ctx.ports.find(IspCmdFactory.PORT_C000, MmioDevice::class.java))
         val sensor = requireNotNull(ctx.ports.find(IspCmdFactory.PORT_IMX461_EXPOSURE, Imx461ExposurePort::class.java))
         ccdtg.write(0x194, 4, 0x20A10)
         issueWrites(
-            0x0002 to 0x00, 0x0001 to 0x92, 0x0004 to 0x03, 0x0016 to 0x88, 0x0017 to 0x03,
+            0x0002 to 0x00, 0x0001 to 0x92, 0x0004 to 0x03,
+            0x0012 to 0x00, 0x0013 to 0x00,
+            0x0016 to 0x88, 0x0017 to 0x03,
             0x001F to 0, 0x0020 to 0, 0x0023 to 0x02, 0x0024 to 0x05,
         )
-        ctx.currentTick += 10_000L // Six SHR2 integration units have completed.
+        ctx.currentTick += 1_000_000L // 384 SHR1 integration units have completed.
         assertEquals(1288, sensor.effectiveExposureState.movieFrameRows)
+        assertEquals(904, sensor.effectiveExposureState.shr15)
         assertEquals(1282, sensor.effectiveExposureState.movieShr15)
-        assertEquals(39L, Imx461ExposurePort.computeEffectiveExposure(sensor).durationNanos)
+        assertEquals(2477L, Imx461ExposurePort.computeEffectiveExposure(sensor).durationNanos)
 
         (comp as HardwareComponent).close()
         (restored as HardwareComponent).close()
@@ -985,39 +990,40 @@ class IspCmdFactoryTest {
             c204.write(0L, 4, 1L)
         }
 
-        // Steady FHD 59.94p (0x194 = 0x20508 -> 644 rows, SHR2 = 590 -> 54 rows integration = 348 ns)
+        // Steady FHD 59.94p (0x194 = 0x20508 -> 644 rows, SHR1 = 590 -> 54 rows integration = 348 ns)
         c000.write(0x194L, 4, 0x0002_0508L)
         spiWrite(
             0x0001 to 0x92, 0x0004 to 0x07,
-            0x0016 to 0x04, 0x0017 to 0x01,
+            0x0012 to 0x00, 0x0013 to 0x00,
+            0x0016 to (590 and 0xFF), 0x0017 to (590 ushr 8),
             0x001F to 0x00, 0x0020 to 0x00,
-            0x0023 to (590 and 0xFF), 0x0024 to (590 ushr 8),
+            0x0023 to (641 and 0xFF), 0x0024 to (641 ushr 8),
             0x002E to (2066 and 0xFF), 0x002F to (2066 ushr 8),
         )
         ctx.currentTick += 2_000_000L
         assertEquals(644, exposure.effectiveExposureState.movieFrameRows)
         assertEquals(348L, Imx461ExposurePort.computeEffectiveExposure(exposure).durationNanos)
 
-        // Start-of-recording transition writes 0x194 = 0x20A10 (1288 rows) BEFORE SPI updates SHR2.
-        // Must NOT pair (old SHR2=590, new rows=1288) into a 698-row (+3.7 EV) white flash!
+        // Start-of-recording transition writes 0x194 = 0x20A10 (1288 rows) BEFORE SPI updates SHR1.
+        // Must NOT pair (old SHR1=590, new rows=1288) into a 698-row (+3.7 EV) white flash!
         c000.write(0x194L, 4, 0x0002_0A10L)
         assertEquals(644, exposure.effectiveExposureState.movieFrameRows)
         assertEquals(348L, Imx461ExposurePort.computeEffectiveExposure(exposure).durationNanos)
 
-        // Once firmware commits matching SHR2=1234 (54 rows integration), 1288 rows commits cleanly.
-        spiWrite(0x0023 to (1234 and 0xFF), 0x0024 to (1234 ushr 8))
+        // Once firmware commits matching SHR1=1234 (54 rows integration), 1288 rows commits cleanly.
+        spiWrite(0x0016 to (1234 and 0xFF), 0x0017 to (1234 ushr 8))
         ctx.currentTick += 2_000_000L
         assertEquals(1288, exposure.effectiveExposureState.movieFrameRows)
-        assertEquals(1234, exposure.effectiveExposureState.movieShr15)
+        assertEquals(1234, exposure.effectiveExposureState.shr15)
         assertEquals(348L, Imx461ExposurePort.computeEffectiveExposure(exposure).durationNanos)
 
-        // Reverse ordering: SPI writes SHR2=1500 (out of 1288 frame) BEFORE 0x194 grows to 1548 rows.
-        spiWrite(0x0023 to (1500 and 0xFF), 0x0024 to (1500 ushr 8))
-        assertEquals(1234, exposure.effectiveExposureState.movieShr15)
+        // Reverse ordering: SPI writes SHR1=1500 (out of 1288 frame) BEFORE 0x194 grows to 1548 rows.
+        spiWrite(0x0016 to (1500 and 0xFF), 0x0017 to (1500 ushr 8))
+        assertEquals(1234, exposure.effectiveExposureState.shr15)
         c000.write(0x194L, 4, 0x0002_0C18L) // 3096 / 2 = 1548 rows
         ctx.currentTick += 2_000_000L
         assertEquals(1548, exposure.effectiveExposureState.movieFrameRows)
-        assertEquals(1500, exposure.effectiveExposureState.movieShr15)
+        assertEquals(1500, exposure.effectiveExposureState.shr15)
         comp.close()
     }
 

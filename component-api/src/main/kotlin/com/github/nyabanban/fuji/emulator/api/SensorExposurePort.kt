@@ -143,6 +143,15 @@ interface Imx461ExposurePort {
          */
         const val IMPLICIT_FRAME_PERIOD_UNITS = 905L
 
+        /**
+         * IMX461 `BOOST -> EVF FRAME RATE PRIORITY` 85.766 fps drive mode (`T[9]`, `MDSEL = 0xAF`,
+         * DAT S5 `0x028DFC4C` + `0x0283D778` `idx=31/33/41/45/52` `v1 = 1052`, `h = 798`, `85.766 fps`,
+         * `line_rate = 72 MHz / 798 = 90.226 kHz -> 1/250 s = 361` SHR units).
+         */
+        const val MDSEL_EVF_BOOST_FPS = 0xAF
+        const val EVF_BOOST_FPS_FRAME_PERIOD_UNITS = 1052L
+        const val EVF_BOOST_FPS_NOMINAL_INTEGRATION_UNITS = 361.0
+
         /** IMX461 Still drive modes (`MDSEL 0x0001`, DAT S5 `0x0283D778` T[0..3]). */
         const val MDSEL_STILL_16BIT = 0x00
         const val MDSEL_STILL_14BIT = 0x40
@@ -166,7 +175,7 @@ interface Imx461ExposurePort {
         const val MDSEL_MOVIE_FHD_60P = 0x92
 
         /**
-         * Exact Movie-mode `SHR2` (`0x0023/0x0024`) frame periods (`timing[1] / 2`, DAT S5
+         * Exact Movie-mode `SHR1` (`0x0016/0x0017`) frame periods (`timing[1] / 2`, DAT S5
          * `0x0283D778` + `0x024FB6DC` `lsl #3` + `0x02501DE8` `lsr #4`):
          * - `MDSEL 0x92` 59.98p (`T[12..13]`, `r04=0x07/0x0B`): `1288 / 2 = 644` ticks/frame (`~38.63 kHz` line clock)
          * - `MDSEL 0x92` 50.03p (`T[14]`, `r04=0x03`): `1544 / 2 = 772` ticks/frame (`~38.62 kHz` line clock)
@@ -182,11 +191,11 @@ interface Imx461ExposurePort {
         fun isStillCaptureMode(mdsel8: Int): Boolean =
             mdsel8 == MDSEL_STILL_16BIT || mdsel8 == MDSEL_STILL_14BIT || mdsel8 == MDSEL_STILL_12BIT
 
-        /** True when `MDSEL` selects a Movie drive mode that programs shutter via `SHR2` (`0x0023/24`) & `SVR2` (`0x001F/20`). */
+        /** True when `MDSEL` selects a Movie drive mode whose electronic shutter uses the `~38.65 kHz` Movie line clock. */
         fun isMovieShutterMode(mdsel8: Int): Boolean =
             mdsel8 == MDSEL_MOVIE_FHD_60P || mdsel8 == MDSEL_MOVIE_4K_30P
 
-        /** Single-frame `SHR2` period in ticks for a Movie `MDSEL` drive mode (`DAT` S5 `0x0283D778`). */
+        /** Single-frame `SHR1` period in ticks for a Movie `MDSEL` drive mode (`DAT` S5 `0x0283D778`). */
         fun movieBaseFramePeriodUnits(mdsel8: Int, modeFlags04: Int = 0, movieFrameRows: Int = 0): Long = when {
             movieFrameRows > 0 -> movieFrameRows.toLong()
             mdsel8 == MDSEL_MOVIE_4K_30P -> MOVIE_4K_30P_FRAME_PERIOD_UNITS
@@ -194,13 +203,15 @@ interface Imx461ExposurePort {
             else -> IMPLICIT_FRAME_PERIOD_UNITS
         }
 
-        /** Frame period in `SHR` units for the given `SVR` (long-shutter frame count) and `VMAX`. */
-        fun framePeriodUnits(svr12: Int, vmax12: Int): Long {
+        /** Frame period in `SHR` units for the given `SVR` (long-shutter frame count), `VMAX`, and `MDSEL`. */
+        fun framePeriodUnits(svr12: Int, vmax12: Int, mdsel8: Int = 0): Long {
             val frames = svr12.coerceAtLeast(0).toLong() + 1L
-            return if (vmax12 >= 64) frames * vmax12.toLong() else frames * IMPLICIT_FRAME_PERIOD_UNITS
+            if (vmax12 >= 64) return frames * vmax12.toLong()
+            val base = if (mdsel8 == MDSEL_EVF_BOOST_FPS) EVF_BOOST_FPS_FRAME_PERIOD_UNITS else IMPLICIT_FRAME_PERIOD_UNITS
+            return frames * base
         }
 
-        /** True when the active electronic-shutter row (`SHR` or Movie `SHR2`) falls inside the programmed frame period. */
+        /** True when the active electronic-shutter row `SHR` (`0x0016/0x0017`) falls inside the programmed frame period. */
         fun isShutterWithinFrame(
             shr15: Int,
             svr12: Int,
@@ -211,15 +222,15 @@ interface Imx461ExposurePort {
             movieFrameRows: Int = 0,
         ): Boolean {
             if (isMovieShutterMode(mdsel8) && vmax12 < 64) {
-                val frames = vmax12.coerceAtLeast(0).toLong() + 1L
+                val frames = svr12.coerceAtLeast(0).toLong() + 1L
                 val period = frames * movieBaseFramePeriodUnits(mdsel8, modeFlags04, movieFrameRows)
-                return movieShr15 >= 0 && movieShr15.toLong() < period
+                return shr15 >= 0 && shr15.toLong() < period
             }
-            return shr15 >= 0 && shr15.toLong() < framePeriodUnits(svr12, vmax12)
+            return shr15 >= 0 && shr15.toLong() < framePeriodUnits(svr12, vmax12, mdsel8)
         }
 
         /**
-         * Converts live IMX461 `SHR`/`SVR`/`VMAX`/`PGC`/`HCG` (and Movie-mode `MDSEL`/`SHR2`)
+         * Converts live IMX461 `SHR`/`SVR`/`VMAX`/`PGC`/`HCG` (and Movie-mode `MDSEL` frame period)
          * shadow registers into calibrated emulator [EffectiveSensorExposure] (`durationNanos` in
          * `[1, 256000]`, `iso` in `[25, 25600]`).
          */
@@ -237,13 +248,16 @@ interface Imx461ExposurePort {
             val shr = state.shr15.coerceAtLeast(0)
             val vmax = state.vmax12
             if (isMovieShutterMode(state.mdsel8) && vmax < 64) {
-                // DAT S5 0x02503750 / 0x024FEC84 / 0x024FB6DC / 0x0283D778:
-                // In Movie modes (MDSEL 0x92 FHD 60p/50p, 0x91 4K 30p), firmware leaves 0x0016/17 frozen
-                // and drives electronic shutter via 0x001F/20 (SVR2) and 0x0023/24 (SHR2) against the
-                // mode's timing[1]/2 frame period (~38.65 kHz line clock -> ~155 ticks at 1/250 s).
+                // DAT S5 0x024F21F4 -> 0x02508D64 / 0x02502B20 / 0x02503544 -> 0x024FC280:
+                // In Movie modes (MDSEL 0x92 FHD 60p/50p/30p/24p, 0x91 4K 30p/24p), firmware drives
+                // primary electronic shutter via SHR1 (0x0016/17) and SVR1 (0x0012/13) against the
+                // mode's timing[1]/2 frame period (~38.65 kHz line clock -> ~155 ticks at 1/250 s;
+                // e.g. FHD 59.94p 644 rows: 1/60 s -> shr=2, 1/100 s -> shr=260, 1/125 s -> shr=337,
+                // bright Auto -> shr=450). SHR2 (0x0023/24) + SVR2 (0x001F/20) + PGC2 (0x0030/31)
+                // is the secondary short-exposure (~-4 EV) path (0x02508DE4 -> 0x02503750).
                 val basePeriod = movieBaseFramePeriodUnits(state.mdsel8, state.modeFlags04, state.movieFrameRows)
-                val movieSvr = vmax.coerceAtLeast(0).toLong()
-                val movieShr = state.movieShr15.coerceAtLeast(0).toLong()
+                val movieSvr = svr.toLong()
+                val movieShr = shr.toLong()
                 val vPeriod = maxOf((movieSvr + 1L) * basePeriod, movieShr + 1L)
                 val intUnits = (vPeriod - movieShr).coerceAtLeast(1L)
                 durationNanos = ((intUnits.toDouble() / MOVIE_NOMINAL_INTEGRATION_UNITS) * nominalDurationNanos.toDouble())
@@ -263,10 +277,16 @@ interface Imx461ExposurePort {
                 //   1/60s -> shr=603 (int=302), 1/80s -> shr=681 (int=224), 1/100s -> shr=726 (int=179),
                 //   1/125s -> shr=762 (int=143), 1/250s -> shr=833 (int=72 nominal EV 11.1 studio/daylight at f/2.8 ISO 100),
                 //   1/4000s -> shr=900 (int=5).
-                val basePeriod16 = IMPLICIT_FRAME_PERIOD_UNITS
+                val isEvfBoostFps = state.mdsel8 == MDSEL_EVF_BOOST_FPS
+                val basePeriod16 = if (isEvfBoostFps) {
+                    EVF_BOOST_FPS_FRAME_PERIOD_UNITS
+                } else {
+                    IMPLICIT_FRAME_PERIOD_UNITS
+                }
+                val nominalUnits = if (isEvfBoostFps) EVF_BOOST_FPS_NOMINAL_INTEGRATION_UNITS else 70.0
                 val vPeriod16 = maxOf((svr.toLong() + 1L) * basePeriod16, shr.toLong() + 1L)
                 val intUnits = (vPeriod16 - shr.toLong()).coerceAtLeast(1L)
-                durationNanos = ((intUnits.toDouble() / 70.0) * nominalDurationNanos.toDouble())
+                durationNanos = ((intUnits.toDouble() / nominalUnits) * nominalDurationNanos.toDouble())
                     .roundToLong()
                     .coerceIn(1L, 256_000L)
             }

@@ -134,14 +134,29 @@ internal class PanelBacklightDecoder : PanelBacklightPort {
 
     override fun backlightState(): PanelBacklightState = cachedState
 
+    private var lcdCsLow = false
+    private var evfCsLow = false
+
     fun attachGpio(port: GpioOutputPort?) {
         detachGpio()
         if (port != null) {
             lcdCsSub = port.addOutputListener(LCD_CS_GPIO_PORT, LCD_CS_GPIO_PIN) { high, _ ->
-                if (high) finishLcdCommandIfAny() else resetLcdCommand()
+                if (high) {
+                    lcdCsLow = false
+                    finishLcdCommandIfAny()
+                } else {
+                    lcdCsLow = true
+                    resetLcdCommand()
+                }
             }
             evfCsSub = port.addOutputListener(EVF_CS_GPIO_PORT, EVF_CS_GPIO_PIN) { high, _ ->
-                if (high) flushEvfFrame() else evfByteLen = 0
+                if (high) {
+                    evfCsLow = false
+                    flushEvfFrame()
+                } else {
+                    evfCsLow = true
+                    evfByteLen = 0
+                }
             }
         }
     }
@@ -151,6 +166,8 @@ internal class PanelBacklightDecoder : PanelBacklightPort {
         lcdCsSub = null
         evfCsSub?.close()
         evfCsSub = null
+        lcdCsLow = false
+        evfCsLow = false
     }
 
     private fun resetLcdCommand() {
@@ -171,13 +188,13 @@ internal class PanelBacklightDecoder : PanelBacklightPort {
 
     fun onShift(bits: Int, word: Int, tick: Long) {
         if (bits == 16) {
-            if (lastLcdTick >= 0L && tick - lastLcdTick > TICK_GAP_FLUSH) {
+            if (!lcdCsLow && lastLcdTick >= 0L && tick - lastLcdTick > TICK_GAP_FLUSH) {
                 finishLcdCommandIfAny()
             }
             lastLcdTick = tick
             processLcdWord16(word and 0xFFFF)
         } else if (bits == 8) {
-            if (lastEvfTick >= 0L && tick - lastEvfTick > TICK_GAP_FLUSH) {
+            if (!evfCsLow && lastEvfTick >= 0L && tick - lastEvfTick > TICK_GAP_FLUSH) {
                 flushEvfFrame()
             }
             lastEvfTick = tick
@@ -435,6 +452,8 @@ internal class PanelBacklightDecoder : PanelBacklightPort {
 
     fun restore(saved: Snapshot?) {
         resetLcdCommand()
+        lcdCsLow = false
+        evfCsLow = false
         evfByteLen = 0
         evfRecentCount = 0
         lastLcdTick = -1L

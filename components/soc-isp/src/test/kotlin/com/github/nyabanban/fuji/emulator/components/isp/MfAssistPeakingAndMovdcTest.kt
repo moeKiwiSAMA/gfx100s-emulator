@@ -311,4 +311,82 @@ class MfAssistPeakingAndMovdcTest {
         }
         assertTrue(prismDiffs > 4, "Microprism checkerboard inside circle must produce phase-shifted tile disparity (diffs=$prismDiffs)")
     }
+
+    @Test
+    fun companionBB000UnmaskedWeightedCombinePopulatesBoostLowLightOutputRing() {
+        val base = 0x3D90_0000L
+        val mem = FlatDmaMemory(base, 0x0120_0000)
+        val width = 32
+        val height = 16
+        val pixelStride = 40 // strided (> width), matching 1024px at 1280px (0x500) stride on LCD
+        val byteStride = pixelStride * 2
+        val in0Addr = base + 0x00_0000L
+        val in1Addr = base + 0x04_0000L
+        val in2Addr = base + 0x08_0000L
+        val in3Addr = base + 0x0C_0000L
+        val outAddr = base + 0x10_0000L
+
+        fun fillPlane(addr: Long, y0: Int, y1: Int, u: Int, v: Int) {
+            val baseOff = (addr - base).toInt()
+            for (y in 0 until height) {
+                val rowOff = baseOff + y * byteStride
+                for (x in 0 until width step 2) {
+                    val p = rowOff + x * 2
+                    mem.bytes[p] = u.toByte()
+                    mem.bytes[p + 1] = y0.toByte()
+                    mem.bytes[p + 2] = v.toByte()
+                    mem.bytes[p + 3] = y1.toByte()
+                }
+            }
+        }
+        fillPlane(in0Addr, y0 = 100, y1 = 120, u = 160, v = 96)
+        fillPlane(in1Addr, y0 = 140, y1 = 160, u = 120, v = 136)
+        fillPlane(in2Addr, y0 = 180, y1 = 200, u = 100, v = 156)
+        fillPlane(in3Addr, y0 = 220, y1 = 240, u = 140, v = 116)
+        // Guard padding bytes beyond width must remain untouched
+        val guardOff = (outAddr - base).toInt() + 3 * byteStride + width * 2
+        mem.bytes[guardOff] = 0x5A
+
+        val bbWords = LongArray(0xA4 / 4)
+        bbWords[0x08 / 4] = 0x43L // 4-input mode 3 (BOOST AF PRIORITY - LOW LIGHT)
+        bbWords[0x10 / 4] = in0Addr
+        bbWords[0x14 / 4] = pixelStride.toLong()
+        bbWords[0x18 / 4] = in1Addr
+        bbWords[0x1C / 4] = pixelStride.toLong()
+        bbWords[0x20 / 4] = in2Addr
+        bbWords[0x24 / 4] = pixelStride.toLong()
+        bbWords[0x28 / 4] = in3Addr
+        bbWords[0x2C / 4] = pixelStride.toLong()
+        bbWords[0x30 / 4] = 0L // unmasked
+        bbWords[0x3C / 4] = outAddr
+        bbWords[0x40 / 4] = pixelStride.toLong()
+        bbWords[0x44 / 4] = (height.toLong() shl 16) or width.toLong()
+
+        // 1. Bright-light passthrough (0x54 = 0x100 -> w0 = +256 = 1.0, w1=w2=w3=0)
+        bbWords[0x54 / 4] = 0x0000_0100L
+        bbWords[0x58 / 4] = 0x0000_0000L
+        assertTrue(MovdcMfAssistEngine.onCompanionBB000Complete(bbWords, mem))
+        val outOff = (outAddr - base).toInt() + 5 * byteStride + 4 * 2
+        assertEquals(160, mem.bytes[outOff].toInt() and 0xFF)
+        assertEquals(100, mem.bytes[outOff + 1].toInt() and 0xFF)
+        assertEquals(96, mem.bytes[outOff + 2].toInt() and 0xFF)
+        assertEquals(120, mem.bytes[outOff + 3].toInt() and 0xFF)
+        assertEquals(0x5A.toByte(), mem.bytes[guardOff], "Padding outside active width must not be clobbered")
+
+        // 2. 4-frame equal Q8 temporal average (w0=w1=w2=w3 = 64 = 0x40 -> 0.25 each)
+        bbWords[0x54 / 4] = 0x0040_0040L
+        bbWords[0x58 / 4] = 0x0040_0040L
+        assertTrue(MovdcMfAssistEngine.onCompanionBB000Complete(bbWords, mem))
+        assertEquals(130, mem.bytes[outOff].toInt() and 0xFF) // (160+120+100+140)/4 = 130
+        assertEquals(160, mem.bytes[outOff + 1].toInt() and 0xFF) // (100+140+180+220)/4 = 160
+        assertEquals(126, mem.bytes[outOff + 2].toInt() and 0xFF) // (96+136+156+116)/4 = 126
+        assertEquals(180, mem.bytes[outOff + 3].toInt() and 0xFF) // (120+160+200+240)/4 = 180
+
+        // 3. 2-frame low-light gain sum (w0=256, w1=256) saturates cleanly at 255
+        bbWords[0x54 / 4] = 0x0100_0100L
+        bbWords[0x58 / 4] = 0x0000_0000L
+        assertTrue(MovdcMfAssistEngine.onCompanionBB000Complete(bbWords, mem))
+        assertEquals(240, mem.bytes[outOff + 1].toInt() and 0xFF) // 100 + 140 = 240
+        assertEquals(255, mem.bytes[outOff + 3].toInt() and 0xFF) // 120 + 160 = 280 -> clamped to 255
+    }
 }

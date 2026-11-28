@@ -329,9 +329,9 @@ class IspCmdFactory : ComponentFactory {
                 committedMovieFrameRows = if (Imx461ExposurePort.isMovieShutterMode(mode)) rawRows else 0
             } else {
                 // On a bare CCDTG 0x194 frame-period write, do not pair the new movieFrameRows with
-                // a stale movieShr15 (which would fabricate a bright white flash when 0x194 increases
-                // before firmware commits the matching SHR2 burst). Only adopt rawRows immediately
-                // if the already-written SHR2 was out-of-frame for the old period and now fits.
+                // a stale SHR1 (which would fabricate a bright white flash when 0x194 increases
+                // before firmware commits the matching SHR1 burst). Only adopt rawRows immediately
+                // if the already-written SHR1 was out-of-frame for the old period and now fits.
                 if (!Imx461ExposurePort.isMovieShutterMode(mode)) return
                 val wasOutOfFrame = !Imx461ExposurePort.isShutterWithinFrame(
                     shr, svr, vmax, mode, flags04, mShr, committedMovieFrameRows,

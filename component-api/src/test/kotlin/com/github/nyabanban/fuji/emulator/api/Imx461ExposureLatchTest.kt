@@ -154,48 +154,55 @@ class Imx461ExposureLatchTest {
     }
 
     @Test
-    fun movieModeUsesShr2AndSvr2AgainstModeFramePeriodWhileIgnoringFrozenStillShr1() {
+    fun movieModeUsesPrimaryShr1AndSvr1AgainstModeFramePeriodWhileIgnoringSecondaryShr2() {
         val latch = Imx461ExposureLatch()
         val port = FakeExposurePort(latch = latch)
 
-        // Live GFX100S 2.13 FHD 59.94p Movie mode (MDSEL=0x92, r04=0x07, period=644 ticks):
-        // Firmware freezes 0x0016/17 (SHR1) at 260 and drives shutter via 0x0023/24 (SHR2).
-        port.commit(shr = 260, svr = 0, vmax = 0, pgc = 2066, hcg = false, mdsel = 0x92, flags04 = 0x07, movieShr = 495)
+        // Live GFX100S 2.13 FHD 59.94p Movie mode (MDSEL=0x92, r04=0x07, period=644 ticks, 155 ticks = 1/250 s):
+        // Firmware drives primary Movie shutter via SHR1 (0x0016/17) + SVR1 (0x0012/13), while
+        // secondary SHR2 (0x0023/24) runs ~4 EV shorter (e.g. 620..641) and must not hijack exposure.
+        port.commit(shr = 2, svr = 0, vmax = 0, pgc = 2066, hcg = false, mdsel = 0x92, flags04 = 0x07, movieShr = 620)
+        val expAt60 = Imx461ExposurePort.computeEffectiveExposure(port)
+        // 1/60 s -> SHR1=2 -> intUnits = 644 - 2 = 642 -> (642 / 155) * 1000 = 4142 ns
+        assertEquals(4142L, expAt60.durationNanos)
+        assertEquals(100, expAt60.iso)
+
+        // Turning shutter from 1/60 s to 1/125 s (SHR1=337, SHR2 still 620) halves integration cleanly
+        port.commit(shr = 337, svr = 0, vmax = 0, pgc = 2066, hcg = false, mdsel = 0x92, flags04 = 0x07, movieShr = 620)
+        val expAt125 = Imx461ExposurePort.computeEffectiveExposure(port)
+        // 1/125 s -> SHR1=337 -> intUnits = 644 - 337 = 307 -> (307 / 155) * 1000 = 1981 ns
+        assertEquals(1981L, expAt125.durationNanos)
+        assertTrue(expAt125.durationNanos < expAt60.durationNanos / 2)
+
+        // Bright Movie Auto shutter (SHR1=495 -> 149 ticks = 961 ns, SHR2 pinned at 641)
+        port.commit(shr = 495, svr = 0, vmax = 0, pgc = 2066, hcg = false, mdsel = 0x92, flags04 = 0x07, movieShr = 641)
         val expAt495 = Imx461ExposurePort.computeEffectiveExposure(port)
-        // intUnits = 644 - 495 = 149 -> (149 / 155) * 1000 = 961 ns (~1/260 s), NOT 9214 ns from frozen shr=260!
         assertEquals(961L, expAt495.durationNanos)
-        assertEquals(100, expAt495.iso)
 
-        // Higher SHR2 = shorter exposure (e.g. live Movie AE ramp 495 -> 614)
-        port.commit(shr = 260, svr = 0, vmax = 0, pgc = 2066, hcg = false, mdsel = 0x92, flags04 = 0x07, movieShr = 614)
-        val expAt614 = Imx461ExposurePort.computeEffectiveExposure(port)
-        assertEquals(194L, expAt614.durationNanos)
-        assertTrue(expAt614.durationNanos < expAt495.durationNanos / 4)
-
-        // Out-of-frame Movie SHR2 (>= 644 with SVR2=0) holds last valid Movie state
-        port.commit(shr = 260, svr = 0, vmax = 0, pgc = 2066, hcg = false, mdsel = 0x92, flags04 = 0x07, movieShr = 900)
-        assertEquals(expAt614, Imx461ExposurePort.computeEffectiveExposure(port))
+        // Out-of-frame Movie SHR1 (>= 644 with SVR1=0, e.g. stale Still SHR=740 during STILL->MOVIE transition) holds last valid state
+        port.commit(shr = 740, svr = 0, vmax = 0, pgc = 2066, hcg = false, mdsel = 0x92, flags04 = 0x07, movieShr = 641)
+        assertEquals(expAt495, Imx461ExposurePort.computeEffectiveExposure(port))
         assertEquals(1L, latch.heldOutOfFrameCount)
 
         // Snapshot round-trip preserves Movie-mode fields
         val snap = assertNotNull(latch.snapshot())
         val restored = Imx461ExposureLatch()
         restored.restore(snap)
-        assertEquals(Imx461ExposureState(260, 0, 0, 2066, false, 0x92, 0x07, 614), restored.latchedState)
+        assertEquals(Imx461ExposureState(495, 0, 0, 2066, false, 0x92, 0x07, 641), restored.latchedState)
 
         // 4K 29.97p Movie mode (MDSEL=0x91, period=1291 ticks, 155 ticks = 1/250 s)
-        port.commit(shr = 260, svr = 0, vmax = 0, pgc = 2066, hcg = false, mdsel = 0x91, flags04 = 0x03, movieShr = 1136)
+        port.commit(shr = 1136, svr = 0, vmax = 0, pgc = 2066, hcg = false, mdsel = 0x91, flags04 = 0x03, movieShr = 1280)
         assertEquals(1000L, Imx461ExposurePort.computeEffectiveExposure(port).durationNanos)
 
         // FHD 50p PAL Movie mode (MDSEL=0x92, r04=0x03, period=772 ticks)
-        port.commit(shr = 260, svr = 0, vmax = 0, pgc = 2066, hcg = false, mdsel = 0x92, flags04 = 0x03, movieShr = 617)
+        port.commit(shr = 617, svr = 0, vmax = 0, pgc = 2066, hcg = false, mdsel = 0x92, flags04 = 0x03, movieShr = 760)
         assertEquals(1000L, Imx461ExposurePort.computeEffectiveExposure(port).durationNanos)
     }
     @Test
     fun movieTimingUsesTheCcdtgFramePeriodAtSlowRecordingRates() {
         for ((mode, rows) in listOf(0x92 to 1288, 0x92 to 644, 0x91 to 1291, 0x91 to 1548)) {
             val latch = Imx461ExposureLatch()
-            latch.observe(131, 0, 0, mdsel8 = mode, modeFlags04 = 3, movieShr15 = rows - 6, movieFrameRows = rows)
+            latch.observe(rows - 6, 0, 0, mdsel8 = mode, modeFlags04 = 3, movieShr15 = rows - 3, movieFrameRows = rows)
             val state = assertNotNull(latch.latchedState)
             assertEquals(rows, state.movieFrameRows)
             val port = object : Imx461ExposurePort by FakeExposurePort() {
@@ -203,7 +210,7 @@ class Imx461ExposureLatchTest {
                 override val effectiveExposureState = state
             }
             assertEquals(39L, Imx461ExposurePort.computeEffectiveExposure(port).durationNanos)
-            latch.observe(131, 0, 0, mdsel8 = mode, modeFlags04 = 3, movieShr15 = rows, movieFrameRows = rows)
+            latch.observe(rows, 0, 0, mdsel8 = mode, modeFlags04 = 3, movieShr15 = rows - 3, movieFrameRows = rows)
             assertEquals(state, latch.latchedState)
             assertEquals(state, Imx461ExposureLatch().apply { restore(latch.snapshot()) }.latchedState)
         }
@@ -215,27 +222,27 @@ class Imx461ExposureLatchTest {
         val clock = EmulationClock { tick }
         val latch = Imx461ExposureLatch(clock)
         fun program(shutter: Int, frames: Int, gain: Int = 2260) =
-            latch.observe(131, 0, frames, gain, true, false, 0x91, 3, shutter, 1291)
+            latch.observe(shutter, frames, 0, gain, true, false, 0x91, 3, 1285, 1291)
         fun output(source: Imx461ExposureLatch) =
-            source.resolveState(131, 0, 4, 2600, true, false, 0x91, 3, 1200, 1291)
+            source.resolveState(1200, 4, 0, 2600, true, false, 0x91, 3, 1285, 1291)
 
         program(1280, 0)
         program(1200, 4)
         val deadline = tick + ((5 * 1291L - 1200) * 54_000_000L + 38_649) / 38_650
         tick += 1_801_800
-        assertEquals(1280, output(latch).movieShr15)
+        assertEquals(1280, output(latch).shr15)
         program(1200, 4, 2600)
         val restored = Imx461ExposureLatch(clock).apply { restore(latch.snapshot()) }
         program(1277, 0)
         val shortDeadline = tick + ((1291L - 1277) * 54_000_000L + 38_649) / 38_650
         tick = shortDeadline - 1
-        assertEquals(1280, latch.resolveState(131, 0, 0, 2260, true, false, 0x91, 3, 1277, 1291).movieShr15)
+        assertEquals(1280, latch.resolveState(1277, 0, 0, 2260, true, false, 0x91, 3, 1285, 1291).shr15)
         tick++
-        assertEquals(1277, latch.resolveState(131, 0, 0, 2260, true, false, 0x91, 3, 1277, 1291).movieShr15)
+        assertEquals(1277, latch.resolveState(1277, 0, 0, 2260, true, false, 0x91, 3, 1285, 1291).shr15)
         tick = deadline - 1
-        assertEquals(1280, output(restored).movieShr15)
+        assertEquals(1280, output(restored).shr15)
         tick++
-        assertEquals(1200, output(restored).movieShr15)
+        assertEquals(1200, output(restored).shr15)
         assertEquals(2600, output(restored).pgc12)
     }
 
@@ -243,8 +250,8 @@ class Imx461ExposureLatchTest {
     fun fhd5994ReadoutWaitsForTheSingleFrameShutterProgramWhenDmaRunsMidIntegration() {
         var tick = 2_030_866_658L
         val latch = Imx461ExposureLatch(EmulationClock { tick })
-        fun program(shutter: Int) = latch.observe(260, 0, 0, 3318, true, false, 0x92, 7, shutter, 644)
-        fun read() = latch.resolveState(260, 0, 0, 3318, true, false, 0x92, 7, 244, 644).movieShr15
+        fun program(shutter: Int) = latch.observe(shutter, 0, 0, 3318, true, false, 0x92, 7, 641, 644)
+        fun read() = latch.resolveState(244, 0, 0, 3318, true, false, 0x92, 7, 641, 644).shr15
         program(596)
         program(244)
         tick = 2_030_897_324L
@@ -260,9 +267,9 @@ class Imx461ExposureLatchTest {
     fun rapidMovieAeShutterUpdatesNeverStarveReadoutDeadline() {
         var tick = 1_000_000L
         val latch = Imx461ExposureLatch(EmulationClock { tick })
-        fun program(shutter: Int) = latch.observe(260, 0, 0, 2066, false, false, 0x92, 7, shutter, 644)
+        fun program(shutter: Int) = latch.observe(shutter, 0, 0, 2066, false, false, 0x92, 7, 641, 644)
 
-        // Start overexposed (SHR2=100 -> 544 rows integration -> ~760,052 ticks delay)
+        // Start overexposed (SHR1=100 -> 544 rows integration -> ~760,052 ticks delay)
         program(100)
         val firstUpdateTick = tick
         program(180) // 464 rows -> ~648,280 ticks deadline
@@ -273,46 +280,46 @@ class Imx461ExposureLatchTest {
             tick += 150_000L
             program(shr)
         }
-        // By firstDeadline, the latest AE shutter MUST be visible (not starved at stale SHR2=100).
+        // By firstDeadline, the latest AE shutter MUST be visible (not starved at stale SHR1=100).
         tick = firstDeadline
-        assertEquals(500, latch.resolveState(260, 0, 0, 2066, false, false, 0x92, 7, 500, 644).movieShr15)
+        assertEquals(500, latch.resolveState(500, 0, 0, 2066, false, false, 0x92, 7, 641, 644).shr15)
     }
 
     @Test
-    fun movieGainUpdateBeforePairedShr2NeverExposesOrFreezesBrightWhiteFlashTransient() {
+    fun movieGainUpdateBeforePairedShr1NeverExposesOrFreezesBrightWhiteFlashTransient() {
         var tick = 5_000_000L
         val latch = Imx461ExposureLatch(EmulationClock { tick })
 
-        // Steady state: long shutter (SHR2=244) with low ISO (PGC=2066, HCG=false)
-        latch.observe(260, 0, 0, 2066, false, false, 0x92, 7, 244, 644)
-        // Burst 1: firmware raises ISO (PGC=3300, HCG=true) BEFORE shortening SHR2 -> would be +3 EV white flash
+        // Steady state: long shutter (SHR1=244) with low ISO (PGC=2066, HCG=false)
+        latch.observe(244, 0, 0, 2066, false, false, 0x92, 7, 641, 644)
+        // Burst 1: firmware raises ISO (PGC=3300, HCG=true) BEFORE shortening SHR1 -> would be +3 EV white flash
         tick += 10_000L
-        latch.observe(260, 0, 0, 3300, true, false, 0x92, 7, 244, 644)
-        val midSplit = latch.resolveState(260, 0, 0, 3300, true, false, 0x92, 7, 244, 644)
+        latch.observe(244, 0, 0, 3300, true, false, 0x92, 7, 641, 644)
+        val midSplit = latch.resolveState(244, 0, 0, 3300, true, false, 0x92, 7, 641, 644)
         assertEquals(2066, midSplit.pgc12, "Split PGC/HCG update must not immediately expose bright transient")
         assertFalse(midSplit.hcgEnabled)
 
-        // Burst 2: paired SHR2=600 arrives shortly after; previousReadout must remain clean pre-split state
+        // Burst 2: paired SHR1=600 arrives shortly after; previousReadout must remain clean pre-split state
         tick += 1_000L
-        latch.observe(260, 0, 0, 3300, true, false, 0x92, 7, 600, 644)
-        val duringShort = latch.resolveState(260, 0, 0, 3300, true, false, 0x92, 7, 600, 644)
-        assertEquals(244, duringShort.movieShr15)
-        assertEquals(2066, duringShort.pgc12, "Paired SHR2 must not freeze split bright PGC/HCG into previousReadout")
+        latch.observe(600, 0, 0, 3300, true, false, 0x92, 7, 641, 644)
+        val duringShort = latch.resolveState(600, 0, 0, 3300, true, false, 0x92, 7, 641, 644)
+        assertEquals(244, duringShort.shr15)
+        assertEquals(2066, duringShort.pgc12, "Paired SHR1 must not freeze split bright PGC/HCG into previousReadout")
         assertFalse(duringShort.hcgEnabled)
 
-        // After short integration finishes, paired (SHR2=600, PGC=3300, HCG=true) becomes visible cleanly
+        // After short integration finishes, paired (SHR1=600, PGC=3300, HCG=true) becomes visible cleanly
         tick += ((644L - 600L) * 54_000_000L + 38_649L) / 38_650L
-        val settled = latch.resolveState(260, 0, 0, 3300, true, false, 0x92, 7, 600, 644)
-        assertEquals(600, settled.movieShr15)
+        val settled = latch.resolveState(600, 0, 0, 3300, true, false, 0x92, 7, 641, 644)
+        assertEquals(600, settled.shr15)
         assertEquals(3300, settled.pgc12)
         assertTrue(settled.hcgEnabled)
 
-        // Pure gain-only change (manual ISO dial with no following SHR2) still settles within <= 1 frame
+        // Pure gain-only change (manual ISO dial with no following SHR1) still settles within <= 1 frame
         tick += 1_000L
-        latch.observe(260, 0, 0, 2470, false, false, 0x92, 7, 600, 644)
-        assertEquals(3300, latch.resolveState(260, 0, 0, 2470, false, false, 0x92, 7, 600, 644).pgc12)
+        latch.observe(600, 0, 0, 2470, false, false, 0x92, 7, 641, 644)
+        assertEquals(3300, latch.resolveState(600, 0, 0, 2470, false, false, 0x92, 7, 641, 644).pgc12)
         tick += 1_000_000L
-        assertEquals(2470, latch.resolveState(260, 0, 0, 2470, false, false, 0x92, 7, 600, 644).pgc12)
+        assertEquals(2470, latch.resolveState(600, 0, 0, 2470, false, false, 0x92, 7, 641, 644).pgc12)
     }
 
     @Test
@@ -399,4 +406,27 @@ class Imx461ExposureLatchTest {
         )
     }
 
+    @Test
+    fun evfBoostFpsPriorityModeMdsel0xAfUses1052UnitPeriodAnd90kHzLineClock() {
+        val latch = Imx461ExposureLatch()
+        val port = FakeExposurePort(latch = latch)
+
+        // Live GFX100S 2.13 BOOST -> EVF FRAME RATE PRIORITY (T[9], MDSEL=0xAF, 85.766 fps, v1=1052, h=798):
+        // SHR in 905..1051 must be accepted as in-frame (NOT frozen by the 60 fps 905-unit cap).
+        assertTrue(Imx461ExposurePort.isShutterWithinFrame(shr15 = 1026, svr12 = 0, vmax12 = 0, mdsel8 = 0xAF))
+        assertFalse(Imx461ExposurePort.isShutterWithinFrame(shr15 = 1052, svr12 = 0, vmax12 = 0, mdsel8 = 0xAF))
+
+        // Nominal 1/250 s integration (~361 units -> SHR = 1052 - 361 = 691) maps to ~1000 ns (not 5x overexposed).
+        port.commit(shr = 691, svr = 0, vmax = 0, pgc = 2066, hcg = false, mdsel = 0xAF, flags04 = 0x02)
+        val nom = Imx461ExposurePort.computeEffectiveExposure(port)
+        assertEquals(1000L, nom.durationNanos)
+        assertEquals(100, nom.iso)
+
+        // Shorter shutter SHR=980 (int=72 units) darkens proportionally and is latched cleanly.
+        port.commit(shr = 980, svr = 0, vmax = 0, pgc = 2066, hcg = false, mdsel = 0xAF, flags04 = 0x02)
+        val fast = Imx461ExposurePort.computeEffectiveExposure(port)
+        assertEquals(199L, fast.durationNanos)
+        assertEquals(980, latch.latchedState?.shr15)
+        assertEquals(0L, latch.heldOutOfFrameCount)
+    }
 }

@@ -315,4 +315,45 @@ class PanelBacklightDecoderTest {
         assertEquals(0x0A, bl.backlightState().lcdDutyLow)
         assertTrue(bl.backlightState().lcdGain < 0.5f)
     }
+
+    @Test
+    fun tickGapDuringCsLowEvfBankDumpNeverSplitsBurstOrZeroesEvfGain() {
+        val gpio = FakeGpioOutputs()
+        val (_, spi5, bl) = setupSpi5Evf(gpio)
+        val t = longArrayOf(0L)
+        // Consume 1-word 16-bit prefix before switching SPI5 to 8-bit EVF transfers
+        shiftWords(spi5, gpio, 8, 16, intArrayOf(0x0000), t)
+
+        // Build a real-silicon 131-byte Sony ECX33x register bank dump starting at reg 0x00
+        // with reg 0x13 = 0x46 (bitrev=0x62) and reg 0x2C = 0xE0 (bitrev=0x07), and embedded 0x00 runs.
+        val dump = IntArray(131) { 0x00 }
+        dump[0] = 0x00 // startReg = 0x00
+        dump[1 + 0x00] = 0xC9 // reg 0x00 = 0x93
+        dump[1 + 0x13] = 0x62 // reg 0x13 = 0x46 (70)
+        dump[1 + 0x2C] = 0x07 // reg 0x2C = 0xE0 (224)
+        dump[1 + 0x2D] = 0x01 // reg 0x2D = 0x80
+        dump[1 + 0x2E] = 0x01 // reg 0x2E = 0x80
+        dump[1 + 0x2F] = 0x01 // reg 0x2F = 0x80
+
+        spi5.write(0, 4, 7L)
+        spi5.write(0x10, 4, 2L)
+        spi5.write(4, 4, 2L)
+        gpio.setLevel(13, 10, false) // CS LOW
+        for (i in dump.indices) {
+            if (i == 10 || i == 21 || i == 60) {
+                // Simulate > 40,000-tick IRQ preemption right before a 0x00 byte while CS stays LOW!
+                t[0] += 80_000L
+            }
+            spi5.write(8, 4, dump[i].toLong())
+            t[0] += 20L
+            spi5.beforeInstruction(t[0])
+            spi5.read(8, 4)
+        }
+        gpio.setLevel(13, 10, true) // CS HIGH commits full 131-byte transaction
+
+        val st = bl.backlightState()
+        assertEquals(0x46, st.evfLuminance, "Mid-burst IRQ preemption must not corrupt EVF luminance to 0")
+        assertEquals(0xE0, st.evfEmission, "Mid-burst IRQ preemption must not corrupt EVF emission to 0")
+        assertTrue(st.evfGain > 1.5f, "EVF gain must stay illuminated (>1.5x), got ${st.evfGain}")
+    }
 }
