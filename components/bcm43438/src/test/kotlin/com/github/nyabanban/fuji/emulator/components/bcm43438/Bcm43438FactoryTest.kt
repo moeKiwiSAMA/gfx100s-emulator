@@ -439,6 +439,198 @@ class Bcm43438FactoryTest {
         comp.close()
     }
 
+    private fun buildSdpcmBdcData(ethFrame: ByteArray, seq: Int = 0): ByteArray {
+        val bdcLen = 4 + ethFrame.size
+        val totalLen = 12 + bdcLen
+        val buf = ByteBuffer.allocate(totalLen).order(ByteOrder.LITTLE_ENDIAN)
+        buf.putShort(totalLen.toShort())
+        buf.putShort((totalLen.inv() and 0xffff).toShort())
+        buf.put(seq.toByte())
+        buf.put(2) // channel 2 = SDPCM_DATA_CHANNEL
+        buf.put(0)
+        buf.put(12)
+        buf.putInt(0)
+        buf.put(0x20) // BDC v2
+        buf.put(0)
+        buf.put(0)
+        buf.put(0)
+        buf.put(ethFrame)
+        return buf.array()
+    }
+
+    @Test
+    fun bcm43430UnassociatedBssidDisassocAssocInfoAndWpa2FourWayEapolFlow() {
+        val ctx = TestContext()
+        val uart = FakeUartSerialPort()
+        val sdio = FakeSdioBusPort()
+        ctx.claims[Bcm43438Factory.DEFAULT_UART_PORT] = uart
+        ctx.claims[Bcm43438Factory.DEFAULT_SDIO_PORT] = sdio
+        val comp = Bcm43438Factory().create(
+            ctx,
+            mapOf("enabled" to true, "deviceName" to "FujiEmu Host", "wifiMacAddr" to "02:46:4A:10:00:00"),
+        ) as StatefulComponent
+        comp.start()
+        val card = sdio.card!!
+        card.executeCommand(52, cmd52Arg(true, 0, 0x02, 0x06))
+        card.executeCommand(52, cmd52Arg(true, 0, 0x04, 0x07))
+
+        var seq = 0
+        fun sendCdc(cmd: Int, isSet: Boolean, payload: ByteArray): ByteArray {
+            val frame = buildSdpcmCdc(cmd, 200 + seq, isSet, payload, seq = seq and 0xff)
+            seq++
+            card.writeTransferData(53, cmd53Arg(true, 2, false, false, 0, frame.size), frame)
+            return card.executeCommand(53, cmd53Arg(false, 2, false, false, 0, 512)).dataOut!!
+        }
+
+        // 1. Unassociated STA WLC_GET_BSSID (23) MUST return 00:00:00:00:00:00 so WWD does not enter DISASSOCIATING (0x20)
+        sendCdc(Bcm43430WifiController.WLC_UP, true, ByteArray(0))
+        val unassocBssidReply = sendCdc(Bcm43430WifiController.WLC_GET_BSSID, false, ByteArray(6))
+        val unassocBssid = unassocBssidReply.copyOfRange(28, 34)
+        assertTrue(unassocBssid.all { it.toInt() == 0 }, "Expected all-zero BSSID when STA is unassociated")
+
+        // 2. WLC_DISASSOC (52) always emits WLC_E_DISASSOC_IND + WLC_E_DISASSOC + WLC_E_LINK after CDC reply
+        sendCdc(Bcm43430WifiController.WLC_DISASSOC, true, ByteArray(12))
+        val disassocEvents = mutableListOf<Int>()
+        while (card.isCardInterruptAsserted()) {
+            val rx = card.executeCommand(53, cmd53Arg(false, 2, false, false, 0, 256)).dataOut!!
+            if ((rx[5].toInt() and 0x0f) == Bcm43430WifiController.SDPCM_EVENT_CHANNEL) {
+                disassocEvents += ByteBuffer.wrap(rx, 16 + 28, 4).order(ByteOrder.BIG_ENDIAN).int
+            }
+        }
+        assertEquals(
+            listOf(
+                Bcm43430WifiController.WLC_E_DISASSOC_IND,
+                Bcm43430WifiController.WLC_E_DISASSOC,
+                Bcm43430WifiController.WLC_E_LINK,
+            ),
+            disassocEvents,
+        )
+
+        // 3. Configure WPA2-PSK (RSN IE + wpa_auth=0x80 + wsec=4) and join "FujiEmu Host"
+        val rsnIe = byteArrayOf(
+            0x30, 0x14, 0x01, 0x00,
+            0x00, 0x0F, 0xAC.toByte(), 0x04,
+            0x01, 0x00, 0x00, 0x0F, 0xAC.toByte(), 0x04,
+            0x01, 0x00, 0x00, 0x0F, 0xAC.toByte(), 0x02,
+            0x00, 0x00,
+        )
+        sendCdc(Bcm43430WifiController.WLC_SET_VAR, true, "wpaie\u0000".toByteArray(Charsets.US_ASCII) + rsnIe)
+        sendCdc(Bcm43430WifiController.WLC_SET_VAR, true, "wpa_auth\u0000".toByteArray(Charsets.US_ASCII) + byteArrayOf(0x80.toByte(), 0, 0, 0))
+        sendCdc(Bcm43430WifiController.WLC_SET_VAR, true, "wsec\u0000".toByteArray(Charsets.US_ASCII) + byteArrayOf(4, 0, 0, 0))
+
+        val joinArg = ByteArray(70)
+        val ssidBytes = "FujiEmu Host".toByteArray(Charsets.UTF_8)
+        ByteBuffer.wrap(joinArg).order(ByteOrder.LITTLE_ENDIAN).putInt(0, ssidBytes.size)
+        System.arraycopy(ssidBytes, 0, joinArg, 4, ssidBytes.size)
+        sendCdc(Bcm43430WifiController.WLC_SET_VAR, true, "join\u0000".toByteArray(Charsets.US_ASCII) + joinArg)
+        while (card.isCardInterruptAsserted()) {
+            card.executeCommand(53, cmd53Arg(false, 2, false, false, 0, 256))
+        }
+
+        // 4. Verify assoc_info + assoc_req_ies + assoc_resp_ies + WLC_GET_BSS_INFO
+        val assocInfoReply = sendCdc(
+            Bcm43430WifiController.WLC_GET_VAR, false,
+            "assoc_info\u0000".toByteArray(Charsets.US_ASCII) + ByteArray(64),
+        )
+        val assocInfoBuf = ByteBuffer.wrap(assocInfoReply.copyOfRange(28, 40)).order(ByteOrder.LITTLE_ENDIAN)
+        val reqLen = assocInfoBuf.getInt(0)
+        val respLen = assocInfoBuf.getInt(4)
+        val flags = assocInfoBuf.getInt(8)
+        assertTrue(reqLen > 4 + rsnIe.size, "Expected assoc_info.req_len to include SSID + Rates + RSN IE (got $reqLen)")
+        assertTrue(respLen > 6, "Expected assoc_info.resp_len > 6")
+        assertEquals(0, flags)
+
+        val assocReqReply = sendCdc(
+            Bcm43430WifiController.WLC_GET_VAR, false,
+            "assoc_req_ies\u0000".toByteArray(Charsets.US_ASCII) + ByteArray(128),
+        )
+        val reqIes = assocReqReply.copyOfRange(28, 28 + (reqLen - 4))
+        assertTrue(
+            reqIes.takeLast(rsnIe.size).toByteArray().contentEquals(rsnIe),
+            "Expected assoc_req_ies to contain exact configured RSN IE",
+        )
+
+        val bssInfoReply = sendCdc(Bcm43430WifiController.WLC_GET_BSS_INFO, false, ByteArray(256))
+        assertTrue(bssInfoReply.size > 152)
+
+        // 5. WLC_SET_PM (86) triggers EAPOL-Key Msg 1/4 after WPA_ASSOCIATED
+        sendCdc(Bcm43430WifiController.WLC_SET_PM, true, byteArrayOf(0, 0, 0, 0))
+        val msg1Sdpcm = card.executeCommand(53, cmd53Arg(false, 2, false, false, 0, 256)).dataOut!!
+        assertEquals(Bcm43430WifiController.SDPCM_DATA_CHANNEL, msg1Sdpcm[5].toInt() and 0x0f)
+        val msg1Eth = msg1Sdpcm.copyOfRange(16, u16LeTest(msg1Sdpcm, 0))
+        assertEquals(0x888E, ((msg1Eth[12].toInt() and 0xff) shl 8) or (msg1Eth[13].toInt() and 0xff))
+        assertEquals(0x008A, ((msg1Eth[19].toInt() and 0xff) shl 8) or (msg1Eth[20].toInt() and 0xff))
+        val apMac = msg1Eth.copyOfRange(6, 12)
+        val staMac = msg1Eth.copyOfRange(0, 6)
+        val aNonce = msg1Eth.copyOfRange(31, 63)
+
+        // 6. Send EAPOL-Key Msg 2/4 signed with passphrase "12345678" -> receive Msg 3/4 -> send Msg 4/4
+        val sNonce = ByteArray(32) { i -> (0x33 + i).toByte() }
+        val pmk = javax.crypto.SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1")
+            .generateSecret(javax.crypto.spec.PBEKeySpec("12345678".toCharArray(), ssidBytes, 4096, 256)).encoded
+        val ptkData = ByteArray(76)
+        // apMac=02:46:4A:48:00:01 > staMac=02:46:4A:10:00:00
+        System.arraycopy(staMac, 0, ptkData, 0, 6)
+        System.arraycopy(apMac, 0, ptkData, 6, 6)
+        // sNonce[0]=0x33 < aNonce[0]=0xA2
+        System.arraycopy(sNonce, 0, ptkData, 12, 32)
+        System.arraycopy(aNonce, 0, ptkData, 44, 32)
+        val mac = javax.crypto.Mac.getInstance("HmacSHA1").apply {
+            init(javax.crypto.spec.SecretKeySpec(pmk, "HmacSHA1"))
+        }
+        val label = "Pairwise key expansion\u0000".toByteArray(Charsets.US_ASCII)
+        val ptkBlock0 = mac.doFinal(label + ptkData + byteArrayOf(0))
+        val kck = ptkBlock0.copyOfRange(0, 16)
+
+        val msg2BodyLen = 95 + rsnIe.size
+        val msg2Eth = ByteArray(14 + 4 + msg2BodyLen)
+        System.arraycopy(apMac, 0, msg2Eth, 0, 6)
+        System.arraycopy(staMac, 0, msg2Eth, 6, 6)
+        msg2Eth[12] = 0x88.toByte(); msg2Eth[13] = 0x8E.toByte()
+        msg2Eth[14] = 1; msg2Eth[15] = 3
+        msg2Eth[16] = ((msg2BodyLen ushr 8) and 0xff).toByte(); msg2Eth[17] = (msg2BodyLen and 0xff).toByte()
+        msg2Eth[18] = 2
+        msg2Eth[19] = 0x01; msg2Eth[20] = 0x0A // KeyMIC | Pairwise | HMAC-SHA1-128
+        msg2Eth[30] = 1 // replayCounter = 1
+        System.arraycopy(sNonce, 0, msg2Eth, 31, 32)
+        msg2Eth[111] = 0; msg2Eth[112] = rsnIe.size.toByte()
+        System.arraycopy(rsnIe, 0, msg2Eth, 113, rsnIe.size)
+        val hmacKck = javax.crypto.Mac.getInstance("HmacSHA1").apply {
+            init(javax.crypto.spec.SecretKeySpec(kck, "HmacSHA1"))
+        }
+        val msg2Mic = hmacKck.doFinal(msg2Eth.copyOfRange(14, msg2Eth.size)).copyOfRange(0, 16)
+        System.arraycopy(msg2Mic, 0, msg2Eth, 95, 16)
+
+        val msg2Frame = buildSdpcmBdcData(msg2Eth, seq = (seq++) and 0xff)
+        card.writeTransferData(53, cmd53Arg(true, 2, false, false, 0, msg2Frame.size), msg2Frame)
+
+        val msg3Sdpcm = card.executeCommand(53, cmd53Arg(false, 2, false, false, 0, 512)).dataOut!!
+        val msg3Eth = msg3Sdpcm.copyOfRange(16, u16LeTest(msg3Sdpcm, 0))
+        assertEquals(0x13CA, ((msg3Eth[19].toInt() and 0xff) shl 8) or (msg3Eth[20].toInt() and 0xff))
+
+        val msg4Eth = ByteArray(14 + 4 + 95)
+        System.arraycopy(apMac, 0, msg4Eth, 0, 6)
+        System.arraycopy(staMac, 0, msg4Eth, 6, 6)
+        msg4Eth[12] = 0x88.toByte(); msg4Eth[13] = 0x8E.toByte()
+        msg4Eth[14] = 1; msg4Eth[15] = 3
+        msg4Eth[17] = 95
+        msg4Eth[18] = 2
+        msg4Eth[19] = 0x03; msg4Eth[20] = 0x0A // Secure | KeyMIC | Pairwise | HMAC-SHA1-128
+        msg4Eth[30] = 2
+        val msg4Mic = hmacKck.doFinal(msg4Eth.copyOfRange(14, msg4Eth.size)).copyOfRange(0, 16)
+        System.arraycopy(msg4Mic, 0, msg4Eth, 95, 16)
+        val msg4Frame = buildSdpcmBdcData(msg4Eth, seq = (seq++) and 0xff)
+        card.writeTransferData(53, cmd53Arg(true, 2, false, false, 0, msg4Frame.size), msg4Frame)
+
+        val wifiState = comp.state()["wifi"] as Map<*, *>
+        assertEquals(true, wifiState["wpa2FourWayComplete"])
+        assertEquals(1L, (wifiState["wpa2HandshakeCount"] as Number).toLong())
+        comp.close()
+    }
+
+    private fun u16LeTest(buf: ByteArray, off: Int): Int =
+        (buf[off].toInt() and 0xff) or ((buf[off + 1].toInt() and 0xff) shl 8)
+
     @Test
     fun bcm43438BleAndClassicScanDiscoversFujiEmuHostNeighbor() {
         val ctx = TestContext()

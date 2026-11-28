@@ -366,7 +366,8 @@ class ConnectivityBtWifiLiveE2eTest {
             assertZeroRelaxedFallbacks(rt, "WIFI-LIST-CANCEL")
         }
 
-        // Scenario B: Enter SELECT FROM NETWORK LIST (0x0387), move D-pad cursor, select AP with MENU/OK -> 0x0388 + STA association, then cancel
+        // Scenario B: Select Open AP ('GFX100S-WiFi') on 0x0387 -> 0x0388 ('CONNECTING TO Wi-Fi ROUTER') ->
+        // completes STA association + DHCP/ARP packet exchange -> exits 0x0388 into 0x0389 ('REGISTRATION COMPLETED') -> [OK] SET -> 0x0100
         val selectRoot = tempRoot.resolve("conn-wifi-select-root")
         copyDirectory(stagedRoot, selectRoot)
         EmulatorRuntime(selectRoot, Formats.read(selectRoot.resolve("configs/emulator.yaml")), telemetryDisabled = true).use { rt ->
@@ -378,18 +379,84 @@ class ConnectivityBtWifiLiveE2eTest {
             tapButton(rt, "up", 5_000_000L, 0L)
             stepByVirtualTicks(rt, 30_000_000L)
             tapButton(rt, "menu", 5_000_000L, 0L)
-            stepByVirtualTicks(rt, 220_000_000L)
-            val afterSelectScr = readGuestU32(rt, 0x01CC6424L)
-            @Suppress("UNCHECKED_CAST")
-            val wifiAfterSelect = compState(rt, "bcm43438")["wifi"] as Map<String, Any?>
-            println("[WIFI-LIST-E2E#SELECT-DONE] after MENU/OK scr=0x${afterSelectScr.toString(16)} wifi=$wifiAfterSelect")
-            assertTrue(afterSelectScr != 0x0387, "MENU/OK on SELECT FROM NETWORK LIST (0x0387) must select AP and advance out of 0x0387")
-            assertEquals("GFX100S-WiFi", wifiAfterSelect["ssid"], "Expected STA join to selected 'GFX100S-WiFi' AP")
-            assertEquals("02:46:4A:48:00:10", wifiAfterSelect["associatedBssid"], "Expected STA associated with 'GFX100S-WiFi' BSSID")
+            stepByVirtualTicks(rt, 40_000_000L)
 
-            tapButton(rt, "back", 5_000_000L, 0L)
-            stepByVirtualTicks(rt, 100_000_000L)
-            assertZeroRelaxedFallbacks(rt, "WIFI-LIST-SELECT")
+            var openScr = readGuestU32(rt, 0x01CC6424L)
+            assertEquals(0x0388, openScr, "Expected CONNECTING TO Wi-Fi ROUTER screen 0x0388 after selecting Open AP")
+            for (sec in 1..15) {
+                stepByVirtualTicks(rt, 54_000_000L)
+                openScr = readGuestU32(rt, 0x01CC6424L)
+                if (openScr != 0x0388) break
+            }
+            @Suppress("UNCHECKED_CAST")
+            val wifiAfterOpen = compState(rt, "bcm43438")["wifi"] as Map<String, Any?>
+            @Suppress("UNCHECKED_CAST")
+            val netAfterOpen = wifiAfterOpen["networkStatus"] as Map<String, Any?>
+            println("[WIFI-LIST-E2E#OPEN-REGISTERED] scr=0x${openScr.toString(16)} netStatus=$netAfterOpen")
+            assertEquals(0x0389, openScr, "Expected Open AP connect to exit 0x0388 into REGISTRATION COMPLETED (0x0389)")
+            assertEquals("192.168.42.100", netAfterOpen["guestIp"], "Expected NAT DHCP lease 192.168.42.100")
+            assertTrue((netAfterOpen["txPackets"] as Number).toLong() >= 8L, "Expected >= 8 guest Ethernet TX frames (DHCP + ARP)")
+            assertTrue((netAfterOpen["rxPackets"] as Number).toLong() >= 3L, "Expected >= 3 host NAT Ethernet RX frames (DHCP + ARP)")
+
+            tapButton(rt, "menu", 5_000_000L, 60_000_000L)
+            assertEquals(0x0100, readGuestU32(rt, 0x01CC6424L), "Expected [OK] SET on 0x0389 to return to STILL HUD 0x0100")
+            assertZeroRelaxedFallbacks(rt, "WIFI-LIST-OPEN-CONNECT")
+        }
+
+        // Scenario C: Select WPA2-PSK AP ('FujiEmu Host') on 0x0387 -> enter password '12345678' on 0x038b -> SET ->
+        // 0x0388 -> IEEE 802.11i 4-way EAPOL + DHCP/ARP -> exits 0x0388 into 0x0389 ('REGISTRATION COMPLETED') -> [OK] SET -> 0x0100
+        val wpa2Root = tempRoot.resolve("conn-wifi-wpa2-root")
+        copyDirectory(stagedRoot, wpa2Root)
+        EmulatorRuntime(wpa2Root, Formats.read(wpa2Root.resolve("configs/emulator.yaml")), telemetryDisabled = true).use { rt ->
+            bootStock213ToStillHud(rt)
+            val listScr = navigateFromStillToWifiNetworkListFirstTime(rt)
+            assertEquals(0x0387, listScr, "Expected SELECT FROM NETWORK LIST screen 0x0387")
+            tapButton(rt, "down", 5_000_000L, 0L)
+            stepByVirtualTicks(rt, 35_000_000L)
+            tapButton(rt, "menu", 5_000_000L, 0L)
+            stepByVirtualTicks(rt, 40_000_000L)
+            assertEquals(0x038b, readGuestU32(rt, 0x01CC6424L), "Expected WPA2 password keyboard screen 0x038b")
+
+            // Enter "12345678" on 0x038b keyboard (from initial SET focus: up -> '4', left x3 -> '1', then '1'..'8', down -> SET)
+            tapButton(rt, "up", 5_000_000L, 0L)
+            stepByVirtualTicks(rt, 25_000_000L)
+            repeat(3) {
+                tapButton(rt, "left", 5_000_000L, 0L)
+                stepByVirtualTicks(rt, 20_000_000L)
+            }
+            for (k in 0 until 8) {
+                tapButton(rt, "menu", 5_000_000L, 0L)
+                stepByVirtualTicks(rt, 20_000_000L)
+                if (k < 7) {
+                    tapButton(rt, "right", 5_000_000L, 0L)
+                    stepByVirtualTicks(rt, 20_000_000L)
+                }
+            }
+            tapButton(rt, "down", 5_000_000L, 0L)
+            stepByVirtualTicks(rt, 25_000_000L)
+            tapButton(rt, "menu", 5_000_000L, 0L)
+            stepByVirtualTicks(rt, 40_000_000L)
+
+            var wpa2Scr = readGuestU32(rt, 0x01CC6424L)
+            assertEquals(0x0388, wpa2Scr, "Expected CONNECTING TO Wi-Fi ROUTER screen 0x0388 after WPA2 password SET")
+            for (sec in 1..15) {
+                stepByVirtualTicks(rt, 54_000_000L)
+                wpa2Scr = readGuestU32(rt, 0x01CC6424L)
+                if (wpa2Scr != 0x0388) break
+            }
+            @Suppress("UNCHECKED_CAST")
+            val wifiAfterWpa2 = compState(rt, "bcm43438")["wifi"] as Map<String, Any?>
+            @Suppress("UNCHECKED_CAST")
+            val netAfterWpa2 = wifiAfterWpa2["networkStatus"] as Map<String, Any?>
+            println("[WIFI-LIST-E2E#WPA2-REGISTERED] scr=0x${wpa2Scr.toString(16)} handshakes=${wifiAfterWpa2["wpa2HandshakeCount"]} netStatus=$netAfterWpa2")
+            assertEquals(0x0389, wpa2Scr, "Expected WPA2-PSK connect to exit 0x0388 into REGISTRATION COMPLETED (0x0389)")
+            assertTrue((wifiAfterWpa2["wpa2HandshakeCount"] as Number).toLong() >= 1L, "Expected >= 1 completed WPA2 4-way EAPOL handshake")
+            assertTrue((netAfterWpa2["txPackets"] as Number).toLong() >= 8L, "Expected >= 8 guest Ethernet TX frames (DHCP + ARP)")
+            assertTrue((netAfterWpa2["rxPackets"] as Number).toLong() >= 3L, "Expected >= 3 host NAT Ethernet RX frames (DHCP + ARP)")
+
+            tapButton(rt, "menu", 5_000_000L, 60_000_000L)
+            assertEquals(0x0100, readGuestU32(rt, 0x01CC6424L), "Expected [OK] SET on 0x0389 to return to STILL HUD 0x0100")
+            assertZeroRelaxedFallbacks(rt, "WIFI-LIST-WPA2-CONNECT")
         }
     }
 }

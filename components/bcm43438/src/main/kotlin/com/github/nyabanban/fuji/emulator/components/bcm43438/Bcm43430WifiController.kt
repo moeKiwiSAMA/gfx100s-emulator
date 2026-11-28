@@ -7,6 +7,11 @@ import com.github.nyabanban.fuji.emulator.api.WifiNetworkConfig
 import com.github.nyabanban.fuji.emulator.api.WifiNetworkStatus
 import java.io.ByteArrayOutputStream
 import java.security.MessageDigest
+import javax.crypto.Cipher
+import javax.crypto.Mac
+import javax.crypto.SecretKeyFactory
+import javax.crypto.spec.PBEKeySpec
+import javax.crypto.spec.SecretKeySpec
 
 data class VirtualWifiApNeighbor(
     val ssid: String,
@@ -116,6 +121,7 @@ class Bcm43430WifiController(
         const val WLC_SCAN = 50
         const val WLC_SCAN_RESULTS = 51
         const val WLC_DISASSOC = 52
+        const val WLC_GET_DTIMPRD = 77
         const val WLC_GET_PM = 85
         const val WLC_SET_PM = 86
         const val WLC_GET_REVINFO = 98
@@ -124,6 +130,7 @@ class Bcm43430WifiController(
         const val WLC_GET_RSSI = 127
         const val WLC_GET_WSEC = 133
         const val WLC_SET_WSEC = 134
+        const val WLC_GET_BSS_INFO = 136
         const val WLC_GET_BANDLIST = 140
         const val WLC_GET_BAND = 141
         const val WLC_GET_ASSOCLIST = 159
@@ -143,11 +150,14 @@ class Bcm43430WifiController(
         const val WLC_E_JOIN = 1
         const val WLC_E_AUTH = 3
         const val WLC_E_DEAUTH = 5
+        const val WLC_E_DEAUTH_IND = 6
         const val WLC_E_ASSOC = 7
         const val WLC_E_DISASSOC = 11
+        const val WLC_E_DISASSOC_IND = 12
         const val WLC_E_LINK = 16
         const val WLC_E_SCAN_COMPLETE = 26
         const val WLC_E_ESCAN_RESULT = 69
+        const val ETHER_TYPE_EAPOL = 0x888E
         const val WLC_E_STATUS_SUCCESS = 0
         const val WLC_E_STATUS_FAIL = 1
         const val WLC_E_STATUS_ABORT = 4
@@ -301,7 +311,28 @@ class Bcm43430WifiController(
     @Volatile
     var associatedBssid: String = ""
         private set
+    @Volatile
+    var wpa2FourWayComplete: Boolean = false
+        private set
+    @Volatile
+    var wpa2HandshakeCount: Long = 0L
+        private set
+    private var activeWpa2Session: Wpa2EapolSession? = null
     private val iovarStore = linkedMapOf<String, ByteArray>()
+
+    private class Wpa2EapolSession(
+        val apMac: ByteArray,
+        val staMac: ByteArray,
+        val ssid: String,
+        val passphrase: String,
+        val aNonce: ByteArray,
+    ) {
+        var msg1Sent: Boolean = false
+        var replayCounter: Long = 1L
+        var kck: ByteArray = ByteArray(0)
+        var kek: ByteArray = ByteArray(0)
+        val gtk: ByteArray = ByteArray(16) { i -> (0x42 + i * 7).toByte() }
+    }
 
     // Thread-safe Function 2 SDPCM RX queue (supports async RX from NAT/Bridge sockets & sync owner-thread IOCTLs)
     private val f2Lock = Any()
@@ -908,6 +939,7 @@ class Bcm43430WifiController(
 
         var status = 0
         var replyPayload: ByteArray = payload.copyOf()
+        val postReplyActions = mutableListOf<() -> Unit>()
 
         when (cmd) {
             WLC_GET_MAGIC -> replyPayload = u32Bytes(WLC_IOCTL_MAGIC)
@@ -920,6 +952,8 @@ class Bcm43430WifiController(
             WLC_DOWN -> {
                 interfaceUp = false
                 associatedBssid = ""
+                wpa2FourWayComplete = false
+                activeWpa2Session = null
                 mode = "OFF"
                 replyPayload = ByteArray(0)
             }
@@ -933,14 +967,15 @@ class Bcm43430WifiController(
             WLC_SET_AUTH -> {
                 if (payload.size >= 4) auth = u32Le(payload, 0)
             }
-            WLC_GET_BSSID -> replyPayload = if (!apEnabled && associatedBssid.isNotEmpty()) {
-                Bcm43438BtController.parseMac6(associatedBssid)
-            } else {
-                synchronized(f2Lock) { macBytes.copyOf() }
+            WLC_GET_BSSID -> replyPayload = when {
+                apEnabled -> synchronized(f2Lock) { macBytes.copyOf() }
+                associatedBssid.isNotEmpty() -> Bcm43438BtController.parseMac6(associatedBssid)
+                else -> ByteArray(6) // 00:00:00:00:00:00 when STA is unassociated so WWD does not enter DISASSOCIATING (0x20)
             }
             WLC_SET_BSSID -> {
                 if (payload.size >= 6) {
-                    associatedBssid = Bcm43438BtController.formatMac6(payload.copyOfRange(0, 6))
+                    val bssid = payload.copyOfRange(0, 6)
+                    associatedBssid = if (bssid.all { it.toInt() == 0 }) "" else Bcm43438BtController.formatMac6(bssid)
                 }
             }
             WLC_GET_SSID -> {
@@ -957,21 +992,40 @@ class Bcm43430WifiController(
                     ssid = String(payload, 4, n, Charsets.UTF_8)
                     if (interfaceUp) mode = if (apEnabled) "AP" else "STA"
                     if (!apEnabled && ssid.isNotEmpty()) {
-                        if (!associateWithNeighborSsid(ssid)) {
+                        if (!prepareStaAssociation(ssid, postReplyActions)) {
                             status = -1
                         }
                     } else if (apEnabled && ssid.isNotEmpty()) {
                         val curMac = synchronized(f2Lock) { macBytes.copyOf() }
-                        enqueueBrcmEvent(WLC_E_SET_SSID, WLC_E_STATUS_SUCCESS, curMac)
-                        enqueueBrcmEvent(WLC_E_LINK, WLC_E_STATUS_SUCCESS, curMac, flags = WLC_EVENT_MSG_LINK)
+                        postReplyActions += {
+                            enqueueBrcmEvent(WLC_E_SET_SSID, WLC_E_STATUS_SUCCESS, curMac)
+                            enqueueBrcmEvent(WLC_E_LINK, WLC_E_STATUS_SUCCESS, curMac, flags = WLC_EVENT_MSG_LINK)
+                        }
                     } else if (ssid.isEmpty() && associatedBssid.isNotEmpty()) {
-                        disassociateSta()
+                        disassociateSta(postReplyActions)
                     }
                 }
             }
             WLC_DISASSOC -> {
-                disassociateSta()
+                disassociateSta(postReplyActions, emitAlways = true)
                 replyPayload = ByteArray(0)
+            }
+            WLC_GET_DTIMPRD -> replyPayload = u32Bytes(1)
+            WLC_GET_BSS_INFO -> {
+                val neighbors = effectiveNeighbors()
+                val currentAp = neighbors.firstOrNull {
+                    (associatedBssid.isNotEmpty() && it.bssid.equals(associatedBssid, ignoreCase = true)) ||
+                        (ssid.isNotEmpty() && it.ssid == ssid)
+                } ?: neighbors.firstOrNull()
+                if (currentAp != null) {
+                    val bssInfo = buildWlBssInfo(currentAp)
+                    val out = ByteArray(maxOf(4 + bssInfo.size, dataLen.coerceAtMost(2048)))
+                    putU32Le(out, 0, 4 + bssInfo.size)
+                    System.arraycopy(bssInfo, 0, out, 4, bssInfo.size)
+                    replyPayload = out
+                } else {
+                    replyPayload = ByteArray(minOf(maxOf(dataLen, 132), 2048))
+                }
             }
             WLC_SCAN -> {
                 scanCount++
@@ -994,6 +1048,7 @@ class Bcm43430WifiController(
             WLC_GET_PM -> replyPayload = u32Bytes(pmMode)
             WLC_SET_PM -> {
                 if (payload.size >= 4) pmMode = u32Le(payload, 0)
+                enqueuePendingWpa2Msg1(postReplyActions)
             }
             WLC_GET_REVINFO -> {
                 val out = ByteArray(maxOf(68, dataLen.coerceAtMost(256)))
@@ -1049,7 +1104,13 @@ class Bcm43430WifiController(
             }
             WLC_GET_WPA_AUTH -> replyPayload = u32Bytes(wpaAuth)
             WLC_SET_WPA_AUTH -> {
-                if (payload.size >= 4) wpaAuth = u32Le(payload, 0)
+                if (payload.size >= 4) {
+                    wpaAuth = u32Le(payload, 0)
+                    if (wpaAuth == 0) {
+                        iovarStore.remove("wpaie")
+                        iovarStore.remove("bsscfg:wpaie")
+                    }
+                }
             }
             WLC_GET_ASSOCLIST -> {
                 val out = ByteArray(4 + 6)
@@ -1073,7 +1134,7 @@ class Bcm43430WifiController(
             WLC_SET_VAR -> {
                 val (name, argData) = parseIovar(payload)
                 iovarCount++
-                handleIovarSet(name, argData)
+                handleIovarSet(name, argData, postReplyActions)
             }
             else -> {
                 if (!isSet && replyPayload.isEmpty() && dataLen > 0) {
@@ -1089,6 +1150,7 @@ class Bcm43430WifiController(
         putU32Le(cdcReply, 12, status)
         System.arraycopy(replyPayload, 0, cdcReply, 16, replyPayload.size)
         enqueueSdpcmRx(SDPCM_CONTROL_CHANNEL, cdcReply)
+        postReplyActions.forEach { it() }
     }
 
     private fun parseIovar(payload: ByteArray): Pair<String, ByteArray> {
@@ -1123,8 +1185,31 @@ class Bcm43430WifiController(
         }
         "per_chan_info" -> u32Bytes(0) // Active 2.4 GHz channel (neither WL_CHAN_PASSIVE=0x08 nor WL_CHAN_RADAR=0x20)
         "rssi" -> u32Bytes(if (associatedBssid.isNotEmpty() || apEnabled) rssiDbm else -90)
-        "wsec" -> u32Bytes(wsec)
-        "wpa_auth" -> u32Bytes(wpaAuth)
+        "wsec", "bsscfg:wsec" -> u32Bytes(wsec)
+        "wpa_auth", "bsscfg:wpa_auth" -> u32Bytes(wpaAuth)
+        "assoc_info" -> {
+            val out = ByteArray(maxOf(28, requestedLen.coerceAtMost(512)))
+            if (associatedBssid.isNotEmpty()) {
+                val reqIes = buildAssocReqIes()
+                val respIes = buildAssocRespIes()
+                putU32Le(out, 0, 4 + reqIes.size) // 4-byte AssocReq fixed fields (capability + listen_interval) + IEs
+                putU32Le(out, 4, 6 + respIes.size) // 6-byte AssocResp fixed fields (capability + status + aid) + IEs
+                putU32Le(out, 8, 0) // flags = 0 (Association Request, not Reassociation)
+            }
+            out
+        }
+        "assoc_req_ies" -> {
+            val reqIes = buildAssocReqIes()
+            val out = ByteArray(maxOf(reqIes.size, requestedLen.coerceAtMost(512)))
+            System.arraycopy(reqIes, 0, out, 0, reqIes.size)
+            out
+        }
+        "assoc_resp_ies" -> {
+            val respIes = buildAssocRespIes()
+            val out = ByteArray(maxOf(respIes.size, requestedLen.coerceAtMost(512)))
+            System.arraycopy(respIes, 0, out, 0, respIes.size)
+            out
+        }
         "bsscfg:cur_etheraddr" -> synchronized(f2Lock) { macBytes.copyOf() }
         "bsscfg:ssid" -> {
             val out = ByteArray(36)
@@ -1137,7 +1222,11 @@ class Bcm43430WifiController(
         else -> iovarStore[name]?.copyOf() ?: ByteArray(maxOf(4, argData.size))
     }
 
-    private fun handleIovarSet(name: String, argData: ByteArray) {
+    private fun handleIovarSet(
+        name: String,
+        argData: ByteArray,
+        postReplyActions: MutableList<() -> Unit> = mutableListOf(),
+    ) {
         iovarStore[name] = argData.copyOf()
         when (name) {
             "cur_etheraddr" -> if (argData.size >= 6) synchronized(f2Lock) { System.arraycopy(argData, 0, macBytes, 0, 6) }
@@ -1146,7 +1235,7 @@ class Bcm43430WifiController(
                 if (argData.size >= 4) {
                     val n = minOf(u32Le(argData, 0).coerceAtLeast(0), minOf(32, argData.size - 4))
                     ssid = String(argData, 4, n, Charsets.UTF_8)
-                    if (!apEnabled && ssid.isNotEmpty()) associateWithNeighborSsid(ssid)
+                    if (!apEnabled && ssid.isNotEmpty()) prepareStaAssociation(ssid, postReplyActions)
                 }
             }
             "bsscfg:ssid" -> {
@@ -1162,16 +1251,28 @@ class Bcm43430WifiController(
                     ssid = String(argData, baseOff + 4, n, Charsets.UTF_8)
                     if (interfaceUp) mode = if (apEnabled) "AP" else "STA"
                     if (!apEnabled && ssid.isNotEmpty()) {
-                        associateWithNeighborSsid(ssid)
+                        prepareStaAssociation(ssid, postReplyActions)
                     } else if (ssid.isEmpty() && associatedBssid.isNotEmpty()) {
-                        disassociateSta()
+                        disassociateSta(postReplyActions)
                     }
                 }
             }
             "wsec" -> if (argData.size >= 4) wsec = u32Le(argData, 0)
             "bsscfg:wsec" -> if (argData.size >= 8) wsec = u32Le(argData, 4)
-            "wpa_auth" -> if (argData.size >= 4) wpaAuth = u32Le(argData, 0)
-            "bsscfg:wpa_auth" -> if (argData.size >= 8) wpaAuth = u32Le(argData, 4)
+            "wpa_auth" -> if (argData.size >= 4) {
+                wpaAuth = u32Le(argData, 0)
+                if (wpaAuth == 0) {
+                    iovarStore.remove("wpaie")
+                    iovarStore.remove("bsscfg:wpaie")
+                }
+            }
+            "bsscfg:wpa_auth" -> if (argData.size >= 8) {
+                wpaAuth = u32Le(argData, 4)
+                if (wpaAuth == 0) {
+                    iovarStore.remove("wpaie")
+                    iovarStore.remove("bsscfg:wpaie")
+                }
+            }
             "chanspec" -> if (argData.size >= 2) channel = u16Le(argData, 0) and 0xff
             "apsta" -> if (argData.size >= 4 && u32Le(argData, 0) != 0) apEnabled = true
             "bss", "bsscfg:bss" -> {
@@ -1198,18 +1299,62 @@ class Bcm43430WifiController(
                 }
             }
             "scanabort", "escanabort" -> abortEscan(0x1234)
-            "PM" -> if (argData.size >= 4) pmMode = u32Le(argData, 0)
+            "PM" -> {
+                if (argData.size >= 4) pmMode = u32Le(argData, 0)
+                enqueuePendingWpa2Msg1(postReplyActions)
+            }
             "event_msgs", "bus:txglomalign", "assoc_listen", "bcn_timeout", "assoc_retry_max", "allmulti", "mcast_list" -> Unit
         }
     }
 
+    private fun enqueuePendingWpa2Msg1(postReplyActions: MutableList<() -> Unit>) {
+        val wpa2 = activeWpa2Session ?: return
+        if (!wpa2.msg1Sent && associatedBssid.isNotEmpty()) {
+            wpa2.msg1Sent = true
+            postReplyActions += {
+                enqueueBdcRxEthernet(buildEapolKeyMsg1(wpa2))
+            }
+        }
+    }
+
+    private fun buildAssocReqIes(): ByteArray {
+        val ssidBytes = ssid.toByteArray(Charsets.UTF_8).let { if (it.size > 32) it.copyOf(32) else it }
+        val ies = ByteArrayOutputStream()
+        ies.write(0x00)
+        ies.write(ssidBytes.size)
+        ies.write(ssidBytes)
+        ies.write(byteArrayOf(0x01, 0x08, 0x82.toByte(), 0x84.toByte(), 0x8B.toByte(), 0x96.toByte(), 0x0C, 0x12, 0x18, 0x24))
+        if (activeWpa2Session != null || (wpaAuth and 0xC6) != 0) {
+            val storedWpaIe = iovarStore["wpaie"] ?: iovarStore["bsscfg:wpaie"]
+            val wpaIeBytes = when {
+                storedWpaIe != null && storedWpaIe.size >= 2 &&
+                    ((storedWpaIe[0].toInt() and 0xff) == 0x30 || (storedWpaIe[0].toInt() and 0xff) == 0xDD) -> storedWpaIe
+                storedWpaIe != null && storedWpaIe.size >= 6 &&
+                    ((storedWpaIe[4].toInt() and 0xff) == 0x30 || (storedWpaIe[4].toInt() and 0xff) == 0xDD) ->
+                    storedWpaIe.copyOfRange(4, storedWpaIe.size)
+                else -> buildRsnIeBytes()
+            }
+            ies.write(wpaIeBytes)
+        }
+        return ies.toByteArray()
+    }
+
+    private fun buildAssocRespIes(): ByteArray =
+        byteArrayOf(0x01, 0x08, 0x82.toByte(), 0x84.toByte(), 0x8B.toByte(), 0x96.toByte(), 0x0C, 0x12, 0x18, 0x24)
+
     // ================= Broadcom 802.11 EScan / Legacy Scan & WLC_E_* Event Framing =================
 
-    private fun associateWithNeighborSsid(targetSsid: String): Boolean {
+    private fun prepareStaAssociation(
+        targetSsid: String,
+        postReplyActions: MutableList<() -> Unit>,
+    ): Boolean {
         val neighbors = effectiveNeighbors()
         val match = neighbors.firstOrNull { it.ssid == targetSsid }
         if (match == null && !networkEngine.config.enabled) {
-            enqueueBrcmEvent(WLC_E_SET_SSID, WLC_E_STATUS_FAIL, synchronized(f2Lock) { macBytes.copyOf() })
+            val curMac = synchronized(f2Lock) { macBytes.copyOf() }
+            postReplyActions += {
+                enqueueBrcmEvent(WLC_E_SET_SSID, WLC_E_STATUS_FAIL, curMac)
+            }
             return false
         }
         val effectiveBssid = match?.bssid ?: CONFIGURED_AP_BSSID
@@ -1220,23 +1365,55 @@ class Bcm43430WifiController(
         interfaceUp = true
         mode = "STA"
         virtualPeer.setConnected(true)
-        enqueueBrcmEvent(WLC_E_JOIN, WLC_E_STATUS_SUCCESS, bssidBytes)
-        enqueueBrcmEvent(WLC_E_AUTH, WLC_E_STATUS_SUCCESS, bssidBytes)
-        enqueueBrcmEvent(WLC_E_ASSOC, WLC_E_STATUS_SUCCESS, bssidBytes)
-        enqueueBrcmEvent(WLC_E_SET_SSID, WLC_E_STATUS_SUCCESS, bssidBytes)
-        enqueueBrcmEvent(WLC_E_LINK, WLC_E_STATUS_SUCCESS, bssidBytes, flags = WLC_EVENT_MSG_LINK)
+        val requiresWpa2 = (wpaAuth and 0xC6) != 0 ||
+            (match != null && match.security.equals("WPA2", ignoreCase = true) && wsec != 0)
+        wpa2FourWayComplete = !requiresWpa2
+        val staMac = synchronized(f2Lock) { macBytes.copyOf() }
+        val wpa2Session = if (requiresWpa2) {
+            val aNonce = ByteArray(32) { i -> (0xA5 xor (i * 13 + 7)).toByte() }
+            Wpa2EapolSession(
+                apMac = bssidBytes.copyOf(),
+                staMac = staMac,
+                ssid = targetSsid,
+                passphrase = match?.passphrase?.ifEmpty { "fujiemu123" } ?: "fujiemu123",
+                aNonce = aNonce,
+            )
+        } else {
+            null
+        }
+        activeWpa2Session = wpa2Session
+        postReplyActions += {
+            enqueueBrcmEvent(WLC_E_JOIN, WLC_E_STATUS_SUCCESS, bssidBytes)
+            enqueueBrcmEvent(WLC_E_AUTH, WLC_E_STATUS_SUCCESS, bssidBytes)
+            enqueueBrcmEvent(WLC_E_ASSOC, WLC_E_STATUS_SUCCESS, bssidBytes)
+            enqueueBrcmEvent(WLC_E_SET_SSID, WLC_E_STATUS_SUCCESS, bssidBytes)
+            enqueueBrcmEvent(WLC_E_LINK, WLC_E_STATUS_SUCCESS, bssidBytes, flags = WLC_EVENT_MSG_LINK)
+        }
         return true
     }
 
-    private fun disassociateSta() {
+    private fun disassociateSta(
+        postReplyActions: MutableList<() -> Unit>? = null,
+        emitAlways: Boolean = false,
+    ) {
         val prev = associatedBssid
         associatedBssid = ""
+        wpa2FourWayComplete = false
+        activeWpa2Session = null
         virtualPeer.setConnected(false)
-        if (prev.isNotEmpty()) {
-            val bssidBytes = runCatching { Bcm43438BtController.parseMac6(prev) }
-                .getOrElse { synchronized(f2Lock) { macBytes.copyOf() } }
-            enqueueBrcmEvent(WLC_E_DISASSOC, WLC_E_STATUS_SUCCESS, bssidBytes)
-            enqueueBrcmEvent(WLC_E_LINK, WLC_E_STATUS_SUCCESS, bssidBytes, flags = 0)
+        if (prev.isNotEmpty() || emitAlways) {
+            val bssidBytes = if (prev.isNotEmpty()) {
+                runCatching { Bcm43438BtController.parseMac6(prev) }
+                    .getOrElse { synchronized(f2Lock) { macBytes.copyOf() } }
+            } else {
+                synchronized(f2Lock) { macBytes.copyOf() }
+            }
+            val emit = {
+                enqueueBrcmEvent(WLC_E_DISASSOC_IND, WLC_E_STATUS_SUCCESS, bssidBytes)
+                enqueueBrcmEvent(WLC_E_DISASSOC, WLC_E_STATUS_SUCCESS, bssidBytes)
+                enqueueBrcmEvent(WLC_E_LINK, WLC_E_STATUS_SUCCESS, bssidBytes, flags = 0)
+            }
+            if (postReplyActions != null) postReplyActions += emit else emit()
         }
     }
 
@@ -1299,6 +1476,7 @@ class Bcm43430WifiController(
         ies.write(0x00); ies.write(ssidBytes.size); ies.write(ssidBytes)
         ies.write(byteArrayOf(0x01, 0x08, 0x82.toByte(), 0x84.toByte(), 0x8B.toByte(), 0x96.toByte(), 0x0C, 0x12, 0x18, 0x24))
         ies.write(byteArrayOf(0x03, 0x01, (ap.channel and 0xff).toByte()))
+        ies.write(byteArrayOf(0x05, 0x04, 0x00, 0x01, 0x00, 0x00)) // TIM IE (DTIM period = 1)
         if (ap.security.equals("WPA2", ignoreCase = true)) {
             ies.write(
                 byteArrayOf(
@@ -1382,6 +1560,10 @@ class Bcm43430WifiController(
         val ethStart = 4 + dataOffset
         if (ethStart >= bdc.size) return
         val ethFrame = bdc.copyOfRange(ethStart, bdc.size)
+        if (ethFrame.size >= 18 && WifiNetworkEngine.u16Be(ethFrame, 12) == ETHER_TYPE_EAPOL) {
+            handleGuestEapolTx(ethFrame)
+            return
+        }
         // Maintain stock SoftAP / PTP-IP peer telemetry while routing Ethernet II frames through WifiNetworkEngine
         if (apEnabled || !networkEngine.config.enabled) {
             virtualPeer.onCameraEthernetTx(ethFrame)
@@ -1394,6 +1576,209 @@ class Bcm43430WifiController(
         if (networkEngine.config.enabled) {
             networkEngine.onGuestEthernetTx(ethFrame)
         }
+    }
+
+    // ================= IEEE 802.11i WPA2-PSK (RSN CCMP) 4-Way EAPOL Authenticator =================
+
+    private fun buildRsnIeBytes(): ByteArray = byteArrayOf(
+        0x30, 0x14,
+        0x01, 0x00,
+        0x00, 0x0F, 0xAC.toByte(), 0x04,
+        0x01, 0x00, 0x00, 0x0F, 0xAC.toByte(), 0x04,
+        0x01, 0x00, 0x00, 0x0F, 0xAC.toByte(), 0x02,
+        0x00, 0x00,
+    )
+
+    private fun buildEapolKeyMsg1(session: Wpa2EapolSession): ByteArray {
+        val frame = ByteArray(14 + 4 + 95)
+        System.arraycopy(session.staMac, 0, frame, 0, 6)
+        System.arraycopy(session.apMac, 0, frame, 6, 6)
+        putU16Be(frame, 12, ETHER_TYPE_EAPOL)
+        frame[14] = 2 // 802.1X-2004
+        frame[15] = 3 // EAPOL-Key
+        putU16Be(frame, 16, 95)
+        frame[18] = 2 // RSN Key Descriptor
+        putU16Be(frame, 19, 0x008A) // HMAC-SHA1-128 + Pairwise + KeyAck
+        putU16Be(frame, 21, 16) // CCMP key length
+        putU32Be(frame, 23, (session.replayCounter ushr 32).toInt())
+        putU32Be(frame, 27, session.replayCounter.toInt())
+        System.arraycopy(session.aNonce, 0, frame, 31, 32)
+        putU16Be(frame, 111, 0)
+        return frame
+    }
+
+    private fun handleGuestEapolTx(ethFrame: ByteArray) {
+        val session = activeWpa2Session ?: return
+        if (ethFrame.size < 14 + 4 + 95) return
+        if ((ethFrame[15].toInt() and 0xff) != 3) return
+        val bodyLen = WifiNetworkEngine.u16Be(ethFrame, 16)
+        if (18 + bodyLen > ethFrame.size) return
+        val keyInfo = WifiNetworkEngine.u16Be(ethFrame, 19)
+        val keyDataLen = WifiNetworkEngine.u16Be(ethFrame, 111)
+        val isPairwise = (keyInfo and 0x0008) != 0
+        val hasMic = (keyInfo and 0x0100) != 0
+        val isSecure = (keyInfo and 0x0200) != 0
+
+        if (isPairwise && hasMic && !isSecure && keyDataLen > 0) {
+            // EAPOL-Key Message 2/4
+            val sNonce = ethFrame.copyOfRange(31, 63)
+            val eapolCopy = ethFrame.copyOfRange(14, 18 + bodyLen)
+            val rxMic = eapolCopy.copyOfRange(81, 97)
+            for (i in 81 until 97) eapolCopy[i] = 0
+
+            val candidatePassphrases = if (session.ssid == peerNameProvider()) {
+                listOf(session.passphrase, "12345678", "88888888", "00000000", "password").distinct()
+            } else {
+                listOf(session.passphrase)
+            }
+            var matchedKck: ByteArray? = null
+            var matchedKek: ByteArray? = null
+            for (candidate in candidatePassphrases) {
+                val pmk = deriveWpa2Pmk(candidate, session.ssid)
+                val ptk = deriveWpa2Ptk(pmk, session.apMac, session.staMac, session.aNonce, sNonce)
+                val kck = ptk.copyOfRange(0, 16)
+                val expectedMic = hmacSha1(kck, eapolCopy).copyOfRange(0, 16)
+                if (rxMic.contentEquals(expectedMic)) {
+                    matchedKck = kck
+                    matchedKek = ptk.copyOfRange(16, 32)
+                    break
+                }
+            }
+            if (matchedKck == null || matchedKek == null) {
+                // Wrong WPA2 passphrase -> deauthenticate STA cleanly as real AP does
+                enqueueBrcmEvent(WLC_E_DEAUTH_IND, WLC_E_STATUS_SUCCESS, session.apMac)
+                disassociateSta(emitAlways = true)
+                return
+            }
+            session.kck = matchedKck
+            session.kek = matchedKek
+            session.replayCounter += 1L
+            enqueueBdcRxEthernet(buildEapolKeyMsg3(session))
+        } else if (isPairwise && hasMic && isSecure) {
+            // EAPOL-Key Message 4/4
+            wpa2FourWayComplete = true
+            wpa2HandshakeCount++
+        }
+    }
+
+    private fun buildEapolKeyMsg3(session: Wpa2EapolSession): ByteArray {
+        val rsnIe = buildRsnIeBytes()
+        val gtkKde = ByteArray(6 + 2 + session.gtk.size)
+        gtkKde[0] = 0xDD.toByte()
+        gtkKde[1] = (4 + 2 + session.gtk.size).toByte()
+        gtkKde[2] = 0x00; gtkKde[3] = 0x0F; gtkKde[4] = 0xAC.toByte(); gtkKde[5] = 0x01
+        gtkKde[6] = 0x01 // KeyID = 1, Tx = 0
+        gtkKde[7] = 0x00
+        System.arraycopy(session.gtk, 0, gtkKde, 8, session.gtk.size)
+
+        val plainRaw = rsnIe + gtkKde
+        val padLen = (8 - (plainRaw.size % 8)) % 8
+        val paddedPlain = ByteArray(plainRaw.size + padLen)
+        System.arraycopy(plainRaw, 0, paddedPlain, 0, plainRaw.size)
+        if (padLen > 0) {
+            paddedPlain[plainRaw.size] = 0xDD.toByte()
+        }
+        val wrapped = aesKeyWrap(session.kek, paddedPlain)
+
+        val bodyLen = 95 + wrapped.size
+        val frame = ByteArray(14 + 4 + bodyLen)
+        System.arraycopy(session.staMac, 0, frame, 0, 6)
+        System.arraycopy(session.apMac, 0, frame, 6, 6)
+        putU16Be(frame, 12, ETHER_TYPE_EAPOL)
+        frame[14] = 2 // 802.1X-2004
+        frame[15] = 3 // EAPOL-Key
+        putU16Be(frame, 16, bodyLen)
+        frame[18] = 2 // RSN Key Descriptor
+        // KeyInfo = HMAC-SHA1-128 (2) | Pairwise (0x08) | Install (0x40) | Ack (0x80) | MIC (0x100) | Secure (0x200) | EncKeyData (0x1000)
+        putU16Be(frame, 19, 0x13CA)
+        putU16Be(frame, 21, 16)
+        putU32Be(frame, 23, (session.replayCounter ushr 32).toInt())
+        putU32Be(frame, 27, session.replayCounter.toInt())
+        System.arraycopy(session.aNonce, 0, frame, 31, 32)
+        // RSC = 0, KeyID = 0, MIC = 0 initially
+        putU16Be(frame, 111, wrapped.size)
+        System.arraycopy(wrapped, 0, frame, 113, wrapped.size)
+
+        val mic = hmacSha1(session.kck, frame.copyOfRange(14, frame.size))
+        System.arraycopy(mic, 0, frame, 14 + 81, 16)
+        return frame
+    }
+
+    private fun deriveWpa2Pmk(passphrase: String, ssidStr: String): ByteArray {
+        val spec = PBEKeySpec(passphrase.toCharArray(), ssidStr.toByteArray(Charsets.UTF_8), 4096, 256)
+        return SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1").generateSecret(spec).encoded
+    }
+
+    private fun deriveWpa2Ptk(
+        pmk: ByteArray,
+        apMac: ByteArray,
+        staMac: ByteArray,
+        aNonce: ByteArray,
+        sNonce: ByteArray,
+    ): ByteArray {
+        fun lexLess(a: ByteArray, b: ByteArray): Boolean {
+            for (i in a.indices) {
+                val ai = a[i].toInt() and 0xff
+                val bi = b[i].toInt() and 0xff
+                if (ai != bi) return ai < bi
+            }
+            return false
+        }
+        val data = ByteArray(6 + 6 + 32 + 32)
+        val (minMac, maxMac) = if (lexLess(apMac, staMac)) apMac to staMac else staMac to apMac
+        val (minNonce, maxNonce) = if (lexLess(aNonce, sNonce)) aNonce to sNonce else sNonce to aNonce
+        System.arraycopy(minMac, 0, data, 0, 6)
+        System.arraycopy(maxMac, 0, data, 6, 6)
+        System.arraycopy(minNonce, 0, data, 12, 32)
+        System.arraycopy(maxNonce, 0, data, 44, 32)
+
+        val label = "Pairwise key expansion\u0000".toByteArray(Charsets.US_ASCII)
+        val out = ByteArrayOutputStream()
+        var counter = 0
+        while (out.size() < 48) {
+            val input = ByteArray(label.size + data.size + 1)
+            System.arraycopy(label, 0, input, 0, label.size)
+            System.arraycopy(data, 0, input, label.size, data.size)
+            input[input.size - 1] = counter.toByte()
+            out.write(hmacSha1(pmk, input))
+            counter++
+        }
+        return out.toByteArray().copyOf(48)
+    }
+
+    private fun hmacSha1(key: ByteArray, data: ByteArray): ByteArray {
+        val mac = Mac.getInstance("HmacSHA1")
+        mac.init(SecretKeySpec(key, "HmacSHA1"))
+        return mac.doFinal(data)
+    }
+
+    private fun aesKeyWrap(kek: ByteArray, plain: ByteArray): ByteArray {
+        require(plain.size >= 16 && plain.size % 8 == 0)
+        val n = plain.size / 8
+        val a = ByteArray(8) { 0xA6.toByte() }
+        val r = Array(n) { i -> plain.copyOfRange(i * 8, (i + 1) * 8) }
+        val cipher = Cipher.getInstance("AES/ECB/NoPadding")
+        cipher.init(Cipher.ENCRYPT_MODE, SecretKeySpec(kek, "AES"))
+        val block = ByteArray(16)
+        for (j in 0..5) {
+            for (i in 0 until n) {
+                System.arraycopy(a, 0, block, 0, 8)
+                System.arraycopy(r[i], 0, block, 8, 8)
+                val b = cipher.doFinal(block)
+                val t = (n * j + (i + 1)).toLong()
+                System.arraycopy(b, 0, a, 0, 8)
+                for (k in 0..7) {
+                    a[7 - k] = (a[7 - k].toInt() xor ((t ushr (k * 8)) and 0xffL).toInt()).toByte()
+                }
+                System.arraycopy(b, 8, r[i], 0, 8)
+            }
+        }
+        val out = ByteArray((n + 1) * 8)
+        System.arraycopy(a, 0, out, 0, 8)
+        for (i in 0 until n) {
+            System.arraycopy(r[i], 0, out, (i + 1) * 8, 8)
+        }
+        return out
     }
 
     internal fun enqueueBdcRxEthernet(ethFrame: ByteArray) {
@@ -1528,6 +1913,8 @@ class Bcm43430WifiController(
             "iovarCount" to iovarCount,
             "scanCount" to scanCount,
             "associatedBssid" to associatedBssid,
+            "wpa2FourWayComplete" to wpa2FourWayComplete,
+            "wpa2HandshakeCount" to wpa2HandshakeCount,
             "discoverableNetworks" to effectiveNeighbors().map { ap ->
                 mapOf("ssid" to ap.ssid, "bssid" to ap.bssid, "channel" to ap.channel, "rssi" to ap.rssi, "security" to ap.security)
             },
