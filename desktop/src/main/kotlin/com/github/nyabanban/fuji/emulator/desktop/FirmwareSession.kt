@@ -2125,9 +2125,11 @@ class FirmwareSession(
         }
         // Real-silicon power-peer sel 0x11 post-shutdown command:
         // - 0x1F00: full power-off (wakes on power switch false->true)
-        // - 0x0002: AUTO POWER OFF standby wake-arm (wakes on shutterHalf/shutterFull/play/afOn rising press while power==true, or power toggle)
+        // - 0x0002: AUTO POWER OFF standby wake-arm when power stayed ON throughout boot (`!sawPowerSwitchOffDuringBoot`),
+        //   OR end-of-shutdown handoff when user toggled power OFF (`sawPowerSwitchOffDuringBoot`) and back ON during sensor cleaning
         // - 0x0001 / 0x0008: immediate reboot / firmware restart request
-        val immediateRestart = lastSel11 == 0x0001 || lastSel11 == 0x0008
+        val immediateRestart = lastSel11 == 0x0001 || lastSel11 == 0x0008 ||
+            (powerNow && sawPowerSwitchOffDuringBoot)
         standbyWakeState.arm(
             power = powerNow,
             shutterHalf = shutterNow,

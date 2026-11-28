@@ -188,10 +188,22 @@ class EmulatorApp : Application() {
         )
     }
     private fun patchStudioButtons(changes: Map<String, Any>, persistToDisk: Boolean): Map<String, Any?> {
+        val btnPort = runtime.host.ports.find("buttons", ButtonPort::class.java)
         val movie = changes["movieMode"] as? Boolean
-        val previous = if (movie != null) runtime.host.ports.find("buttons", ButtonPort::class.java)?.pressed("movieMode") else null
+        val previous = if (movie != null) btnPort?.pressed("movieMode") else null
+        val powerNext = changes["power"] as? Boolean
+        val powerPrev = if (powerNext != null) btnPort?.pressed("power") else null
         val result = runtime.host.patchLatestDirect("buttons", changes, persistToDisk)
         if (movie != null && previous != null && previous != movie) runtime.session.studioModeSwitchChanged(movie)
+        if (
+            powerNext == true &&
+            powerPrev == false &&
+            !interactiveStarted &&
+            LaunchContext.smokePath == null &&
+            runtime.catalog.mode == RelaxedPeripheralFallback.MODE
+        ) {
+            Platform.runLater { triggerBootFromUi?.invoke() }
+        }
         return result
     }
     private fun patchLatest(id: String, changes: Map<String, Any>): CompletableFuture<Map<String, Any?>> = runtime.owner.submit {
@@ -1412,13 +1424,16 @@ class EmulatorApp : Application() {
         themeListenerHandle = null
         LaunchContext.bootTrigger = null
         LaunchContext.onPauseChanged = null
-        stopRequested.set(true)
-        paused.set(false)
-        runnerThread?.let { thread ->
-            runCatching { thread.join(9000) }
-        }
         displayTimer?.stop()
         if(::timeline.isInitialized) timeline.stop()
+        stopRequested.set(true)
+        paused.set(false)
+        if (LaunchContext.isRuntimeInitialized) {
+            runtime.requestGracefulStopAndAwait(32_000L)
+        }
+        runnerThread?.let { thread ->
+            runCatching { thread.join(2_000L) }
+        }
         uiBackgroundExecutor.shutdownNow()
         if(::lensProfileWindow.isInitialized) lensProfileWindow.close()
         runCatching { inputBindings?.close() }

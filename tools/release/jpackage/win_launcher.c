@@ -19,6 +19,31 @@
 __declspec(dllexport) unsigned long NvOptimusEnablement = 1;
 __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 
+static volatile HANDLE g_child_process = NULL;
+
+/*
+ * Keep the native launcher alive when the user closes the console window or presses Ctrl+C,
+ * allowing child java.exe's JVM shutdown hook to finish flushing $BACKUP BlockA (Language,
+ * Area/Timezone, user settings) and RTC/Sub-MCU state to disk cleanly.
+ */
+static BOOL WINAPI launcher_ctrl_handler(DWORD ctrl_type) {
+    switch (ctrl_type) {
+        case CTRL_C_EVENT:
+        case CTRL_BREAK_EVENT:
+        case CTRL_CLOSE_EVENT:
+        case CTRL_LOGOFF_EVENT:
+        case CTRL_SHUTDOWN_EVENT: {
+            HANDLE child = g_child_process;
+            if (child != NULL) {
+                WaitForSingleObject(child, 32000);
+            }
+            return TRUE;
+        }
+        default:
+            return FALSE;
+    }
+}
+
 static int file_exists_w(const wchar_t *path) {
     DWORD attrs = GetFileAttributesW(path);
     return (attrs != INVALID_FILE_ATTRIBUTES) && ((attrs & FILE_ATTRIBUTE_DIRECTORY) == 0);
@@ -238,6 +263,8 @@ int wmain(int argc, wchar_t **argv) {
     ZeroMemory(&pi, sizeof(pi));
     si.cb = sizeof(si);
 
+    SetConsoleCtrlHandler(launcher_ctrl_handler, TRUE);
+
     if (!CreateProcessW(java_exe, cmd, NULL, NULL, TRUE, 0, NULL, root, &si, &pi)) {
         DWORD err = GetLastError();
         fwprintf(stderr, L"ERROR: Failed to launch %ls (Win32 error %lu).\n", java_exe, (unsigned long)err);
@@ -245,7 +272,9 @@ int wmain(int argc, wchar_t **argv) {
         return 1;
     }
 
+    g_child_process = pi.hProcess;
     WaitForSingleObject(pi.hProcess, INFINITE);
+    g_child_process = NULL;
     DWORD exit_code = 0;
     GetExitCodeProcess(pi.hProcess, &exit_code);
     CloseHandle(pi.hProcess);

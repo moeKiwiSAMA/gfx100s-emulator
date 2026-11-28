@@ -1034,14 +1034,25 @@ class CameraStudio(private val owner: Stage, sendButton: (String, Boolean) -> Co
                 val close = Button("×").apply {
                     styleClass += "studio-face-close"
                     minHeight = 18.0; prefHeight = 18.0; maxHeight = 18.0
-                    setOnAction { setFaceVisible(panel.id, false) }
+                    setOnAction {
+                        setFaceVisible(panel.id, false)
+                        if (!closed && !owner.isShowing && faceWindows.values.none { it.isShowing } && !evfWindow.isShowing) {
+                            Platform.exit()
+                        }
+                    }
                     accessibleText = I18n.t("studio.faces.hide_accessible", panelShortLabel(panel))
                 }
                 val bar = HBox(handle, close).apply { HBox.setHgrow(handle, Priority.ALWAYS); styleClass += "studio-face-bar" }
                 val pane = BorderPane(regions.getValue(panel.id), bar, null, null, null).apply { styleClass += "studio-face-frame" }
                 scene = Scene(pane).also { UiThemeRegistry.applyToScene(it, uiTheme) }
                 minWidth = 120.0; minHeight = 100.0
-                setOnCloseRequest { event -> event.consume(); setFaceVisible(panel.id, false) }
+                setOnCloseRequest { event ->
+                    event.consume()
+                    setFaceVisible(panel.id, false)
+                    if (!closed && !owner.isShowing && faceWindows.values.none { it.isShowing } && !evfWindow.isShowing) {
+                        Platform.exit()
+                    }
+                }
                 focusedProperty().addListener { _, _, on ->
                     if (on) { if ("studio-face-frame-focused" !in pane.styleClass) pane.styleClass += "studio-face-frame-focused" }
                     else pane.styleClass.remove("studio-face-frame-focused")

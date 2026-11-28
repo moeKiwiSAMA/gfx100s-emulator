@@ -2,7 +2,7 @@
 
 Generated from catalog/catalog.yaml by :address-catalog:compileCatalog. Do not edit.
 
-Dictionary gfx100s-213-discovery-v1 / SHA256 fa5c4234f2c5d27803833ca8247ee6a4aa8b9cceb7751883d1c6adc1f1349506. Firmware gfx100s-213 / ea997915ac5accc79699392b47909bb29506f66ec8d571e5804dd1fb0408fd12.
+Dictionary gfx100s-213-discovery-v1 / SHA256 c01d47ad89e31bf6bfde6214cb15ddb852f73ca39b9f1ee522b9fdafb5326e67. Firmware gfx100s-213 / ea997915ac5accc79699392b47909bb29506f66ec8d571e5804dd1fb0408fd12.
 
 All intervals are half open. Candidate envelope lengths and fill values are HYPOTHESIS, not measured hardware spans or reset values. Component behavior and lifecycle checks remain active.
 
@@ -214,7 +214,7 @@ All intervals are half open. Candidate envelope lengths and fill values are HYPO
 | gfx100s.soc-sd-host.signal6238-1 | soc-sd-host.signal6238-1 | [0xfffca238, 0xfffca23a) | MMIO | 1 |
 | gfx100s.soc-sd-host.control623e-1 | soc-sd-host.control623e-1 | [0xfffca23e, 0xfffca240) | MMIO | 1 |
 | gfx100s.soc-sd-host.capability6244-1 | soc-sd-host.capability6244-1 | [0xfffca244, 0xfffca248) | MMIO | 1 |
-| gfx100s.soc-sdio | soc-sdio.sdhci | [0xfffcc000, 0xfffcc100) | MMIO | 1 |
+| gfx100s.soc-sdio | soc-sdio.sdhci | [0xfffcc000, 0xfffcc200) | MMIO | 1 |
 | gfx100s.soc-vglib-init.registers | soc-vglib-init.registers | [0xfffd0000, 0xfffd18c4) | MMIO | 13 |
 | gfx100s.soc-flash.registers | soc-flash.registers | [0xfffd8000, 0xfffd9000) | MMIO | 33 |
 | gfx100s.soc-dma.registers | soc-dma.registers | [0xfffe0000, 0xffff0000) | MMIO | 11 |

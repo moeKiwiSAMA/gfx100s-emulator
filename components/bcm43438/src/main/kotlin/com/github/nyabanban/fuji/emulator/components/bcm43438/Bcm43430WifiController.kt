@@ -71,6 +71,9 @@ class Bcm43430WifiController(
         const val SDIO_CORE_BASE = 0x18002000L
         const val ARM_CM3_BASE = 0x18003000L
         const val SOCRAM_CORE_BASE = 0x18004000L
+        const val CHIPCOMMON_WRAP_BASE = 0x18100000L
+        const val D11_WRAP_BASE = 0x18101000L
+        const val SDIO_WRAP_BASE = 0x18102000L
         const val ARM_CM3_WRAP_BASE = 0x18103000L
         const val SOCRAM_WRAP_BASE = 0x18104000L
         const val EROM_BASE = 0x1810F000L
@@ -115,14 +118,21 @@ class Bcm43430WifiController(
         const val WLC_DISASSOC = 52
         const val WLC_GET_PM = 85
         const val WLC_SET_PM = 86
+        const val WLC_GET_REVINFO = 98
         const val WLC_GET_AP = 117
         const val WLC_SET_AP = 118
         const val WLC_GET_RSSI = 127
         const val WLC_GET_WSEC = 133
         const val WLC_SET_WSEC = 134
+        const val WLC_GET_BANDLIST = 140
+        const val WLC_GET_BAND = 141
         const val WLC_GET_ASSOCLIST = 159
         const val WLC_GET_WPA_AUTH = 164
         const val WLC_SET_WPA_AUTH = 165
+        const val WLC_SET_SCAN_CHANNEL_TIME = 185
+        const val WLC_SET_SCAN_UNASSOC_TIME = 187
+        const val WLC_GET_VALID_CHANNELS = 217
+        const val WLC_SET_SCAN_PASSIVE_TIME = 258
         const val WLC_GET_VAR = 262
         const val WLC_SET_VAR = 263
         const val WLC_SET_WSEC_PMK = 268
@@ -140,6 +150,7 @@ class Bcm43430WifiController(
         const val WLC_E_ESCAN_RESULT = 69
         const val WLC_E_STATUS_SUCCESS = 0
         const val WLC_E_STATUS_FAIL = 1
+        const val WLC_E_STATUS_ABORT = 4
         const val WLC_E_STATUS_PARTIAL = 8
         const val WLC_EVENT_MSG_LINK = 0x0001
         const val WL_BSS_INFO_VERSION = 109
@@ -218,16 +229,24 @@ class Bcm43430WifiController(
     private var sdioPullUp: Int = 0
     private var wakeupCtrl: Int = 0
     private var sleepCsr: Int = 0
+    private var f0SepIntCtl: Int = 0
     @Volatile
     private var sdioIntStatus: Long = 0L
     @Volatile
     private var sdioHostIntMask: Long = 0L
     private var toHostMailboxData: Long = 0L
     private var toSbMailboxData: Long = 0L
+    private var ccResetCtrl: Int = 0
+    private var ccIoCtrl: Int = 1
+    private var d11ResetCtrl: Int = 0
+    private var d11IoCtrl: Int = 1
+    private var sdioResetCtrl: Int = 0
+    private var sdioIoCtrl: Int = 1
     private var armResetCtrl: Int = 1 // Starts in reset until guest downloads FW & releases reset
     private var armIoCtrl: Int = 0
     private var socramResetCtrl: Int = 0
-    private var socramIoCtrl: Int = 0
+    private var socramIoCtrl: Int = 1
+    private var socramBankIdx: Int = 0
 
     // Genuine 512 KiB SOCRAM receiving guest firmware + NVRAM
     private val socram = ByteArray(SOCRAM_SIZE)
@@ -388,7 +407,19 @@ class Bcm43430WifiController(
         ioEnable = 0
         intEnable = 0
         chipClkCsr = 0
+        sleepCsr = 0
+        f0SepIntCtl = 0
+        ccResetCtrl = 0
+        ccIoCtrl = 1
+        d11ResetCtrl = 0
+        d11IoCtrl = 1
+        sdioResetCtrl = 0
+        sdioIoCtrl = 1
         armResetCtrl = 1
+        armIoCtrl = 0
+        socramResetCtrl = 0
+        socramIoCtrl = 1
+        socramBankIdx = 0
         firmwareLoaded = false
         firmwareBytesWritten = 0L
         firmwareSha256 = ""
@@ -414,7 +445,10 @@ class Bcm43430WifiController(
         ioEnable = 0
         intEnable = 0
         synchronized(f2Lock) {
+            txSeqExpected = 0
+            rxSeq = 0
             sdioIntStatus = 0L
+            f2RxQueue.clear()
             f2PendingReadFrame = null
             f2PendingReadOffset = 0
         }
@@ -603,6 +637,7 @@ class Bcm43430WifiController(
         0x10 -> funcBlockSize[0] and 0xff
         0x11 -> (funcBlockSize[0] ushr 8) and 0xff
         0x13 -> highSpeedCtrl
+        0xF0 -> f0SepIntCtl
         // FBR1 (0x100..0x1FF)
         0x100 -> 0x00
         0x109 -> 0x40 // F1 CIS ptr = 0x001040
@@ -635,6 +670,7 @@ class Bcm43430WifiController(
             0x10 -> funcBlockSize[0] = (funcBlockSize[0] and 0xff00) or v
             0x11 -> funcBlockSize[0] = (funcBlockSize[0] and 0x00ff) or (v shl 8)
             0x13 -> highSpeedCtrl = (highSpeedCtrl and 0x01) or (v and 0x02)
+            0xF0 -> f0SepIntCtl = v
             0x110 -> funcBlockSize[1] = (funcBlockSize[1] and 0xff00) or v
             0x111 -> funcBlockSize[1] = (funcBlockSize[1] and 0x00ff) or (v shl 8)
             0x210 -> funcBlockSize[2] = (funcBlockSize[2] and 0xff00) or v
@@ -679,7 +715,10 @@ class Bcm43430WifiController(
             }
             SBSDIO_FUNC1_SDIOPULLUP -> sdioPullUp = v
             SBSDIO_FUNC1_WAKEUPCTRL -> wakeupCtrl = v
-            SBSDIO_FUNC1_SLEEPCSR -> sleepCsr = v
+            SBSDIO_FUNC1_SLEEPCSR -> {
+                // SBSDIO_SLPCSR_KSO (bit 0) immediately asserts SBSDIO_SLPCSR_DEVON (bit 1)
+                sleepCsr = if ((v and 0x01) != 0) (v or 0x02) else (v and 0x02.inv())
+            }
             else -> {
                 val bpAddr = backplaneBase() + (addr and 0x7fff).toLong()
                 writeBackplaneBytes(bpAddr, byteArrayOf(v.toByte()))
@@ -741,8 +780,16 @@ class Bcm43430WifiController(
             SDIO_CORE_BASE + 0x044L -> 0L
             SDIO_CORE_BASE + 0x048L -> toSbMailboxData
             SDIO_CORE_BASE + 0x04CL -> toHostMailboxData
-            SOCRAM_CORE_BASE + 0x000L -> 0x00000808L // 8 banks, rev 8
-            SOCRAM_CORE_BASE + 0x040L -> 0x00000007L // 64 KiB per bank
+            SOCRAM_CORE_BASE + 0x000L -> 0x00000088L // SRCI_SRNB = 8 banks (bits 7:4), core type 8 -> 8 * 64 KiB = 512 KiB
+            SOCRAM_CORE_BASE + 0x010L -> socramBankIdx.toLong() and 0xffff_ffffL
+            SOCRAM_CORE_BASE + 0x040L -> 0x00000007L // BANKINFO_SZMASK = 7 -> (7 + 1) * 8 KiB = 64 KiB per bank
+            SOCRAM_CORE_BASE + 0x044L -> 0x00000000L // BANKPDA = 0 (all banks active)
+            CHIPCOMMON_WRAP_BASE + 0x408L -> ccIoCtrl.toLong() and 0xffff_ffffL
+            CHIPCOMMON_WRAP_BASE + 0x800L -> ccResetCtrl.toLong() and 0xffff_ffffL
+            D11_WRAP_BASE + 0x408L -> d11IoCtrl.toLong() and 0xffff_ffffL
+            D11_WRAP_BASE + 0x800L -> d11ResetCtrl.toLong() and 0xffff_ffffL
+            SDIO_WRAP_BASE + 0x408L -> sdioIoCtrl.toLong() and 0xffff_ffffL
+            SDIO_WRAP_BASE + 0x800L -> sdioResetCtrl.toLong() and 0xffff_ffffL
             ARM_CM3_WRAP_BASE + 0x408L -> armIoCtrl.toLong() and 0xffff_ffffL
             ARM_CM3_WRAP_BASE + 0x800L -> armResetCtrl.toLong() and 0xffff_ffffL
             SOCRAM_WRAP_BASE + 0x408L -> socramIoCtrl.toLong() and 0xffff_ffffL
@@ -765,6 +812,13 @@ class Bcm43430WifiController(
             SDIO_CORE_BASE + 0x020L -> synchronized(f2Lock) { sdioIntStatus = sdioIntStatus and word.inv() }
             SDIO_CORE_BASE + 0x024L -> sdioHostIntMask = word
             SDIO_CORE_BASE + 0x048L -> toSbMailboxData = word
+            SOCRAM_CORE_BASE + 0x010L -> socramBankIdx = word.toInt()
+            CHIPCOMMON_WRAP_BASE + 0x408L -> ccIoCtrl = word.toInt()
+            CHIPCOMMON_WRAP_BASE + 0x800L -> ccResetCtrl = word.toInt() and 0x01
+            D11_WRAP_BASE + 0x408L -> d11IoCtrl = word.toInt()
+            D11_WRAP_BASE + 0x800L -> d11ResetCtrl = word.toInt() and 0x01
+            SDIO_WRAP_BASE + 0x408L -> sdioIoCtrl = word.toInt()
+            SDIO_WRAP_BASE + 0x800L -> sdioResetCtrl = word.toInt() and 0x01
             ARM_CM3_WRAP_BASE + 0x408L -> armIoCtrl = word.toInt()
             ARM_CM3_WRAP_BASE + 0x800L -> {
                 val prev = armResetCtrl
@@ -782,6 +836,10 @@ class Bcm43430WifiController(
 
     private fun onArmCm3ResetReleased() {
         firmwareLoaded = true
+        synchronized(f2Lock) {
+            txSeqExpected = 0
+            rxSeq = 0
+        }
         val md = MessageDigest.getInstance("SHA-256")
         val hashLen = minOf(firmwareBytesWritten.toInt().coerceAtLeast(0), SOCRAM_SIZE)
         if (hashLen > 0) {
@@ -818,7 +876,9 @@ class Bcm43430WifiController(
             val channel = raw[off + 5].toInt() and 0x0f
             val hdrLen = raw[off + 7].toInt() and 0xff
             if (hdrLen < 12 || hdrLen > frameLen) break
-            txSeqExpected = (raw[off + 4].toInt() + 1) and 0xff
+            synchronized(f2Lock) {
+                txSeqExpected = (raw[off + 4].toInt() + 1) and 0xff
+            }
 
             val payload = raw.copyOfRange(off + hdrLen, off + frameLen)
             when (channel) {
@@ -826,10 +886,11 @@ class Bcm43430WifiController(
                 SDPCM_DATA_CHANNEL -> handleBdcDataFrame(payload)
             }
             off += frameLen
-            // Align next glommed sub-frame if 4-byte padded
-            if (off < raw.size && u16Le(raw, off) == 0 && off + 4 <= raw.size) {
-                val aligned = (off + 3) and 3.inv()
-                if (aligned > off) off = aligned
+            // Align next glommed sub-frame if 4-byte zero-padded
+            val aligned = (off + 3) and 3.inv()
+            if (aligned > off && aligned + 12 <= raw.size) {
+                val padZero = (off until aligned).all { raw[it].toInt() == 0 }
+                if (padZero) off = aligned
             }
         }
     }
@@ -841,7 +902,8 @@ class Bcm43430WifiController(
         val flags = u32Le(cdc, 8)
         val reqId = (flags ushr CDC_F_ID_SHIFT) and 0xffff
         val isSet = (flags and CDC_F_SET) != 0
-        val payload = if (cdc.size > 16) cdc.copyOfRange(16, minOf(cdc.size, 16 + maxOf(dataLen, 0))) else ByteArray(0)
+        val payloadEnd = (16L + dataLen.toLong().coerceAtLeast(0L)).coerceAtMost(cdc.size.toLong()).toInt()
+        val payload = if (cdc.size > 16) cdc.copyOfRange(16, payloadEnd) else ByteArray(0)
         ioctlCount++
 
         var status = 0
@@ -933,6 +995,27 @@ class Bcm43430WifiController(
             WLC_SET_PM -> {
                 if (payload.size >= 4) pmMode = u32Le(payload, 0)
             }
+            WLC_GET_REVINFO -> {
+                val out = ByteArray(maxOf(68, dataLen.coerceAtMost(256)))
+                putU32Le(out, 0, 0x14E4) // vendorid = Broadcom
+                putU32Le(out, 4, sdioProdId) // deviceid = 0x43E2
+                putU32Le(out, 8, 0x22050000) // radiorev
+                putU32Le(out, 12, 1) // chiprev = A1
+                putU32Le(out, 16, 43) // corerev = D11 rev 43
+                putU32Le(out, 20, 0x058E) // boardid
+                putU32Le(out, 24, 0x14E4) // boardvendor
+                putU32Le(out, 28, 0x1101) // boardrev
+                putU32Le(out, 32, 0x072D6200) // driverrev = 7.45.98
+                putU32Le(out, 36, 0x038001A2) // ucoderev
+                putU32Le(out, 40, 3) // bus = SDIO
+                putU32Le(out, 44, 0xA9A6) // chipnum = 43430
+                putU32Le(out, 48, 4) // phytype = N-PHY
+                putU32Le(out, 52, 17) // phyrev
+                putU32Le(out, 56, 12) // anarev
+                putU32Le(out, 60, 0) // chippkg
+                putU32Le(out, 64, 1) // nvramrev
+                replyPayload = out
+            }
             WLC_GET_AP -> replyPayload = u32Bytes(if (apEnabled) 1 else 0)
             WLC_SET_AP -> {
                 if (payload.size >= 4) {
@@ -943,6 +1026,26 @@ class Bcm43430WifiController(
             WLC_GET_WSEC -> replyPayload = u32Bytes(wsec)
             WLC_SET_WSEC -> {
                 if (payload.size >= 4) wsec = u32Le(payload, 0)
+            }
+            WLC_GET_BANDLIST -> {
+                val out = ByteArray(maxOf(12, dataLen.coerceAtMost(64)))
+                putU32Le(out, 0, 1) // 1 active band on BCM43430A1 (single-band 2.4 GHz)
+                putU32Le(out, 4, 2) // WLC_BAND_2G = 2
+                putU32Le(out, 8, 0)
+                replyPayload = out
+            }
+            WLC_GET_BAND -> replyPayload = u32Bytes(2) // WLC_BAND_2G = 2
+            WLC_GET_VALID_CHANNELS -> {
+                val maxCh = if (countryCode.equals("US", ignoreCase = true)) 11 else 13
+                val out = ByteArray(maxOf(4 + maxCh * 4, dataLen.coerceAtMost(512)))
+                putU32Le(out, 0, maxCh)
+                for (i in 0 until maxCh) {
+                    putU32Le(out, 4 + i * 4, i + 1)
+                }
+                replyPayload = out
+            }
+            WLC_SET_SCAN_CHANNEL_TIME, WLC_SET_SCAN_UNASSOC_TIME, WLC_SET_SCAN_PASSIVE_TIME -> {
+                replyPayload = ByteArray(0)
             }
             WLC_GET_WPA_AUTH -> replyPayload = u32Bytes(wpaAuth)
             WLC_SET_WPA_AUTH -> {
@@ -965,7 +1068,7 @@ class Bcm43430WifiController(
             WLC_GET_VAR -> {
                 val (name, argData) = parseIovar(payload)
                 iovarCount++
-                replyPayload = handleIovarGet(name, argData)
+                replyPayload = handleIovarGet(name, argData, dataLen)
             }
             WLC_SET_VAR -> {
                 val (name, argData) = parseIovar(payload)
@@ -974,7 +1077,7 @@ class Bcm43430WifiController(
             }
             else -> {
                 if (!isSet && replyPayload.isEmpty() && dataLen > 0) {
-                    replyPayload = ByteArray(minOf(dataLen, 256))
+                    replyPayload = ByteArray(minOf(dataLen, 2048))
                 }
             }
         }
@@ -996,14 +1099,29 @@ class Bcm43430WifiController(
         return name to rest
     }
 
-    private fun handleIovarGet(name: String, argData: ByteArray): ByteArray = when (name) {
+    private fun handleIovarGet(name: String, argData: ByteArray, requestedLen: Int = 0): ByteArray = when (name) {
         "cur_etheraddr" -> synchronized(f2Lock) { macBytes.copyOf() }
         "perm_etheraddr" -> initialMacBytes.copyOf()
         "ver" -> "wl0: BCM43430A1 FullMAC 7.45.98\n\u0000".toByteArray(Charsets.US_ASCII)
         "cap" -> "ap sta wme 802.11n bss_max=2\u0000".toByteArray(Charsets.US_ASCII)
         "clmload_status" -> u32Bytes(0)
-        "country" -> countryCode.toByteArray(Charsets.US_ASCII).copyOf(4)
+        "country" -> countryCode.toByteArray(Charsets.US_ASCII).copyOf(maxOf(4, argData.size.coerceAtMost(16)))
+        "nmode" -> u32Bytes(1)
+        "mimo_bw_cap" -> u32Bytes(0)
         "chanspec" -> u32Bytes(0x1000 or (channel and 0xff))
+        "chanspecs" -> {
+            // D11AC 2.4 GHz 20 MHz chanspec list: wl_uint32_list_t { uint32 count; uint32 element[count]; }
+            // Band 2G (0x0000) | BW 20MHz (0x1000) | channel (1..maxCh) -> 0x1001..0x100d
+            val maxCh = if (countryCode.equals("US", ignoreCase = true)) 11 else 13
+            val outLen = maxOf(4 + maxCh * 4, argData.size, requestedLen.coerceAtMost(1024))
+            val out = ByteArray(outLen)
+            putU32Le(out, 0, maxCh)
+            for (i in 0 until maxCh) {
+                putU32Le(out, 4 + i * 4, 0x1000 or (i + 1))
+            }
+            out
+        }
+        "per_chan_info" -> u32Bytes(0) // Active 2.4 GHz channel (neither WL_CHAN_PASSIVE=0x08 nor WL_CHAN_RADAR=0x20)
         "rssi" -> u32Bytes(if (associatedBssid.isNotEmpty() || apEnabled) rssiDbm else -90)
         "wsec" -> u32Bytes(wsec)
         "wpa_auth" -> u32Bytes(wpaAuth)
@@ -1037,6 +1155,19 @@ class Bcm43430WifiController(
                     ssid = String(argData, 8, n, Charsets.UTF_8)
                 }
             }
+            "join", "extjoin", "bsscfg:join", "bsscfg:extjoin" -> {
+                val baseOff = if (name.startsWith("bsscfg:")) 4 else 0
+                if (argData.size >= baseOff + 4) {
+                    val n = minOf(u32Le(argData, baseOff).coerceAtLeast(0), minOf(32, argData.size - baseOff - 4))
+                    ssid = String(argData, baseOff + 4, n, Charsets.UTF_8)
+                    if (interfaceUp) mode = if (apEnabled) "AP" else "STA"
+                    if (!apEnabled && ssid.isNotEmpty()) {
+                        associateWithNeighborSsid(ssid)
+                    } else if (ssid.isEmpty() && associatedBssid.isNotEmpty()) {
+                        disassociateSta()
+                    }
+                }
+            }
             "wsec" -> if (argData.size >= 4) wsec = u32Le(argData, 0)
             "bsscfg:wsec" -> if (argData.size >= 8) wsec = u32Le(argData, 4)
             "wpa_auth" -> if (argData.size >= 4) wpaAuth = u32Le(argData, 0)
@@ -1056,13 +1187,17 @@ class Bcm43430WifiController(
                 clmBytesWritten += argData.size.toLong()
                 clmLoaded = true
             }
-            "escan" -> {
-                val action = if (argData.size >= 6) u16Le(argData, 4) else 1
-                val syncId = if (argData.size >= 8) u16Le(argData, 6) else 1
-                if (action == 1) {
+            "escan", "bsscfg:escan", "p2p_scan" -> {
+                val baseOff = if (name == "escan") 0 else 4
+                val action = if (argData.size >= baseOff + 6) u16Le(argData, baseOff + 4) else 1
+                val syncId = if (argData.size >= baseOff + 8) u16Le(argData, baseOff + 6) else 1
+                if (action == 1 || action == 2) {
                     runEscan(syncId)
+                } else {
+                    abortEscan(syncId)
                 }
             }
+            "scanabort", "escanabort" -> abortEscan(0x1234)
             "PM" -> if (argData.size >= 4) pmMode = u32Le(argData, 0)
             "event_msgs", "bus:txglomalign", "assoc_listen", "bcn_timeout", "assoc_retry_max", "allmulti", "mcast_list" -> Unit
         }
@@ -1130,6 +1265,17 @@ class Bcm43430WifiController(
         putU16Le(donePayload, 10, 0)
         enqueueBrcmEvent(WLC_E_ESCAN_RESULT, WLC_E_STATUS_SUCCESS, curMac, data = donePayload)
         enqueueBrcmEvent(WLC_E_SCAN_COMPLETE, WLC_E_STATUS_SUCCESS, curMac)
+    }
+
+    private fun abortEscan(syncId: Int) {
+        val curMac = synchronized(f2Lock) { macBytes.copyOf() }
+        val abortPayload = ByteArray(12)
+        putU32Le(abortPayload, 0, 12)
+        putU32Le(abortPayload, 4, 1)
+        putU16Le(abortPayload, 8, syncId)
+        putU16Le(abortPayload, 10, 0)
+        enqueueBrcmEvent(WLC_E_ESCAN_RESULT, WLC_E_STATUS_ABORT, curMac, data = abortPayload)
+        enqueueBrcmEvent(WLC_E_SCAN_COMPLETE, WLC_E_STATUS_ABORT, curMac)
     }
 
     private fun buildLegacyScanResults(neighbors: List<VirtualWifiApNeighbor>): ByteArray {
@@ -1272,7 +1418,7 @@ class Bcm43430WifiController(
             frame[6] = 0
             frame[7] = hdrLen.toByte()
             frame[8] = 0
-            frame[9] = 32
+            frame[9] = ((txSeqExpected + 32) and 0xff).toByte()
             System.arraycopy(payload, 0, frame, hdrLen, payload.size)
             f2RxQueue.addLast(frame)
             sdioIntStatus = sdioIntStatus or I_HMB_FRAME_IND
@@ -1284,6 +1430,9 @@ class Bcm43430WifiController(
         val out = ByteArray(length)
         synchronized(f2Lock) {
             val active = f2PendingReadFrame ?: f2RxQueue.removeFirstOrNull()?.also {
+                if (it.size >= 10) {
+                    it[9] = ((txSeqExpected + 32) and 0xff).toByte()
+                }
                 f2PendingReadFrame = it
                 f2PendingReadOffset = 0
             }
@@ -1329,14 +1478,15 @@ class Bcm43430WifiController(
 
     private fun buildAxiErom(): IntArray {
         fun ciA(coreId: Int): Int = ((0x4BF shl 20) or ((coreId and 0xfff) shl 8) or 0x01)
-        fun ciB(rev: Int): Int = ((rev and 0xff) shl 24) or (1 shl 14) or (1 shl 19) or 0x01
+        // CIB: rev[31:24], nsw=1 (bit 19), nmw=0 (bits 18:14), nsp=1 (bit 9), nmp=0 (bits 8:4), ER_CI=0x01
+        fun ciB(rev: Int): Int = ((rev and 0xff) shl 24) or (1 shl 19) or (1 shl 9) or 0x01
         fun addrDesc(base: Long, isWrapper: Boolean): Int =
             (base.toInt() and 0xfffff000.toInt()) or (if (isWrapper) (0x2 shl 6) else 0x0) or 0x05
 
         return intArrayOf(
-            ciA(0x800), ciB(48), addrDesc(CHIPCOMMON_BASE, false), addrDesc(0x18100000L, true),
-            ciA(0x812), ciB(43), addrDesc(D11_BASE, false), addrDesc(0x18101000L, true),
-            ciA(0x829), ciB(22), addrDesc(SDIO_CORE_BASE, false), addrDesc(0x18102000L, true),
+            ciA(0x800), ciB(48), addrDesc(CHIPCOMMON_BASE, false), addrDesc(CHIPCOMMON_WRAP_BASE, true),
+            ciA(0x812), ciB(43), addrDesc(D11_BASE, false), addrDesc(D11_WRAP_BASE, true),
+            ciA(0x829), ciB(22), addrDesc(SDIO_CORE_BASE, false), addrDesc(SDIO_WRAP_BASE, true),
             ciA(0x82A), ciB(7), addrDesc(ARM_CM3_BASE, false), addrDesc(ARM_CM3_WRAP_BASE, true),
             ciA(0x80E), ciB(24), addrDesc(SOCRAM_CORE_BASE, false), addrDesc(SOCRAM_WRAP_BASE, true),
             0x0000000F,
@@ -1424,6 +1574,8 @@ class Bcm43430WifiController(
         "countryCode" to countryCode,
         "ioctlCount" to ioctlCount,
         "iovarCount" to iovarCount,
+        "txSeqExpected" to synchronized(f2Lock) { txSeqExpected },
+        "rxSeq" to synchronized(f2Lock) { rxSeq },
         "virtualPeer" to virtualPeer.saveSnapshot(),
     )
 
@@ -1458,6 +1610,8 @@ class Bcm43430WifiController(
             cisRom = buildCisRom(macBytes)
             sdioIntStatus = (data["sdioIntStatus"] as? Number)?.toLong() ?: 0L
             sdioHostIntMask = (data["sdioHostIntMask"] as? Number)?.toLong() ?: 0L
+            txSeqExpected = ((data["txSeqExpected"] as? Number)?.toInt() ?: 0) and 0xff
+            rxSeq = ((data["rxSeq"] as? Number)?.toInt() ?: 0) and 0xff
             f2RxQueue.clear()
             f2PendingReadFrame = null
             f2PendingReadOffset = 0

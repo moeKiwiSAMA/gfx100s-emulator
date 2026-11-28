@@ -5,12 +5,14 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
 /**
- * Pure, chip-agnostic SDHCI v3.0 / SDIO Host Controller (`soc-sdio`, channel 2 at `0xFFFCC000`,
- * `0x100` bytes; `GIC IRQ 224` host interrupt + `GIC IRQ 225` SDIO DAT1 card interrupt).
+ * Pure, chip-agnostic SDHCI v3.0 / F_SDH30 SDIO Host Controller (`soc-sdio`, channel 2 at `0xFFFCC000`,
+ * `0x200` bytes; `GIC IRQ 224` host interrupt + `GIC IRQ 225` SDIO DAT1 card interrupt).
  *
- * Strictly zero Broadcom/Wi-Fi logic inside: models standard SDHCI v3.00 registers, PIO Data Port,
- * SDMA, 32-bit ADMA2 descriptor table scatter/gather, clock/reset state, and exposes [SdioBusPort]
- * (`soc-sdio.bus`) for any external SDIO card/function component (such as `bcm43438`) to attach.
+ * Strictly zero Broadcom/Wi-Fi logic inside: models standard SDHCI v3.00 registers (`0x00..0xFF`),
+ * Socionext F_SDH30 vendor UHS/I-O drive-strength & tuning registers (`0x100..0x1FF`, e.g. `+0x100`
+ * exercised at `S4 0x011F5CF0..0x011F5D44`), PIO Data Port, SDMA, 32-bit ADMA2 descriptor table
+ * scatter/gather, clock/reset state, and exposes [SdioBusPort] (`soc-sdio.bus`) for any external
+ * SDIO card/function component (such as `bcm43438`) to attach.
  */
 class SocSdioFactory : ComponentFactory {
     override val descriptor = DESCRIPTOR
@@ -21,7 +23,7 @@ class SocSdioFactory : ComponentFactory {
         const val PROFILE = "soc-sdio-sdhci3-experimental-v1"
         const val MMIO_PORT = "soc-sdio.sdhci"
         const val BUS_PORT = "soc-sdio.bus"
-        const val WINDOW_SIZE = 0x100L
+        const val WINDOW_SIZE = 0x200L
         const val HOST_GIC_IRQ = 224 // DAT section4 0x011F4240..0x011F4368: lid 0x60 -> GIC 224 (ch=2 ISR 0x011F5558)
         const val CARD_GIC_IRQ = 225 // DAT section4 0x011F4240..0x011F4368: lid 0x7F -> GIC 225 (ch=2 ISR 0x011F5764)
 
@@ -94,6 +96,8 @@ class SocSdioFactory : ComponentFactory {
         private var hostControl2: Int = 0
         private var admaSysAddrLo: Long = 0L
         private var admaSysAddrHi: Long = 0L
+        // Socionext F_SDH30 vendor UHS-I / I-O pad control bank (+0x100..+0x1FF; +0x10C..+0x10F status RO)
+        private val vendorRegs = ByteArray(0x100)
         @Volatile
         private var cardInterruptLine: Boolean = false
 
@@ -271,6 +275,9 @@ class SocSdioFactory : ComponentFactory {
         }
 
         private fun readRegByte(off: Int): Int {
+            if (off in 0x100..0x1FF) {
+                return if (off in 0x10C..0x10F) 0 else (vendorRegs[off - 0x100].toInt() and 0xff)
+            }
             val wordAligned = off and 0xFC
             val shift = (off and 3) * 8
             val word: Long = when (wordAligned) {
@@ -353,6 +360,11 @@ class SocSdioFactory : ComponentFactory {
                 0x3F -> hostControl2 = (hostControl2 and 0x00ff) or (v shl 8)
                 in 0x58..0x5B -> admaSysAddrLo = setByte32(admaSysAddrLo, off - 0x58, v)
                 in 0x5C..0x5F -> admaSysAddrHi = setByte32(admaSysAddrHi, off - 0x5C, v)
+                in 0x100..0x1FF -> {
+                    if (off !in 0x10C..0x10F) {
+                        vendorRegs[off - 0x100] = v.toByte()
+                    }
+                }
             }
             return false
         }
@@ -631,7 +643,8 @@ class SocSdioFactory : ComponentFactory {
             "errorIntStatus" to errorIntStatus,
             "clockControl" to clockControl,
             "hostControl1" to hostControl1,
-            "basis" to "DAT section4 0x011F43A4..0x011F43B0 SDHC ch=2 base 0xFFFCC000 (0x100 B), lid 0x60->GIC 224 host IRQ, lid 0x7F->GIC 225 card IRQ; generic SDHCI v3.00 host controller with zero vendor chip coupling",
+            "vendorIoCtrl100" to ((vendorRegs[0].toInt() and 0xff) or ((vendorRegs[1].toInt() and 0xff) shl 8)),
+            "basis" to "DAT section4 0x011F43A4..0x011F43B0 & 0x011F5CF0..0x011F5D44 SDHC ch=2 base 0xFFFCC000 (0x200 B), lid 0x60->GIC 224 host IRQ, lid 0x7F->GIC 225 card IRQ; generic SDHCI v3.00 + F_SDH30 UHS/pad host controller with zero vendor Wi-Fi chip coupling",
         )
 
         override fun saveSnapshot(): Map<String, Any?> {
@@ -663,6 +676,7 @@ class SocSdioFactory : ComponentFactory {
                 "hostControl2" to hostControl2,
                 "admaSysAddrLo" to admaSysAddrLo,
                 "admaSysAddrHi" to admaSysAddrHi,
+                "vendorRegsBase64" to java.util.Base64.getEncoder().encodeToString(vendorRegs),
                 "cardInterruptLine" to cardInterruptLine,
                 "readCount" to readCount,
                 "writeCount" to writeCount,
@@ -704,6 +718,11 @@ class SocSdioFactory : ComponentFactory {
             hostControl2 = (data["hostControl2"] as? Number)?.toInt() ?: 0
             admaSysAddrLo = (data["admaSysAddrLo"] as? Number)?.toLong() ?: 0L
             admaSysAddrHi = (data["admaSysAddrHi"] as? Number)?.toLong() ?: 0L
+            vendorRegs.fill(0)
+            (data["vendorRegsBase64"] as? String)?.let { b64 ->
+                val decoded = java.util.Base64.getDecoder().decode(b64)
+                decoded.copyInto(vendorRegs, 0, 0, minOf(decoded.size, vendorRegs.size))
+            }
             cardInterruptLine = data["cardInterruptLine"] as? Boolean ?: false
             readCount = (data["readCount"] as? Number)?.toLong() ?: 0L
             writeCount = (data["writeCount"] as? Number)?.toLong() ?: 0L

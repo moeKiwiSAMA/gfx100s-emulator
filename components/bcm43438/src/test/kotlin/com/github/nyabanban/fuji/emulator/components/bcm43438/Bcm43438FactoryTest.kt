@@ -305,6 +305,141 @@ class Bcm43438FactoryTest {
     }
 
     @Test
+    fun bcm43430AxiEromSocramBandChanspecsEscanAbortAndSlidingCreditWindow() {
+        val ctx = TestContext()
+        val uart = FakeUartSerialPort()
+        val sdio = FakeSdioBusPort()
+        ctx.claims[Bcm43438Factory.DEFAULT_UART_PORT] = uart
+        ctx.claims[Bcm43438Factory.DEFAULT_SDIO_PORT] = sdio
+        val comp = Bcm43438Factory().create(
+            ctx,
+            mapOf("enabled" to true, "deviceName" to "FujiEmu Host"),
+        ) as StatefulComponent
+        comp.start()
+        val card = sdio.card!!
+
+        // 1. SLEEPCSR KSO (bit 0) asserts DEVON (bit 1)
+        card.executeCommand(52, cmd52Arg(true, 1, Bcm43430WifiController.SBSDIO_FUNC1_SLEEPCSR, 0x01))
+        val sleepCsr = card.executeCommand(52, cmd52Arg(false, 1, Bcm43430WifiController.SBSDIO_FUNC1_SLEEPCSR)).response[0] and 0xff
+        assertEquals(0x03, sleepCsr)
+
+        // 2. AXI EROM at 0x1810F000 advertises nsp=1 (bits 13:9 = 1) for all 5 cores so Broadcom ai_scan finds all cores
+        card.executeCommand(52, cmd52Arg(true, 1, 0x1000C, 0x18))
+        card.executeCommand(52, cmd52Arg(true, 1, 0x1000B, 0x10))
+        card.executeCommand(52, cmd52Arg(true, 1, 0x1000A, 0xF0))
+        val eromBytes = card.executeCommand(53, cmd53Arg(false, 1, false, true, 0x0000, 84)).dataOut!!
+        val eromBuf = ByteBuffer.wrap(eromBytes).order(ByteOrder.LITTLE_ENDIAN)
+        repeat(5) { coreIdx ->
+            val ciA = eromBuf.getInt(coreIdx * 16)
+            val ciB = eromBuf.getInt(coreIdx * 16 + 4)
+            assertEquals(0x01, ciA and 0x0f)
+            assertEquals(1, (ciB ushr 9) and 0x1f, "Expected nsp=1 in EROM CIB for core #$coreIdx")
+            assertEquals(1, (ciB ushr 19) and 0x1f, "Expected nsw=1 in EROM CIB for core #$coreIdx")
+        }
+
+        // 3. SOCRAM core (0x18004000) reports 8 banks * 64 KiB = 512 KiB (SRCI_SRNB=8 at +0x00, BANKINFO=7 at +0x40)
+        card.executeCommand(52, cmd52Arg(true, 1, 0x1000C, 0x18))
+        card.executeCommand(52, cmd52Arg(true, 1, 0x1000B, 0x00))
+        card.executeCommand(52, cmd52Arg(true, 1, 0x1000A, 0x40))
+        val coreInfo = ByteBuffer.wrap(
+            card.executeCommand(53, cmd53Arg(false, 1, false, true, 0x0000, 4)).dataOut!!,
+        ).order(ByteOrder.LITTLE_ENDIAN).int
+        val bankInfo = ByteBuffer.wrap(
+            card.executeCommand(53, cmd53Arg(false, 1, false, true, 0x0040, 4)).dataOut!!,
+        ).order(ByteOrder.LITTLE_ENDIAN).int
+        assertEquals(8, (coreInfo ushr 4) and 0x0f)
+        assertEquals(7, bankInfo and 0x7f)
+
+        // 4. Country JP -> WLC_GET_BANDLIST (2G=2) + chanspecs (13 channels: 0x1001..0x100d) + >40 IOCTLs advancing tx_max
+        val setJp = buildSdpcmCdc(
+            Bcm43430WifiController.WLC_SET_VAR, 1, true,
+            "country\u0000JP\u0000\u0000".toByteArray(Charsets.US_ASCII), seq = 0,
+        )
+        card.writeTransferData(53, cmd53Arg(true, 2, false, false, 0, setJp.size), setJp)
+        card.executeCommand(53, cmd53Arg(false, 2, false, false, 0, 64))
+
+        val bandListReq = buildSdpcmCdc(Bcm43430WifiController.WLC_GET_BANDLIST, 2, false, ByteArray(12), seq = 1)
+        card.writeTransferData(53, cmd53Arg(true, 2, false, false, 0, bandListReq.size), bandListReq)
+        val bandListResp = card.executeCommand(53, cmd53Arg(false, 2, false, false, 0, 64)).dataOut!!
+        val bandBuf = ByteBuffer.wrap(bandListResp.copyOfRange(28, 40)).order(ByteOrder.LITTLE_ENDIAN)
+        assertEquals(1, bandBuf.getInt(0))
+        assertEquals(2, bandBuf.getInt(4))
+
+        val chanspecsReq = buildSdpcmCdc(
+            Bcm43430WifiController.WLC_GET_VAR, 3, false,
+            "chanspecs\u0000".toByteArray(Charsets.US_ASCII) + ByteArray(64), seq = 2,
+        )
+        card.writeTransferData(53, cmd53Arg(true, 2, false, false, 0, chanspecsReq.size), chanspecsReq)
+        val chanspecsResp = card.executeCommand(53, cmd53Arg(false, 2, false, false, 0, 256)).dataOut!!
+        val csBuf = ByteBuffer.wrap(chanspecsResp.copyOfRange(28, 88)).order(ByteOrder.LITTLE_ENDIAN)
+        assertEquals(13, csBuf.getInt(0))
+        assertEquals(0x1001, csBuf.getInt(4))
+        assertEquals(0x100d, csBuf.getInt(52))
+
+        // Issue 45 consecutive per_chan_info GET_VARs (exceeding initial 32-slot window) and verify frame[9] advances
+        for (i in 0 until 45) {
+            val txSeq = (3 + i) and 0xff
+            val req = buildSdpcmCdc(
+                Bcm43430WifiController.WLC_GET_VAR, 10 + i, false,
+                "per_chan_info\u0000".toByteArray(Charsets.US_ASCII) + byteArrayOf(0x01, 0x10, 0x00, 0x00),
+                seq = txSeq,
+            )
+            card.writeTransferData(53, cmd53Arg(true, 2, false, false, 0, req.size), req)
+            val rx = card.executeCommand(53, cmd53Arg(false, 2, false, false, 0, 64)).dataOut!!
+            val expectedWindow = ((txSeq + 1 + 32) and 0xff)
+            assertEquals(expectedWindow, rx[9].toInt() and 0xff, "Expected sliding SDPCM tx_max window at iter $i")
+        }
+
+        // 5. EScan action=0 (ABORT) emits WLC_E_ESCAN_RESULT + WLC_E_SCAN_COMPLETE with WLC_E_STATUS_ABORT (4)
+        val abortParams = ByteArray(12)
+        abortParams[0] = 1
+        abortParams[4] = 0 // WL_SCAN_ACTION_ABORT
+        abortParams[6] = 0x55
+        val abortReq = buildSdpcmCdc(
+            Bcm43430WifiController.WLC_SET_VAR, 99, true,
+            "escan\u0000".toByteArray(Charsets.US_ASCII) + abortParams, seq = 48,
+        )
+        card.writeTransferData(53, cmd53Arg(true, 2, false, false, 0, abortReq.size), abortReq)
+        val abortEvt1 = card.executeCommand(53, cmd53Arg(false, 2, false, false, 0, 256)).dataOut!!
+        val abortEvt2 = card.executeCommand(53, cmd53Arg(false, 2, false, false, 0, 256)).dataOut!!
+        val abortCdcReply = card.executeCommand(53, cmd53Arg(false, 2, false, false, 0, 128)).dataOut!!
+        assertTrue(abortCdcReply.isNotEmpty())
+        // SDPCM(12) + BDC(4) + Eth+BCM_ETH(24) -> wl_event_msg_t: event_type at +28 (offset 44), status at +32 (offset 48)
+        assertEquals(Bcm43430WifiController.WLC_E_ESCAN_RESULT, ByteBuffer.wrap(abortEvt1, 16 + 28, 4).order(ByteOrder.BIG_ENDIAN).int)
+        assertEquals(Bcm43430WifiController.WLC_E_STATUS_ABORT, ByteBuffer.wrap(abortEvt1, 16 + 32, 4).order(ByteOrder.BIG_ENDIAN).int)
+        assertEquals(Bcm43430WifiController.WLC_E_SCAN_COMPLETE, ByteBuffer.wrap(abortEvt2, 16 + 28, 4).order(ByteOrder.BIG_ENDIAN).int)
+        assertEquals(Bcm43430WifiController.WLC_E_STATUS_ABORT, ByteBuffer.wrap(abortEvt2, 16 + 32, 4).order(ByteOrder.BIG_ENDIAN).int)
+
+        // 6. 63-byte SDPCM frame padded inside a 64-byte F2 CMD53 block must not throw IndexOutOfBounds at offset 63
+        val oddLenIovarPayload = ByteArray(35) // 12 (SDPCM) + 16 (CDC) + 35 = 63 bytes total
+        val verPrefix = "ver\u0000".toByteArray(Charsets.US_ASCII)
+        System.arraycopy(verPrefix, 0, oddLenIovarPayload, 0, verPrefix.size)
+        val unpadded63 = buildSdpcmCdc(Bcm43430WifiController.WLC_GET_VAR, 100, false, oddLenIovarPayload, seq = 49)
+        assertEquals(63, unpadded63.size)
+        val padded64 = unpadded63.copyOf(64) // 1 trailing zero byte at index 63
+        val write64Res = card.writeTransferData(53, cmd53Arg(true, 2, true, false, 0, 1), padded64)
+        assertTrue(write64Res.accepted)
+        val verReply = card.executeCommand(53, cmd53Arg(false, 2, false, false, 0, 128)).dataOut!!
+        assertTrue(verReply.isNotEmpty())
+
+        // 7. STA "join" IOVAR associates with matching neighbor SSID and emits join/link events
+        val joinArg = ByteArray(4 + 32 + 20)
+        val targetSsidBytes = "FujiEmu Host".toByteArray(Charsets.UTF_8)
+        ByteBuffer.wrap(joinArg).order(ByteOrder.LITTLE_ENDIAN).putInt(0, targetSsidBytes.size)
+        System.arraycopy(targetSsidBytes, 0, joinArg, 4, targetSsidBytes.size)
+        val joinReq = buildSdpcmCdc(
+            Bcm43430WifiController.WLC_SET_VAR, 101, true,
+            "join\u0000".toByteArray(Charsets.US_ASCII) + joinArg, seq = 50,
+        )
+        card.writeTransferData(53, cmd53Arg(true, 2, false, false, 0, joinReq.size), joinReq)
+        val wifiAfterJoin = comp.state()["wifi"] as Map<*, *>
+        assertEquals("FujiEmu Host", wifiAfterJoin["ssid"])
+        assertEquals("02:46:4A:48:00:01", wifiAfterJoin["associatedBssid"])
+
+        comp.close()
+    }
+
+    @Test
     fun bcm43438BleAndClassicScanDiscoversFujiEmuHostNeighbor() {
         val ctx = TestContext()
         val uart = FakeUartSerialPort()

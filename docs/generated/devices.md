@@ -2141,7 +2141,7 @@ Sources: [SocSdioFactory.kt](../../components/soc-sdio/src/main/kotlin/com/githu
 
 | Register ID | Offset / count / stride | Read / write widths | Status | Fields / definition confidence | Behavior | Property provenance | Evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| reg.soc-sdio.sdhci.regs | 0x0 / 64 / 4 | [1, 2, 4] / [1, 2, 4] | IMPLEMENTED_PARTIAL | reg.soc-sdio.sdhci.regs.raw[0:32] DAT | kotlin:soc-sdio | address=DAT; width=DAT; name=DAT; initial=HYPOTHESIS; behavior=SIM_UNDER_HYPOTHESIS | [raw](../../firmware-data/gfx100s/2.13/decoded/section4.bin) |
+| reg.soc-sdio.sdhci.regs | 0x0 / 128 / 4 | [1, 2, 4] / [1, 2, 4] | IMPLEMENTED_PARTIAL | reg.soc-sdio.sdhci.regs.raw[0:32] DAT | kotlin:soc-sdio | address=DAT; width=DAT; name=DAT; initial=HYPOTHESIS; behavior=SIM_UNDER_HYPOTHESIS | [raw](../../firmware-data/gfx100s/2.13/decoded/section4.bin) |
 
 ## soc-selection
 

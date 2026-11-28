@@ -325,13 +325,20 @@ class EmulatorRuntime @JvmOverloads constructor(
         val rtcRunning = rtcRegsBefore?.get("counterRunning") as? Boolean
         val sleepWallSeconds = session.consumeLastSocPoweredOffWallSeconds()
         val buttonsBefore = host.components().singleOrNull { it.descriptor.id == "buttons" }?.config
-        val latchingButtonsBefore = LinkedHashMap<String, Any>()
+        val liveButtonsBefore = LinkedHashMap<String, Boolean>()
         if (buttonsBefore != null) {
-            for (key in com.github.nyabanban.fuji.emulator.desktop.panels.PanelCatalog.latchingButtonKeys) {
-                val v = buttonsBefore[key]
-                if (v is Boolean) latchingButtonsBefore[key] = v
+            for ((key, v) in buttonsBefore) {
+                if (v is Boolean) liveButtonsBefore[key] = v
             }
         }
+        val adcConfigBefore = host.components().singleOrNull { it.descriptor.id == "soc-adc" }?.config
+        val liveAdcButtonsBefore = LinkedHashMap<String, Boolean>()
+        if (adcConfigBefore != null) {
+            for ((key, v) in adcConfigBefore) {
+                if (v is Boolean) liveAdcButtonsBefore[key] = v
+            }
+        }
+        val viewModeBefore = viewModePressed
         val subMcuNvramBefore = LinkedHashMap<String, Int>()
         val powerPeerStoredBefore = host.components().singleOrNull { it.descriptor.id == "power-peer" }
             ?.component?.state()?.get("stored") as? Map<*, *>
@@ -345,22 +352,41 @@ class EmulatorRuntime @JvmOverloads constructor(
         host.resetClockForColdReset()
         RelaxedFlashPersistence.syncMutableManifest(home, config)
         host.load()
-        // Carry physical latching switches (power, movieMode) across Sub-MCU cold reset and clear
-        // any stale momentary button that may have been persisted to buttons.yaml before reset.
+        // Carry both physical latching switches (power, movieMode, focusMode) AND any actively held/locked
+        // momentary buttons in the live session (e.g. locked DISP/BACK `back=true` when entering FWUP mode
+        // on Power OFF -> ON) across Sub-MCU cold reset, while still clearing any stale disk-only `true`
+        // that was not active in `liveButtonsBefore`.
         val buttonsLoaded = host.components().singleOrNull { it.descriptor.id == "buttons" }
         if (buttonsLoaded != null) {
-            val sanitized = LinkedHashMap<String, Any>()
+            val reconciled = LinkedHashMap<String, Any>()
             for ((key, value) in buttonsLoaded.config) {
-                if (key in com.github.nyabanban.fuji.emulator.desktop.panels.PanelCatalog.latchingButtonKeys) {
-                    val liveVal = latchingButtonsBefore[key]
-                    if (liveVal != null && liveVal != value) sanitized[key] = liveVal
-                } else if (value == true) {
-                    sanitized[key] = false
+                val target = liveButtonsBefore[key]
+                    ?: if (key in com.github.nyabanban.fuji.emulator.desktop.panels.PanelCatalog.latchingButtonKeys) value else false
+                if (target != value) {
+                    reconciled[key] = target
                 }
             }
-            if (sanitized.isNotEmpty()) {
-                runCatching { host.patchLatestDirect("buttons", sanitized, persistToDisk = false) }
+            if (reconciled.isNotEmpty()) {
+                runCatching { host.patchLatestDirect("buttons", reconciled, persistToDisk = false) }
             }
+        }
+        if (liveAdcButtonsBefore.isNotEmpty()) {
+            val adcLoaded = host.components().singleOrNull { it.descriptor.id == "soc-adc" }
+            if (adcLoaded != null) {
+                val adcReconciled = LinkedHashMap<String, Any>()
+                for ((key, value) in adcLoaded.config) {
+                    if (value is Boolean) {
+                        val target = liveAdcButtonsBefore[key] ?: false
+                        if (target != value) adcReconciled[key] = target
+                    }
+                }
+                if (adcReconciled.isNotEmpty()) {
+                    runCatching { host.patchLatestDirect("soc-adc", adcReconciled, persistToDisk = false) }
+                }
+            }
+        }
+        if (viewModeBefore) {
+            runCatching { setViewModeButtonOnOwner(true) }
         }
         if (rtcRegsBefore != null) {
             val rtcComp = host.components().singleOrNull { it.descriptor.id == "rtc" }?.component as? com.github.nyabanban.fuji.emulator.api.StatefulComponent
@@ -476,7 +502,11 @@ class EmulatorRuntime @JvmOverloads constructor(
         owner.submit {
             var result: NorFlashTool.FlashResult? = null
             reloadHostAfterFlashMutationOnOwner { livePath ->
-                result = NorFlashTool.flashDatIntoNor(datPath, livePath, preserveCalibration = preserveCalibration)
+                val flashed = NorFlashTool.flashDatIntoNor(datPath, livePath, preserveCalibration = preserveCalibration)
+                if (!flashed.preservedCalibration || NorFlashTool.isBlockAErased(livePath)) {
+                    NorFlashTool.clearCompanionSubMcuState(home, config)
+                }
+                result = flashed
             }
             checkNotNull(result)
         }.join()
@@ -492,6 +522,9 @@ class EmulatorRuntime @JvmOverloads constructor(
             var result: NorFlashTool.NorInspect? = null
             reloadHostAfterFlashMutationOnOwner { livePath ->
                 result = NorFlashTool.importNor(sourcePath, livePath)
+                if (NorFlashTool.isBlockAErased(livePath)) {
+                    NorFlashTool.clearCompanionSubMcuState(home, config)
+                }
             }
             checkNotNull(result)
         }.join()
@@ -846,12 +879,35 @@ class EmulatorRuntime @JvmOverloads constructor(
             watchdog.close()
         }
     }
+    @Volatile private var activeInteractiveThread: Thread? = null
+    @Volatile private var activeInteractiveStop: AtomicBoolean? = null
+    @Volatile private var activeInteractivePaused: AtomicBoolean? = null
+
+    /**
+     * Signals an active [runInteractive] session to exit its main loop, wakes [RealTimePacer]
+     * immediately, and waits for [drainGracefulPowerOffIfNeeded] to flush guest `$BACKUP BlockA`
+     * (Language, Area/Timezone, user settings) to NOR Flash / COW storage before returning.
+     */
+    fun requestGracefulStopAndAwait(timeoutMs: Long = 30_000L) {
+        activeInteractiveStop?.set(true)
+        activeInteractivePaused?.set(false)
+        realTimePacer?.wake()
+        val thread = activeInteractiveThread
+        val current = Thread.currentThread()
+        if (thread != null && thread !== current && current !== owner.ownerThread) {
+            runCatching { thread.join(timeoutMs.coerceAtLeast(1L)) }
+        }
+    }
+
     @JvmOverloads
     @Synchronized fun runInteractive(
         snapshot: Path? = null,
         paused: AtomicBoolean = AtomicBoolean(false),
         stopRequested: AtomicBoolean = AtomicBoolean(false),
     ): Map<String, Any?> {
+        activeInteractiveStop = stopRequested
+        activeInteractivePaused = paused
+        activeInteractiveThread = Thread.currentThread()
         telemetry.markSessionStarted()
         telemetryPublisher?.start()
         watchdog.start()
@@ -1038,6 +1094,11 @@ class EmulatorRuntime @JvmOverloads constructor(
             }
             throw error
         } finally {
+            if (activeInteractiveThread === Thread.currentThread()) {
+                activeInteractiveThread = null
+                activeInteractiveStop = null
+                activeInteractivePaused = null
+            }
             if (pacer != null) {
                 owner.onExternalSubmit = null
                 log.info("Real-time pacer summary: {}", pacer.stats())
@@ -1056,15 +1117,20 @@ class EmulatorRuntime @JvmOverloads constructor(
     }
     private fun drainGracefulPowerOffIfNeeded() {
         if (catalog.mode != RelaxedPeripheralFallback.MODE) return
-        if (bootPlan.activeNorPath == null) return
+        if (CustomFirmwareConfig.parseRawImage(config, catalog.mode) != null) return
         if ((telemetry.stageMask and FirmwareStage.STAGE_6_INTERACTIVE_UI.bit) == 0) return
         if (session.isSocPoweredOff || !owner.isRunning) return
         val startNanos = System.nanoTime()
-        val deadlineNanos = startNanos + 8_000_000_000L
+        val deadlineNanos = startNanos + 30_000_000_000L
         val startTick = telemetry.virtualTick
         val maxDrainVirtualTicks = 600_000_000L
         val initiated = owner.submit {
             if (session.isSocPoweredOff) return@submit false
+            val programmableFlash = host.ports.find(
+                "flash.image.program",
+                com.github.nyabanban.fuji.emulator.api.ProgrammableImagePort::class.java,
+            ) != null
+            if (!programmableFlash) return@submit false
             val buttons = host.ports.find("buttons", com.github.nyabanban.fuji.emulator.api.ButtonPort::class.java)
                 ?: return@submit false
             if (buttons.pressed("power")) {
@@ -1084,10 +1150,10 @@ class EmulatorRuntime @JvmOverloads constructor(
             keepGoing = owner.submitRunnerSlice {
                 var batch = 0
                 var cont = true
-                val sliceDeadline = minOf(deadlineNanos, System.nanoTime() + 25_000_000L)
+                val sliceDeadline = minOf(deadlineNanos, System.nanoTime() + 50_000_000L)
                 while (
                     cont &&
-                    batch < 64 &&
+                    batch < 256 &&
                     owner.isRunning &&
                     !session.isSocPoweredOff &&
                     (telemetry.virtualTick - startTick) < maxDrainVirtualTicks &&
@@ -1114,6 +1180,7 @@ class EmulatorRuntime @JvmOverloads constructor(
     }.join()
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
+        requestGracefulStopAndAwait(30_000L)
         try { realTimePacer?.close() }
         finally {
         try { audioPlayback.close() }
@@ -1339,7 +1406,9 @@ internal fun executeMain(
     val home = Path.of(option("--home") ?: ".").toAbsolutePath().normalize()
     val pureJsonCli = isPureJsonCliMode(args)
     val cliConsoleLogLevel = LogArchiver.parseCliLogLevel(args)
-    var shutdownLog: Thread? = null
+    var shutdownHook: Thread? = null
+    val activeRuntimeRef = AtomicReference<EmulatorRuntime?>(null)
+    val onShutdownExtra = AtomicReference<(() -> Unit)?>(null)
     var loadedConfig: Map<String, Any?> = emptyMap()
     var explicitCliTarget: Path? = null
     if (!pureJsonCli) {
@@ -1348,8 +1417,17 @@ internal fun executeMain(
         if (effectiveConsoleLevel != null) {
             LogArchiver.setConsoleLevel(effectiveConsoleLevel)
         }
-        shutdownLog = Thread({ LogArchiver.shutdownLogging() }, "fuji-log-shutdown")
-        Runtime.getRuntime().addShutdownHook(shutdownLog)
+        shutdownHook = Thread({
+            runCatching { onShutdownExtra.get()?.invoke() }
+            LaunchContext.stopRequested.set(true)
+            LaunchContext.paused.set(false)
+            activeRuntimeRef.getAndSet(null)?.let { rt ->
+                runCatching { rt.requestGracefulStopAndAwait(30_000L) }
+                runCatching { rt.close() }
+            }
+            LogArchiver.shutdownLogging()
+        }, "fuji-runtime-shutdown")
+        Runtime.getRuntime().addShutdownHook(shutdownHook)
     }
     try {
         val configPath = option("--config")?.let { home.resolve(it) }
@@ -1380,6 +1458,9 @@ internal fun executeMain(
             explicitCliTarget = datPath
             val preserveCal = "--no-preserve-calibration" !in args
             val result = NorFlashTool.flashDatIntoNor(datPath, norPath, preserveCalibration = preserveCal)
+            if (!result.preservedCalibration || NorFlashTool.isBlockAErased(norPath)) {
+                NorFlashTool.clearCompanionSubMcuState(home, config)
+            }
             print(Formats.jsonText(result.toMap())); return 0
         }
         option("--export-flash")?.let { rawOut ->
@@ -1397,6 +1478,9 @@ internal fun executeMain(
             val inPath = Path.of(rawIn).let { if (it.isAbsolute) it else home.resolve(it) }.normalize()
             explicitCliTarget = inPath
             val result = NorFlashTool.importNor(inPath, norPath)
+            if (NorFlashTool.isBlockAErased(norPath)) {
+                NorFlashTool.clearCompanionSubMcuState(home, config)
+            }
             print(Formats.jsonText(result.toMap())); return 0
         }
         if ("--restore-factory-flash" in args) {
@@ -1507,6 +1591,7 @@ internal fun executeMain(
                     created.serve()
                     LaunchContext.runtime = created
                     startupCtx.completedRuntime = created
+                    activeRuntimeRef.set(created)
                     if (consoleOptions.consoleEnabled) {
                         startupCtx.attachedConsole = EmulatorConsole(
                             RuntimeConsoleBackend(
@@ -1537,6 +1622,7 @@ internal fun executeMain(
                 try {
                     startupCtx.attachedConsole?.close()
                 } finally {
+                    activeRuntimeRef.set(null)
                     startupCtx.completedRuntime?.close()
                 }
             }
@@ -1548,6 +1634,7 @@ internal fun executeMain(
             }
         }
 
+        activeRuntimeRef.set(initialRuntime)
         initialRuntime.use { runtime ->
             if ("--probe" in args) {
                 print(Formats.jsonText(runtime.probe(snapshot))); return 0
@@ -1625,14 +1712,11 @@ internal fun executeMain(
                     triggerHeadlessBoot()
                 }
 
-                val shutdownHook = Thread({
+                onShutdownExtra.set {
                     stopRequested.set(true)
                     paused.set(false)
                     stopLatch.countDown()
-                    runnerThread.get()?.let { runCatching { it.join(9000) } }
-                    try { runtime.close() } finally { LogArchiver.shutdownLogging() }
-                }, "fuji-headless-shutdown")
-                Runtime.getRuntime().addShutdownHook(shutdownHook)
+                }
 
                 val console = if (consoleOptions.consoleEnabled) {
                     EmulatorConsole(
@@ -1650,11 +1734,12 @@ internal fun executeMain(
                 try {
                     stopLatch.await()
                 } finally {
+                    onShutdownExtra.set(null)
                     stopRequested.set(true)
                     paused.set(false)
                     console?.close()
-                    runnerThread.get()?.let { runCatching { it.join(9000) } }
-                    runCatching { Runtime.getRuntime().removeShutdownHook(shutdownHook) }
+                    runtime.requestGracefulStopAndAwait(32_000L)
+                    runnerThread.get()?.let { runCatching { it.join(2_000L) } }
                 }
                 headlessFailure.get()?.let { throw it }
             } else {
@@ -1703,8 +1788,10 @@ internal fun executeMain(
         }
         throw error
     } finally {
+        activeRuntimeRef.set(null)
+        onShutdownExtra.set(null)
         if (!pureJsonCli) {
-            shutdownLog?.let { runCatching { Runtime.getRuntime().removeShutdownHook(it) } }
+            shutdownHook?.let { runCatching { Runtime.getRuntime().removeShutdownHook(it) } }
             LogArchiver.shutdownLogging()
         }
     }

@@ -2,7 +2,7 @@
 
 Generated from `catalog/flash/gfx100s-213.yaml` by `:address-catalog:compileCatalog`. Do not edit.
 
-Dictionary `gfx100s-213-flash-layout-v1` / Catalog `gfx100s-213-discovery-v1` / SHA256 `fa5c4234f2c5d27803833ca8247ee6a4aa8b9cceb7751883d1c6adc1f1349506`. Firmware `gfx100s-213` / `ea997915ac5accc79699392b47909bb29506f66ec8d571e5804dd1fb0408fd12`.
+Dictionary `gfx100s-213-flash-layout-v1` / Catalog `gfx100s-213-discovery-v1` / SHA256 `c01d47ad89e31bf6bfde6214cb15ddb852f73ca39b9f1ee522b9fdafb5326e67`. Firmware `gfx100s-213` / `ea997915ac5accc79699392b47909bb29506f66ec8d571e5804dd1fb0408fd12`.
 
 - **Total NOR Flash size**: `0x4000000` (64 MiB)
 - **Erase block size**: `0x20000` (128 KiB)

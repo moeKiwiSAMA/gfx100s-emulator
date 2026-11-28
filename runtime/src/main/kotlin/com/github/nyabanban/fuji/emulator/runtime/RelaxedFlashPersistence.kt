@@ -31,6 +31,11 @@ object RelaxedFlashPersistence {
     fun prepare(home: Path, config: Map<String, Any>) {
         if (CatalogRuntime.mode(config) != RelaxedPeripheralFallback.MODE) return
         NorFlashTool.ensureLiveNorExists(home, config)
+        NorFlashTool.resolveNorFlashPath(home, config)?.let { liveNor ->
+            if (NorFlashTool.isBlockAErased(liveNor)) {
+                NorFlashTool.clearCompanionSubMcuState(home, config)
+            }
+        }
         syncMutableManifest(home, config)
         ensureBlankSdImages(home, config)
         resetButtonsForBoot(home, config)

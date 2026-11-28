@@ -17,19 +17,19 @@
   "ports": [
     {
       "id": "definition.soc-sdio.sdhci",
-      "size": 256,
+      "size": 512,
       "kind": "MMIO",
       "byteOrder": "little",
       "backing": {
-        "source": "component-owned SDHCI v3.00 register state",
-        "permissions": "Standard SDHCI 1/2/4-byte registers across 0x00..0xFF"
+        "source": "component-owned SDHCI v3.00 + F_SDH30 vendor UHS/PHY register state",
+        "permissions": "Standard SDHCI 1/2/4-byte registers (0x00..0xFF) and F_SDH30 vendor UHS/pad control registers (0x100..0x1FF)"
       },
       "registers": [
         {
           "id": "reg.soc-sdio.sdhci.regs",
           "offset": 0,
           "size": 4,
-          "count": 64,
+          "count": 128,
           "stride": 4,
           "alignment": 1,
           "readWidths": [
@@ -45,7 +45,7 @@
           "status": "IMPLEMENTED_PARTIAL",
           "behaviorId": "kotlin:soc-sdio",
           "name": "sdhci_regs",
-          "namingBasis": "DAT section4 0x011F43A4..0x011F43B0 SDHC ch=2 base (0x3FFF1+2)<<14 = 0xFFFCC000 (standard SDHCI v3.00 0x100B register bank)",
+          "namingBasis": "DAT section4 0x011F43A4..0x011F43B0 & 0x011F5CF0..0x011F5D44 SDHC ch=2 base (0x3FFF1+2)<<14 = 0xFFFCC000 (standard SDHCI v3.00 0x00..0xFF + F_SDH30 vendor UHS/pad 0x100..0x1FF)",
           "initial": {
             "value": null,
             "source": "SDHCI v3.00 reset state (Capabilities 0x25E832B2, Host Version 0x1002)"
@@ -123,7 +123,7 @@
               "enums": {},
               "access": "inherits-register",
               "sideEffects": "behaviorId",
-              "definition": "Standard SDHCI v3.00 register bank (0x00..0xFF)",
+              "definition": "Standard SDHCI v3.00 register bank (0x00..0xFF) and F_SDH30 vendor UHS/pad control bank (0x100..0x1FF)",
               "initial": {
                 "value": null,
                 "source": "HYPOTHESIS"
@@ -151,7 +151,7 @@
               ],
               "refutingEvidence": [],
               "unknowns": [
-                "Vendor PHY registers above +0x100 if any remain unmodeled until observed."
+                "Bank B UHS-II registers at +0x2000..+0x22FF remain unmodeled unless exercised on ch=2."
               ],
               "nextValidation": "Observe live Wi-Fi SDIO bring-up on GXUP0004.DAT."
             }
@@ -162,14 +162,14 @@
           "nextValidation": "Verify live dhd_threadx SDIO enumeration and firmware download on GXUP0004.DAT."
         }
       ],
-      "unknownCoverage": "Standard SDHCI v3.00 0x00..0xFF register bank; vendor PHY registers above 0xFF remain unmodeled.",
+      "unknownCoverage": "Standard SDHCI v3.00 0x00..0xFF and F_SDH30 vendor UHS/pad 0x100..0x1FF register banks.",
       "implementationSources": [
         "components/soc-sdio/src/main/kotlin/com/github/nyabanban/fuji/emulator/components/sdio/SocSdioFactory.kt"
       ]
     }
   ],
   "unknowns": [
-    "Only standard SDHCI v3.00 0x00..0xFF bank at 0xFFFCC000 is mapped."
+    "Only SDHCI v3.00 (0x00..0xFF) and F_SDH30 vendor UHS/pad (0x100..0x1FF) banks at 0xFFFCC000..0xFFFCC1FF are mapped."
   ],
   "nextValidation": "Verify live Wi-Fi bring-up on GXUP0004.DAT."
 }

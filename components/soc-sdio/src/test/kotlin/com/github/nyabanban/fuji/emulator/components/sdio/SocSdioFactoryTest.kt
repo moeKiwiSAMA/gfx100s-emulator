@@ -209,15 +209,35 @@ class SocSdioFactoryTest {
         assertEquals(Long.MAX_VALUE, strictMmio.nextInterestedTick())
         strictComp.close()
 
-        // 6. Snapshot round-trip
+        // 6. Socionext F_SDH30 vendor register bank (+0x100..+0x1FF / 0xFFFCC100..0xFFFCC1FF)
+        assertEquals(0L, mmio.read(0x100, 2))
+        // Stock GFX100S 2.13 section4 0x011f5d08..0x011f5d1c RMWs u16 drive strength bits [2:0] = 0x7 at +0x100
+        val prevPadCtrl = mmio.read(0x100, 2)
+        mmio.write(0x100, 2, (prevPadCtrl and 0xfff8L) or 0x0007L)
+        assertEquals(0x0007L, mmio.read(0x100, 2))
+        assertEquals(7, comp.state()["vendorIoCtrl100"])
+        // Vendor UHS status window +0x10C..+0x10F stays read-only 0 (not busy)
+        mmio.write(0x10C, 4, 0xFFFF_FFFFL)
+        assertEquals(0L, mmio.read(0x10C, 4))
+
+        // 7. Snapshot round-trip (including vendor register bank + legacy snapshot compatibility)
         val snap = comp.saveSnapshot()
         val ctx2 = TestContext()
         ctx2.claims["soc-gic.lines"] = ctx.claims["soc-gic.lines"]!!
         val comp2 = SocSdioFactory().create(ctx2, mapOf("profile" to SocSdioFactory.PROFILE, "irqEnabled" to true)) as StatefulComponent
         comp2.start()
         comp2.restoreSnapshot(snap)
+        val mmio2 = ctx2.ports.find(SocSdioFactory.MMIO_PORT, MmioDevice::class.java)!!
+        assertEquals(0x0007L, mmio2.read(0x100, 2))
+        assertEquals(7, comp2.state()["vendorIoCtrl100"])
         assertEquals(comp.state()["commandCount"], comp2.state()["commandCount"])
         assertEquals(comp.state()["dmaBytesTransferred"], comp2.state()["dmaBytesTransferred"])
+
+        // Legacy snapshot without vendorRegsBase64 zeroes vendor bank cleanly
+        val legacySnap = snap.filterKeys { it != "vendorRegsBase64" }
+        comp2.restoreSnapshot(legacySnap)
+        assertEquals(0L, mmio2.read(0x100, 2))
+        assertEquals(0, comp2.state()["vendorIoCtrl100"])
         comp.close()
         comp2.close()
     }

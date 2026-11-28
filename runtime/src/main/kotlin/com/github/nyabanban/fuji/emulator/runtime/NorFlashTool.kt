@@ -31,6 +31,8 @@ object NorFlashTool {
     const val FIRMWARE_REGION_LIMIT = 0x02FE_0000L // 49,938,432 bytes (start of part12/calibration banks)
     const val BOOT_BIN_OFFSET = 0x20000L
     const val BOOT_BIN_SIZE = 0x20000L
+    const val BLOCK_A_OFFSET = 0x03DC_0000L
+    const val BLOCK_A_PING_PONG_BYTES = 0x0004_0000 // 0x03DC_0000..0x03E0_0000 (ping + pong BKUP banks)
 
     private const val DAT_HEADER_SIZE = 0x274
     private const val DAT_VERSION_OFFSET = 0x000
@@ -104,6 +106,30 @@ object NorFlashTool {
         clearCompanionSubMcuState(home, config)
         LOG.info("Initialized live 64 MiB NOR Flash {} from stock factory template {}", livePath, factoryPath)
         return true
+    }
+
+    /**
+     * Returns `true` when [norPath] is a regular 64 MiB NOR image whose `$BACKUP BlockA` ping+pong
+     * sectors (`[0x03DC_0000, 0x03E0_0000)`) are completely erased (`0xFF`), indicating a brand-new
+     * factory/re-flashed NOR image that has never persisted settings yet.
+     */
+    fun isBlockAErased(norPath: Path): Boolean {
+        if (!Files.isRegularFile(norPath, NOFOLLOW_LINKS)) return false
+        if (runCatching { Files.size(norPath) }.getOrDefault(-1L) != NOR_SIZE_BYTES) return false
+        return runCatching {
+            val buf = ByteArray(BLOCK_A_PING_PONG_BYTES)
+            FileChannel.open(norPath, READ).use { ch ->
+                val view = ByteBuffer.wrap(buf)
+                var pos = BLOCK_A_OFFSET
+                while (view.hasRemaining()) {
+                    val n = ch.read(view, pos)
+                    if (n <= 0) return@runCatching false
+                    pos += n
+                }
+            }
+            val ff = 0xFF.toByte()
+            buf.all { it == ff }
+        }.getOrDefault(false)
     }
 
     /**

@@ -239,4 +239,157 @@ class ConnectivityBtWifiLiveE2eTest {
             assertTrue(afterLongBackNonBlack > 0, "Expected non-black screen after 2s DISP/BACK Bluetooth pairing")
         }
     }
+
+    private fun waitForWifiNetworkListScan(rt: EmulatorRuntime, minScans: Long): Int {
+        var scr = readGuestU32(rt, 0x01CC6424L)
+        for (i in 0 until 50) {
+            val wifi = compState(rt, "bcm43438")["wifi"] as Map<*, *>
+            val scans = (wifi["scanCount"] as Number).toLong()
+            scr = readGuestU32(rt, 0x01CC6424L)
+            if (scr == 0x0387 && scans >= minScans) break
+            stepByVirtualTicks(rt, 20_000_000L)
+        }
+        stepByVirtualTicks(rt, 40_000_000L)
+        return readGuestU32(rt, 0x01CC6424L)
+    }
+
+    private fun navigateFromStillToWifiNetworkListFirstTime(rt: EmulatorRuntime): Int {
+        tapButton(rt, "menu", 6_000_000L, 45_000_000L)
+        stepByVirtualTicks(rt, 20_000_000L)
+        tapButton(rt, "left", 5_000_000L, 25_000_000L)
+        repeat(4) { tapButton(rt, "down", 5_000_000L, 25_000_000L) }
+        stepByVirtualTicks(rt, 35_000_000L)
+        tapButton(rt, "right", 5_000_000L, 30_000_000L)
+        repeat(6) { tapButton(rt, "down", 5_000_000L, 18_000_000L) }
+        tapButton(rt, "menu", 5_000_000L, 35_000_000L) // Enter CONNECTION SETTING
+        tapButton(rt, "down", 5_000_000L, 20_000_000L) // NETWORK SETTING
+        tapButton(rt, "menu", 5_000_000L, 35_000_000L) // Enter NETWORK SETTING
+        tapButton(rt, "menu", 5_000_000L, 40_000_000L) // WIRELESS ACCESS POINT SETTING
+        tapButton(rt, "down", 5_000_000L, 25_000_000L) // MANUAL SETUP
+        tapButton(rt, "menu", 5_000_000L, 45_000_000L) // Enter MANUAL SETUP
+        tapButton(rt, "menu", 5_000_000L, 60_000_000L) // SELECT FROM NETWORK LIST
+        return waitForWifiNetworkListScan(rt, minScans = 1L)
+    }
+
+    private fun bootStock213ToStillHud(rt: EmulatorRuntime) {
+        rt.owner.submit { rt.session.initialize() }.join()
+        var scr = 0
+        for (i in 0 until 80) {
+            stepBy(rt, 12_000_000L)
+            scr = readGuestU32(rt, 0x01CC6424L)
+            if (scr == 0x0421 || scr == 0x0100) break
+        }
+        if (scr == 0x0421) {
+            stepBy(rt, 60_000_000L)
+            tapButton(rt, "menu", 5_000_000L, 45_000_000L)
+            scr = readGuestU32(rt, 0x01CC6424L)
+            if (scr == 0x0423) {
+                tapButton(rt, "down", 5_000_000L, 25_000_000L)
+                tapButton(rt, "down", 5_000_000L, 25_000_000L)
+                tapButton(rt, "menu", 5_000_000L, 45_000_000L)
+                scr = readGuestU32(rt, 0x01CC6424L)
+            }
+            if (scr == 0x0422) {
+                tapButton(rt, "menu", 5_000_000L, 45_000_000L)
+                scr = readGuestU32(rt, 0x01CC6424L)
+            }
+            if (scr == 0x0482) {
+                tapButton(rt, "menu", 5_000_000L, 40_000_000L)
+            }
+        }
+        for (iter in 0 until 35) {
+            stepBy(rt, 6_000_000L)
+            if (readGuestU32(rt, 0x01CC6424L) == 0x0100 && displayNonBlack(rt) > 150_000) break
+        }
+        assertEquals(0x0100, readGuestU32(rt, 0x01CC6424L), "Expected STILL HUD 0x0100")
+    }
+
+    private fun assertZeroRelaxedFallbacks(rt: EmulatorRuntime, tag: String) {
+        val relaxed = rt.owner.submit {
+            @Suppress("UNCHECKED_CAST")
+            rt.session.state()["relaxedFallback"] as Map<String, Any?>
+        }.join()
+        println("[$tag] relaxedFallback=$relaxed")
+        assertEquals(0L, (relaxed["deviceFallbacks"] as Number).toLong(), "[$tag] Expected ZERO device MMIO fallbacks")
+        assertEquals(0L, (relaxed["discoveryFallbacks"] as Number).toLong(), "[$tag] Expected ZERO discovery MMIO fallbacks")
+        assertEquals(0L, (relaxed["flashRefusals"] as Number).toLong(), "[$tag] Expected ZERO flash refusals")
+    }
+
+    @Test
+    fun verifiesStock213WifiSelectFromNetworkListSelectAndDispBackCancelLive(@TempDir tempRoot: Path) {
+        assumeTrue(
+            System.getenv("FUJI_RUN_CONN_E2E") == "1",
+            "Set FUJI_RUN_CONN_E2E=1 to run live GXUP0004.DAT Wi-Fi network list selection & DISP/BACK E2E verification",
+        )
+        val repo = Path.of(System.getProperty("componentProjectRoot"))
+        val stagedRoot = repo.resolve("build/release-stage/linux-x86_64")
+        assumeTrue(
+            Files.isDirectory(stagedRoot) &&
+                Files.isRegularFile(stagedRoot.resolve("configs/emulator.yaml")) &&
+                (
+                    Files.isRegularFile(stagedRoot.resolve("flash/nor-flash.bin")) ||
+                        Files.isRegularFile(stagedRoot.resolve("runtime/templates/factory-flash/nor-flash-2.13.bin")) ||
+                        Files.isRegularFile(stagedRoot.resolve("runtime/firmware/GXUP0004.DAT"))
+                ),
+            "Requires :stageReleaseLinux output at build/release-stage/linux-x86_64",
+        )
+
+        // Scenario A: Enter SELECT FROM NETWORK LIST (0x0387), verify EScan + SDIO +0x100, and press DISP/BACK directly on 0x0387
+        val cancelRoot = tempRoot.resolve("conn-wifi-cancel-root")
+        copyDirectory(stagedRoot, cancelRoot)
+        EmulatorRuntime(cancelRoot, Formats.read(cancelRoot.resolve("configs/emulator.yaml")), telemetryDisabled = true).use { rt ->
+            bootStock213ToStillHud(rt)
+            val listScr = navigateFromStillToWifiNetworkListFirstTime(rt)
+            val sdioState = compState(rt, "soc-sdio")
+            @Suppress("UNCHECKED_CAST")
+            val wifiState = compState(rt, "bcm43438")["wifi"] as Map<String, Any?>
+            println("[WIFI-LIST-E2E#CANCEL-LIST] scr=0x${listScr.toString(16)} sdioVendor100=${sdioState["vendorIoCtrl100"]} wifi=$wifiState")
+            assertEquals(0x0387, listScr, "Expected SELECT FROM NETWORK LIST screen 0x0387")
+            assertEquals(7, (sdioState["vendorIoCtrl100"] as Number).toInt(), "Expected soc-sdio +0x100 pad drive register = 0x7")
+            assertEquals(true, wifiState["firmwareLoaded"], "Expected BCM43430A1 firmware downloaded into 512 KiB SOCRAM")
+            assertTrue((wifiState["firmwareBytesWritten"] as Number).toLong() >= 400_000L, "Expected >= 400 KiB BCM43430A1 firmware+NVRAM written")
+            assertTrue((wifiState["ioctlCount"] as Number).toLong() >= 80L, "Expected >= 80 CDC IOCTLs across sliding SDPCM credit window")
+            assertTrue((wifiState["scanCount"] as Number).toLong() >= 1L, "Expected >= 1 completed EScan populating network list")
+
+            tapButton(rt, "back", 5_000_000L, 0L)
+            stepByVirtualTicks(rt, 120_000_000L)
+            val afterCancelScr = readGuestU32(rt, 0x01CC6424L)
+            val powerAfterCancel = (compState(rt, "bcm43438")["wifi"] as Map<*, *>)["wifiPowerOn"]
+            println("[WIFI-LIST-E2E#CANCEL-DONE] after DISP/BACK scr=0x${afterCancelScr.toString(16)} wifiPowerOn=$powerAfterCancel")
+            assertTrue(afterCancelScr != 0x0387, "DISP/BACK on SELECT FROM NETWORK LIST (0x0387) must cancel and exit 0x0387")
+            assertEquals(false, powerAfterCancel, "Expected BCM43430 powered down cleanly after DISP/BACK cancel")
+            for (i in 0 until 8) {
+                if (readGuestU32(rt, 0x01CC6424L) == 0x0100) break
+                tapButton(rt, if (i == 0) "shutterHalf" else "back", 5_000_000L, 30_000_000L)
+            }
+            assertEquals(0x0100, readGuestU32(rt, 0x01CC6424L), "Expected return to STILL HUD 0x0100 after cancel")
+            assertZeroRelaxedFallbacks(rt, "WIFI-LIST-CANCEL")
+        }
+
+        // Scenario B: Enter SELECT FROM NETWORK LIST (0x0387), move D-pad cursor, select AP with MENU/OK -> 0x0388 + STA association, then cancel
+        val selectRoot = tempRoot.resolve("conn-wifi-select-root")
+        copyDirectory(stagedRoot, selectRoot)
+        EmulatorRuntime(selectRoot, Formats.read(selectRoot.resolve("configs/emulator.yaml")), telemetryDisabled = true).use { rt ->
+            bootStock213ToStillHud(rt)
+            val listScr = navigateFromStillToWifiNetworkListFirstTime(rt)
+            assertEquals(0x0387, listScr, "Expected SELECT FROM NETWORK LIST screen 0x0387")
+            tapButton(rt, "down", 5_000_000L, 0L)
+            stepByVirtualTicks(rt, 30_000_000L)
+            tapButton(rt, "up", 5_000_000L, 0L)
+            stepByVirtualTicks(rt, 30_000_000L)
+            tapButton(rt, "menu", 5_000_000L, 0L)
+            stepByVirtualTicks(rt, 220_000_000L)
+            val afterSelectScr = readGuestU32(rt, 0x01CC6424L)
+            @Suppress("UNCHECKED_CAST")
+            val wifiAfterSelect = compState(rt, "bcm43438")["wifi"] as Map<String, Any?>
+            println("[WIFI-LIST-E2E#SELECT-DONE] after MENU/OK scr=0x${afterSelectScr.toString(16)} wifi=$wifiAfterSelect")
+            assertTrue(afterSelectScr != 0x0387, "MENU/OK on SELECT FROM NETWORK LIST (0x0387) must select AP and advance out of 0x0387")
+            assertEquals("GFX100S-WiFi", wifiAfterSelect["ssid"], "Expected STA join to selected 'GFX100S-WiFi' AP")
+            assertEquals("02:46:4A:48:00:10", wifiAfterSelect["associatedBssid"], "Expected STA associated with 'GFX100S-WiFi' BSSID")
+
+            tapButton(rt, "back", 5_000_000L, 0L)
+            stepByVirtualTicks(rt, 100_000_000L)
+            assertZeroRelaxedFallbacks(rt, "WIFI-LIST-SELECT")
+        }
+    }
 }
